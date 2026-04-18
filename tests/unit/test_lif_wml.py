@@ -68,3 +68,22 @@ def test_lif_wml_step_emits_pi_when_pattern_confident():
     # Emission is best-effort (decoder may return no match until LIF stabilises).
     # The assertion is that any emissions that happened are well-formed.
     assert all(l.src == 0 and l.phase is Phase.GAMMA for l in received)
+
+
+def test_lif_wml_emits_eps_when_mismatch_high():
+    """Large inbound drive + θ active triggers ε emission."""
+    nerve = MockNerve(n_wmls=2, k=1, seed=0)
+    nerve.set_phase_active(gamma=False, theta=True)
+    wml = LifWML(id=0, n_neurons=20, seed=0, threshold_eps=0.0)
+
+    for _ in range(5):
+        from nerve_core.neuroletter import Neuroletter
+        nerve._queues[0].append(
+            Neuroletter(code=3, role=Role.ERROR, phase=Phase.THETA,
+                        src=1, dst=0, timestamp=0.0)
+        )
+        wml.step(nerve, t=0.0)
+
+    received = nerve.listen(wml_id=1, role=Role.ERROR)
+    # Threshold 0 + θ active + strong drive: ε must be emitted.
+    assert any(l.role is Role.ERROR and l.phase is Phase.THETA for l in received)

@@ -72,30 +72,46 @@ class LifWML(nn.Module):
         pooled = embed_inbound(inbound, self.codebook)     # [n_neurons]
         i_in   = self.input_proj(pooled)
 
-        # LIF integration with surrogate-gradient spike.
+        # LIF integration.
         self.v_mem = self.v_mem + dt / self.tau_mem * (-self.v_mem + i_in)
         spikes     = spike_with_surrogate(self.v_mem, v_thr=self.v_thr)
         self.v_mem = self.v_mem * (1 - spikes)
 
-        # Pattern-match decoder: cosine similarity spikes vs each codebook row.
-        if spikes.sum().item() == 0:
-            return  # N-1 silence is legitimate
-        norms = self.codebook.norm(dim=-1) + 1e-6
-        sims  = (self.codebook @ spikes) / (norms * (spikes.norm() + 1e-6))
-        best  = int(sims.argmax().item())
-        conf  = float(sims[best].item())
+        spike_count = spikes.sum().item()
+        has_spikes = spike_count > 0
 
-        if conf < 0.3:
-            return  # confidence too low — stay silent
+        # Pattern-match decoder (only if spikes exist).
+        best = 0
+        conf = 0.0
+        if has_spikes:
+            norms = self.codebook.norm(dim=-1) + 1e-6
+            sims  = (self.codebook @ spikes) / (norms * (spikes.norm() + 1e-6))
+            best  = int(sims.argmax().item())
+            conf  = float(sims[best].item())
 
-        for dst in range(nerve.n_wmls):
-            if dst == self.id:
-                continue
-            if nerve.routing_weight(self.id, dst) == 1.0:
-                nerve.send(Neuroletter(
-                    code=best, role=Role.PREDICTION, phase=Phase.GAMMA,
-                    src=self.id, dst=dst, timestamp=t,
-                ))
+        # π path — fires on confident match.
+        if has_spikes and conf >= 0.3:
+            for dst in range(nerve.n_wmls):
+                if dst == self.id:
+                    continue
+                if nerve.routing_weight(self.id, dst) == 1.0:
+                    nerve.send(Neuroletter(
+                        code=best, role=Role.PREDICTION, phase=Phase.GAMMA,
+                        src=self.id, dst=dst, timestamp=t,
+                    ))
+
+        # ε path — mismatch = |spike_rate − expected| / expected.
+        expected_rate = 0.3 * self.n_neurons
+        mismatch = abs(spike_count - expected_rate) / max(expected_rate, 1)
+        if mismatch > self.threshold_eps:
+            for dst in range(nerve.n_wmls):
+                if dst == self.id:
+                    continue
+                if nerve.routing_weight(self.id, dst) == 1.0:
+                    nerve.send(Neuroletter(
+                        code=best, role=Role.ERROR, phase=Phase.THETA,
+                        src=self.id, dst=dst, timestamp=t,
+                    ))
 
     def parameters(self, *args, **kwargs) -> Iterable[Tensor]:  # type: ignore[override]
         return super().parameters(*args, **kwargs)
