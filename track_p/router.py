@@ -22,13 +22,24 @@ class SparseRouter(nn.Module):
         # Learnable logits per directed pair. Self-loops masked at sample time.
         self.logits = nn.Parameter(torch.randn(n_wmls, n_wmls) * 0.1)
 
-    def sample_edges(self, *, tau: float = 1.0, hard: bool = True) -> Tensor:
+    def sample_edges(
+        self,
+        *,
+        tau: float = 1.0,
+        hard: bool = True,
+        generator: torch.Generator | None = None,
+    ) -> Tensor:
         # Mask self-loops with -inf so softmax never selects them.
         mask       = torch.eye(self.n_wmls, dtype=torch.bool, device=self.logits.device)
         masked_log = self.logits.masked_fill(mask, float("-inf"))
 
         # Per-row Gumbel; then keep top-K per row.
-        noise    = -torch.log(-torch.log(torch.rand_like(masked_log) + 1e-9) + 1e-9)
+        if generator is not None:
+            uniform = torch.rand(masked_log.shape, generator=generator,
+                                 device=self.logits.device)
+        else:
+            uniform = torch.rand_like(masked_log)
+        noise    = -torch.log(-torch.log(uniform + 1e-9) + 1e-9)
         noisy    = (masked_log + noise) / tau
 
         topk_idx = noisy.topk(self.k, dim=-1).indices            # [N, K]

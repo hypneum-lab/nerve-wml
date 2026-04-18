@@ -30,13 +30,25 @@ class SimNerve:
         n_wmls:      int,
         k:           int,
         *,
+        seed:        int | None = 0,
         strict_n3:   bool = True,
     ) -> None:
-        # Seed router for deterministic topology (tests depend on edges 0→1 and 2→1 being active).
-        torch.manual_seed(0)
+        # Local generator — does NOT pollute global torch RNG (unlike the original
+        # implementation which called torch.manual_seed(0) inside __init__).
+        gen = torch.Generator()
+        if seed is not None:
+            gen.manual_seed(seed)
         self.n_wmls     = n_wmls
         self.router     = SparseRouter(n_wmls=n_wmls, k=k)
-        self._edges: Tensor = self.router.sample_edges(tau=0.5, hard=True)
+        with torch.no_grad():
+            self.router.logits.data = torch.randn(
+                n_wmls, n_wmls, generator=gen
+            ) * 0.1
+        # Pass the same generator so topology sampling is deterministic
+        # regardless of global torch RNG state.
+        self._edges: Tensor = self.router.sample_edges(
+            tau=0.5, hard=True, generator=gen,
+        )
         self.gamma_osc  = PhaseOscillator(self.GAMMA_HZ)
         self.theta_osc  = PhaseOscillator(self.THETA_HZ)
         # Initialize θ at phase 0.5 to provide temporal separation from γ.
