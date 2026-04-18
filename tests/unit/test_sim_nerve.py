@@ -27,8 +27,11 @@ def test_sim_nerve_filter_by_role():
     delivered = nerve.listen(wml_id=1)
     assert len([l for l in delivered if l.role is Role.PREDICTION]) == 1
     assert len([l for l in delivered if l.role is Role.ERROR]) == 0
-    # Now wait for θ to become active and listen again
-    for _ in range(84):
+    # Tick until γ is inactive AND θ is active. θ starts at phase=0.5, so
+    # θ re-enters its active window when its phase wraps back below 0.5.
+    # At t=95ms : γ_phase ≈ 0.80 (inactive, γ priority released),
+    # θ_phase  ≈ 0.07 (active, now deliverable).
+    for _ in range(95):
         nerve.tick(1e-3)
     delivered = nerve.listen(wml_id=1)
     assert len([l for l in delivered if l.role is Role.ERROR]) == 1
