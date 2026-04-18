@@ -29,3 +29,8 @@ packages = ["nerve_core", "track_p"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
+
+[dependency-groups]
+dev = [
+    "matplotlib>=3.10.8",
+]

@@ -9,3 +9,12 @@ build/
 .mypy_cache/
 .ruff_cache/
 .superpowers/
+
+# Paper build artifacts
+papers/paper1/main.pdf
+papers/paper1/figures/*.pdf
+papers/paper1/*.aux
+papers/paper1/*.bbl
+papers/paper1/*.blg
+papers/paper1/*.log
+papers/paper1/*.out
