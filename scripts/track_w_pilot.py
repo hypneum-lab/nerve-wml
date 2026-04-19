@@ -178,6 +178,68 @@ def run_w4(steps: int = 400) -> dict:
     }
 
 
+
+
+def run_w2_true_lif(steps: int = 400) -> dict:
+    """W2 honest — evaluate LifWML via full step() loop, not linear probe.
+
+    Training: learn an input_encoder + lif.codebook + lif.input_proj so
+    the LIF emits the right code on the right input. Evaluation: integrate
+    membrane, surrogate-spike, cosine-similarity to codebook, argmax.
+
+    No gate threshold enforced — spec §13.1 tracks the measured gap.
+    """
+    import torch.nn.functional as F
+    from track_w._surrogate import spike_with_surrogate
+
+    torch.manual_seed(0)
+    nerve = MockNerve(n_wmls=2, k=1, seed=0)
+    nerve.set_phase_active(gamma=True, theta=False)
+    task = FlowProxyTask(dim=16, n_classes=4, seed=0)
+
+    # MLP baseline (same as canonical W2).
+    mlp = MlpWML(id=0, d_hidden=16, seed=0)
+    train_wml_on_task(mlp, nerve, task, steps=steps, lr=1e-2)
+
+    # LIF trained end-to-end on the full spike-match pipeline.
+    lif = LifWML(id=0, n_neurons=16, seed=10)
+    input_encoder = torch.nn.Linear(16, lif.n_neurons)
+    opt = torch.optim.Adam(
+        list(lif.parameters()) + list(input_encoder.parameters()),
+        lr=1e-2,
+    )
+    for _ in range(steps):
+        x, y = task.sample(batch=64)
+        pooled = input_encoder(x)
+        i_in   = lif.input_proj(pooled)
+        spikes_batch = spike_with_surrogate(i_in, v_thr=lif.v_thr)
+        norms = lif.codebook.norm(dim=-1) + 1e-6
+        sims  = spikes_batch @ lif.codebook.T / (
+            norms * (spikes_batch.norm(dim=-1, keepdim=True) + 1e-6)
+        )
+        logits = sims[:, : task.n_classes]
+        loss = F.cross_entropy(logits, y)
+        opt.zero_grad(); loss.backward(); opt.step()
+
+    # Evaluation.
+    x, y = task.sample(batch=256)
+    with torch.no_grad():
+        h_mlp  = mlp.core(x)
+        pred_mlp = mlp.emit_head_pi(h_mlp)[:, : task.n_classes].argmax(-1)
+        acc_mlp = (pred_mlp == y).float().mean().item()
+
+        pooled = input_encoder(x)
+        i_in   = lif.input_proj(pooled)
+        spikes_batch = spike_with_surrogate(i_in, v_thr=lif.v_thr)
+        norms = lif.codebook.norm(dim=-1) + 1e-6
+        sims  = spikes_batch @ lif.codebook.T / (
+            norms * (spikes_batch.norm(dim=-1, keepdim=True) + 1e-6)
+        )
+        pred_lif = sims[:, : task.n_classes].argmax(-1)
+        acc_lif  = (pred_lif == y).float().mean().item()
+
+    return {"acc_mlp": acc_mlp, "acc_lif": acc_lif}
+
 def run_gate_w() -> dict:
     """Run W1..W4 end-to-end and return a JSON-serialisable report."""
     torch.manual_seed(0)
