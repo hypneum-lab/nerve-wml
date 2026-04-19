@@ -579,6 +579,92 @@ def run_w2_n16(steps: int = 400) -> dict:
     }
 
 
+def run_w_triple_substrate(steps: int = 400, hard: bool = False) -> dict:
+    """Triple-substrate polymorphism — MLP vs LIF vs Transformer.
+
+    Trains one instance of each substrate on the same task (fresh task
+    per cohort for RNG isolation, as in run_w2_hard) and reports
+    accuracies + 3-way gap (max − min) / max.
+
+    Args:
+        steps: SGD steps per substrate.
+        hard:  if True use HardFlowProxyTask (12-class XOR-on-noise),
+               else FlowProxyTask (4-class, linearly-separable).
+
+    Returns:
+        dict with keys acc_mlp, acc_lif, acc_trf, triple_gap, n_classes.
+    """
+    import torch.nn.functional as F  # noqa: N812
+
+    from track_w._surrogate import spike_with_surrogate
+    from track_w.transformer_wml import TransformerWML
+
+    if hard:
+        from track_w.tasks.hard_flow_proxy import HardFlowProxyTask
+        make_task = lambda: HardFlowProxyTask(dim=16, n_classes=12, seed=0)  # noqa: E731
+    else:
+        make_task = lambda: FlowProxyTask(dim=16, n_classes=4, seed=0)  # noqa: E731
+
+    torch.manual_seed(0)
+    nerve = MockNerve(n_wmls=3, k=1, seed=0)
+    nerve.set_phase_active(gamma=True, theta=False)
+
+    # MLP cohort.
+    task_mlp = make_task()
+    mlp = MlpWML(id=0, d_hidden=16, seed=0)
+    train_wml_on_task(mlp, nerve, task_mlp, steps=steps, lr=1e-2)
+
+    # LIF cohort (full spike + learned head, v0.4 symmetry).
+    task_lif = make_task()
+    lif = LifWML(id=0, n_neurons=16, seed=10)
+    input_encoder = torch.nn.Linear(16, lif.n_neurons)
+    opt = torch.optim.Adam(
+        list(lif.parameters()) + list(input_encoder.parameters()), lr=1e-2,
+    )
+    for _ in range(steps):
+        x, y = task_lif.sample(batch=64)
+        i_in = lif.input_proj(input_encoder(x))
+        spikes = spike_with_surrogate(i_in, v_thr=lif.v_thr)
+        logits = lif.emit_head_pi(spikes)[:, : task_lif.n_classes]
+        loss = F.cross_entropy(logits, y)
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+
+    # Transformer cohort.
+    task_trf = make_task()
+    trf = TransformerWML(id=0, d_model=16, n_layers=2, n_heads=2, seed=0)
+    train_wml_on_task(trf, nerve, task_trf, steps=steps, lr=1e-2)
+
+    # Eval on a common fresh instance.
+    task_eval = make_task()
+    x, y = task_eval.sample(batch=512)
+    n_classes = task_eval.n_classes
+    with torch.no_grad():
+        acc_mlp = (
+            mlp.emit_head_pi(mlp.core(x))[:, :n_classes].argmax(-1) == y
+        ).float().mean().item()
+        i_in = lif.input_proj(input_encoder(x))
+        spikes = spike_with_surrogate(i_in, v_thr=lif.v_thr)
+        acc_lif = (
+            lif.emit_head_pi(spikes)[:, :n_classes].argmax(-1) == y
+        ).float().mean().item()
+        acc_trf = (
+            trf.emit_head_pi(trf.core(x))[:, :n_classes].argmax(-1) == y
+        ).float().mean().item()
+
+    accs = [acc_mlp, acc_lif, acc_trf]
+    triple_gap = (max(accs) - min(accs)) / max(max(accs), 1e-6)
+    return {
+        "acc_mlp":    acc_mlp,
+        "acc_lif":    acc_lif,
+        "acc_trf":    acc_trf,
+        "triple_gap": triple_gap,
+        "n_classes":  n_classes,
+        "task":       "HardFlowProxyTask" if hard else "FlowProxyTask",
+    }
+
+
 def _run_w2_hard_scale(n_wmls: int, steps: int) -> dict:
     """Shared core for W2-hard at scale (N=16, N=32).
 
