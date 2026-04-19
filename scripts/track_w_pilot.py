@@ -667,6 +667,49 @@ def run_w2_hard_n32(steps: int = 200, seed: int = 0) -> dict:
     return _run_w2_hard_scale(n_wmls=32, steps=steps, seed=seed)
 
 
+def run_w2_hard_n64(steps: int = 150, seed: int = 0) -> dict:
+    """W2-N64 HARD — 64-WML pool on HardFlowProxyTask with v0.4 heads.
+
+    Reduced step budget (150) relative to N=32's 200; the polymorphism
+    question at this scale is distributional closure, not absolute
+    accuracy. Extrapolation point for the v0.7 scaling law.
+    """
+    return _run_w2_hard_scale(n_wmls=64, steps=steps, seed=seed)
+
+
+def run_w2_hard_n64_multiseed(
+    seeds: list[int] | None = None,
+    steps: int = 150,
+) -> dict:
+    """Multi-seed W2-N64 — fourth scaling-law point.
+
+    Tests whether the monotonic decrease (N=2 → 10.7 %, N=16 → 6.71 %,
+    N=32 → 2.39 %) continues, producing a 4-point log-log fit. If
+    median at N=64 is < 2 %, the scaling law holds empirically.
+    """
+    import numpy as np
+
+    if seeds is None:
+        seeds = list(range(5))
+    per_seed = [run_w2_hard_n64(steps=steps, seed=s) for s in seeds]
+    gaps     = [r["gap"]          for r in per_seed]
+    accs_mlp = [r["mean_acc_mlp"] for r in per_seed]
+    accs_lif = [r["mean_acc_lif"] for r in per_seed]
+    return {
+        "seeds":        list(seeds),
+        "gaps":         gaps,
+        "accs_mlp":     accs_mlp,
+        "accs_lif":     accs_lif,
+        "mean_gap":     float(np.mean(gaps)),
+        "median_gap":   float(np.median(gaps)),
+        "p25_gap":      float(np.percentile(gaps, 25)),
+        "p75_gap":      float(np.percentile(gaps, 75)),
+        "max_gap":      float(np.max(gaps)),
+        "mean_acc_mlp": float(np.mean(accs_mlp)),
+        "mean_acc_lif": float(np.mean(accs_lif)),
+    }
+
+
 def run_w2_hard_n32_multiseed(
     seeds: list[int] | None = None,
     steps: int = 200,

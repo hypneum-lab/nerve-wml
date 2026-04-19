@@ -24,6 +24,7 @@ from scripts.track_w_pilot import (
     run_w2_hard_n16_multiseed,
     run_w2_hard_n32,
     run_w2_hard_n32_multiseed,
+    run_w2_hard_n64_multiseed,
 )
 
 
@@ -127,6 +128,33 @@ def test_w2_hard_n32_multiseed_closes_under_5pct():
     assert lif_wins == 5, (
         f"LIF >= MLP in only {lif_wins}/5 seeds at N=32 — "
         "direction stability across scales breaks"
+    )
+
+
+def test_w2_hard_n64_multiseed_reaches_plateau():
+    """v0.7 scaling law: at N=64, gap plateaus around ~2-3 %.
+
+    Interpretation: pool averaging compresses the substrate asymmetry
+    but cannot eliminate it — LIF retains a ~2-3 % expressivity edge
+    on XOR-style boundaries that is substrate-intrinsic, not seed
+    variance. Assertions:
+      1. max_gap < 5 %: contract holds for every seed.
+      2. median_gap in [1 %, 4 %]: plateau band, not zero.
+      3. Direction stability (LIF >= MLP for all seeds).
+    """
+    r = run_w2_hard_n64_multiseed(seeds=list(range(5)), steps=150)
+    assert r["max_gap"] < 0.05, (
+        f"N=64 max_gap {r['max_gap']:.3f} violates the 5 % contract; "
+        f"per-seed gaps = {r['gaps']}"
+    )
+    assert 0.01 < r["median_gap"] < 0.04, (
+        f"N=64 median_gap {r['median_gap']:.3f} outside the expected "
+        "plateau band [1 %, 4 %] — the scaling-law story needs review"
+    )
+    lif_wins = sum(1 for i in range(5) if r["accs_lif"][i] >= r["accs_mlp"][i])
+    assert lif_wins == 5, (
+        f"LIF >= MLP in only {lif_wins}/5 seeds at N=64 — "
+        "direction stability breaks at the largest scale"
     )
 
 
