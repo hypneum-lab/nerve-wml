@@ -209,6 +209,58 @@ def run_p3_no_priority(n_cycles: int = 1000, dt: float = 1e-3) -> float:
     return collision_count / n_cycles
 
 
+def run_p1_dead_vs_steps(
+    max_steps: int = 16000,
+    checkpoint_every: int = 1000,
+    *,
+    dim: int = 32,
+    size: int = 64,
+) -> dict:
+    """P1 curves — for paper figure 3.
+
+    Runs three training variants in parallel and records
+    (step, dead_code_fraction) at each checkpoint interval:
+
+    - mog_init: codebook embeddings seeded from Mixture-of-Gaussians cluster
+      centers (the original Plan 1 shortcut, converges fast).
+    - random_no_rot: random embedding init, NO rotate_dead_codes call.
+    - random_with_rot: random embedding init, rotation every 500 steps.
+
+    Returns: dict with three keys, each a list of (step, dead_frac) tuples.
+    """
+    torch.manual_seed(0)
+    centers = torch.randn(size, dim) * 3
+
+    def _make_cb(variant: str) -> VQCodebook:
+        cb = VQCodebook(size=size, dim=dim, ema=True)
+        if variant == "mog_init":
+            with torch.no_grad():
+                cb.embeddings.copy_(centers)
+                cb.ema_embed_sum.copy_(centers)
+                cb.ema_cluster_size.fill_(1.0)
+        # random_no_rot and random_with_rot use the VQCodebook default random init.
+        return cb
+
+    cbs = {v: _make_cb(v) for v in ("mog_init", "random_no_rot", "random_with_rot")}
+
+    curves: dict[str, list[tuple[int, float]]] = {v: [] for v in cbs}
+
+    for step in range(1, max_steps + 1):
+        cluster_ids = torch.randint(0, size, (256,))
+        z = centers[cluster_ids] + torch.randn(256, dim) * 0.2
+        for v, cb in cbs.items():
+            cb.train()
+            _, _, loss = cb.quantize(z)
+            if v == "random_with_rot" and step % 500 == 0:
+                cb.rotate_dead_codes(z, dead_threshold=0)
+        if step % checkpoint_every == 0:
+            for v, cb in cbs.items():
+                dead = (cb.usage_counter == 0).float().mean().item()
+                curves[v].append((step, dead))
+
+    return curves
+
+
 if __name__ == "__main__":
     import json
 
