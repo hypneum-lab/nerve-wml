@@ -139,6 +139,46 @@ steps retains $1.000$ of its mock-baseline accuracy, exceeding the
   \label{fig:w2-histogram}
 \end{figure}
 
+\subsection{Scaling Behaviour}
+\label{sec:scaling}
+
+To test whether the polymorphie and continual-learning claims survive
+a larger pool, we repeat W1, W2 and W4 at $N = 16$ and $N = 32$ WMLs
+(respectively 8 MLP + 8 LIF and 16 MLP + 16 LIF, interleaved).
+Fan-out scales with $k(N) = \max(2, \lceil \log_2 N \rceil)$ so the
+directed graph remains sparse ($k = 4$ at $N = 16$, $k = 5$ at $N = 32$).
+
+\begin{table}[t]
+  \centering
+  \caption{Gate-Scale measurements on \texttt{FlowProxyTask} 4-class.}
+  \label{tab:scaling}
+  \small
+  \begin{tabular}{lrrr}
+    \hline
+    Metric & $N = 4$ & $N = 16$ & $N = 32$ \\
+    \hline
+    W1 accuracy (MLP)          & 1.000 & 1.000 & --- \\
+    W2 mean acc\ MLP           & 1.000 & 1.000 & 1.000 \\
+    W2 mean acc\ LIF           & 1.000 & 1.000 & 1.000 \\
+    W2 relative gap            & 0.000 & 0.000 & 0.000 \\
+    W4 forgetting (rehearsal)  & 0.000 & 0.000 & --- \\
+    Strongly connected graph   & yes   & yes   & yes \\
+    \hline
+  \end{tabular}
+\end{table}
+
+The \texttt{run\_w1\_n16}, \texttt{run\_w2\_n16}, \texttt{run\_w4\_n16},
+and \texttt{run\_w2\_n32} pilots in \texttt{scripts/track\_w\_pilot.py}
+reproduce Table~\ref{tab:scaling} deterministically (seed~0). The
+\texttt{scale\_diagnostic} script verifies that for every
+$N \in \{4, 8, 16, 32\}$ the sparse graph remains strongly connected
+(single SCC), with fan-in variance growing sub-linearly with $N$.
+Both substrates saturate \texttt{FlowProxyTask}, so the \emph{absence}
+of a gap at scale is not a strong claim --- the honest
+\texttt{HardFlowProxyTask} measurement (Threats to Validity) shows
+the polymorphie gap widens on non-linear tasks. Scaling the hard
+task to $N = 16$ / $N = 32$ is a natural near-term follow-up.
+
 \section{Threats to Validity}
 
 Our experiments use synthetic tasks and small WML pools. Three threats deserve mention.
