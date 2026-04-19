@@ -1,5 +1,4 @@
 """Tests for AdaptiveCodebook.shrink and .grow."""
-import torch
 
 from track_p.adaptive_codebook import AdaptiveCodebook
 

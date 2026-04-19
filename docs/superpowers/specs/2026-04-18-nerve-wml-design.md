@@ -538,7 +538,7 @@ Alternative (deferred) : sub-project inside `dream-of-kiki/` if seen as empirica
 
 ## 13. Open questions / future work
 
-- **Multi-alphabet extension.** Could the 64-code alphabet grow or shrink adaptively per WML once the system is stable ?
+- **Multi-alphabet extension.** Could the 64-code alphabet grow or shrink adaptively per WML once the system is stable ? — **PLAN 8 RESOLVED (post-hoc, 2026-04-19)**. `track_p.adaptive_codebook.AdaptiveCodebook` wraps a fixed 64-slot `VQCodebook` with an `active_mask` so shrink/grow are logical, not physical. `bridge.transducer_resize` produces a reshaped `Transducer` preserving argmax on kept rows. `gate-adaptive-passed` verifies a shrink→grow cycle completes without the alphabet collapsing below 4 codes. Remaining: wire into live WMLs at training time (currently applied post-hoc on checkpoints).
 - **Hardware deployment.** How do the LIF WMLs port to Loihi or Akida once the software PoC is validated ?
 - **Dream integration.** What is the minimal interface between `nerve-wml` and `dream-of-kiki` to replay ε traces during offline consolidation ?
 - **Scaling behaviour.** Does the polymorphie gap remain < 5 % at N = 16 or 32 WMLs ?

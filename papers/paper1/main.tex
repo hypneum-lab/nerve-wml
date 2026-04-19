@@ -231,6 +231,16 @@ priority rule suffices in simulation; a phase-locked oscillator
 regime would give the same invariant without the rule and is a
 natural next step.
 
+\textit{Adaptive alphabet.} The 64-code codebook is fixed per WML.
+\texttt{track\_p.adaptive\_codebook.AdaptiveCodebook} implements an
+\texttt{active\_mask} over a fixed 64-slot storage so shrink and grow
+become logical (not physical) operations. \texttt{bridge.transducer\_
+resize} produces a reshaped \texttt{Transducer} preserving argmax on
+kept rows. \texttt{gate-adaptive-passed} verifies a shrink-then-grow
+cycle completes without the alphabet collapsing below 4 codes. Wiring
+this into live WMLs at training time (rather than post-hoc on
+checkpoints) is future work tracked in spec \S 13 Q1.
+
 \bibliographystyle{plain}
 \bibliography{refs}
 
