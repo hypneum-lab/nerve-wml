@@ -59,5 +59,5 @@ class QueryEncoder(nn.Module):
     def forward(self, tokens: Tensor) -> Tensor:
         """tokens: [B, token_dim] float → codes: [B] long in [0, alphabet_size)."""
         h = self.projection(tokens)                      # [B, hidden_dim]
-        dist = torch.cdist(h, self.codebook)             # [B, alphabet_size]
+        dist = torch.cdist(h, self.codebook)  # type: ignore[arg-type]
         return dist.argmin(dim=-1)
