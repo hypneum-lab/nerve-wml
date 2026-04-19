@@ -49,7 +49,9 @@ def run_p1(steps: int = 2000, dim: int = 32, size: int = 64) -> VQCodebook:
     return cb
 
 
-def run_p1_random_init(steps: int = 8000, dim: int = 32, size: int = 64) -> tuple[VQCodebook, float]:
+def run_p1_random_init(
+    steps: int = 8000, dim: int = 32, size: int = 64
+) -> tuple[VQCodebook, float]:
     """P1 ablation — VQ codebook trained from random init (no MOG center leak).
 
     Demonstrates the protocol converges from scratch, even if slower. Does NOT

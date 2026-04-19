@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,7 +24,11 @@ def render_cycle_trace(
 
     # Column 0 = γ delivery; column 1 = θ delivery (per freeze_golden.py structure).
     row_gamma = (shown[:, 0] >= 0).astype(int)
-    row_theta = (shown[:, 1] >= 0).astype(int) if shown.shape[1] > 1 else np.zeros(n_to_show, dtype=int)
+    row_theta = (
+        (shown[:, 1] >= 0).astype(int)
+        if shown.shape[1] > 1
+        else np.zeros(n_to_show, dtype=int)
+    )
 
     fig, ax = plt.subplots(figsize=(8, 2))
     ax.imshow(np.stack([row_gamma, row_theta]), aspect="auto", cmap="Greys")

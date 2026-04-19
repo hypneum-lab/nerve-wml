@@ -7,16 +7,18 @@ step count. Gate M asserts merged perf ≥ 95 % of Track-W-with-mock.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import torch
+from torch import Tensor
 from torch.optim import Adam
 
 
 @dataclass
 class MergeTrainer:
-    wmls:  list              # pool of MlpWML / LifWML
+    wmls:  list[Any]         # pool of MlpWML / LifWML
     nerve: torch.nn.Module   # SimNerveAdapter
-    task:  object            # FlowProxyTask
+    task:  Any               # FlowProxyTask
     steps: int = 100
     lr:    float = 1e-2
 
@@ -41,13 +43,15 @@ class MergeTrainer:
             task_loss = torch.nn.functional.cross_entropy(pi_logits, y)
 
             # Transducer entropy regulariser to avoid collapse-to-identity.
-            ent_reg = torch.tensor(0.0)
-            for t in self.nerve._transducers.values():
-                ent_reg = ent_reg + t.entropy()
+            ent_reg: Tensor = torch.tensor(0.0)
+            for t in self.nerve._transducers.values():  # type: ignore[operator,union-attr]
+                ent_reg = ent_reg + t.entropy()  # type: ignore[union-attr,operator]
             reg = -0.01 * ent_reg  # maximise entropy (negative sign)
 
             total = task_loss + reg
-            opt.zero_grad(); total.backward(); opt.step()
+            opt.zero_grad()
+            total.backward()
+            opt.step()
             losses.append(total.item())
 
         # Unfreeze WML params after training so downstream code is not surprised.

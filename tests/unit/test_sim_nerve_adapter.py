@@ -43,12 +43,12 @@ def test_adapter_honors_gamma_priority():
 
     # γ and θ both active → γ delivers, θ held.
     delivered = nerve.listen(wml_id=dst)
-    assert [l.role for l in delivered] == [Role.PREDICTION]
+    assert [letter.role for letter in delivered] == [Role.PREDICTION]
 
     # Now turn γ off — θ should deliver.
     nerve.set_phase_active(gamma=False, theta=True)
     delivered = nerve.listen(wml_id=dst)
-    assert [l.role for l in delivered] == [Role.ERROR]
+    assert [letter.role for letter in delivered] == [Role.ERROR]
 
 
 def test_adapter_parameters_include_transducers():

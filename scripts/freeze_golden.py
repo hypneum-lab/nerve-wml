@@ -23,11 +23,11 @@ def _emit_cycle(nerve: SimNerveAdapter, n_cycles: int) -> np.ndarray:
     for i in range(n_cycles):
         nerve.set_phase_active(gamma=True, theta=False)
         nerve.send(Neuroletter((i * 3) % 64, Role.PREDICTION, Phase.GAMMA, 0, 1, i * 1e-3))
-        received_g = [l.code for l in nerve.listen(wml_id=1)]
+        received_g = [letter.code for letter in nerve.listen(wml_id=1)]
 
         nerve.set_phase_active(gamma=False, theta=True)
         nerve.send(Neuroletter((i * 7) % 64, Role.ERROR, Phase.THETA, 2, 1, i * 1e-3))
-        received_t = [l.code for l in nerve.listen(wml_id=1)]
+        received_t = [letter.code for letter in nerve.listen(wml_id=1)]
 
         codes.append(received_g + received_t)
 
