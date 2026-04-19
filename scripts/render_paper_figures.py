@@ -92,6 +92,46 @@ def render_w4_forgetting_bars(
     plt.close(fig)
 
 
+def render_p1_dead_curve(
+    *,
+    output_path:      str = "papers/paper1/figures/p1_dead_curve.pdf",
+    max_steps:        int = 16000,
+    checkpoint_every: int = 1000,
+) -> None:
+    """Figure 3: dead-code fraction vs step, three VQ init variants."""
+    import torch
+    from scripts.track_p_pilot import run_p1_dead_vs_steps
+
+    torch.manual_seed(0)
+    curves = run_p1_dead_vs_steps(
+        max_steps=max_steps,
+        checkpoint_every=checkpoint_every,
+    )
+
+    labels_styles = {
+        "mog_init":         ("MOG init (shortcut)",      "#1f77b4", "-"),
+        "random_no_rot":    ("Random, no rotation",      "#d62728", "--"),
+        "random_with_rot":  ("Random + rotation",        "#2ca02c", "-"),
+    }
+
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(6, 3.5))
+    for variant, (label, color, ls) in labels_styles.items():
+        steps = [s for s, _ in curves[variant]]
+        dead  = [d for _, d in curves[variant]]
+        ax.plot(steps, dead, color=color, linestyle=ls, linewidth=2, label=label)
+
+    ax.axhline(y=0.10, color="gray", linestyle=":", linewidth=1,
+               label="gate threshold 10%")
+    ax.set_xlabel("training step")
+    ax.set_ylabel("dead-code fraction")
+    ax.set_ylim(0, 0.7)
+    ax.set_title("Gate P1: VQ dead-code convergence by init strategy")
+    ax.legend(loc="upper right", fontsize=8)
+    fig.savefig(output_path, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main() -> None:
     render_cycle_trace()
     print("paper figures rendered.")
