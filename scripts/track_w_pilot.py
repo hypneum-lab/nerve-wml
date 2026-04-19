@@ -455,6 +455,11 @@ def run_w2_hard(steps: int = 800) -> dict:
 
     # LIF path — fresh task instance (seed 0), independent RNG state.
     task_lif = HardFlowProxyTask(dim=16, n_classes=12, seed=0)
+    # LIF training now uses the learned emit_head_pi — symmetric to MLP's
+    # π head. The prior cosine-similarity decoder was a fixed linear classifier
+    # on spike patterns; unable to express the XOR-on-noise boundary, it
+    # produced a 12.1 % polymorphism gap (§13.1 debt #1). The learned head
+    # restores apples-to-apples substrate comparison.
     lif = LifWML(id=0, n_neurons=16, seed=10)
     input_encoder = torch.nn.Linear(16, lif.n_neurons)
     opt = torch.optim.Adam(
@@ -465,11 +470,7 @@ def run_w2_hard(steps: int = 800) -> dict:
         x, y = task_lif.sample(batch=64)
         i_in = lif.input_proj(input_encoder(x))
         spikes = spike_with_surrogate(i_in, v_thr=lif.v_thr)
-        norms = lif.codebook.norm(dim=-1) + 1e-6
-        sims = spikes @ lif.codebook.T / (
-            norms * (spikes.norm(dim=-1, keepdim=True) + 1e-6)
-        )
-        logits = sims[:, : task_lif.n_classes]
+        logits = lif.emit_head_pi(spikes)[:, : task_lif.n_classes]
         loss = F.cross_entropy(logits, y)
         opt.zero_grad()
         loss.backward()
@@ -484,11 +485,7 @@ def run_w2_hard(steps: int = 800) -> dict:
         acc_mlp = (pred_mlp == y).float().mean().item()
         i_in = lif.input_proj(input_encoder(x))
         spikes = spike_with_surrogate(i_in, v_thr=lif.v_thr)
-        norms = lif.codebook.norm(dim=-1) + 1e-6
-        sims = spikes @ lif.codebook.T / (
-            norms * (spikes.norm(dim=-1, keepdim=True) + 1e-6)
-        )
-        pred_lif = sims[:, : task_eval.n_classes].argmax(-1)
+        pred_lif = lif.emit_head_pi(spikes)[:, : task_eval.n_classes].argmax(-1)
         acc_lif = (pred_lif == y).float().mean().item()
 
     gap = abs(acc_mlp - acc_lif) / max(acc_mlp, 1e-6)

@@ -50,7 +50,11 @@ class LifWML(nn.Module):
         # Membrane state — re-init per episode via `.reset_state()`.
         self.register_buffer("v_mem", torch.zeros(n_neurons))
 
-        # Save global RNG, re-init input_proj from local generator, restore.
+        # Save global RNG, re-init input_proj + emit_head_pi from local
+        # generator, restore. emit_head_pi is a learned linear readout over
+        # the spike pattern; symmetric to MlpWML.emit_head_pi. Used by the
+        # polymorphism benchmarks so the LIF readout is trainable end-to-end
+        # rather than a fixed cosine match against the codebook.
         saved_rng = torch.get_rng_state()
         try:
             self.input_proj = nn.Linear(n_neurons, n_neurons)
@@ -59,6 +63,13 @@ class LifWML(nn.Module):
                     n_neurons, n_neurons, generator=gen
                 ) * 0.1
                 self.input_proj.bias.data.zero_()
+
+            self.emit_head_pi = nn.Linear(n_neurons, alphabet_size)
+            with torch.no_grad():
+                self.emit_head_pi.weight.data = torch.randn(
+                    alphabet_size, n_neurons, generator=gen
+                ) * 0.1
+                self.emit_head_pi.bias.data.zero_()
         finally:
             torch.set_rng_state(saved_rng)
 
