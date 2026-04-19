@@ -8,9 +8,17 @@ abstract: >
   measured cross-substrate polymorphism (0 % gap on linearly
   separable FlowProxyTask, 12.1 % gap on HardFlowProxyTask, Gate M
   merge retaining 1.000 of mock-baseline accuracy). The repository
-  provides the reference substrate-portability measurement cited in
-  the parent research program's Paper 1 v0.2 §7.4 (dreamOfkiki
-  cross-substrate validation).
+  validates eleven gates end to end: protocol correctness (Gate P),
+  MLP↔LIF polymorphism (Gate W), merge fine-tuning (Gate M),
+  resolution of four scientific shortcuts (Gate M2), scaling to
+  N=16 / N=32 pools (Gate Scale), neuroletter-semantics extraction
+  (Gate Interp), INT8 Loihi/Akida export (Gate Neuro), dream-of-kiki
+  ε-trace consolidation bridge (Gate Dream, partial), adaptive
+  alphabet shrink/grow (Gate Adaptive), and a never-raising LLM
+  advisor for micro-kiki (Gate LLM Advisor). It provides the
+  reference substrate-portability measurement cited in the parent
+  research program's Paper 1 v0.2 §7.4 (dreamOfkiki cross-substrate
+  validation).
 type: software
 authors:
   - name: "genial-lab contributors"
