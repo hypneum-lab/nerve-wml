@@ -97,6 +97,72 @@ against \texttt{SimNerveAdapter} after 60 transducer fine-tuning
 steps retains $1.000$ of its mock-baseline accuracy, exceeding the
 95\% threshold.
 
+\begin{table}[t]
+  \centering
+  \caption{Ablation summary — Plan 4a measurements before vs after the honest variants.}
+  \label{tab:ablation}
+  \small
+  \begin{tabular}{lrr}
+    \hline
+    Debt & Shortcut value & Honest value \\
+    \hline
+    P3 $\gamma$-priority   & 0\% collisions (trivial) & 26\% without priority \\
+    W2 true-LIF polymorphie & 0\% gap (linear probe)  & 0\% gap (full spike path) \\
+    W4 continual learning  & 0\% forgetting (disjoint heads) & 100\% $\to$ 0\% (rehearsal) \\
+    P1 random-init VQ     & 39\% dead-code (no rot) & 0\% dead-code (rotation) \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.95\columnwidth]{figures/w4_forgetting.pdf}
+  \caption{Forgetting under three W4 regimes. The shared-head baseline
+  catastrophically forgets (100\%); rehearsal (30\% replay) fully recovers.}
+  \label{fig:w4-forgetting}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.95\columnwidth]{figures/p1_dead_curve.pdf}
+  \caption{Dead-code fraction vs training step for three VQ init variants.
+  Random init plateaus at $\sim$31\%; rotation recovers to zero by step 1000.}
+  \label{fig:p1-dead-curve}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.95\columnwidth]{figures/w2_histogram.pdf}
+  \caption{MLP vs LIF accuracy distribution across seeds on FlowProxyTask
+  4-class. Both substrates saturate to 1.0; a harder task would expose
+  more variance and is noted as follow-up.}
+  \label{fig:w2-histogram}
+\end{figure}
+
+\section{Threats to Validity}
+
+Our experiments use synthetic tasks and small WML pools. Three threats deserve mention.
+
+\textit{Task saturation.} \texttt{FlowProxyTask} 4-class is trivially linearly separable; both MLP and LIF pools converge to 1.0 on it. The 0\% polymorphie gap (Figure~\ref{fig:w2-histogram}) is therefore a degenerate best case. A harder task (e.g. $n_{\text{classes}} \geq 12$, noisier centroids, or non-linear decision boundaries) would likely reveal a non-zero gap and is a near-term follow-up.
+
+\textit{Scale.} All experiments use $N=4$ WMLs with $K=1$--2 fan-out. Whether the 5\% polymorphie gap holds at $N=16$ or $N=32$ is an open question tracked in a separate scaling plan; the router's sparsity and the $\gamma$-priority rule may interact non-trivially at scale.
+
+\textit{Single-seed artefacts.} The Gate P and Gate M pilots in this draft run on a single seed. Where multi-seed data exists (W2, W4, P1), we report it; elsewhere the reader should treat numbers as suggestive rather than statistically validated.
+
+\section{Reproducibility}
+
+All measurements in this paper resolve to a deterministic \texttt{run\_id} via \texttt{harness/run\_registry.py}. The frozen golden NPZ artefacts in \texttt{tests/golden/} lock in bit-stability.
+
+\begin{itemize}
+  \item \textbf{Gate P numbers} — \texttt{uv run python scripts/track\_p\_pilot.py} prints a JSON report with \texttt{all\_passed: true}.
+  \item \textbf{Gate W numbers} — \texttt{uv run python scripts/track\_w\_pilot.py} prints the same style report covering W1--W4.
+  \item \textbf{Gate M ratio} — \texttt{uv run python scripts/merge\_pilot.py} prints \texttt{acc\_merged / acc\_mock\_baseline $\geq$ 0.95}.
+  \item \textbf{Ablation numbers} — \texttt{run\_p3\_no\_priority}, \texttt{run\_w2\_true\_lif}, \texttt{run\_w4\_rehearsal}, and \texttt{run\_p1\_random\_init} in the same scripts.
+  \item \textbf{Figures} — \texttt{uv run python scripts/render\_paper\_figures.py} regenerates every figure from frozen golden data and multi-seed pilot output.
+\end{itemize}
+
+Every numeric claim has a backing test in \texttt{tests/integration/} or \texttt{tests/unit/}. Running \texttt{uv run pytest} reproduces all gate assertions in under a minute on commodity Apple Silicon.
+
 \section{Limitations and Future Work}
 The experiments in this draft use toy signals and small WML pools
 ($N=4$). Scaling to larger pools, LLM-backed WMLs, and hardware
