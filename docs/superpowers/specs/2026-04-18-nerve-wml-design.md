@@ -544,6 +544,15 @@ Alternative (deferred) : sub-project inside `dream-of-kiki/` if seen as empirica
 - **Scaling behaviour.** Does the polymorphie gap remain < 5 % at N = 16 or 32 WMLs ?
 - **Causal inspection.** Can we read off a learned « neuroletter semantics » table (code → concept) from the trained system, as an interpretability artifact ?
 
+### 13.1 Known limitations from Plan 1/2 execution
+
+The following scientific shortcuts were taken to ship gates P and W on schedule. They are documented here to prevent misinterpretation of results:
+
+- **P3 γ-priority ablation.** Gate P3 asserts 0 collisions, which is trivially true given the γ-priority rule in `SimNerve.listen()`. Measure the collision rate WITHOUT the priority rule to quantify how much work the rule is doing. Expected: ~25 % overlap (γ 50 % active × θ 50 % active, independent). — Raised during Plan 1 code review.
+- **W2 true-LIF polymorphie.** The current W2 pilot evaluates `LifWML` via a linear probe on `input_proj`, which bypasses the spike dynamics + pattern-match decoder that constitute the actual LIF path. A faithful polymorphie test would drive the full `step()` loop on a sequence task and read emissions. Expected: non-zero gap, possibly > 5 %. — Raised during Plan 2 execution.
+- **W4 true continual learning.** The current W4 pilot uses disjoint output heads (Task 0 → classes 0-1, Task 1 → classes 2-3) and a reduced lr for Task 1. This avoids catastrophic forgetting by construction rather than by algorithmic means. A faithful W4 would share a full-class head and train both tasks at the same lr; forgetting would likely exceed 20 %. EWC or rehearsal would then become meaningful additions. — Raised during Plan 2 execution.
+- **P1 fully-random VQ convergence.** `run_p1_random_init` (Plan 3 Task 11) demonstrates the protocol converges without MOG cluster-center init, but does not enforce the dead-code < 10 % gate. Future work: characterise the convergence rate and find a training recipe that reaches gate under random init.
+
 ---
 
 ## 14. Sign-off

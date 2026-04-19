@@ -49,6 +49,36 @@ def run_p1(steps: int = 2000, dim: int = 32, size: int = 64) -> VQCodebook:
     return cb
 
 
+def run_p1_random_init(steps: int = 8000, dim: int = 32, size: int = 64) -> tuple[VQCodebook, float]:
+    """P1 ablation — VQ codebook trained from random init (no MOG center leak).
+
+    Demonstrates the protocol converges from scratch, even if slower. Does NOT
+    enforce the dead-code < 10 % gate — this is scientific honesty, not a
+    gate pilot. Returns (VQCodebook, dead_code_fraction) for logging.
+
+    EMA mode (ema=True) is used for consistency with run_p1. The codebook
+    converges via exposure to a deterministic toy signal, not gradient descent.
+    """
+    torch.manual_seed(0)
+    cb = VQCodebook(size=size, dim=dim, ema=True, decay=0.99)
+    centers = torch.randn(size, dim) * 3
+
+    for step in range(steps):
+        cb.train()
+        torch.manual_seed(step)
+
+        # Force every cluster to appear 4x per batch (64 clusters * 4 = 256 samples)
+        cluster_ids = torch.tensor(list(range(size)) * 4)
+        perm = torch.randperm(256)
+        cluster_ids = cluster_ids[perm]
+        z = centers[cluster_ids] + torch.randn(256, dim) * 0.2
+
+        _, _, loss = cb.quantize(z)
+
+    dead = (cb.usage_counter == 0).float().mean().item()
+    return cb, dead
+
+
 def run_p2(steps: int = 2000, alphabet_size: int = 64) -> tuple[Transducer, float]:
     """P2 — train a transducer so that a known src→dst code permutation is learned.
 
