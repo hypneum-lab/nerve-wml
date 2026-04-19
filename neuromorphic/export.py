@@ -13,7 +13,6 @@ import json
 from pathlib import Path
 
 import numpy as np
-import torch
 from torch import Tensor
 
 
@@ -61,7 +60,7 @@ def save_neuromorphic_artefact(export: dict, path: str | Path) -> None:
     arrays = {k: v for k, v in export.items() if isinstance(v, np.ndarray)}
     scalars = {k: v for k, v in export.items() if not isinstance(v, np.ndarray)}
 
-    np.savez(out / "weights.npz", **arrays)
+    np.savez(out / "weights.npz", **arrays)  # type: ignore[call-overload,arg-type]
     (out / "artefact.json").write_text(json.dumps(scalars, indent=2))
 
 

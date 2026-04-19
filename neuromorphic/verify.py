@@ -1,7 +1,6 @@
 """Software (PyTorch) vs neuromorphic (mock runner) accuracy delta."""
 from __future__ import annotations
 
-import numpy as np
 import torch
 
 from neuromorphic.mock_runner import MockNeuromorphicRunner

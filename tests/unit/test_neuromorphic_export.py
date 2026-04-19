@@ -1,6 +1,5 @@
 """Tests for neuromorphic.export — quantization + artefact save/load."""
 import numpy as np
-import torch
 
 from neuromorphic.export import (
     load_neuromorphic_artefact,
