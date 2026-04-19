@@ -401,5 +401,30 @@ def run_w4_rehearsal(steps: int = 400, rehearsal_frac: float = 0.3) -> dict:
     }
 
 
+def run_w4_multi_seed(seeds: list[int], steps: int = 400) -> dict:
+    """W4 — run run_w4_shared_head and run_w4_rehearsal across multiple seeds.
+
+    Figure 2 of paper v0.2 uses this to show variance reduction under rehearsal.
+    Returns dict with two lists: forgetting_shared, forgetting_rehearsal.
+    """
+    import torch
+
+    forgetting_shared:    list[float] = []
+    forgetting_rehearsal: list[float] = []
+    for s in seeds:
+        torch.manual_seed(s)
+        r_shared = run_w4_shared_head(steps=steps)
+        forgetting_shared.append(r_shared["forgetting"])
+
+        torch.manual_seed(s)
+        r_rehearsal = run_w4_rehearsal(steps=steps, rehearsal_frac=0.3)
+        forgetting_rehearsal.append(r_rehearsal["forgetting"])
+
+    return {
+        "forgetting_shared":    forgetting_shared,
+        "forgetting_rehearsal": forgetting_rehearsal,
+    }
+
+
 if __name__ == "__main__":
     print(json.dumps(run_gate_w(), indent=2))
