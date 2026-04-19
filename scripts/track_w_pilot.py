@@ -333,6 +333,23 @@ def _eval_on(wml, task) -> float:
     return (pred == y).float().mean().item()
 
 
+
+def run_w2_multi_seed(seeds: list[int], steps: int = 400) -> dict:
+    """W2 — run run_w2_true_lif across multiple seeds.
+
+    Returns a dict with two lists of per-seed accuracies. Figure 4 of the
+    paper (v0.2) reads this to plot the MLP vs LIF distribution.
+    """
+    acc_mlp: list[float] = []
+    acc_lif: list[float] = []
+    for s in seeds:
+        import torch
+        torch.manual_seed(s)
+        r = run_w2_true_lif(steps=steps)
+        acc_mlp.append(r["acc_mlp"])
+        acc_lif.append(r["acc_lif"])
+    return {"acc_mlp": acc_mlp, "acc_lif": acc_lif}
+
 def run_w4_rehearsal(steps: int = 400, rehearsal_frac: float = 0.3) -> dict:
     """W4 honest — Task 1 training mixes a fraction of Task 0 samples
     (rehearsal buffer) to prevent catastrophic forgetting. Shared head,
