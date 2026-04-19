@@ -710,5 +710,48 @@ def run_w2_n32(steps: int = 200) -> dict:
     }
 
 
+def run_gate_scale() -> dict:
+    """Run W1-N16, W2-N16, W4-N16, W2-N32 end-to-end. Return a single report."""
+    torch.manual_seed(0)
+    w1_acc = run_w1_n16(steps=400)
+
+    w2_n16 = run_w2_n16(steps=400)
+    w2_n16_gap = abs(w2_n16["mean_acc_mlp"] - w2_n16["mean_acc_lif"]) / max(
+        w2_n16["mean_acc_mlp"], 1e-6
+    )
+
+    w4_n16 = run_w4_n16(steps=400)
+
+    w2_n32 = run_w2_n32(steps=200)
+
+    all_passed = (
+        w1_acc > 0.6
+        and w2_n16["mean_acc_mlp"] > 0.6
+        and w2_n16["mean_acc_lif"] > 0.6
+        and w2_n16_gap < 0.10
+        and w4_n16["forgetting"] < 0.20
+        and w2_n32["n_mlp"] == 16
+        and w2_n32["n_lif"] == 16
+    )
+
+    return {
+        "w1_n16_accuracy":     w1_acc,
+        "w2_n16_acc_mlp":      w2_n16["mean_acc_mlp"],
+        "w2_n16_acc_lif":      w2_n16["mean_acc_lif"],
+        "w2_n16_gap":          w2_n16_gap,
+        "w4_n16_forgetting":   w4_n16["forgetting"],
+        "w2_n32_acc_mlp":      w2_n32["mean_acc_mlp"],
+        "w2_n32_acc_lif":      w2_n32["mean_acc_lif"],
+        "w2_n32_n_mlp":        w2_n32["n_mlp"],
+        "w2_n32_n_lif":        w2_n32["n_lif"],
+        "all_passed":          all_passed,
+    }
+
+
 if __name__ == "__main__":
-    print(json.dumps(run_gate_w(), indent=2))
+    import sys
+
+    if len(sys.argv) > 1 and sys.argv[1] == "scale":
+        print(json.dumps(run_gate_scale(), indent=2))
+    else:
+        print(json.dumps(run_gate_w(), indent=2))
