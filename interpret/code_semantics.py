@@ -44,7 +44,7 @@ def build_semantics_table(
         # so `next_codes_distribution` for code c is the softmax of the vector
         # that would drive the π head if c were a template hidden state.
         # Shortcut: use the output weight directly.
-        W = wml.emit_head_pi.weight                        # [alphabet_size, d_hidden]
+        W = wml.emit_head_pi.weight  # noqa: N806 (matrix convention)
         next_dist = F.softmax(W @ W.T, dim=-1)             # [alphabet_size, alphabet_size]
 
     table: dict[int, dict] = {}

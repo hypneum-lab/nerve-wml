@@ -15,7 +15,7 @@ def test_semantics_table_fields_per_code():
     wml = MlpWML(id=0, d_hidden=16, seed=0)
     inputs = torch.randn(512, 16)
     table = build_semantics_table(wml, inputs, top_k_inputs=3)
-    for code, entry in table.items():
+    for _code, entry in table.items():
         assert "top_inputs" in entry
         assert "activation_centroid" in entry
         assert "next_codes_distribution" in entry

@@ -1,4 +1,3 @@
-import math
 
 import torch
 
@@ -27,7 +26,8 @@ def test_clustering_entropy_non_degenerate():
 
     # 8 Gaussian blobs.
     torch.manual_seed(0)
-    gen = torch.Generator(); gen.manual_seed(0)
+    gen = torch.Generator()
+    gen.manual_seed(0)
     centres = torch.randn(8, 32, generator=gen) * 5
     cluster_ids = torch.randint(0, 8, (64,), generator=gen)
     centroids = centres[cluster_ids] + torch.randn(64, 32, generator=gen) * 0.1
