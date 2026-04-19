@@ -19,3 +19,4 @@ papers/paper1/*.blg
 papers/paper1/*.log
 papers/paper1/*.out
 .serena/
+reports/
