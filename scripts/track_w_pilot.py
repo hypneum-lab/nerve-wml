@@ -492,5 +492,30 @@ def run_w2_hard(steps: int = 800) -> dict:
     return {"acc_mlp": acc_mlp, "acc_lif": acc_lif, "gap": gap}
 
 
+def run_w1_n16(steps: int = 400) -> float:
+    """W1-N16 — train a 16-WML all-MLP pool on FlowProxyTask.
+
+    Uses build_pool(n_wmls=16, mlp_frac=1.0) and k_for_n(16)=4 fan-out.
+    Returns accuracy of WML 0 after training.
+    """
+    from track_w.pool_factory import build_pool, k_for_n
+
+    torch.manual_seed(0)
+    n_wmls = 16
+    nerve = MockNerve(n_wmls=n_wmls, k=k_for_n(n_wmls), seed=0)
+    nerve.set_phase_active(gamma=True, theta=False)
+    pool = build_pool(n_wmls=n_wmls, mlp_frac=1.0, seed=0)
+    task = FlowProxyTask(dim=16, n_classes=4, seed=0)
+
+    for wml in pool:
+        train_wml_on_task(wml, nerve, task, steps=steps, lr=1e-2)
+
+    x, y = task.sample(batch=256)
+    with torch.no_grad():
+        h = pool[0].core(x)
+        pred = pool[0].emit_head_pi(h)[:, : task.n_classes].argmax(-1)
+    return (pred == y).float().mean().item()
+
+
 if __name__ == "__main__":
     print(json.dumps(run_gate_w(), indent=2))
