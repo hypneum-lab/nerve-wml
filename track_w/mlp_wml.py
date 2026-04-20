@@ -25,6 +25,7 @@ class MlpWML(nn.Module):
         d_hidden:      int  = 128,
         alphabet_size: int  = 64,
         threshold_eps: float = 0.30,
+        input_dim:     int | None = None,
         *,
         seed:          int | None = None,
     ) -> None:
@@ -32,6 +33,9 @@ class MlpWML(nn.Module):
         self.id            = id
         self.alphabet_size = alphabet_size
         self.threshold_eps = threshold_eps
+        # v1.2: decouple task-input dim from internal width. When None,
+        # fall back to d_hidden for backward compatibility with v1.1.
+        self.input_dim = input_dim if input_dim is not None else d_hidden
 
         # Create a local generator for all random ops
         gen = torch.Generator()
@@ -45,19 +49,25 @@ class MlpWML(nn.Module):
         # Save global RNG state to avoid mutation during nn.Linear creation.
         global_state = torch.get_rng_state()
 
-        # 4-layer MLP core with local generator init.
+        # Core: optional input projection (input_dim→d_hidden) if different,
+        # then 4 d_hidden-wide layers with ReLU between.
         layers: list[nn.Module] = []
+        if self.input_dim != d_hidden:
+            layers.append(nn.Linear(self.input_dim, d_hidden))
+            layers.append(nn.ReLU())
         for _ in range(4):
             lin = nn.Linear(d_hidden, d_hidden)
-            # Manually set weights using local generator
-            with torch.no_grad():
-                lin.weight.data = torch.randn(
-                    lin.weight.shape, generator=gen
-                ) * 0.1
-                lin.bias.data.zero_()
             layers.append(lin)
-            if _ < 3:  # No ReLU after last layer
+            if _ < 3:
                 layers.append(nn.ReLU())
+        # Seed every Linear from the local generator.
+        for m in layers:
+            if isinstance(m, nn.Linear):
+                with torch.no_grad():
+                    m.weight.data = torch.randn(
+                        m.weight.shape, generator=gen,
+                    ) * 0.1
+                    m.bias.data.zero_()
 
         self.core = nn.Sequential(*layers)
 

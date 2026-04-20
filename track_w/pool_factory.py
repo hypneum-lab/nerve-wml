@@ -53,6 +53,29 @@ def build_pool(n_wmls: int, mlp_frac: float = 0.5, *, seed: int = 0) -> list:
     return pool
 
 
+def build_pool_cfg(n_wmls: int, cfg, *, seed: int = 0) -> list:
+    """Config-driven pool factory (v1.2).
+
+    Accepts a WmlConfig and interleaves MLP and LIF according to the
+    existing mlp_frac=0.5 rule (odd ids → LIF, even ids → MLP).
+    Substrate dims come from the config.
+    """
+    pool: list = []
+    for i in range(n_wmls):
+        wml_seed = seed * 1000 + i
+        if i % 2 == 0:
+            pool.append(MlpWML(
+                id=i, input_dim=cfg.input_dim, d_hidden=cfg.d_hidden,
+                alphabet_size=cfg.alphabet_size, seed=wml_seed,
+            ))
+        else:
+            pool.append(LifWML(
+                id=i, input_dim=cfg.input_dim, n_neurons=cfg.n_neurons,
+                alphabet_size=cfg.alphabet_size, seed=wml_seed,
+            ))
+    return pool
+
+
 def build_triple_pool(
     n_wmls: int, *, seed: int = 0,
     fractions: tuple[float, float, float] = (1 / 3, 1 / 3, 1 / 3),
