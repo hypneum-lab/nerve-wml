@@ -11,23 +11,24 @@ def test_paper_has_integrations_section():
     assert "\\section{Integrations}" in text
 
 
-def test_paper_mentions_all_eleven_gates_in_abstract():
-    # LaTeX source wraps lines; normalize whitespace before matching tokens.
+def test_paper_mentions_v1_2_claims_in_abstract():
+    """Post-v0.9, the abstract foregrounds Claims A + B rather than
+    enumerating all 11 gates. The 11-gate catalogue lives in §Status
+    of the README and CHANGELOG; the paper's abstract is a scientific
+    hook, not a release changelog."""
     text = " ".join(_tex().split())
-    abstract_tokens = [
-        "Gate P",
-        "Gate W",
-        "Gate M",
-        "Gate M2",
-        "Gate Scale",
-        "Gate Interp",
-        "Gate Neuro",
-        "Gate Dream",
-        "Gate Adaptive",
-        "Gate LLM Advisor",
+    v1_2_tokens = [
+        "Substrate-agnostic",       # title / abstract anchor
+        "polymorphism",             # Claim A
+        "information transmission", # Claim B
+        "scaling law",              # v1.1.4 headline
+        "mutual information",       # Claim B quantification
+        "Transformer",              # third substrate
     ]
-    for token in abstract_tokens:
-        assert token in text, f"abstract should mention {token!r}"
+    for token in v1_2_tokens:
+        assert token.lower() in text.lower(), (
+            f"paper should mention {token!r} in the body"
+        )
 
 
 def test_integrations_cites_each_pilot_module():

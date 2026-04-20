@@ -39,6 +39,7 @@ class TransformerWML(nn.Module):
         n_tokens:      int   = 4,
         alphabet_size: int   = 64,
         threshold_eps: float = 0.30,
+        input_dim:     int | None = None,
         *,
         seed:          int | None = None,
     ) -> None:
@@ -53,6 +54,9 @@ class TransformerWML(nn.Module):
         self.d_token       = d_model // n_tokens
         self.alphabet_size = alphabet_size
         self.threshold_eps = threshold_eps
+        # v1.2: decouple task-input dim from d_model. When None, fall back
+        # to d_model for backward compatibility with v1.1.
+        self.input_dim = input_dim if input_dim is not None else d_model
 
         gen = torch.Generator()
         if seed is not None:
@@ -65,6 +69,17 @@ class TransformerWML(nn.Module):
             self.codebook = nn.Parameter(
                 torch.randn(alphabet_size, d_model, generator=gen) * 0.1
             )
+
+            # Optional input projection for input_dim != d_model (v1.2).
+            if self.input_dim != d_model:
+                self.input_proj = nn.Linear(self.input_dim, d_model)
+                with torch.no_grad():
+                    self.input_proj.weight.data = torch.randn(
+                        self.input_proj.weight.shape, generator=gen,
+                    ) * 0.1
+                    self.input_proj.bias.data.zero_()
+            else:
+                self.input_proj = None
 
             self.token_proj = nn.Linear(self.d_token, d_model)
             with torch.no_grad():
@@ -95,9 +110,12 @@ class TransformerWML(nn.Module):
             torch.set_rng_state(saved_rng)
 
     def core(self, x: Tensor) -> Tensor:
-        """Tokenize [B, d_model] → attend → mean-pool → [B, d_model]."""
+        """Tokenize [B, input_dim] → project → attend → mean-pool → [B, d_model]."""
         if x.dim() != 2:
-            raise ValueError(f"expected [B, d_model], got {tuple(x.shape)}")
+            raise ValueError(f"expected [B, input_dim], got {tuple(x.shape)}")
+        # Optional input projection (v1.2, when input_dim != d_model).
+        if self.input_proj is not None:
+            x = self.input_proj(x)
         batch = x.shape[0]
         tokens = x.view(batch, self.n_tokens, self.d_token)
         tokens = self.token_proj(tokens)

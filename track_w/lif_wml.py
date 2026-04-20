@@ -28,6 +28,7 @@ class LifWML(nn.Module):
         v_thr:         float = 1.0,
         tau_mem:       float = 20e-3,
         threshold_eps: float = 0.30,
+        input_dim:     int | None = None,
         *,
         seed:          int | None = None,
     ) -> None:
@@ -38,6 +39,9 @@ class LifWML(nn.Module):
         self.v_thr         = v_thr
         self.tau_mem       = tau_mem
         self.threshold_eps = threshold_eps
+        # v1.2: decouple task-input dim from population size. When None,
+        # fall back to n_neurons for backward compatibility with v1.1.
+        self.input_dim = input_dim if input_dim is not None else n_neurons
 
         gen = torch.Generator()
         if seed is not None:
@@ -57,10 +61,10 @@ class LifWML(nn.Module):
         # rather than a fixed cosine match against the codebook.
         saved_rng = torch.get_rng_state()
         try:
-            self.input_proj = nn.Linear(n_neurons, n_neurons)
+            self.input_proj = nn.Linear(self.input_dim, n_neurons)
             with torch.no_grad():
                 self.input_proj.weight.data = torch.randn(
-                    n_neurons, n_neurons, generator=gen
+                    n_neurons, self.input_dim, generator=gen
                 ) * 0.1
                 self.input_proj.bias.data.zero_()
 
