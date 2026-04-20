@@ -18,6 +18,9 @@ dev = [
   "ruff>=0.5",
   "mypy>=1.10",
 ]
+mnist = [
+    "torchvision>=0.17.0",
+]
 
 [build-system]
 requires = ["hatchling"]
