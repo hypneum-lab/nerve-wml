@@ -172,8 +172,15 @@ side. That would quantify how much of cross-merge's 97 % ratio is
   continuous level. Does not directly measure discrete output
   agreement.
 - **Morcos, Raghu, Bengio 2018, "Insights on representational
-  similarity via SVCCA / PWCCA"** — canonical correlation variants.
-  Same limitation: continuous, basis-sensitive.
+  similarity via SVCCA / PWCCA"** (arXiv:1806.05759). Verified via
+  WebFetch of abstract/metadata. Introduces Projection-Weighted CCA
+  (PWCCA) on top of SVCCA (Raghu 2017); distinguishes signal-
+  carrying and noise-carrying directions in the CCA subspace. Used
+  to study width / generalization / RNN dynamics. Predates CKA by
+  ~1 year; no direct CKA comparison in the abstract. Permutation-
+  invariance properties are not explicit in the abstract (would
+  need full text). **Continuous, basis-sensitive in the sense that
+  CCA alignment is sensitive to direction matching.**
 - **Raghu et al. 2017, "SVCCA"** — earlier; same family.
 - **Li et al. 2015, "Convergent learning"** — observes that different
   networks trained on the same task learn overlapping representations
@@ -192,28 +199,95 @@ alphabet (a protocol), not a continuous embedding.
   as empirical evidence, though the task distribution is
   synthetic/MNIST-only.
 - **Moschella et al. 2022, "Relative representations enable zero-shot
-  latent space communication"** (ICLR 2023 notable top 5%,
-  arXiv:2209.15430). Verified by fetching the abstract: representation
-  is pairwise *cosine similarity to a fixed set of anchors* —
-  **continuous**, not discrete. Invariance property: quasi-isometric
-  (angles between encodings preserved across training runs). Enables
-  zero-shot model stitching across CNNs, GCNs, transformers on
-  images/text/graphs. **Distinction from ours**: Moschella encodes
-  sample *relative* to anchors in continuous space; we encode sample
-  into a *discrete code* via learned codebook. Our invariance is label
-  permutation (relabelling the 64 codes); theirs is latent isometry
-  (rotating the continuous space). Same philosophical aim — enabling
-  cross-architecture communication without shared training — two
-  different mathematical routes.
+  latent space communication"** (ICLR 2023 notable top 5 %,
+  arXiv:2209.15430). **Full method verified 2026-04-20** via
+  HuggingFace papers page.
 
-- **"Are neural network representations universal or idiosyncratic?"
-  (Nature Machine Intelligence 2025, s42256-025-01139-y).** Very
-  recent — explicitly frames the live debate between the universal
-  representation hypothesis (all networks converge on a common
-  computational substrate) and the idiosyncratic view (networks
-  diverge by architecture, objective, learning rule). Our 0.91–0.96
-  MI/H and 0.99 round-trip belong in this debate as evidence for a
-  soft universal hypothesis at the *discrete-output* level.
+  *Formula (their Eq. 4):*
+  ```
+  r_x^(i) = (sim(e_x^(i), e_a^(1)), sim(e_x^(i), e_a^(2)),
+             ..., sim(e_x^(i), e_a^(|A|)))
+  ```
+  where `sim` is cosine similarity and `A` is a fixed anchor set
+  (typically 300–768 samples; uniform, fps, k-means, or top-k
+  strategies all work similarly). Encoding is **continuous,
+  |A|-dimensional**.
+
+  *Invariance:* angle-preserving transformations (rotations,
+  reflections, rescalings; NOT translations — mitigated by
+  normalization). Holds whenever training stochasticity induces a
+  quasi-isometric transform.
+
+  *Striking zero-shot numbers they report:*
+  - Word embeddings (FastText → Word2Vec): absolute MRR = 0.00,
+    relative MRR = 0.94.
+  - Auto-encoder cross-seed stitching (MNIST): absolute reconstruction
+    MSE = 97.79, relative = 2.83.
+  - Cross-architecture (ViT encoder → CIFAR-100, decoder from
+    ResNet50): absolute accuracy = 4.69, relative = 84.46.
+  - Cross-lingual (Japanese review encoder → English decoder):
+    absolute F1 = 48.72, relative F1 = 66.31.
+
+  *What they do NOT do* (confirmed by reading their Related Work):
+  - **No CKA or mutual-information comparison.**
+  - **No discrete / protocol-level codebook evaluation.** Their
+    Figure 7 briefly mentions vector quantization as a possible
+    alternative similarity function but explicitly leaves it to
+    "future work."
+  - **Same architecture family (all continuous encoders).** No
+    ANN / SNN cross-substrate test.
+
+  *Positioning of nerve-wml vs Moschella.* We operate in the
+  discrete-codebook regime Moschella left as future work. Their
+  mechanism is angle-preservation via continuous similarity-to-
+  anchors; ours is label-permutation invariance via learned VQ
+  codebook + per-edge transducers. Their claim is zero-shot
+  stitchability of continuous embeddings; our claim is 91–96 %
+  MI/H of discrete code emissions and 97–99 % task-fidelity under
+  cross-substrate transducer. Both enable cross-architecture
+  communication; neither subsumes the other.
+
+- **Nature Machine Intelligence 2025 editorial** "Are neural network
+  representations universal or idiosyncratic?" (s42256-025-01139-y,
+  pp. 1589–1590). Confirmed via search: 2-page editorial summarizing
+  the CCNeuro 2025 community event. Frames the debate, does not
+  present new empirical results.
+
+- **Saxe et al. 2024, "Universality of representation in biological
+  and artificial neural networks"** (bioRxiv 2024.12.26.629294,
+  also PMC11703180). **Full method verified 2026-04-20** via the PMC
+  mirror.
+
+  *Central claim:* high-performing artificial networks converge onto
+  **shared representational axes that align with biological brain
+  representations** — supports a "representation universality
+  hypothesis" against a "representation individuality" view.
+
+  *Metric:* representational dissimilarity analysis (RDA) — pairwise
+  Pearson correlation of dissimilarity matrices (RDMs) between
+  models, and between models and fMRI data. **Not CKA, not MI.**
+
+  *Numbers:*
+  - Language — low-agreement sentences: median pairwise model
+    agreement = 0.931; high-agreement: 1.767. Inter-subject ceiling
+    0.54. 5/7 models predict high-agreement sentences significantly
+    better than low-agreement.
+  - Vision — high-agreement images predict brain responses
+    significantly better for all 7 models tested across 29 480
+    voxels in occipitotemporal cortex.
+  - Cross-direction: stimuli with high inter-brain agreement also
+    show high inter-model agreement.
+
+  *What they don't do:* **continuous representations only.** No
+  discrete-code, categorical, or symbolic investigation.
+
+  *Positioning of nerve-wml.* Saxe establishes universality at the
+  continuous-embedding level via RDM Pearson. Our work makes a
+  cousin claim at the **discrete-output level via MI/H of emitted
+  codes**. Different metric, different granularity, compatible
+  direction — both support a soft universal hypothesis. If Saxe is
+  the brain-model universality paper, we are the cross-architecture
+  discrete-protocol cousin.
 - **Koch et al. 2024, "On Emergent Similarity"** — review of when
   convergent representations emerge.
 
@@ -314,19 +388,74 @@ abstracts. Tracking what was actually verified during this session:
 
 | Paper | Status | What was verified |
 |---|---|---|
-| **Hinton, Vinyals, Dean 2015** (KD) [arXiv:1503.02531](https://arxiv.org/abs/1503.02531) | ✅ PDF fetched, method section extracted | Full loss equation, temperature, T² scaling, end-to-end student training, soft class probabilities (not hidden states). Our KD vs cross-merge distinctions above are now grounded. |
+| **Hinton, Vinyals, Dean 2015** (KD) [arXiv:1503.02531](https://arxiv.org/abs/1503.02531) | ✅ PDF fetched, method section extracted | Full loss equation with T² scaling, end-to-end student training, soft class probabilities (not hidden states). KD vs cross-merge distinctions now grounded. |
 | **Kornblith et al. 2019** (CKA) [arXiv:1905.00414](https://arxiv.org/abs/1905.00414) | ✅ Abstract + key invariance claim verified | CKA IS invariant to feature permutation (corrected earlier error). |
-| **Moschella et al. 2022** (Relative Repr) [arXiv:2209.15430](https://arxiv.org/abs/2209.15430) | ⚠️ Abstract + search summary only | Anchor-based continuous similarity; invariance is latent isometry. PDF fetch failed (403 / size). Can confirm philosophical neighbour, cannot confirm exact CKA-comparison results. |
-| **Nature MI 2025 "universal vs idiosyncratic"** [s42256-025-01139-y](https://www.nature.com/articles/s42256-025-01139-y) | ⚠️ Confirmed to be a 2-page editorial (pp. 1589–1590), not an empirical paper | The underlying empirical work is Saxe et al. 2024 bioRxiv 2024.12.26.629294 (PMC11703180) — fetch failed (403). Status: known voisin, content unread. |
-| Morcos 2018 SVCCA, Foerster 2016 multi-agent, Rueckauer 2017 ANN→SNN | ❌ Cited from memory, not refetched | Paper needs these verified before submission. |
+| **Moschella et al. 2022** (Relative Repr) [arXiv:2209.15430](https://arxiv.org/abs/2209.15430) | ✅ **Full method + numbers verified via HuggingFace papers page** | Formula (their Eq. 4), anchor strategies, invariance proof, all 7 experimental tables. **Confirmed: no CKA or MI comparison.** **Confirmed: discrete codebook left as future work (their Fig. 7).** |
+| **Saxe et al. 2024** "Universality…" [bioRxiv 2024.12.26.629294](https://www.biorxiv.org/content/10.1101/2024.12.26.629294v1) | ✅ **Full method + numbers verified via PMC11703180** | Central claim (universality hypothesis), metric (RDA / Pearson-RDM), numerical results (agreement 0.931 / 1.767), continuous-only. Cousin of our MI/H at different granularity. |
+| **Nature MI 2025 editorial** [s42256-025-01139-y](https://www.nature.com/articles/s42256-025-01139-y) | ✅ Confirmed 2-page editorial, not empirical | Just the commentary frame; real content lives in Saxe 2024. |
+| **Morcos, Raghu, Bengio 2018** (SVCCA/PWCCA) [arXiv:1806.05759](https://arxiv.org/abs/1806.05759) | ⚠️ Abstract extracted | PWCCA = projection-weighted CCA improving SVCCA. Permutation-invariance not discussed in abstract. |
+| Foerster 2016 multi-agent comm, Rueckauer 2017 ANN→SNN, "Codebook Features" | ❌ Cited from memory | Paper should verify before submission but not critical for the core positioning. |
 
-The most important unverified claim is our positioning vs
-**Moschella 2022 relative representations**. If it turns out they
-quantify something very close to our MI/H — e.g. a normalised
-pairwise-similarity-sharing metric — the novelty claim of this paper
-narrows significantly. A 1-day careful reading of the Moschella PDF
-(via a non-403 mirror or local download) is the highest-ROI action
-before arXiv submission.
+## Synthesis after verified reading
+
+The key empirical outcome of this reading session: **nerve-wml's
+specific combination is not covered by any of the verified voisins.**
+
+| What we do | Moschella 2022 | Saxe 2024 | Kornblith 2019 | Hinton 2015 |
+|---|---|---|---|---|
+| Discrete protocol alphabet (64 codes) | ✗ continuous | ✗ continuous | ✗ continuous | ✗ class logits |
+| MI/H across substrates | ✗ Jaccard/MRR/Cosine | ✗ Pearson RDM | ✗ HSIC kernel | ✗ KL soft labels |
+| Permutation-invariance of *code labels* | N/A (continuous) | N/A (continuous) | ✓ of features, ✗ of labels | ✗ class-indexed |
+| ANN ↔ SNN cross-substrate | ✗ continuous only | ✗ ANN only | ✗ ANN only | ✗ same family |
+| Round-trip fidelity | ✗ | ✗ | ✗ | ✗ |
+| Cross-substrate merge (frozen) | ~partial (stitching) | ✗ | ✗ | ✗ (student e2e) |
+| Pool-size scaling law w/ plateau | ✗ | ✗ | ✗ | ✗ |
+
+Moschella comes closest on *cross-architecture stitching* but
+stays continuous. Saxe comes closest on *universality at output
+level* but uses Pearson-RDM and focuses on brain alignment.
+Kornblith defines the representation-similarity family our MI/H
+joins. Hinton's KD is a different problem (student training, soft
+labels over classes). The gap we occupy is the intersection of:
+**discrete protocol codes × cross-substrate (ANN+SNN+TRF) × MI
+rather than kernel alignment × pool-scale scaling law**.
+
+## Residual risk
+
+The one paper that could still threaten our novelty claim is
+**Moschella's Figure 7 / VQ variant** — if a follow-up paper from
+their group implemented it empirically, that paper would be our
+direct competitor.
+
+*Targeted search executed 2026-04-20* for "relative representations
+vector quantization Moschella follow-up 2023–2025":
+
+- The only direct follow-up from Moschella's group found is
+  **Cannistraci et al. 2023, "Bootstrapping Parallel Anchors for
+  Relative Representations"** (luca.moschella.dev publication),
+  which extends the anchor-selection problem but stays in the
+  **continuous regime**. It does not implement the VQ variant.
+- A broad VQ / discrete-codebook literature exists
+  (HQ-VAE 2024, Neural Discrete Representation Learning 2017,
+  various codebook-collapse fixes 2023–2025) but none extends
+  Moschella's relative-representations framework.
+
+Conclusion: as of 2026-04-20, **no paper in Moschella's group or
+adjacent has empirically implemented the VQ variant** of relative
+representations. The gap our paper fills is real.
+
+## Venue recommendation
+
+**UniReps: the Second Edition of the Workshop on Unifying
+Representations in Neural Models** (NeurIPS 2024, PMLR Vol. 285,
+Dec 14 2024 at the Vancouver Convention Center). Editors include
+Moschella himself, plus Fumero, Domine, Lähner, Crisostomi,
+Stachenfeld. This is the natural venue for our paper — the
+workshop's explicit scope is "unifying representations in neural
+models", which is exactly what we study at the discrete-code level.
+A UniReps 2026 edition (NeurIPS 2026) would be a cleaner submission
+target than NeurIPS main track, with a higher probability of
+engaged reviewers.
 
 ## Next steps for a stronger paper
 
