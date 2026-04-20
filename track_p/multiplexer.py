@@ -9,6 +9,7 @@ Q1-Q5 design decisions that guided this contract.
 """
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Literal
 
@@ -18,7 +19,59 @@ from torch.nn import functional as F  # noqa: N812
 
 from nerve_core.protocols import Nerve
 
-__all__ = ["GammaThetaConfig", "GammaThetaMultiplexer"]
+__all__ = [
+    "AWGN",
+    "GammaThetaConfig",
+    "GammaThetaMultiplexer",
+    "HardwareJitterNoise",
+    "NoiseModel",
+]
+
+
+class NoiseModel(ABC):
+    """Channel noise model applied to the clean carrier.
+
+    Concrete subclasses implement `apply`, taking the clean carrier and
+    returning a noisy carrier of the same shape and dtype.
+    """
+
+    @abstractmethod
+    def apply(self, carrier: Tensor) -> Tensor: ...
+
+
+class AWGN(NoiseModel):
+    """Additive white Gaussian noise with fixed σ.
+
+    Textbook baseline per O'Shea & Hoydis 2017. σ=0 is a no-op so AWGN(0)
+    can be passed in place of None without branching at the call site.
+    """
+
+    def __init__(self, sigma: float = 0.0) -> None:
+        self.sigma = sigma
+
+    def apply(self, carrier: Tensor) -> Tensor:
+        if self.sigma == 0.0:
+            return carrier
+        return carrier + self.sigma * torch.randn_like(carrier)
+
+
+class HardwareJitterNoise(NoiseModel):
+    """Neuromorphic substrate phase-jitter noise — stub for future work.
+
+    Loihi 2 (~200 ns) and SpiNNaker2 (~ms) jitter profiles per Moradi
+    et al. 2025 (Nat Commun, doi:10.1038/s41467-025-65268-z). Instantiable
+    so consumers can wire the hook, but `apply()` raises until the jitter
+    profile impl lands — bouba_sens Sprint 4+ requirement per issue #1 Q3.
+    """
+
+    def __init__(self, substrate: Literal["loihi2", "spinnaker2"]) -> None:
+        self.substrate = substrate
+
+    def apply(self, carrier: Tensor) -> Tensor:
+        raise NotImplementedError(
+            f"HardwareJitterNoise({self.substrate!r}) pending — "
+            f"bouba_sens Sprint 4+ scope per issue #1 Q3 arbitration"
+        )
 
 
 @dataclass(frozen=True)
@@ -92,12 +145,22 @@ class GammaThetaMultiplexer(nn.Module):
         )
         self.register_buffer("_t_grid", t_grid)
 
-    def forward(self, codes: Tensor, *, theta_phase_offset: float = 0.0) -> Tensor:
+    def forward(
+        self,
+        codes: Tensor,
+        *,
+        theta_phase_offset: float = 0.0,
+        noise: NoiseModel | None = None,
+    ) -> Tensor:
         """Encode codes onto a γ/θ PAC carrier.
 
         Args:
             codes: [B, K] long, K ≤ symbols_per_theta.
             theta_phase_offset: phase offset in radians for the θ carrier.
+            noise: optional NoiseModel applied to the clean carrier. None
+                (default) returns the clean signal. AWGN(σ) adds Gaussian
+                noise; HardwareJitterNoise is a stub for future substrate-
+                specific jitter (Loihi 2, SpiNNaker2).
 
         Returns:
             carrier: [B, T] float32, T = sample_rate_hz // theta_hz.
@@ -159,8 +222,12 @@ class GammaThetaMultiplexer(nn.Module):
         carrier = (
             i_t * gamma_i.unsqueeze(0) + q_t * gamma_q.unsqueeze(0)
         ) * theta_env.unsqueeze(0)
+        carrier = carrier.to(torch.float32)
 
-        return carrier.to(torch.float32)
+        if noise is not None:
+            carrier = noise.apply(carrier)
+
+        return carrier
 
     def demodulate(
         self,

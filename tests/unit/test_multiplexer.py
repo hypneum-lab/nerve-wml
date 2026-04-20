@@ -12,7 +12,13 @@ import pytest
 import torch
 
 from nerve_core.protocols import Nerve
-from track_p.multiplexer import GammaThetaConfig, GammaThetaMultiplexer
+from track_p.multiplexer import (
+    AWGN,
+    GammaThetaConfig,
+    GammaThetaMultiplexer,
+    HardwareJitterNoise,
+    NoiseModel,
+)
 
 # ---------------------------------------------------------------------------
 # Configuration & defaults
@@ -151,6 +157,47 @@ def test_soft_demodulate_gradient_flows_through_channel():
         "constellation received no gradient via soft demod — "
         "backprop through channel is broken"
     )
+
+
+# ---------------------------------------------------------------------------
+# Noise models (Q3 scaffolding)
+# ---------------------------------------------------------------------------
+
+def test_noise_model_default_none_is_clean_carrier():
+    """forward without noise arg must return identical carrier to AWGN(0)."""
+    mux = GammaThetaMultiplexer(seed=0)
+    cfg = mux.cfg
+    codes = torch.randint(0, cfg.alphabet_size, (2, cfg.symbols_per_theta))
+    clean = mux.forward(codes)
+    with_awgn_zero = mux.forward(codes, noise=AWGN(sigma=0.0))
+    assert torch.allclose(clean, with_awgn_zero, atol=1e-6)
+
+
+def test_awgn_applies_additive_gaussian():
+    """AWGN(σ>0) must change the carrier and scale with σ."""
+    mux = GammaThetaMultiplexer(seed=0)
+    cfg = mux.cfg
+    codes = torch.randint(0, cfg.alphabet_size, (4, cfg.symbols_per_theta))
+    clean = mux.forward(codes)
+    torch.manual_seed(42)
+    noisy = mux.forward(codes, noise=AWGN(sigma=0.1))
+    diff = (noisy - clean).std().item()
+    assert 0.05 < diff < 0.2, (
+        f"AWGN(0.1) std deviation {diff:.3f} not in expected range [0.05, 0.2]"
+    )
+
+
+def test_hardware_jitter_is_instantiable_but_unimplemented():
+    """HardwareJitterNoise can be constructed (hook wired) but apply() raises
+    NotImplementedError — deferred to bouba_sens Sprint 4+ per issue #1 Q3.
+    """
+    jitter = HardwareJitterNoise(substrate="loihi2")
+    assert isinstance(jitter, NoiseModel)
+    mux = GammaThetaMultiplexer(seed=0)
+    cfg = mux.cfg
+    codes = torch.randint(0, cfg.alphabet_size, (1, cfg.symbols_per_theta))
+    with pytest.raises(NotImplementedError, match="loihi2"):
+        mux.forward(codes, noise=jitter)
 
 
 def test_carrier_spectrum_dominated_by_gamma_band():
