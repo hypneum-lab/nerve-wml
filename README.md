@@ -4,6 +4,20 @@
 
 Research engine that validates a discrete-code communication layer between heterogeneous neural modules (World Model Languages, or WMLs). Modules exchange **neuroletters** over a sparse learned topology, multiplexed on gamma/theta rhythms, and converted between local codebooks by per-edge transducers. The paper draft is at [`papers/paper1/main.tex`](papers/paper1/main.tex); the full spec is at [`docs/superpowers/specs/2026-04-18-nerve-wml-design.md`](docs/superpowers/specs/2026-04-18-nerve-wml-design.md).
 
+## Status — 11 gates + 3 substrates + scaling law (v1.1.0)
+
+Release v1.1.0 (2026-04-20) adds three **structurally distinct substrates** validating the polymorphism claim, a **four-point scaling law**, and **direct measurement of inter-substrate information transmission** (see `CHANGELOG.md`).
+
+| Measurement | Value | Meaning |
+|---|---|---|
+| Scaling-law plateau (N=32, 64) | median gap $\sim 2\text{--}3\%$ (5 seeds each, all < 5 %) | Pool averaging closes the 5 % contract |
+| MI($c_\mathrm{MLP}$; $c_\mathrm{LIF}$) / H($c_\mathrm{MLP}$) | **0.91** (5 seeds) | Shared code between independent substrates |
+| Round-trip fidelity MLP → LIF → MLP | **0.99** (3 seeds) | Information survives the cross-substrate pass |
+| Cross-substrate merge ratio | **0.97** (3 seeds) | Frozen LIF reproduces MLP from codes only |
+| Direction LIF ≥ MLP on hard task | **15/15** seeds | Stable substrate asymmetry (not a bug) |
+
+See Figure `papers/paper1/figures/w2_hard_scaling.pdf` for the scaling law.
+
 ## Status — 11 gates
 
 | Tag | What it proves |

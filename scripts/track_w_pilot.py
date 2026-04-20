@@ -579,7 +579,75 @@ def run_w2_n16(steps: int = 400) -> dict:
     }
 
 
-def _run_w2_hard_scale(n_wmls: int, steps: int) -> dict:
+def run_w_triple_substrate(steps: int = 400, hard: bool = False) -> dict:
+    """Triple-substrate polymorphism — MLP vs LIF vs Transformer.
+
+    Trains one instance of each substrate on the same task (fresh task
+    per cohort for RNG isolation, as in run_w2_hard) and reports
+    accuracies + 3-way gap (max − min) / max.
+    """
+    import torch.nn.functional as F  # noqa: N812
+
+    from track_w._surrogate import spike_with_surrogate
+    from track_w.transformer_wml import TransformerWML
+
+    if hard:
+        from track_w.tasks.hard_flow_proxy import HardFlowProxyTask
+        make_task = lambda: HardFlowProxyTask(dim=16, n_classes=12, seed=0)  # noqa: E731
+    else:
+        make_task = lambda: FlowProxyTask(dim=16, n_classes=4, seed=0)  # noqa: E731
+
+    torch.manual_seed(0)
+    nerve = MockNerve(n_wmls=3, k=1, seed=0)
+    nerve.set_phase_active(gamma=True, theta=False)
+
+    task_mlp = make_task()
+    mlp = MlpWML(id=0, d_hidden=16, seed=0)
+    train_wml_on_task(mlp, nerve, task_mlp, steps=steps, lr=1e-2)
+
+    task_lif = make_task()
+    lif = LifWML(id=0, n_neurons=16, seed=10)
+    input_encoder = torch.nn.Linear(16, lif.n_neurons)
+    opt = torch.optim.Adam(
+        list(lif.parameters()) + list(input_encoder.parameters()), lr=1e-2,
+    )
+    for _ in range(steps):
+        x, y = task_lif.sample(batch=64)
+        i_in = lif.input_proj(input_encoder(x))
+        spikes = spike_with_surrogate(i_in, v_thr=lif.v_thr)
+        logits = lif.emit_head_pi(spikes)[:, : task_lif.n_classes]
+        loss = F.cross_entropy(logits, y)
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+
+    task_trf = make_task()
+    trf = TransformerWML(id=0, d_model=16, n_layers=2, n_heads=2, seed=0)
+    train_wml_on_task(trf, nerve, task_trf, steps=steps, lr=1e-2)
+
+    task_eval = make_task()
+    x, y = task_eval.sample(batch=512)
+    n_classes = task_eval.n_classes
+    with torch.no_grad():
+        acc_mlp = (mlp.emit_head_pi(mlp.core(x))[:, :n_classes].argmax(-1) == y).float().mean().item()
+        i_in = lif.input_proj(input_encoder(x))
+        spikes = spike_with_surrogate(i_in, v_thr=lif.v_thr)
+        acc_lif = (lif.emit_head_pi(spikes)[:, :n_classes].argmax(-1) == y).float().mean().item()
+        acc_trf = (trf.emit_head_pi(trf.core(x))[:, :n_classes].argmax(-1) == y).float().mean().item()
+
+    accs = [acc_mlp, acc_lif, acc_trf]
+    triple_gap = (max(accs) - min(accs)) / max(max(accs), 1e-6)
+    return {
+        "acc_mlp":    acc_mlp,
+        "acc_lif":    acc_lif,
+        "acc_trf":    acc_trf,
+        "triple_gap": triple_gap,
+        "n_classes":  n_classes,
+        "task":       "HardFlowProxyTask" if hard else "FlowProxyTask",
+    }
+
+
+def _run_w2_hard_scale(n_wmls: int, steps: int, seed: int = 0) -> dict:
     """Shared core for W2-hard at scale (N=16, N=32).
 
     Uses the v0.4 symmetric-head fix: LIFs read out via the learned
@@ -595,19 +663,19 @@ def _run_w2_hard_scale(n_wmls: int, steps: int) -> dict:
     from track_w.pool_factory import build_pool, k_for_n
     from track_w.tasks.hard_flow_proxy import HardFlowProxyTask
 
-    torch.manual_seed(0)
-    nerve = MockNerve(n_wmls=n_wmls, k=k_for_n(n_wmls), seed=0)
+    torch.manual_seed(seed)
+    nerve = MockNerve(n_wmls=n_wmls, k=k_for_n(n_wmls), seed=seed)
     nerve.set_phase_active(gamma=True, theta=False)
-    pool = build_pool(n_wmls=n_wmls, mlp_frac=0.5, seed=0)
+    pool = build_pool(n_wmls=n_wmls, mlp_frac=0.5, seed=seed)
 
     # MLP cohort — fresh task instance for RNG isolation.
-    task_mlp = HardFlowProxyTask(dim=16, n_classes=12, seed=0)
+    task_mlp = HardFlowProxyTask(dim=16, n_classes=12, seed=seed)
     for wml in pool:
         if isinstance(wml, MlpWML):
             train_wml_on_task(wml, nerve, task_mlp, steps=steps, lr=1e-2)
 
     # LIF cohort — fresh task, full spike + learned head (v0.4 symmetry).
-    task_lif = HardFlowProxyTask(dim=16, n_classes=12, seed=0)
+    task_lif = HardFlowProxyTask(dim=16, n_classes=12, seed=seed)
     for wml in pool:
         if isinstance(wml, LifWML):
             input_encoder = torch.nn.Linear(16, wml.n_neurons)
@@ -627,7 +695,7 @@ def _run_w2_hard_scale(n_wmls: int, steps: int) -> dict:
             wml._input_encoder = input_encoder  # cached for eval  # noqa: SLF001
 
     # Eval — fresh task instance, same distribution for both substrates.
-    task_eval = HardFlowProxyTask(dim=16, n_classes=12, seed=0)
+    task_eval = HardFlowProxyTask(dim=16, n_classes=12, seed=seed)
     x, y = task_eval.sample(batch=512)
     mlp_accs, lif_accs = [], []
     with torch.no_grad():
@@ -652,19 +720,142 @@ def _run_w2_hard_scale(n_wmls: int, steps: int) -> dict:
     }
 
 
-def run_w2_hard_n16(steps: int = 400) -> dict:
+def run_w2_hard_n16(steps: int = 400, seed: int = 0) -> dict:
     """W2-N16 HARD — 16-WML pool on HardFlowProxyTask with v0.4 heads."""
-    return _run_w2_hard_scale(n_wmls=16, steps=steps)
+    return _run_w2_hard_scale(n_wmls=16, steps=steps, seed=seed)
 
 
-def run_w2_hard_n32(steps: int = 200) -> dict:
+def run_w2_hard_n32(steps: int = 200, seed: int = 0) -> dict:
     """W2-N32 HARD — 32-WML pool on HardFlowProxyTask with v0.4 heads.
 
     Uses reduced step budget to keep runtime bounded; the polymorphism
     question at this scale is whether the reversal (LIF ≥ MLP) observed
     at N=2 persists, not absolute accuracy.
     """
-    return _run_w2_hard_scale(n_wmls=32, steps=steps)
+    return _run_w2_hard_scale(n_wmls=32, steps=steps, seed=seed)
+
+
+def run_w2_hard_n64(steps: int = 150, seed: int = 0) -> dict:
+    """W2-N64 HARD — 64-WML pool on HardFlowProxyTask with v0.4 heads.
+
+    Reduced step budget (150) relative to N=32's 200; the polymorphism
+    question at this scale is distributional closure, not absolute
+    accuracy. Extrapolation point for the v0.7 scaling law.
+    """
+    return _run_w2_hard_scale(n_wmls=64, steps=steps, seed=seed)
+
+
+def run_w2_hard_n64_multiseed(
+    seeds: list[int] | None = None,
+    steps: int = 150,
+) -> dict:
+    """Multi-seed W2-N64 — fourth scaling-law point.
+
+    Tests whether the monotonic decrease (N=2 → 10.7 %, N=16 → 6.71 %,
+    N=32 → 2.39 %) continues, producing a 4-point log-log fit. If
+    median at N=64 is < 2 %, the scaling law holds empirically.
+    """
+    import numpy as np
+
+    if seeds is None:
+        seeds = list(range(5))
+    per_seed = [run_w2_hard_n64(steps=steps, seed=s) for s in seeds]
+    gaps     = [r["gap"]          for r in per_seed]
+    accs_mlp = [r["mean_acc_mlp"] for r in per_seed]
+    accs_lif = [r["mean_acc_lif"] for r in per_seed]
+    return {
+        "seeds":        list(seeds),
+        "gaps":         gaps,
+        "accs_mlp":     accs_mlp,
+        "accs_lif":     accs_lif,
+        "mean_gap":     float(np.mean(gaps)),
+        "median_gap":   float(np.median(gaps)),
+        "p25_gap":      float(np.percentile(gaps, 25)),
+        "p75_gap":      float(np.percentile(gaps, 75)),
+        "max_gap":      float(np.max(gaps)),
+        "mean_acc_mlp": float(np.mean(accs_mlp)),
+        "mean_acc_lif": float(np.mean(accs_lif)),
+    }
+
+
+def run_w2_hard_n32_multiseed(
+    seeds: list[int] | None = None,
+    steps: int = 200,
+) -> dict:
+    """Multi-seed W2-N32 HARD — same methodology as _n16 at larger pool.
+
+    The question this pilot answers: does the ~7 % distributional gap
+    observed at N=16 continue to hold at N=32, or does further pool
+    averaging compress it toward the 5 % contract? A stable gap across
+    scales indicates substrate-intrinsic asymmetry; a scale-dependent
+    one indicates residual variance.
+    """
+    import numpy as np
+
+    if seeds is None:
+        seeds = list(range(5))
+    per_seed = [run_w2_hard_n32(steps=steps, seed=s) for s in seeds]
+    gaps     = [r["gap"]          for r in per_seed]
+    accs_mlp = [r["mean_acc_mlp"] for r in per_seed]
+    accs_lif = [r["mean_acc_lif"] for r in per_seed]
+    return {
+        "seeds":        list(seeds),
+        "gaps":         gaps,
+        "accs_mlp":     accs_mlp,
+        "accs_lif":     accs_lif,
+        "mean_gap":     float(np.mean(gaps)),
+        "median_gap":   float(np.median(gaps)),
+        "p25_gap":      float(np.percentile(gaps, 25)),
+        "p75_gap":      float(np.percentile(gaps, 75)),
+        "max_gap":      float(np.max(gaps)),
+        "mean_acc_mlp": float(np.mean(accs_mlp)),
+        "mean_acc_lif": float(np.mean(accs_lif)),
+    }
+
+
+def run_w2_hard_n16_multiseed(
+    seeds: list[int] | None = None,
+    steps: int = 400,
+) -> dict:
+    """Multi-seed W2-N16 HARD — statistical closure of the polymorphism gap.
+
+    Single-seed N=16 reported `gap = 1.68 %` (§W2-hard-scale v0.4). This
+    pilot re-runs the same configuration across multiple independent
+    seeds so we can report the **median** and **IQR** of the gap rather
+    than a single-seed point. The scientific claim the median addresses:
+    "at pool scale, the substrate-agnostic polymorphism contract holds
+    in distribution, not merely for a single lucky seed".
+
+    Args:
+        seeds: RNG seeds to try. Each seed cascades to nerve topology,
+               pool initialization, and task data. Default = [0..4].
+        steps: SGD steps per substrate cohort per seed.
+
+    Returns:
+        dict with per-seed gaps, accuracies, and summary stats
+        (mean, median, p25, p75, max).
+    """
+    import numpy as np
+
+    if seeds is None:
+        seeds = list(range(5))
+    per_seed = [run_w2_hard_n16(steps=steps, seed=s) for s in seeds]
+    gaps     = [r["gap"]          for r in per_seed]
+    accs_mlp = [r["mean_acc_mlp"] for r in per_seed]
+    accs_lif = [r["mean_acc_lif"] for r in per_seed]
+    return {
+        "seeds":          list(seeds),
+        "gaps":           gaps,
+        "accs_mlp":       accs_mlp,
+        "accs_lif":       accs_lif,
+        "mean_gap":       float(np.mean(gaps)),
+        "median_gap":     float(np.median(gaps)),
+        "p25_gap":        float(np.percentile(gaps, 25)),
+        "p75_gap":        float(np.percentile(gaps, 75)),
+        "max_gap":        float(np.max(gaps)),
+        "mean_acc_mlp":   float(np.mean(accs_mlp)),
+        "mean_acc_lif":   float(np.mean(accs_lif)),
+    }
 
 
 def run_w4_n16(steps: int = 400, rehearsal_frac: float = 0.3) -> dict:
