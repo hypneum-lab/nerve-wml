@@ -12,7 +12,7 @@
     },
     {
       "name": "nerve-wml project contributors",
-      "affiliation": "genial-lab"
+      "affiliation": "c-geni-al"
     }
   ],
   "keywords": [
@@ -36,7 +36,7 @@
     },
     {
       "relation": "isSupplementTo",
-      "identifier": "https://github.com/genial-lab/dream-of-kiki",
+      "identifier": "https://github.com/c-geni-al/dream-of-kiki",
       "resource_type": "software",
       "scheme": "url"
     }

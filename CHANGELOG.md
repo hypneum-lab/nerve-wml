@@ -80,4 +80,4 @@ First stable release. All eleven gates pass on commodity Apple Silicon; the pape
 
 - `dreamOfkiki` Paper 1 v0.2 §7.4 cross-substrate portability (DR-3 Conformance Criterion). OSF pre-registration: [10.17605/OSF.IO/Q6JYN](https://doi.org/10.17605/OSF.IO/Q6JYN).
 
-[1.0.0]: https://github.com/genial-lab/nerve-wml/releases/tag/v1.0.0
+[1.0.0]: https://github.com/c-geni-al/nerve-wml/releases/tag/v1.0.0

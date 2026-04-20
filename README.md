@@ -82,17 +82,17 @@ cd papers/paper1 && tectonic main.tex           # or pdflatex, bibtex, pdflatex,
 
 ## Cited in
 
-- **dreamOfkiki — Paper 1 v0.2 (2026-04-19), §7.4 cross-substrate portability** — [github.com/genial-lab/dream-of-kiki](https://github.com/genial-lab/dream-of-kiki). The Gate W and Gate M measurements reported here (MlpWML / LifWML polymorphism on FlowProxyTask and HardFlowProxyTask) provide the empirical corroboration cited in Paper 1 as independent evidence of the substrate-agnosticism principle (DR-3 Conformance Criterion). OSF pre-registration: [10.17605/OSF.IO/Q6JYN](https://doi.org/10.17605/OSF.IO/Q6JYN).
+- **dreamOfkiki — Paper 1 v0.2 (2026-04-19), §7.4 cross-substrate portability** — [github.com/c-geni-al/dream-of-kiki](https://github.com/c-geni-al/dream-of-kiki). The Gate W and Gate M measurements reported here (MlpWML / LifWML polymorphism on FlowProxyTask and HardFlowProxyTask) provide the empirical corroboration cited in Paper 1 as independent evidence of the substrate-agnosticism principle (DR-3 Conformance Criterion). OSF pre-registration: [10.17605/OSF.IO/Q6JYN](https://doi.org/10.17605/OSF.IO/Q6JYN).
 
 ## Program context
 
-This repository is part of **genial-lab**, which develops executable formal frameworks for cognitive AI. The programmatic parent is `dreamOfkiki` (paper 1 formal framework, paper 2 empirical); `nerve-wml` is the reference implementation for the substrate-agnostic communication principle.
+This repository is part of **c-geni-al**, which develops executable formal frameworks for cognitive AI. The programmatic parent is `dreamOfkiki` (paper 1 formal framework, paper 2 empirical); `nerve-wml` is the reference implementation for the substrate-agnostic communication principle.
 
 Sibling repositories:
 
-- [dream-of-kiki](https://github.com/genial-lab/dream-of-kiki) — formal framework (axioms DR-0..DR-4, Conformance Criterion, Paper 1)
-- [kiki-flow-research](https://github.com/genial-lab/kiki-flow-research) — Wasserstein-gradient-flow engine (upstream)
-- [micro-kiki](https://github.com/genial-lab/micro-kiki) — 35 domain-expert MoE-LoRA deployable instance (advisor consumer)
+- [dream-of-kiki](https://github.com/c-geni-al/dream-of-kiki) — formal framework (axioms DR-0..DR-4, Conformance Criterion, Paper 1)
+- [kiki-flow-research](https://github.com/c-geni-al/kiki-flow-research) — Wasserstein-gradient-flow engine (upstream)
+- [micro-kiki](https://github.com/c-geni-al/micro-kiki) — 35 domain-expert MoE-LoRA deployable instance (advisor consumer)
 - **nerve-wml** (this repo) — substrate-agnostic nerve protocol + cross-substrate polymorphism
 
 ## Repository layout

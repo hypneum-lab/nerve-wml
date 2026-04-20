@@ -10,7 +10,7 @@ handled on a best-effort basis.
 
 This policy applies to :
 
-- The code in this repository (`genial-lab/nerve-wml`)
+- The code in this repository (`c-geni-al/nerve-wml`)
 - The `MlpWML` and `LifWML` substrate implementations and their shared
   `Nerve` Protocol
 - The measurement scripts (`scripts/run_w2_hard`, `scripts/merge_pilot`)
@@ -35,7 +35,7 @@ please report it **privately** via one of these channels :
 
 1. Email : `clement@saillant.cc` — subject starting with `[SECURITY]`
 2. GitHub Private Vulnerability Reporting :
-   https://github.com/genial-lab/nerve-wml/security/advisories/new
+   https://github.com/c-geni-al/nerve-wml/security/advisories/new
 
 Please include :
 

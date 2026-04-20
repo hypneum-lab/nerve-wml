@@ -21,15 +21,15 @@ abstract: >
   validation).
 type: software
 authors:
-  - name: "genial-lab contributors"
+  - name: "c-geni-al contributors"
   - family-names: Saillant
     given-names: Clément
     email: clement@saillant.cc
     affiliation: "L'Electron Rare, Grandris, France"
-repository-code: "https://github.com/genial-lab/nerve-wml"
-url: "https://github.com/genial-lab/nerve-wml"
+repository-code: "https://github.com/c-geni-al/nerve-wml"
+url: "https://github.com/c-geni-al/nerve-wml"
 license: MIT
-license-url: "https://github.com/genial-lab/nerve-wml/blob/main/LICENSE"
+license-url: "https://github.com/c-geni-al/nerve-wml/blob/main/LICENSE"
 keywords:
   - substrate-agnostic protocol
   - World Model Language
@@ -58,5 +58,5 @@ preferred-citation:
       email: clement@saillant.cc
       affiliation: "L'Electron Rare, Grandris, France"
   year: 2026
-  url: "https://github.com/genial-lab/dream-of-kiki"
+  url: "https://github.com/c-geni-al/dream-of-kiki"
   notes: "Paper 1 draft v0.2 §7.4 cites nerve-wml cross-substrate portability numbers. MIT code + CC-BY-4.0 docs. OSF pre-registration DOI 10.17605/OSF.IO/Q6JYN. arXiv preprint forthcoming."
