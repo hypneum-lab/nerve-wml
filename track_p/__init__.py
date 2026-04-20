@@ -1,4 +1,16 @@
 # track_p — protocol simulator.
-from .multiplexer import GammaThetaConfig, GammaThetaMultiplexer
+from .multiplexer import (
+    AWGN,
+    GammaThetaConfig,
+    GammaThetaMultiplexer,
+    HardwareJitterNoise,
+    NoiseModel,
+)
 
-__all__ = ["GammaThetaConfig", "GammaThetaMultiplexer"]
+__all__ = [
+    "AWGN",
+    "GammaThetaConfig",
+    "GammaThetaMultiplexer",
+    "HardwareJitterNoise",
+    "NoiseModel",
+]
