@@ -231,6 +231,83 @@ def run_test_2_round_trip_fidelity(seeds=None, steps=800, batch=512, transducer_
     return results
 
 
+def run_test_1_pool_scale(n_wmls: int = 16, seeds=None, steps: int = 400, batch: int = 1024) -> list:
+    """Pool-scale MI: compare mean MI over all cross-pair (MLP_i, LIF_j).
+
+    Strengthens test (1) from a single MLP vs single LIF to the full
+    N/2 x N/2 cross-pair matrix, reported per seed.
+    """
+    import numpy as np
+    from track_w._surrogate import spike_with_surrogate
+    from track_w.pool_factory import build_pool, k_for_n
+
+    if seeds is None:
+        seeds = list(range(3))
+    results = []
+    for seed in seeds:
+        torch.manual_seed(seed)
+        nerve = MockNerve(n_wmls=n_wmls, k=k_for_n(n_wmls), seed=seed)
+        nerve.set_phase_active(gamma=True, theta=False)
+        pool = build_pool(n_wmls=n_wmls, mlp_frac=0.5, seed=seed)
+
+        # Train MLPs.
+        task_mlp = HardFlowProxyTask(dim=16, n_classes=12, seed=seed)
+        mlps = [w for w in pool if isinstance(w, MlpWML)]
+        for m in mlps:
+            train_wml_on_task(m, nerve, task_mlp, steps=steps, lr=1e-2)
+
+        # Train LIFs.
+        task_lif = HardFlowProxyTask(dim=16, n_classes=12, seed=seed)
+        lifs = [w for w in pool if isinstance(w, LifWML)]
+        input_encoders = []
+        for lif in lifs:
+            enc = torch.nn.Linear(16, lif.n_neurons)
+            opt = torch.optim.Adam(
+                list(lif.parameters()) + list(enc.parameters()), lr=1e-2,
+            )
+            for _ in range(steps):
+                x, y = task_lif.sample(batch=64)
+                i_in = lif.input_proj(enc(x))
+                spikes = spike_with_surrogate(i_in, v_thr=lif.v_thr)
+                logits = lif.emit_head_pi(spikes)[:, : task_lif.n_classes]
+                loss = F.cross_entropy(logits, y)
+                opt.zero_grad()
+                loss.backward()
+                opt.step()
+            input_encoders.append(enc)
+
+        # Eval MI over all N/2 x N/2 cross-pairs.
+        task_eval = HardFlowProxyTask(dim=16, n_classes=12, seed=seed)
+        x, _ = task_eval.sample(batch=batch)
+        mi_pairs = []
+        with torch.no_grad():
+            codes_mlp = [m.emit_head_pi(m.core(x)).argmax(-1).numpy() for m in mlps]
+            codes_lif = []
+            for lif, enc in zip(lifs, input_encoders, strict=False):
+                i_in = lif.input_proj(enc(x))
+                spikes = spike_with_surrogate(i_in, v_thr=lif.v_thr)
+                codes_lif.append(lif.emit_head_pi(spikes).argmax(-1).numpy())
+            for cm in codes_mlp:
+                for cl in codes_lif:
+                    mi_pairs.append(mutual_info_score(cm, cl))
+            # MLP entropy (one representative — they're similar by design).
+            _, c = np.unique(codes_mlp[0], return_counts=True)
+            h_mlp = float(-(c / c.sum() * np.log(c / c.sum())).sum())
+
+        mean_mi = float(np.mean(mi_pairs))
+        results.append({
+            "seed":          seed,
+            "n_wmls":        n_wmls,
+            "n_cross_pairs": len(mi_pairs),
+            "mean_mi":       mean_mi,
+            "max_mi":        float(np.max(mi_pairs)),
+            "min_mi":        float(np.min(mi_pairs)),
+            "h_mlp":         h_mlp,
+            "mean_mi_over_h": mean_mi / max(h_mlp, 1e-9),
+        })
+    return results
+
+
 def run_test_3_cross_substrate_merge(seeds=None, steps=800, batch=512, merge_steps=400):
     """Test (3) — freeze MLP, train transducer M→L, measure LIF accuracy.
 

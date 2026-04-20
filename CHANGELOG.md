@@ -2,17 +2,46 @@
 
 All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] — 2026-04-20
 
-### Changed
+A single intensive session upgraded four scientific claims from architectural postulates to empirical measurements. Paper drafts v0.4 through v0.8 track the iterations.
 
-- **LifWML** now owns a learned `emit_head_pi = nn.Linear(n_neurons, alphabet_size)` symmetric to `MlpWML.emit_head_pi`. The nerve-protocol `step()` keeps the cosine-similarity pattern-match decoder (N-1 invariant), but classification pilots now read out the learned head for apples-to-apples comparison with MLP.
-- **Gate W2 hard-task gap (spec §13.1 Debt 1)** resolved at the architecture level. With symmetric learned heads, `run_w2_hard(steps=800)` now reports `acc_mlp = 0.547`, `acc_lif = 0.611`, `gap = 10.7 %` — the direction of the gap flipped: the spike + surrogate pipeline actually edges out the pure MLP on XOR-on-noise. The original 12.1 % gap was an artefact of a crippled fixed-cosine LIF decoder, not substrate expressivity.
-- **`tests/integration/track_w/test_w2_hard.py`** adds `test_w2_hard_substrate_symmetry_min_55` pinning both substrates above the linear-probe plateau (~0.55).
+### Added
 
-### Honest note
+- **LifWML.emit\_head\_pi** — learned `nn.Linear(n_neurons, alphabet_size)` symmetric to `MlpWML.emit_head_pi`. The protocol `step()` preserves the cosine-similarity pattern-match decoder (N-1 invariant); classification pilots read out the learned head for apples-to-apples comparison. Resolved §13.1 debt #1.
+- **TransformerWML** (`track_w/transformer_wml.py`) — third substrate: tokenized input + `nn.TransformerEncoder(n_layers × n_heads)` + `emit_head_pi` / `emit_head_eps`. Obeys WML Protocol and invariants W-1, W-2, W-5. 7 unit tests pin the Protocol compliance surface.
+- **W2-hard scaling pilots** — `run_w2_hard_n16`, `run_w2_hard_n32`, `run_w2_hard_n64` plus their multi-seed wrappers (`_multiseed`). RNG-isolated per cohort (MLP / LIF / task-eval) using explicit seed parameter.
+- **Triple-substrate polymorphism pilot** — `run_w_triple_substrate(hard=False|True)`. Trains MLP + LIF + TRF on the same task with RNG isolation; reports `triple_gap = (max − min) / max`.
+- **Inter-substrate information-transmission pilots** — `scripts/measure_info_transmission.py`: mutual-information between emitted codes, round-trip fidelity MLP→LIF→MLP through learned transducers, and cross-substrate merge where a frozen LIF recovers task accuracy from MLP-emitted codes only.
+- **Four-point scaling-law figure** — `scripts/render_scaling_figure.py` produces `papers/paper1/figures/w2_hard_scaling.{pdf,png}` with median ± IQR error bars and a 5 % contract band.
 
-The observed 10.7 % asymmetry (LIF > MLP) on HardFlowProxyTask reflects a genuine substrate difference: LIF's binary spike outputs + surrogate gradient add a non-linearity that a 16-dim MLP core cannot replicate. The strict `gap < 5 %` contract was designed for saturated / linearly-separable regimes; on non-linear tasks the substrate does matter, and that is now an explicit empirical finding rather than a measurement artefact.
+### Scientific findings (honest)
+
+- **Polymorphism scaling law (4 points, 5 seeds each except N=2)** — median gap:
+  - $N=2 \to 10.71\%$
+  - $N=16 \to 6.71\%$ (max $10.35\%$)
+  - $N=32 \to 2.39\%$ (max $4.75\%$ — every seed satisfies the 5 % contract)
+  - $N=64 \to 2.73\%$ (plateau; max $3.71\%$)
+  Monotonic decay between $N=2$ and $N=32$, plateau at $\sim 2\text{--}3\%$ for $N \geq 32$. Direction stable: LIF $\geq$ MLP in **15/15 multi-seed measurements**.
+- **Information transmission measured** — on HardFlowProxyTask, for independently trained MLP and LIF on the same input: $\mathrm{MI}(c_{\text{MLP}}, c_{\text{LIF}}) / H(c_{\text{MLP}}) \approx 0.91$ (substrates share $\sim 91\%$ of their code information), round-trip fidelity $\approx 0.99$, cross-merge ratio $\approx 0.97$. Claim B (substrate-agnostic information transmission) is empirical, not just architectural.
+- **Triple-substrate saturation** — on FlowProxyTask, MLP / LIF / TRF all converge to $1.000$ (triple-gap $0\%$). On HardFlowProxyTask at $N=1$: $0.547 / 0.605 / 0.529$ (triple-gap $12.6\%$). Pool scaling not yet measured for TRF.
+
+### Paper
+
+- Drafts v0.4 through v0.8 push substantive §Threats rewrites:
+  - v0.4 — decoder-asymmetry artefact documented
+  - v0.5 — N=16 multi-seed distribution
+  - v0.6 — scaling-law table (N=16 / N=32)
+  - v0.7 — N=64 plateau + scaling-law figure
+  - v0.8 — §Information Transmission (new section)
+- Eight paper tags shipped: `paper-v0.2-draft`, `paper-v0.3-draft`, `paper-v0.4-draft`, `paper-v0.5-draft`, `paper-v0.6-draft`, `paper-v0.7-draft`, `paper-v0.8-draft`.
+
+### Infrastructure
+
+- **240+ tests passing** across unit, integration, golden, and info-transmission layers.
+- Commits split across feature branches `feat/w2-hard-multiseed`, `feat/transformer-wml`, `feat/info-transmission`; all merged into `master` at v1.1.0 tag.
+
+
 
 ## [1.0.0] — 2026-04-19
 

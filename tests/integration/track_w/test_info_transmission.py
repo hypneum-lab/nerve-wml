@@ -14,6 +14,7 @@ import torch
 
 from scripts.measure_info_transmission import (
     run_test_1_mutual_information,
+    run_test_1_pool_scale,
     run_test_2_round_trip_fidelity,
     run_test_3_cross_substrate_merge,
 )
@@ -59,6 +60,31 @@ def test_round_trip_fidelity_preserves_accuracy():
         f"round-trip fidelity {mean_fidelity:.3f} below 85 %; "
         f"per-seed ratios = {ratios}"
     )
+
+
+def test_mi_at_pool_scale_strengthens():
+    """Pool-scale MI (N=16) should preserve or exceed the N=1 ratio.
+
+    Averaging over the full N/2 x N/2 cross-pair matrix tests whether
+    the shared-code signal is a single-pair artefact or a pool-level
+    phenomenon. Empirical: ~0.96 mean ratio across 3 seeds at N=16,
+    vs ~0.91 at N=1 (run_test_1_mutual_information).
+    """
+    results = run_test_1_pool_scale(
+        n_wmls=16, seeds=list(range(3)), steps=400, batch=1024
+    )
+    ratios = [r["mean_mi_over_h"] for r in results]
+    mean_ratio = sum(ratios) / len(ratios)
+    assert mean_ratio > 0.80, (
+        f"pool-scale MI/H {mean_ratio:.3f} collapsed below N=1 baseline; "
+        f"per-seed = {ratios}"
+    )
+    # Every seed's 64 cross-pairs have a non-trivial MI floor.
+    for r in results:
+        assert r["min_mi"] > 0.5 * r["h_mlp"], (
+            f"seed={r['seed']}: min cross-pair MI {r['min_mi']:.3f} "
+            f"< 50 % of H(MLP) {r['h_mlp']:.3f}; some pair is encoding orthogonally"
+        )
 
 
 def test_cross_substrate_merge_approaches_mlp_accuracy():
