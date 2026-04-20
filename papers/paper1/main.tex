@@ -14,23 +14,34 @@
 \maketitle
 
 \begin{abstract}
-We introduce a nerve protocol — discrete neuroletters drawn from a
-learned local vocabulary, multiplexed on gamma/theta rhythms, and
-routed over a sparse learned topology — that lets heterogeneous
-neural modules (World Model Languages, or WMLs) exchange information
-without sharing a substrate. We validate the protocol across eleven
-gates: Track-P correctness on toy signals (Gate P), MLP$\leftrightarrow$LIF
-polymorphie under 5\% (Gate W), merge fine-tuning retaining 95\%
-of baseline (Gate M), resolution of four scientific shortcuts from
-the initial drafts (Gate M2), scaling to $N\in\{16,32\}$ pools
-(Gate Scale), a neuroletter-semantics extraction artefact (Gate
-Interp), a Loihi/Akida INT8 export pipeline (Gate Neuro), an
-$\varepsilon$-trace consolidation bridge to dream-of-kiki (Gate
-Dream, partial), an adaptive-alphabet shrink/grow cycle (Gate
-Adaptive), and an env-gated advisory-only plug-in for micro-kiki
-(Gate LLM Advisor). All eleven gates ship with reproducible
-tests; every numeric claim resolves to a deterministic run
-identifier.
+We introduce a nerve protocol --- discrete neuroletters drawn from a
+learned local vocabulary, multiplexed on $\gamma / \theta$ rhythms, and
+routed over a sparse learned topology --- that lets heterogeneous
+neural modules (World Model Languages, or WMLs) \emph{exchange
+information} without sharing a substrate. We validate two claims
+empirically. \textbf{(A) Substrate-agnostic polymorphism.} Three
+structurally distinct substrates --- stateless MLP, spiking LIF
+with surrogate-gradient training, and attention-based Transformer ---
+reach comparable task accuracies on a non-linear benchmark
+(HardFlowProxyTask, XOR-on-noise 12-class). A four-point scaling law
+traces the pairwise MLP / LIF gap from median $10.7\%$ at $N=2$
+through $6.7\%$ at $N=16$, $2.4\%$ at $N=32$, plateau $2.7\%$ at
+$N=64$; direction stable (LIF $\geq$ MLP) in 15/15 multi-seed
+measurements. The triple-substrate version closes from $8.2\%$ at
+$N=15$ to $4.3\%$ at $N=60$ over 5 seeds each.
+\textbf{(B) Substrate-agnostic information transmission.} For two
+independently trained substrates on the same input, the mutual
+information between their emitted codes over the 64-code alphabet
+is $\mathrm{MI} / H = 0.91$ at $N=1$, strengthening to $0.96$ at
+$N=16$ pool scale (192 cross-pair measurements). Round-trip fidelity
+through learned transducers MLP $\to$ LIF $\to$ MLP retains $99\%$
+of direct-MLP accuracy; cross-substrate merge (a frozen LIF decoding
+MLP-emitted codes alone through a learned transducer) retains
+$97\%$. The finding generalizes to a structurally independent
+distribution (MoonsTask, $\mathrm{MI} / H = 0.74$). All numeric claims
+are reproducible via \texttt{uv run pytest} with explicit seeds;
+code and figures are archived under Zenodo, pre-registered on OSF
+as part of the dreamOfkiki research programme.
 \end{abstract}
 
 \section{Introduction}
