@@ -253,7 +253,34 @@ is trained by fine-tuning only the two transducers $T_{M \to L}, T_{L \to M} \in
 \label{fig:info-transmission}
 \end{figure}
 
-\textbf{(4) Triple-substrate reality check.} \texttt{TransformerWML} (attention-based, third substrate) joins the polymorphism matrix. On \texttt{FlowProxyTask}, MLP, LIF, and Transformer all converge to $1.000$ accuracy (triple-gap $0\%$); on \texttt{HardFlowProxyTask} at $N=1$, MLP $= 0.547$, LIF $= 0.605$, Transformer $= 0.529$ (triple-gap $12.6\%$), with the LIF edge consistent with the two-substrate finding. Pool-scale multi-seed for TRF is future work.
+\textbf{(4a) Real-data validation (MNIST, v1.2).} Running the full v1.1 battery on flattened MNIST (784-dim, 10-class) at $d_\text{hidden}=128$, $\text{alphabet}=256$ gives $\text{acc}_\text{MLP} = 0.942$, $\text{acc}_\text{LIF} = 0.941$, median gap $1.03\%$ over 3 seeds, and $\mathrm{MI}/H = 0.882$. MNIST's structural signal tightens the gap beneath the synthetic plateau. See Figure~\ref{fig:mnist-scaling}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/mnist_scaling.pdf}
+\caption{MNIST real-data validation. (a) MLP--LIF gap per seed at $d_\text{hidden}=128$. (b) MI/H ratio per seed.}
+\label{fig:mnist-scaling}
+\end{figure}
+
+\textbf{(4b) Architecture scale (v1.2).} At $d_\text{hidden}=128$ with the synthetic \texttt{HardFlowProxyTask}, the substrate asymmetry \emph{amplifies} rather than shrinking — $\text{gap} \approx 26\%$ median over 3 seeds. LIF's spike expressivity scales with $n_\text{neurons}$, and on XOR-style tasks this edge widens. Architecture scale and pool scale are orthogonal dimensions. Notably $\mathrm{MI}/H$ between substrates stays above $0.5$ even when accuracies diverge — Claim B survives the asymmetry.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/bigger_arch_scaling.pdf}
+\caption{Architecture scale vs polymorphism gap. Bigger arch \emph{amplifies} the gap on XOR-style tasks while Claim B holds.}
+\label{fig:bigger-arch}
+\end{figure}
+
+\textbf{(4c) Temporal streaming (v1.2).} Under a 16-token sequential task with labels at timestep $t_b=13$, rolling MLP and LIF over the sequence and measuring cross-substrate code MI at each step gives $\mathrm{MI}/H = 0.72$ at the trained step and $0.71$ at filler steps (3 seeds). Alignment is structural, not task-pressure-gated — the shared alphabet induces convergent code distributions across substrates regardless of supervision.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\linewidth]{figures/temporal_info_tx.pdf}
+\caption{Temporal MI across timesteps. Trained (blue) and filler (gray) timesteps both exceed the $30\%$ threshold.}
+\label{fig:temporal-tx}
+\end{figure}
+
+\textbf{(5) Triple-substrate reality check.} \texttt{TransformerWML} (attention-based, third substrate) joins the polymorphism matrix. On \texttt{FlowProxyTask}, MLP, LIF, and Transformer all converge to $1.000$ accuracy (triple-gap $0\%$); on \texttt{HardFlowProxyTask} at $N=1$, MLP $= 0.547$, LIF $= 0.605$, Transformer $= 0.529$ (triple-gap $12.6\%$), with the LIF edge consistent with the two-substrate finding. Pool-scale multi-seed for TRF is future work.
 
 Together Tests (1)--(3) pin Claim B empirically: the Nerve Protocol does more than expose a shared interface --- it carries information that crosses the substrate boundary with minimal loss. The tests \texttt{test\_mi\_between\_substrates\_is\_high}, \texttt{test\_mi\_at\_pool\_scale\_strengthens}, \texttt{test\_round\_trip\_fidelity\_preserves\_accuracy}, and \texttt{test\_cross\_substrate\_merge\_approaches\_mlp\_accuracy} pin the measurements.
 

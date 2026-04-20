@@ -2,6 +2,31 @@
 
 All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] — 2026-04-20
+
+Closes the three remaining scientific debts identified in the v1.1.1 audit: real-data validation (MNIST), bigger-architecture sensitivity (d_hidden=128), and temporal streaming (sequential tokens). Three new figures published.
+
+### Added
+
+- `track_w/tasks/mnist.py` — MNISTTask seed-stable flattened loader (torchvision, optional `mnist` extra).
+- `track_w/tasks/sequential.py` — SequentialFlowProxyTask (16-token sequence, label at a supervised timestep).
+- `track_w/configs/wml_config.py` — WmlConfig with `.mnist()` and `.large()` presets.
+- `track_w/streaming_hooks.py` — per-timestep rollout helpers.
+- `input_dim` parameter on MlpWML / LifWML / TransformerWML (backward compatible).
+- `track_w.pool_factory.build_pool_cfg(cfg)` — config-driven pool.
+- `scripts/run_mnist_pilots.py`, `run_bigger_arch.py`, `run_temporal_pilots.py` + three figure renderers.
+
+### Scientific findings (v1.2)
+
+- **MNIST (real data):** MLP 0.942, LIF 0.941, median gap **1.03 %**, `MI/H = 0.882` over 3 seeds.
+- **Bigger arch (d_hidden=128):** substrate asymmetry AMPLIFIES (median gap **26 %**) — spike expressivity scales with `n_neurons`. Architecture scale and pool scale are orthogonal dimensions. Claim B survives: `MI/H > 0.50` even when accuracies diverge.
+- **Temporal streaming:** `MI/H = 0.72` at trained step, `0.71` at filler step — alignment is structural, not task-pressure-gated.
+
+### Paper
+
+- §Information Transmission extended with subsections (4a) MNIST, (4b) architecture scale, (4c) temporal streaming, each with figure.
+- Three figures: `mnist_scaling.pdf`, `bigger_arch_scaling.pdf`, `temporal_info_tx.pdf`.
+
 ## [1.1.0] — 2026-04-20
 
 A single intensive session upgraded four scientific claims from architectural postulates to empirical measurements. Paper drafts v0.4 through v0.8 track the iterations.
