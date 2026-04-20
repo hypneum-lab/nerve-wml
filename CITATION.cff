@@ -32,6 +32,12 @@ keywords:
   - cross-substrate measurement
 identifiers:
   - type: doi
+    value: 10.5281/zenodo.19656342
+    description: "Zenodo concept DOI (resolves to latest version)"
+  - type: doi
+    value: 10.5281/zenodo.19666405
+    description: "Zenodo v1.3.0 version DOI"
+  - type: doi
     value: 10.17605/OSF.IO/Q6JYN
     description: "Parent research program pre-registration (dreamOfkiki Cycle 1)"
   - type: url
