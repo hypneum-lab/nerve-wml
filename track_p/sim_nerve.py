@@ -1,9 +1,11 @@
 """Concrete Nerve with γ/θ oscillators and top-K sparse routing.
 
-See spec §4.2, §3 (architecture). v0 is a functional stub: it honours the
-Nerve protocol but does not yet phase-gate delivery (that's an explicit
-follow-up task). This keeps unit tests deterministic and the foundation
-robust; phase-gated delivery appears in Task 14 when we wire pilot P3.
+See spec §4.2 (Nerve protocol) and §3 (architecture). `listen()`
+phase-gates delivery via `PhaseOscillator.is_active()` on γ (40 Hz)
+and θ (6 Hz), with a γ-over-θ priority rule when both windows
+overlap. The original v0 stub deferred phase-gating to pilot P3 /
+Task 14; that gating has since landed in this file as the canonical
+boolean routing primitive for SimNerve.
 """
 from __future__ import annotations
 
