@@ -68,11 +68,15 @@ class GammaThetaMultiplexer(nn.Module):
             const = torch.randn(self.cfg.alphabet_size, 2)
         self.constellation = nn.Parameter(const)
 
-        # Time grid covers one θ period at the configured sample rate.
+        # Time grid covers one effective θ period = symbols_per_theta × γ period
+        # exactly. This bin-aligns γ on a rFFT bucket (no quantization leakage)
+        # AND makes the γ period an integer submultiple of the θ period, giving
+        # exact γ-quadrature orthogonality within each symbol window.
         # Registered as a buffer so it follows .to(device) but is not trained.
-        n_samples = int(self.cfg.sample_rate_hz / self.cfg.theta_hz)
-        t_grid = torch.linspace(
-            0.0, 1.0 / self.cfg.theta_hz, n_samples, dtype=torch.float32
+        n_per_gamma = max(1, round(self.cfg.sample_rate_hz / self.cfg.gamma_hz))
+        n_samples = n_per_gamma * self.cfg.symbols_per_theta
+        t_grid = (
+            torch.arange(n_samples, dtype=torch.float32) / self.cfg.sample_rate_hz
         )
         self.register_buffer("_t_grid", t_grid)
 
@@ -97,8 +101,11 @@ class GammaThetaMultiplexer(nn.Module):
         k_cap = self.cfg.symbols_per_theta
         window_n = n_samples // k_cap
 
-        # Symbol constellation IQ per code: [batch, k_active, 2].
-        sym = self.constellation[codes]
+        # Symbol constellation IQ per code, normalized to unit norm (PSK).
+        # Unit-amplitude symbols eliminate amplitude-modulation sidebands that
+        # would otherwise compete with the γ peak at bin 7.
+        raw_sym = self.constellation[codes]  # [batch, k_active, 2]
+        sym = raw_sym / raw_sym.norm(dim=-1, keepdim=True).clamp(min=1e-8)
 
         # γ carrier quadratures (in-phase = cos, quadrature = sin): [n_samples].
         two_pi_gamma_t = 2.0 * torch.pi * self.cfg.gamma_hz * t
@@ -109,7 +116,12 @@ class GammaThetaMultiplexer(nn.Module):
         # Aligns with Harris & Gong 2026 (Nat Commun) on smooth traveling-wave
         # envelopes over rect θ windows (Q4 default, see issue #1). Depth 0.45
         # gives a detectable PAC signature without nulling the demod divide.
-        two_pi_theta_t = 2.0 * torch.pi * self.cfg.theta_hz * t + theta_phase_offset
+        # One envelope cycle spans the full carrier (effective θ = γ / k_cap,
+        # so the θ-peak falls exactly on rFFT bin 1 of the γ power envelope).
+        effective_theta_hz = self.cfg.sample_rate_hz / n_samples
+        two_pi_theta_t = (
+            2.0 * torch.pi * effective_theta_hz * t + theta_phase_offset
+        )
         theta_env = 0.55 + 0.45 * torch.cos(two_pi_theta_t)
 
         # Per-symbol window masks [k_active, n_samples]; only active symbols populated.
@@ -153,7 +165,9 @@ class GammaThetaMultiplexer(nn.Module):
         two_pi_gamma_t = 2.0 * torch.pi * self.cfg.gamma_hz * t
         gamma_i = torch.cos(two_pi_gamma_t)
         gamma_q = torch.sin(two_pi_gamma_t)
-        two_pi_theta_t = 2.0 * torch.pi * self.cfg.theta_hz * t
+        # Effective θ = γ / k_cap (bin-aligned, see forward).
+        effective_theta_hz = self.cfg.sample_rate_hz / n_samples
+        two_pi_theta_t = 2.0 * torch.pi * effective_theta_hz * t
         theta_env = 0.55 + 0.45 * torch.cos(two_pi_theta_t)
 
         # Undo θ envelope (safe: env ∈ [0.1, 1.0] never nulls).
@@ -174,7 +188,11 @@ class GammaThetaMultiplexer(nn.Module):
             sol = torch.linalg.lstsq(basis, rhs).solution  # [2, batch]
             recovered[:, k, :] = sol.T.to(torch.float32)
 
-        # Nearest-constellation assignment — dist [batch*k_cap, A], argmin → [batch, k_cap].
-        dist = torch.cdist(recovered.reshape(-1, 2), self.constellation)
+        # Forward normalized symbols to unit norm (PSK). Compare recovered
+        # unit-norm (i, q) against unit-normalized constellation.
+        const_norm = self.constellation / self.constellation.norm(
+            dim=-1, keepdim=True
+        ).clamp(min=1e-8)
+        dist = torch.cdist(recovered.reshape(-1, 2), const_norm)
         codes = dist.argmin(dim=-1).reshape(batch, k_cap)
         return codes
