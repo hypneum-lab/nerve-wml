@@ -1,11 +1,22 @@
 """γ/θ phase-amplitude-coupling multiplexer for neuroletter transport.
 
-Contract pinned by tests/unit/test_multiplexer.py (issue #1).
+Contract pinned by `tests/unit/test_multiplexer.py` (issue #1). Implements
+theta-gamma phase-amplitude coupling (Lisman & Idiart 1995, Tort et al.
+2010, Harris & Gong 2026) as an end-to-end differentiable encoder:
 
-This module currently exposes the config dataclass and the module skeleton
-(structure tests pass) but leaves the DSP body as NotImplementedError. A
-follow-up PR makes forward/demodulate green — see issue #1 for the
-Q1-Q5 design decisions that guided this contract.
+- `GammaThetaMultiplexer.forward(codes, *, noise=None, role=None)` encodes
+  `[B, K]` long codes into a `[B, T]` float32 carrier, with K symbols
+  riding on Gaussian packets inside one θ period (bin-aligned so γ falls
+  on rFFT bin 7 and the θ-envelope peak on bin 1).
+- `GammaThetaMultiplexer.demodulate(carrier, *, hard=True, tau=1.0)` recovers
+  codes via joint LSTSQ over the Gaussian basis, returning either `[B, K]`
+  long (hard / eval) or `[B, K, alphabet_size]` float (soft Gumbel-softmax,
+  gradient-flowing — bouba_sens CrossModalNerve.fuse θ-replay path).
+- `NoiseModel` / `AWGN` / `HardwareJitterNoise` provide the optional noise
+  hook. AWGN is the textbook baseline; HardwareJitterNoise is a stub for
+  Loihi-2 / SpiNNaker-2 jitter profiles (bouba_sens Sprint 4+ scope).
+
+Q1-Q5 design arbitration lives on issue #1 comment thread.
 """
 from __future__ import annotations
 
