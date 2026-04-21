@@ -1,0 +1,101 @@
+name: Publish to PyPI
+
+# Publishes nerve-wml to PyPI (and TestPyPI on demand) via trusted
+# publishing (GitHub OIDC). No PyPI API token needs to live as a
+# GitHub secret — PyPI verifies the workflow identity through OIDC
+# and grants a short-lived token scoped to this repo + workflow.
+#
+# Setup (one-time, web UI):
+#   1. Claim the `nerve-wml` project name on https://pypi.org.
+#   2. Project → Settings → Publishing → Add a new pending publisher:
+#        Owner: hypneum-lab
+#        Repository: nerve-wml
+#        Workflow: publish.yml
+#        Environment: pypi  (optional but recommended)
+#   3. Repeat for https://test.pypi.org with workflow environment = testpypi.
+#
+# After that, every GitHub release tagged `vX.Y.Z` triggers a build
+# and publishes to PyPI automatically.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Publish target"
+        required: true
+        default: "pypi"
+        type: choice
+        options:
+          - pypi
+          - testpypi
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build wheel + sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Build
+        run: uv build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    if: |
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/nerve-wml/
+    permissions:
+      id-token: write   # OIDC for trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        # Uses https://pypi.org by default; attempts OIDC trusted publishing.
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/nerve-wml/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
