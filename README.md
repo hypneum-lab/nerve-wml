@@ -69,6 +69,10 @@ Three findings probably novel: (1) the four-point scaling law with plateau at $\
 
 The paper explicitly does **not** claim: a new learning algorithm, superiority over knowledge distillation on task accuracy, or universal representations — that debate is addressed by Saxe 2024 and the Nature MI 2025 editorial (s42256-025-01139-y) cited in `docs/positioning.md`.
 
+### Cross-lab methodology commitment
+
+The sister project `bouba_sens` (2026-04-21, `github.com/hypneum-lab/bouba_sens` tag `v0.5.0`) demonstrated that pre-registered findings in this programme must pass three critical tests before publication: **null-model partition controls**, **bootstrap confidence intervals** on sub-threshold effects, and **multi-estimator robustness** checks for MI-based claims. The MI/H = 0.91–0.96 figure above was measured with only one estimator (argmax one-hot + entropy-normalized MI) ; a Sprint-equivalent cross-check against Kraskov kNN and MINE is planned for v1.6 before the paper is submitted. Until then, the MI/H headline is to be read with the usual "single-estimator" caveat that `bouba_sens` paper §6.3 recommends against.
+
 ## Status — 11 gates
 
 | Tag | What it proves |
