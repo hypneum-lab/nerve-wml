@@ -85,9 +85,18 @@ transducers map between neighbours' codebooks.
 \subsection{Sparse routing and priority}
 The topology is a learned directed graph with $K \ll N$ active
 out-edges per WML, sampled via Gumbel-softmax top-K during training
-and frozen to $\{0, 1\}$ at inference. $\gamma$ has priority over
-$\theta$ whenever both oscillators are active, ensuring a clean
-multiplexing window without phase-locking the oscillators.
+and frozen to $\{0, 1\}$ at inference. The $\gamma / \theta$ multiplex
+invariant (N-3: $\text{role}{=}\varepsilon \Leftrightarrow
+\text{phase}{=}\theta$) functions as a \emph{formal correctness
+contract} --- a type-checker for letter well-formedness at
+composition time --- rather than a differential computational
+mechanism. In the experiments reported in this paper all substrates
+emit $\pi$ letters in the $\gamma$ phase exclusively (\S Threats to
+Validity), so the invariant is satisfied by construction; its value
+is catching composition bugs when downstream modules inadvertently
+emit malformed letters (\S\,(7) guard-injection test). The
+Bastos-Friston 2012 cortical-microcircuit citation is preserved as
+the structural inspiration, not as a claim of empirical mechanism.
 
 \subsection{WML polymorphism}
 \texttt{MlpWML} implements the WML protocol via a 4-layer MLP and
