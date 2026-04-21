@@ -426,7 +426,7 @@ def run_w4_multi_seed(seeds: list[int], steps: int = 400) -> dict:
     }
 
 
-def run_w2_hard(steps: int = 800) -> dict:
+def run_w2_hard(steps: int = 800, seed: int = 0) -> dict:
     """W2 HONEST — full spike + 12-class non-linear XOR task.
 
     On FlowProxyTask 4-class both substrates saturate to 1.0 (paper v0.2
@@ -438,29 +438,42 @@ def run_w2_hard(steps: int = 800) -> dict:
     the LIF training sees the same initial task-RNG state. Without this
     isolation, MLP.train consumes random numbers and the LIF saw a
     shifted data distribution, producing a misleading 16.8 % gap.
+
+    Seeding (review m9): the top of the function locks random,
+    numpy.random, and torch global RNG to ``seed`` so downstream
+    non-deterministic code paths (e.g. torch init, task sampling)
+    reproduce bit-for-bit across runs. ``seed`` is also threaded to
+    nerve/task/pool constructors; LIF substrate init keeps the legacy
+    ``seed + 10`` offset for backward-compatible v1.6.0 reproducibility.
     """
+    import random as _random
+
+    import numpy as np
     import torch.nn.functional as F  # noqa: N812
 
     from track_w._surrogate import spike_with_surrogate
     from track_w.tasks.hard_flow_proxy import HardFlowProxyTask
 
-    torch.manual_seed(0)
-    nerve = MockNerve(n_wmls=2, k=1, seed=0)
+    _random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    nerve = MockNerve(n_wmls=2, k=1, seed=seed)
     nerve.set_phase_active(gamma=True, theta=False)
 
-    # MLP path — fresh task instance (seed 0).
-    task_mlp = HardFlowProxyTask(dim=16, n_classes=12, seed=0)
-    mlp = MlpWML(id=0, d_hidden=16, seed=0)
+    # MLP path — fresh task instance.
+    task_mlp = HardFlowProxyTask(dim=16, n_classes=12, seed=seed)
+    mlp = MlpWML(id=0, d_hidden=16, seed=seed)
     train_wml_on_task(mlp, nerve, task_mlp, steps=steps, lr=1e-2)
 
-    # LIF path — fresh task instance (seed 0), independent RNG state.
-    task_lif = HardFlowProxyTask(dim=16, n_classes=12, seed=0)
+    # LIF path — fresh task instance, independent RNG state.
+    task_lif = HardFlowProxyTask(dim=16, n_classes=12, seed=seed)
     # LIF training now uses the learned emit_head_pi — symmetric to MLP's
     # π head. The prior cosine-similarity decoder was a fixed linear classifier
     # on spike patterns; unable to express the XOR-on-noise boundary, it
     # produced a 12.1 % polymorphism gap (§13.1 debt #1). The learned head
     # restores apples-to-apples substrate comparison.
-    lif = LifWML(id=0, n_neurons=16, seed=10)
+    lif = LifWML(id=0, n_neurons=16, seed=seed + 10)
     input_encoder = torch.nn.Linear(16, lif.n_neurons)
     opt = torch.optim.Adam(
         list(lif.parameters()) + list(input_encoder.parameters()),
@@ -476,9 +489,9 @@ def run_w2_hard(steps: int = 800) -> dict:
         loss.backward()
         opt.step()
 
-    # Eval on another fresh task instance (same seed=0) so MLP and LIF see the
+    # Eval on another fresh task instance (same seed) so MLP and LIF see the
     # same distribution, independent of their training-time RNG consumption.
-    task_eval = HardFlowProxyTask(dim=16, n_classes=12, seed=0)
+    task_eval = HardFlowProxyTask(dim=16, n_classes=12, seed=seed)
     x, y = task_eval.sample(batch=512)
     with torch.no_grad():
         pred_mlp = mlp.emit_head_pi(mlp.core(x))[:, : task_eval.n_classes].argmax(-1)
@@ -489,7 +502,15 @@ def run_w2_hard(steps: int = 800) -> dict:
         acc_lif = (pred_lif == y).float().mean().item()
 
     gap = abs(acc_mlp - acc_lif) / max(acc_mlp, 1e-6)
-    return {"acc_mlp": acc_mlp, "acc_lif": acc_lif, "gap": gap}
+    return {
+        "acc_mlp":      acc_mlp,
+        "acc_lif":      acc_lif,
+        "gap":          gap,
+        # Aliases so run_w2_hard_multiseed can mirror the
+        # run_w2_hard_n{16,32,64}_multiseed aggregator shape.
+        "mean_acc_mlp": acc_mlp,
+        "mean_acc_lif": acc_lif,
+    }
 
 
 def run_w1_n16(steps: int = 400) -> float:
@@ -1010,6 +1031,54 @@ def _bulk_run_id(pilot_name: str, seeds: list[int]) -> str:
     from harness.run_registry import run_id_for_pilot
     first = seeds[0] if seeds else 0
     return run_id_for_pilot(pilot_name=pilot_name, seed=first)
+
+
+def run_w2_hard_multiseed(
+    seeds: list[int] | None = None,
+    steps: int = 800,
+) -> dict:
+    """Multi-seed W2 HARD at N=2 — closes the scaling-law asymmetry.
+
+    The single-seed N=2 result (gap 10.71 %) is the starting point of
+    the four-point scaling law (N=2 → 10.7, N=16 → 6.7, N=32 → 2.4,
+    N=64 → 2.7). Review F2 flagged that v1.6.0 reports "direction
+    stable 15/15" from 5-seed runs at N=16/32/64 but only 1 seed at
+    N=2, making the claim seed-asymmetric. This wrapper re-runs
+    run_w2_hard across 5 seeds at N=2 and aggregates median/IQR like
+    the other scaling-law points, producing a symmetric 20/20.
+
+    Args:
+        seeds: RNG seeds to try. Each seed threads through nerve
+               topology, task construction, MLP/LIF init, and LIF
+               substrate offset (+10). Default = [0..4].
+        steps: SGD steps per substrate per seed.
+
+    Returns:
+        dict with per-seed gaps, accuracies, and summary stats
+        (mean, median, p25, p75, max).
+    """
+    import numpy as np
+
+    if seeds is None:
+        seeds = list(range(5))
+    per_seed = [run_w2_hard(steps=steps, seed=s) for s in seeds]
+    gaps     = [r["gap"]          for r in per_seed]
+    accs_mlp = [r["mean_acc_mlp"] for r in per_seed]
+    accs_lif = [r["mean_acc_lif"] for r in per_seed]
+    return {
+        "run_id":       _bulk_run_id("run_w2_hard_multiseed", seeds),
+        "seeds":        list(seeds),
+        "gaps":         gaps,
+        "accs_mlp":     accs_mlp,
+        "accs_lif":     accs_lif,
+        "mean_gap":     float(np.mean(gaps)),
+        "median_gap":   float(np.median(gaps)),
+        "p25_gap":      float(np.percentile(gaps, 25)),
+        "p75_gap":      float(np.percentile(gaps, 75)),
+        "max_gap":      float(np.max(gaps)),
+        "mean_acc_mlp": float(np.mean(accs_mlp)),
+        "mean_acc_lif": float(np.mean(accs_lif)),
+    }
 
 
 def run_w2_hard_n16_multiseed(
