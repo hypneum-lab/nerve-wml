@@ -134,3 +134,41 @@ class MlpWML(nn.Module):
 
     def parameters(self, *args, **kwargs) -> Iterable[Tensor]:  # type: ignore[override]
         return super().parameters(*args, **kwargs)
+
+    @classmethod
+    def from_spectrogram(
+        cls,
+        sample_rate: int,
+        window_sec: float = 1.0,
+        hop_sec: float = 0.05,
+        n_bins: int = 128,
+        target_carrier_dim: int = 16,
+        *,
+        seed: int | None = None,
+    ) -> "object":
+        """Build a spectrogram-based encoder for raw waveform input (issue #7).
+
+        Returns a :class:`track_w.spectrogram.SpectrogramEncoder` callable as
+        ``encoder(waveform)`` — see that class for the full FFT pipeline.
+        Use this instead of the standard ``MlpWML(__init__)`` when the
+        upstream signal is a raw 1-D time-series (audio, ECG, EEG) rather
+        than a pre-computed feature vector.
+
+        Example
+        -------
+        >>> encoder = MlpWML.from_spectrogram(
+        ...     sample_rate=360, window_sec=1.0, hop_sec=0.05,
+        ...     n_bins=128, target_carrier_dim=16,
+        ... )
+        >>> carrier = encoder(waveform_tensor)  # (B, 16)
+        """
+        from track_w.spectrogram import SpectrogramEncoder  # noqa: PLC0415
+
+        return SpectrogramEncoder(
+            sample_rate=sample_rate,
+            window_sec=window_sec,
+            hop_sec=hop_sec,
+            n_bins=n_bins,
+            target_carrier_dim=target_carrier_dim,
+            seed=seed,
+        )
