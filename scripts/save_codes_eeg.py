@@ -96,15 +96,9 @@ def _train_pair_eeg(
     seed:      int,
     steps:     int,
     lr:        float = 1e-2,
+    class_weights: torch.Tensor | None = None,
 ) -> tuple[MlpWML, LifWML]:
-    """Train MLP + LIF on EEG.
-
-    Both substrates are instantiated with input_dim=d_in so their
-    internal projection (mlp.core first layer / lif.input_proj)
-    handles the high-dim EEG input directly; no external encoder
-    is needed, unlike save_codes_for_checks.py where d_in equals
-    n_neurons and the encoder is a simple same-dim projection.
-    """
+    """Train MLP + LIF on EEG, high-dim flat input (path D-off)."""
     torch.manual_seed(seed)
     nerve = MockNerve(n_wmls=2, k=1, seed=seed)
     nerve.set_phase_active(gamma=True, theta=False)
@@ -121,12 +115,76 @@ def _train_pair_eeg(
         i_in = lif.input_proj(x)
         spikes = spike_with_surrogate(i_in, v_thr=lif.v_thr)
         logits = lif.emit_head_pi(spikes)[:, : task_lif.n_classes]
-        loss = F.cross_entropy(logits, y)
+        loss = F.cross_entropy(logits, y, weight=class_weights)
         opt.zero_grad()
         loss.backward()
         opt.step()
 
     return mlp, lif
+
+
+def _train_pair_eeg_spectrogram(
+    x_train_raw: torch.Tensor,
+    y_train:     torch.Tensor,
+    n_classes:   int,
+    sample_rate: int,
+    d_hidden:    int,
+    seed:        int,
+    steps:       int,
+    lr:          float = 1e-3,
+    class_weights: torch.Tensor | None = None,
+) -> tuple[MlpWML, LifWML, torch.nn.Module]:
+    """Train MLP + LIF through a shared SpectrogramEncoder (path D).
+
+    x_train_raw: (N, T) single-channel waveform (Fpz-Cz only).
+    The shared encoder converts (B, T) -> (B, d_hidden) carriers
+    per the v1.5.0 MlpWML.from_spectrogram factory. Both
+    substrates then operate on a shared 16-dim carrier space,
+    symmetric to HardFlowProxyTask's native d_in=16.
+    """
+    torch.manual_seed(seed)
+    nerve = MockNerve(n_wmls=2, k=1, seed=seed)
+    nerve.set_phase_active(gamma=True, theta=False)
+
+    encoder = MlpWML.from_spectrogram(
+        sample_rate=sample_rate,
+        window_sec=1.0,
+        hop_sec=0.5,
+        n_bins=min(50, sample_rate // 2),
+        target_carrier_dim=d_hidden,
+        seed=seed,
+    )
+
+    task = _EegTaskAdapter(x_train_raw, y_train, n_classes=n_classes)
+
+    mlp = MlpWML(id=0, d_hidden=d_hidden, seed=seed)
+    mlp_params = list(mlp.parameters()) + list(encoder.parameters())
+    opt_mlp = torch.optim.Adam(mlp_params, lr=lr)
+    for _ in range(steps):
+        x_raw, y = task.sample(batch=64)
+        carriers = encoder(x_raw)
+        h = mlp.core(carriers)
+        logits = mlp.emit_head_pi(h)[:, :n_classes]
+        loss = F.cross_entropy(logits, y, weight=class_weights)
+        opt_mlp.zero_grad()
+        loss.backward()
+        opt_mlp.step()
+
+    lif = LifWML(id=0, n_neurons=d_hidden, seed=seed + 10)
+    opt_lif = torch.optim.Adam(list(lif.parameters()), lr=lr)
+    for _ in range(steps):
+        x_raw, y = task.sample(batch=64)
+        with torch.no_grad():
+            carriers = encoder(x_raw)
+        i_in = lif.input_proj(carriers)
+        spikes = spike_with_surrogate(i_in, v_thr=lif.v_thr)
+        logits = lif.emit_head_pi(spikes)[:, :n_classes]
+        loss = F.cross_entropy(logits, y, weight=class_weights)
+        opt_lif.zero_grad()
+        loss.backward()
+        opt_lif.step()
+
+    return mlp, lif, encoder
 
 
 def main() -> None:
@@ -141,6 +199,21 @@ def main() -> None:
     parser.add_argument("--steps", type=int, default=2000)
     parser.add_argument("--d-hidden", type=int, default=16)
     parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument(
+        "--spectrogram",
+        action="store_true",
+        help=(
+            "Use MlpWML.from_spectrogram encoder (path D). "
+            "Takes channel 0 only (Fpz-Cz) as 1-channel waveform, "
+            "converts to carriers via STFT."
+        ),
+    )
+    parser.add_argument(
+        "--sample-rate",
+        type=int,
+        default=100,
+        help="Sample rate used during preprocess (Sleep-EDF: 100 Hz).",
+    )
     parser.add_argument(
         "--out",
         type=Path,
@@ -164,30 +237,50 @@ def main() -> None:
     n_ch, n_samp = x_train_np.shape[1], x_train_np.shape[2]
     d_in = n_ch * n_samp
 
-    x_train = torch.from_numpy(x_train_np.reshape(-1, d_in).astype(np.float32))
-    y_train = torch.from_numpy(y_train_np.astype(np.int64))
-    x_test = torch.from_numpy(x_test_np.reshape(-1, d_in).astype(np.float32))
-    y_test = torch.from_numpy(y_test_np.astype(np.int64))
+    if args.spectrogram:
+        x_train_raw = torch.from_numpy(
+            x_train_np[:, 0, :].astype(np.float32),
+        )
+        x_test_raw = torch.from_numpy(
+            x_test_np[:, 0, :].astype(np.float32),
+        )
+        train_mean = x_train_raw.mean()
+        train_std = x_train_raw.std().clamp(min=1e-6)
+        x_train_raw = (x_train_raw - train_mean) / train_std
+        x_test_raw = (x_test_raw - train_mean) / train_std
+        y_train = torch.from_numpy(y_train_np.astype(np.int64))
+        y_test = torch.from_numpy(y_test_np.astype(np.int64))
+        print(
+            f"EEG epochs (spectrogram path D): "
+            f"train {x_train_raw.shape}, test {x_test_raw.shape}, "
+            f"{n_classes} classes, channel 0 only, sample_rate={args.sample_rate}"
+        )
+    else:
+        x_train = torch.from_numpy(x_train_np.reshape(-1, d_in).astype(np.float32))
+        y_train = torch.from_numpy(y_train_np.astype(np.int64))
+        x_test = torch.from_numpy(x_test_np.reshape(-1, d_in).astype(np.float32))
+        y_test = torch.from_numpy(y_test_np.astype(np.int64))
 
-    # Per-feature z-score normalisation using TRAIN stats only.
-    # Raw EEG amplitudes span 1e-5 to 1e-3 volts; unnormalised
-    # inputs drove the MLP/LIF pair to immediate mode collapse
-    # onto the Wake class at d_in=6000.
-    train_mean = x_train.mean(dim=0, keepdim=True)
-    train_std = x_train.std(dim=0, keepdim=True).clamp(min=1e-6)
-    x_train = (x_train - train_mean) / train_std
-    x_test = (x_test - train_mean) / train_std
+        train_mean = x_train.mean(dim=0, keepdim=True)
+        train_std = x_train.std(dim=0, keepdim=True).clamp(min=1e-6)
+        x_train = (x_train - train_mean) / train_std
+        x_test = (x_test - train_mean) / train_std
 
-    print(
-        f"EEG epochs: train {x_train.shape}, test {x_test.shape}, "
-        f"{n_classes} classes, d_in={d_in}"
-    )
-    print(
-        f"After z-score: train mean={x_train.mean().item():+.4f} "
-        f"std={x_train.std().item():.4f}"
-    )
+        print(
+            f"EEG epochs (flat path): train {x_train.shape}, test {x_test.shape}, "
+            f"{n_classes} classes, d_in={d_in}"
+        )
+        print(
+            f"After z-score: train mean={x_train.mean().item():+.4f} "
+            f"std={x_train.std().item():.4f}"
+        )
+
     label_counts_train = torch.bincount(y_train, minlength=n_classes).tolist()
     print(f"Train label counts: {dict(enumerate(label_counts_train))}")
+
+    cw = torch.tensor(label_counts_train, dtype=torch.float32).clamp(min=1.0)
+    class_weights = (1.0 / cw) * (n_classes / (1.0 / cw).sum())
+    print(f"Class weights: {class_weights.tolist()}")
 
     all_codes_mlp: list[np.ndarray] = []
     all_codes_lif: list[np.ndarray] = []
@@ -197,26 +290,52 @@ def main() -> None:
     accs_lif: list[float] = []
 
     for seed in args.seeds:
-        print(f"seed {seed}: training MLP + LIF on EEG ({args.steps} steps)...")
-        mlp, lif = _train_pair_eeg(
-            x_train=x_train,
-            y_train=y_train,
-            n_classes=n_classes,
-            d_in=d_in,
-            d_hidden=args.d_hidden,
-            seed=seed,
-            steps=args.steps,
-            lr=args.lr,
+        print(
+            f"seed {seed}: training MLP + LIF on EEG "
+            f"({args.steps} steps, spectrogram={args.spectrogram})..."
         )
 
-        with torch.no_grad():
-            mlp_emb = mlp.core(x_test)
-            mlp_codes = mlp.emit_head_pi(mlp_emb)[:, :n_classes].argmax(-1)
-            lif_emb = lif.input_proj(x_test)
-            spikes = spike_with_surrogate(lif_emb, v_thr=lif.v_thr)
-            lif_codes = lif.emit_head_pi(spikes)[:, :n_classes].argmax(-1)
-            acc_mlp = (mlp_codes == y_test).float().mean().item()
-            acc_lif = (lif_codes == y_test).float().mean().item()
+        if args.spectrogram:
+            mlp, lif, encoder = _train_pair_eeg_spectrogram(
+                x_train_raw=x_train_raw,
+                y_train=y_train,
+                n_classes=n_classes,
+                sample_rate=args.sample_rate,
+                d_hidden=args.d_hidden,
+                seed=seed,
+                steps=args.steps,
+                lr=args.lr,
+                class_weights=class_weights,
+            )
+            with torch.no_grad():
+                carriers_test = encoder(x_test_raw)
+                mlp_emb = mlp.core(carriers_test)
+                mlp_codes = mlp.emit_head_pi(mlp_emb)[:, :n_classes].argmax(-1)
+                lif_emb = lif.input_proj(carriers_test)
+                spikes = spike_with_surrogate(lif_emb, v_thr=lif.v_thr)
+                lif_codes = lif.emit_head_pi(spikes)[:, :n_classes].argmax(-1)
+                acc_mlp = (mlp_codes == y_test).float().mean().item()
+                acc_lif = (lif_codes == y_test).float().mean().item()
+        else:
+            mlp, lif = _train_pair_eeg(
+                x_train=x_train,
+                y_train=y_train,
+                n_classes=n_classes,
+                d_in=d_in,
+                d_hidden=args.d_hidden,
+                seed=seed,
+                steps=args.steps,
+                lr=args.lr,
+                class_weights=class_weights,
+            )
+            with torch.no_grad():
+                mlp_emb = mlp.core(x_test)
+                mlp_codes = mlp.emit_head_pi(mlp_emb)[:, :n_classes].argmax(-1)
+                lif_emb = lif.input_proj(x_test)
+                spikes = spike_with_surrogate(lif_emb, v_thr=lif.v_thr)
+                lif_codes = lif.emit_head_pi(spikes)[:, :n_classes].argmax(-1)
+                acc_mlp = (mlp_codes == y_test).float().mean().item()
+                acc_lif = (lif_codes == y_test).float().mean().item()
 
         all_codes_mlp.append(mlp_codes.cpu().numpy().astype(np.int64))
         all_codes_lif.append(lif_codes.cpu().numpy().astype(np.int64))
