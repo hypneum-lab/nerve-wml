@@ -165,6 +165,22 @@ class GammaThetaMultiplexer(nn.Module):
         )
         self.register_buffer("_t_grid", t_grid)
 
+    def step(self) -> None:
+        """Advance the plasticity clock by one iteration.
+
+        Consumers (e.g. `bouba_sens.loop.AdaptationLoop`) call this
+        once per training step. When `constellation_lock_after` is
+        set and the counter crosses that threshold, the constellation
+        is permanently frozen (`requires_grad=False`), which models
+        the biological critical-period lock-in.
+        """
+        self.plasticity_step += 1
+        if (
+            self._constellation_lock_after is not None
+            and self.plasticity_step >= self._constellation_lock_after
+        ):
+            self.constellation.requires_grad_(False)
+
     def forward(
         self,
         codes: Tensor,
