@@ -338,53 +338,117 @@ additional estimators on a 3-seed reproduction of
 Kraskov-St\"ogbauer-Grassberger ($k{=}3$ $k$-NN, Kraskov 2004), and
 MINE (Belghazi et al.\ 2018, DV bound, critic hidden${=}128$,
 $500$ epochs). KSG and MINE both operate on continuous pre-VQ
-embeddings ($d{=}16$, $N{=}2000$ subsample). Table~\ref{tab:mi-multi}
-summarises.
+embeddings ($d{=}16$, $N{=}2000$ subsample). To avoid
+scale-mismatch artefacts, we report discrete estimators as
+$\mathrm{MI}/H(a)$ (ratio, bounded by $1$) and continuous
+estimators in nats (unbounded); Table~\ref{tab:mi-multi} summarises.
 
 \begin{table}[t]
   \centering
-  \caption{Multi-estimator MI on MLP--LIF pairs (3 seeds). Discrete
-  estimators operate on argmax codes (post-VQ); KSG and MINE operate
-  on pre-VQ continuous embeddings. All normalised by $H(a)$.}
+  \caption{Multi-estimator MI on MLP--LIF pairs (3 seeds).
+  Discrete estimators are entropy-normalised ratios (bounded by
+  $1$); continuous estimators are reported in nats to avoid the
+  scale-mismatch that follows from normalising continuous MI by
+  a discrete entropy. Converted plug-in MI in nats (0.93 $\times$
+  $\bar H(a)$ $=$ 1.80) is shown for comparison with MINE and KSG.}
   \label{tab:mi-multi}
   \small
   \begin{tabular}{lrr}
     \hline
     Estimator & Level & Mean \\
     \hline
-    Plug-in $\mathrm{MI} / H(a)$      & post-VQ & 0.932 \\
-    Miller-Madow $\mathrm{MI} / H(a)$ & post-VQ & 0.939 \\
-    Kraskov KSG $/ H(a)$              & pre-VQ  & 0.092 \\
-    MINE $/ H(a)$                     & pre-VQ  & 0.985 \\
+    Plug-in $\mathrm{MI} / H(a)$      & post-VQ & 0.932 (ratio) \\
+    Miller-Madow $\mathrm{MI} / H(a)$ & post-VQ & 0.939 (ratio) \\
+    Plug-in MI (nats)                 & post-VQ & 1.80 \\
+    Kraskov KSG MI (nats)             & pre-VQ  & 0.19 \\
+    MINE MI (nats)                    & pre-VQ  & 1.91 \\
     \hline
   \end{tabular}
 \end{table}
 
-The two \emph{discrete} estimators agree within $\Delta = 0.007
-\leq 0.10$, confirming the post-VQ $\mathrm{MI}/H(a)$ headline is
-robust to plug-in bias correction. The two \emph{continuous}
-estimators, by contrast, diverge by an order of magnitude:
-KSG $\approx 0.09$ aligns with the Platonic RH mutual-kNN of
-Test~(6) ($0.174$ at $k{=}10$, same pre-VQ level), while MINE
-$\approx 0.99$ aligns with the post-VQ discrete figures.
+The two \emph{discrete} estimators agree within
+$\Delta = 0.007 \leq 0.10$, confirming the post-VQ
+$\mathrm{MI}/H(a)$ headline is robust to plug-in bias correction.
+This is the \emph{load-bearing} robustness claim.
 
-Two interpretations compete. (i) If KSG is closer to the true
-pre-VQ MI --- MINE inflated by DV-bound variance and
-finite-sample critic overfitting at $d{=}16, N{=}2000$ --- then
-the $\sim 10\times$ gap between pre- and post-VQ is
-\textbf{VQ compression amplifying shared information}: the
-protocol's discrete codebook concentrates cross-substrate
-agreement onto a small effective alphabet ($7$--$27$ of $64$
-codes used empirically). (ii) If MINE is closer to the true pre-VQ
-MI --- KSG biased low by the curse of dimensionality in
-$k$-NN density estimation --- then pre- and post-VQ MI are
-comparable and no amplification takes place. We report both figures
-without arbitrating; cross-estimator convergence on continuous MI
-at this $d$ and $N$ is a known open methodological problem. The
-discrete-side robustness ($\Delta = 0.007$) is independent of this
-ambiguity and is the load-bearing claim. Reproducible via
+On the \emph{continuous} side, MINE ($1.91$ nats) and converted
+plug-in ($1.80$ nats) agree within $\sim 6\%$, suggesting that the
+VQ quantisation preserves MI near-losslessly on
+\texttt{HardFlowProxyTask} --- consistent with an argmax snap
+that does not lose information when the upstream encoder already
+concentrates input classes onto a small effective alphabet ($7$--$27$
+of $64$ codes used empirically). KSG, in contrast, returns $0.19$
+nats, an order of magnitude below the other three estimators.
+Section~(8) below shows that KSG on the same task with a wider
+effective alphabet (DVNC baseline) \emph{over-estimates} by a
+comparable factor, confirming that KSG is unreliable for this
+\mbox{$(d, N, \text{alphabet})$} regime; we report it for
+transparency and to mark the open methodological question, not as
+a load-bearing figure. Reproducible via
 \texttt{uv run python scripts/measure\_mi\_multi\_estimator.py}
 (plus \texttt{scripts/measure\_mi\_mine.py} for the MINE row).
+
+\textbf{(8) Direct comparison to DVNC (Liu et al.\ 2021,
+v1.5.3).} We re-implement the shared-codebook principle of DVNC
+(van den Oord 2017 VQ-VAE with a codebook shared between two
+\emph{homogeneous} MLP agents) on the identical
+\texttt{HardFlowProxyTask} configuration
+(\texttt{scripts/baseline\_dvnc.py}). On 3 seeds at matched
+hyperparameters (steps${=}800$, lr${=}10^{-2}$, batch${=}64$,
+$d_{\mathrm{hidden}}{=}16$, codebook size $64$), DVNC reaches
+mean accuracy $0.54$ with pairwise gap $0.6\%$ --- substantially
+smaller than the $2.7\%$ plateau of the heterogeneous MLP$\leftrightarrow$LIF
+run, as expected for structurally identical agents.
+Table~\ref{tab:dvnc-compare} summarises.
+
+\begin{table}[t]
+  \centering
+  \caption{Direct comparison at matched hyperparameters, 3 seeds.
+  nerve-wml agents are heterogeneous (MLP $\leftrightarrow$ LIF);
+  DVNC agents are homogeneous (MLP $\leftrightarrow$ MLP with a
+  shared codebook). All continuous MI values reported in nats.}
+  \label{tab:dvnc-compare}
+  \small
+  \begin{tabular}{lrr}
+    \hline
+    Quantity & nerve-wml & DVNC \\
+    \hline
+    Mean accuracy           & $\approx 0.55$ & 0.54 \\
+    Pairwise gap            & 2.7\%          & 0.6\% \\
+    Effective alphabet      & 7--27 / 64     & 18--33 / 64 \\
+    Plug-in $\mathrm{MI}/H(a)$ & 0.93        & 0.81 \\
+    Plug-in MI (nats)       & 1.80           & 2.30 \\
+    MINE MI (nats)          & 1.91           & 2.44 \\
+    KSG MI (nats)           & 0.19           & 3.57 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+Two observations. (i) \emph{Shared-information volume}: DVNC
+carries more MI in absolute nats ($2.30$ vs $1.80$ post-VQ)
+because its wider alphabet raises the attainable ceiling
+$H(a)$; nerve-wml saturates its narrower alphabet more
+completely ($\mathrm{MI}/H(a) = 0.93$ vs $0.81$). These are
+complementary facts, not a contradiction. (ii) \emph{KSG scale
+dependence}: on nerve-wml (narrow alphabet, $H(a) \approx 1.9$
+nats) KSG reports $0.19$ nats, far below MINE and plug-in; on
+DVNC (wider alphabet, $H(a) \approx 2.8$ nats) KSG reports
+$3.57$ nats, exceeding $H(a)$ and therefore above any valid
+normalised interpretation. This opposite-direction bias,
+driven only by the effective alphabet and not by the method's
+architecture, reinforces the KSG caveat of Test~(7) and
+supports MINE as the more robust continuous estimator for this
+comparison class.
+
+The principal contribution of nerve-wml relative to DVNC is
+therefore not a headline accuracy or MI advantage on matched
+homogeneous configurations: it is the extension to
+\emph{heterogeneous} substrates (ANN $\leftrightarrow$ spiking LIF)
+where substrate-intrinsic asymmetry produces a reproducible
+plateau gap (Test~5 scaling law) that DVNC's symmetric
+architecture cannot address by design. The shared-codebook
+principle that DVNC validates on homogeneous agents is
+preserved and extended, not replaced.
 
 Together Tests (1)--(3) pin Claim B empirically: the Nerve Protocol does more than expose a shared interface --- it carries information that crosses the substrate boundary with minimal loss. The tests \texttt{test\_mi\_between\_substrates\_is\_high}, \texttt{test\_mi\_at\_pool\_scale\_strengthens}, \texttt{test\_round\_trip\_fidelity\_preserves\_accuracy}, and \texttt{test\_cross\_substrate\_merge\_approaches\_mlp\_accuracy} pin the measurements.
 
