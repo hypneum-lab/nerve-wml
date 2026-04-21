@@ -1,0 +1,43 @@
+{
+  "per_seed": [
+    {
+      "seed": 0,
+      "mi_plugin": 0.9918481582296597,
+      "mi_miller_madow": 0.9978675047754857,
+      "mi_kraskov_nats": 0.06731883580966525,
+      "mi_kraskov_over_h_a": 0.03751994461110569,
+      "h_a_nats": 1.7942146905445924,
+      "n_kraskov": 2000
+    },
+    {
+      "seed": 1,
+      "mi_plugin": 0.9816504621888695,
+      "mi_miller_madow": 0.990351598949257,
+      "mi_kraskov_nats": 0.12405034816962335,
+      "mi_kraskov_over_h_a": 0.06919096439728034,
+      "h_a_nats": 1.7928691881985004,
+      "n_kraskov": 2000
+    },
+    {
+      "seed": 2,
+      "mi_plugin": 0.8221852503895152,
+      "mi_miller_madow": 0.829478762173154,
+      "mi_kraskov_nats": 0.37732880082532994,
+      "mi_kraskov_over_h_a": 0.16987975648924933,
+      "h_a_nats": 2.221152235105828,
+      "n_kraskov": 2000
+    }
+  ],
+  "summary": {
+    "discrete_plugin_mean": 0.9318946236026814,
+    "discrete_miller_madow_mean": 0.9392326219659655,
+    "discrete_delta": 0.007337998363284082,
+    "discrete_robust": true,
+    "discrete_epsilon": 0.1,
+    "continuous_ksg_over_ha_mean": 0.09219688849921177,
+    "vq_amplification_ratio": 10.107658064953553,
+    "n_seeds": 3,
+    "k": 3,
+    "n_kraskov": 2000
+  }
+}
