@@ -1,0 +1,86 @@
+{
+  "cells": [
+    {
+      "strict": true,
+      "seed": 0,
+      "n_gamma_steps": 200,
+      "gamma_send_attempts": 400,
+      "gamma_send_caught": 0,
+      "theta_trace_len": 200,
+      "theta_caught": 0,
+      "apply_consolidation": false,
+      "apply_err": "'MockNerve' object has no attribute '_transducers'"
+    },
+    {
+      "strict": true,
+      "seed": 1,
+      "n_gamma_steps": 200,
+      "gamma_send_attempts": 400,
+      "gamma_send_caught": 0,
+      "theta_trace_len": 200,
+      "theta_caught": 0,
+      "apply_consolidation": false,
+      "apply_err": "'MockNerve' object has no attribute '_transducers'"
+    },
+    {
+      "strict": true,
+      "seed": 2,
+      "n_gamma_steps": 200,
+      "gamma_send_attempts": 400,
+      "gamma_send_caught": 0,
+      "theta_trace_len": 200,
+      "theta_caught": 0,
+      "apply_consolidation": false,
+      "apply_err": "'MockNerve' object has no attribute '_transducers'"
+    },
+    {
+      "strict": false,
+      "seed": 0,
+      "n_gamma_steps": 200,
+      "gamma_send_attempts": 400,
+      "gamma_send_caught": 0,
+      "theta_trace_len": 200,
+      "theta_caught": 0,
+      "apply_consolidation": false,
+      "apply_err": "'MockNerve' object has no attribute '_transducers'"
+    },
+    {
+      "strict": false,
+      "seed": 1,
+      "n_gamma_steps": 200,
+      "gamma_send_attempts": 400,
+      "gamma_send_caught": 0,
+      "theta_trace_len": 200,
+      "theta_caught": 0,
+      "apply_consolidation": false,
+      "apply_err": "'MockNerve' object has no attribute '_transducers'"
+    },
+    {
+      "strict": false,
+      "seed": 2,
+      "n_gamma_steps": 200,
+      "gamma_send_attempts": 400,
+      "gamma_send_caught": 0,
+      "theta_trace_len": 200,
+      "theta_caught": 0,
+      "apply_consolidation": false,
+      "apply_err": "'MockNerve' object has no attribute '_transducers'"
+    }
+  ],
+  "summary": {
+    "strict": {
+      "gamma_send_caught_mean": 0.0,
+      "theta_trace_len_mean": 200.0,
+      "theta_caught_mean": 0.0
+    },
+    "open": {
+      "gamma_send_caught_mean": 0.0,
+      "theta_trace_len_mean": 200.0,
+      "theta_caught_mean": 0.0
+    },
+    "delta": {
+      "gamma_send_caught": 0.0,
+      "theta_trace_len": 0.0
+    }
+  }
+}

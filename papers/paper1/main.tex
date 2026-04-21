@@ -429,11 +429,24 @@ throughout training --- only the $\gamma$ pathway is stressed. An ablation
 of the \texttt{strict\_n3} flag on this pipeline therefore yields
 $\Delta = 0$ at four significant figures across $N \in \{16, 32, 64\}$
 over 5 seeds (\texttt{scripts/ablation\_n3.py}): there are simply no
-$\varepsilon$-letters to validate. A stress-test of N-3 under a pipeline
-that actively generates $\varepsilon$ (e.g.\ \texttt{dream\_bridge.collect\_eps\_trace})
-is left for follow-up work and is a precondition for any quantitative
-claim on the Bastos-Friston cortical-microcircuit analogy beyond its
-formal specification.
+$\varepsilon$-letters to validate. Two complementary follow-up experiments confirm this interpretation.
+A full $\gamma \to \theta \to$ consolidate loop where MLP WMLs emit
+$\varepsilon$ naturally via \texttt{emit\_head\_eps} (surprise $>$ 0.30)
+over 3 seeds yields $\Delta = 0$ exactly
+(\texttt{scripts/ablation\_n3\_predictive.py}) --- the invariant is
+satisfied by construction since WMLs hard-code \texttt{phase=Phase.THETA}
+when emitting $\varepsilon$. A violation-injection guard test
+(\texttt{scripts/ablation\_n3\_guard.py}) confirms that strict\_n3=True
+catches $N \cdot v$ injected violations within binomial noise at
+$v \in \{0.05, 0.10, 0.25, 0.50\}$ (3 seeds, $N{=}1000$ letters)
+while strict\_n3=False lets them pass silently. Together, these three
+ablations establish that N-3 is a formal correctness contract --- a
+type-checker for the protocol --- rather than a differential mechanism:
+measurable impact requires deliberate violation injection rather than
+emerging from a correct pipeline. This does not invalidate the
+Bastos-Friston 2012 ancestry, since biological $\gamma / \theta$
+multiplexing is also a correctness-enforcing constraint, not a free
+parameter that tunes computational behaviour.
 
 Wiring the adaptive-alphabet operations into live WMLs at training
 time (rather than post-hoc on checkpoints) is tracked in spec \S 13

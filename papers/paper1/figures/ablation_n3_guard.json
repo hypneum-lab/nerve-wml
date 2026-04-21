@@ -1,0 +1,411 @@
+{
+  "config": {
+    "n_letters": 1000,
+    "violation_rates": [
+      0.0,
+      0.05,
+      0.1,
+      0.25,
+      0.5
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ]
+  },
+  "cells": [
+    {
+      "strict": true,
+      "violation_rate": 0.0,
+      "seed": 0,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 1000,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.0,
+      "seed": 1,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 1000,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.0,
+      "seed": 2,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 1000,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.05,
+      "seed": 0,
+      "n_letters_sent": 1000,
+      "n_caught": 70,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 930,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.05,
+      "seed": 1,
+      "n_letters_sent": 1000,
+      "n_caught": 54,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 946,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.05,
+      "seed": 2,
+      "n_letters_sent": 1000,
+      "n_caught": 47,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 953,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.1,
+      "seed": 0,
+      "n_letters_sent": 1000,
+      "n_caught": 114,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 886,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.1,
+      "seed": 1,
+      "n_letters_sent": 1000,
+      "n_caught": 95,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 905,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.1,
+      "seed": 2,
+      "n_letters_sent": 1000,
+      "n_caught": 90,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 910,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.25,
+      "seed": 0,
+      "n_letters_sent": 1000,
+      "n_caught": 247,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 753,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.25,
+      "seed": 1,
+      "n_letters_sent": 1000,
+      "n_caught": 227,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 773,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.25,
+      "seed": 2,
+      "n_letters_sent": 1000,
+      "n_caught": 249,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 751,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.5,
+      "seed": 0,
+      "n_letters_sent": 1000,
+      "n_caught": 508,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 492,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.5,
+      "seed": 1,
+      "n_letters_sent": 1000,
+      "n_caught": 473,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 527,
+      "n_received": 0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.5,
+      "seed": 2,
+      "n_letters_sent": 1000,
+      "n_caught": 496,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 504,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.0,
+      "seed": 0,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 1000,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.0,
+      "seed": 1,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 1000,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.0,
+      "seed": 2,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 0,
+      "n_wellformed_sent": 1000,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.05,
+      "seed": 0,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 70,
+      "n_wellformed_sent": 930,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.05,
+      "seed": 1,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 54,
+      "n_wellformed_sent": 946,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.05,
+      "seed": 2,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 47,
+      "n_wellformed_sent": 953,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.1,
+      "seed": 0,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 114,
+      "n_wellformed_sent": 886,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.1,
+      "seed": 1,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 95,
+      "n_wellformed_sent": 905,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.1,
+      "seed": 2,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 90,
+      "n_wellformed_sent": 910,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.25,
+      "seed": 0,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 247,
+      "n_wellformed_sent": 753,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.25,
+      "seed": 1,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 227,
+      "n_wellformed_sent": 773,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.25,
+      "seed": 2,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 249,
+      "n_wellformed_sent": 751,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.5,
+      "seed": 0,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 508,
+      "n_wellformed_sent": 492,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.5,
+      "seed": 1,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 473,
+      "n_wellformed_sent": 527,
+      "n_received": 0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.5,
+      "seed": 2,
+      "n_letters_sent": 1000,
+      "n_caught": 0,
+      "n_silent_passed": 496,
+      "n_wellformed_sent": 504,
+      "n_received": 0
+    }
+  ],
+  "aggregated": [
+    {
+      "strict": true,
+      "violation_rate": 0.0,
+      "n_letters": 1000,
+      "n_caught_mean": 0.0,
+      "n_silent_mean": 0.0,
+      "n_received_mean": 0.0,
+      "expected_violate": 0.0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.05,
+      "n_letters": 1000,
+      "n_caught_mean": 57.0,
+      "n_silent_mean": 0.0,
+      "n_received_mean": 0.0,
+      "expected_violate": 50.0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.1,
+      "n_letters": 1000,
+      "n_caught_mean": 99.66666666666667,
+      "n_silent_mean": 0.0,
+      "n_received_mean": 0.0,
+      "expected_violate": 100.0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.25,
+      "n_letters": 1000,
+      "n_caught_mean": 241.0,
+      "n_silent_mean": 0.0,
+      "n_received_mean": 0.0,
+      "expected_violate": 250.0
+    },
+    {
+      "strict": true,
+      "violation_rate": 0.5,
+      "n_letters": 1000,
+      "n_caught_mean": 492.3333333333333,
+      "n_silent_mean": 0.0,
+      "n_received_mean": 0.0,
+      "expected_violate": 500.0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.0,
+      "n_letters": 1000,
+      "n_caught_mean": 0.0,
+      "n_silent_mean": 0.0,
+      "n_received_mean": 0.0,
+      "expected_violate": 0.0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.05,
+      "n_letters": 1000,
+      "n_caught_mean": 0.0,
+      "n_silent_mean": 57.0,
+      "n_received_mean": 0.0,
+      "expected_violate": 50.0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.1,
+      "n_letters": 1000,
+      "n_caught_mean": 0.0,
+      "n_silent_mean": 99.66666666666667,
+      "n_received_mean": 0.0,
+      "expected_violate": 100.0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.25,
+      "n_letters": 1000,
+      "n_caught_mean": 0.0,
+      "n_silent_mean": 241.0,
+      "n_received_mean": 0.0,
+      "expected_violate": 250.0
+    },
+    {
+      "strict": false,
+      "violation_rate": 0.5,
+      "n_letters": 1000,
+      "n_caught_mean": 0.0,
+      "n_silent_mean": 492.3333333333333,
+      "n_received_mean": 0.0,
+      "expected_violate": 500.0
+    }
+  ]
+}
