@@ -12,8 +12,35 @@ from nerve_wml.methodology.mi_estimators import (
     entropy_discrete,
     mi_kraskov_ksg_continuous,
     mi_miller_madow_discrete,
+    mi_panzeri_treves_discrete,
     mi_plugin_discrete,
 )
+
+
+def test_panzeri_treves_below_plugin_on_independent() -> None:
+    """On independent streams PT removes the plug-in positive bias."""
+    rng = np.random.default_rng(0)
+    a = rng.integers(0, 8, 200)
+    b = rng.integers(0, 8, 200)
+    plug = mi_plugin_discrete(a, b)
+    pt = mi_panzeri_treves_discrete(a, b)
+    assert pt < plug  # positive bias subtracted
+    assert pt < 0.2   # driven near the true MI=0 floor
+
+
+def test_panzeri_treves_preserves_strong_dependence() -> None:
+    """When codes_b is a function of codes_a, PT stays high (large N)."""
+    rng = np.random.default_rng(1)
+    a = rng.integers(0, 6, 5000)
+    b = a.copy()
+    pt = mi_panzeri_treves_discrete(a, b)
+    assert pt > 0.95
+
+
+def test_panzeri_treves_zero_entropy_returns_zero() -> None:
+    a = np.zeros(50, dtype=np.int64)
+    b = np.arange(50, dtype=np.int64)
+    assert mi_panzeri_treves_discrete(a, b) == 0.0
 
 
 def test_entropy_uniform_alphabet() -> None:
