@@ -16,14 +16,14 @@ Gating variants (issue #5, v1.4.0):
 """
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 import torch
 from torch import Tensor, nn
 from torch.nn import functional as F  # noqa: N812
 
 
-class TransducerGating(str, Enum):
+class TransducerGating(StrEnum):
     """Gating mode selector for :class:`Transducer`.
 
     Using ``str`` as the base makes the enum YAML/JSON-serializable without

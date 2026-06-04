@@ -19,7 +19,6 @@ from nerve_core.from_dream_of_kiki import (
 from nerve_core.protocols import Nerve
 from track_p.transducer import Transducer, TransducerGating
 
-
 # ---------------------------------------------------------------------------
 # Canonical constants
 # ---------------------------------------------------------------------------

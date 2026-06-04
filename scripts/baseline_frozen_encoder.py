@@ -20,7 +20,7 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa: N812
 
 from track_w.tasks.hard_flow_proxy import HardFlowProxyTask
 
@@ -202,7 +202,7 @@ def main() -> None:
     print(f"  shared MI/H:    {shared_summary['mi_plugin_mean']:.4f}")
     print(f"  distinct MI/H:  {distinct_summary['mi_plugin_mean']:.4f}")
     print(f"  Delta:          {delta:+.4f}")
-    print(f"  nerve-wml T(1): 0.91-0.96")
+    print("  nerve-wml T(1): 0.91-0.96")
     print()
     if distinct_summary["mi_plugin_mean"] >= 0.85:
         print("  Verdict: distinct MI/H >= 0.85 -> Claim B has no floor")

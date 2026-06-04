@@ -40,10 +40,9 @@ from pathlib import Path
 
 import torch
 
-from track_w.mock_nerve import MockNerve
-from track_w.mlp_wml import MlpWML
 from bridge.dream_bridge import DreamBridge
-from nerve_core.neuroletter import Role
+from track_w.mlp_wml import MlpWML
+from track_w.mock_nerve import MockNerve
 
 
 @contextlib.contextmanager
@@ -74,7 +73,6 @@ def _run_cell(strict: bool, seed: int, n_gamma_steps: int = 200) -> dict:
 
     gamma_send_caught = 0
     gamma_send_attempts = 0
-    gamma_eps_attempted = 0
 
     for step in range(n_gamma_steps):
         x_a = torch.randn(16)

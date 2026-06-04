@@ -16,6 +16,8 @@ from torch import Tensor, nn
 
 
 class SpectrogramEncoder(nn.Module):
+    _window: Tensor
+
     """Raw waveform → carrier embedding via STFT + magnitude + linear projection.
 
     Parameters

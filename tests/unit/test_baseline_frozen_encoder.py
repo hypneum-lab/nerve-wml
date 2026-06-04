@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from scripts.baseline_frozen_encoder import train_frozen_baseline
 
@@ -23,7 +22,7 @@ def test_frozen_baseline_encoder_is_frozen() -> None:
     encoder_before = copy.deepcopy(result["encoder_initial"])
     encoder_after = result["encoder_final"]
     for p_before, p_after in zip(
-        encoder_before.parameters(), encoder_after.parameters(),
+        encoder_before.parameters(), encoder_after.parameters(), strict=False,
     ):
         assert (p_before == p_after).all(), "encoder changed during training"
 

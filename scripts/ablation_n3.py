@@ -17,12 +17,12 @@ import contextlib
 import json
 from pathlib import Path
 
-from track_w.mock_nerve import MockNerve
 from scripts.track_w_pilot import (
     run_w2_hard_n16_multiseed,
     run_w2_hard_n32_multiseed,
     run_w2_hard_n64_multiseed,
 )
+from track_w.mock_nerve import MockNerve
 
 
 @contextlib.contextmanager

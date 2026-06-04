@@ -37,14 +37,14 @@ class WmlConfig:
             )
 
     @classmethod
-    def mnist(cls) -> "WmlConfig":
+    def mnist(cls) -> WmlConfig:
         return cls(
             input_dim=784, d_hidden=128, n_neurons=128, d_model=128,
             n_layers=2, n_heads=4, n_tokens=8, alphabet_size=256,
         )
 
     @classmethod
-    def large(cls) -> "WmlConfig":
+    def large(cls) -> WmlConfig:
         return cls(
             input_dim=128, d_hidden=256, n_neurons=256, d_model=256,
             n_layers=4, n_heads=8, n_tokens=8, alphabet_size=256,

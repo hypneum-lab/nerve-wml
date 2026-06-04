@@ -36,8 +36,8 @@ import json
 import random
 from pathlib import Path
 
+from nerve_core.neuroletter import Neuroletter, Phase, Role
 from track_w.mock_nerve import MockNerve
-from nerve_core.neuroletter import Neuroletter, Role, Phase
 
 
 def _run_cell(

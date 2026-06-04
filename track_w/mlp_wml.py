@@ -45,6 +45,8 @@ class MlpWML(nn.Module):
         # Local codebook (N-5 — each WML owns its vocabulary).
         init = torch.randn(alphabet_size, d_hidden, generator=gen) * 0.1
         self.codebook = nn.Parameter(init)
+        # Python 3.14 runtime_checkable workaround: see BioWML for context.
+        self.__dict__["codebook"] = self._parameters["codebook"]
 
         # Save global RNG state to avoid mutation during nn.Linear creation.
         global_state = torch.get_rng_state()
@@ -145,7 +147,7 @@ class MlpWML(nn.Module):
         target_carrier_dim: int = 16,
         *,
         seed: int | None = None,
-    ) -> "object":
+    ) -> object:
         """Build a spectrogram-based encoder for raw waveform input (issue #7).
 
         Returns a :class:`track_w.spectrogram.SpectrogramEncoder` callable as

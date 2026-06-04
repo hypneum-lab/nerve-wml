@@ -10,9 +10,8 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
-from track_w.mlp_wml import MlpWML
-from track_w.spectrogram import SpectrogramEncoder
-
+from track_w.mlp_wml import MlpWML  # noqa: E402 — gated by importorskip above
+from track_w.spectrogram import SpectrogramEncoder  # noqa: E402 — gated by importorskip above
 
 # ---------------------------------------------------------------------------
 # Shape + factory contract

@@ -1,0 +1,164 @@
+{
+  "verdict": "tied",
+  "narrative": "Tied (3W/1L/2T over 6 non-degenerate comparisons). Paper 2 reframes as convergent evidence: GTM matches latent-space baselines on round-trip while preserving phase-coupled biological plausibility, with stronger MI per code unit.",
+  "wins": {
+    "RecursiveLinkBridge": 1,
+    "MLPBridge": 1,
+    "CrossAttentionBridge": 1
+  },
+  "losses": {
+    "RecursiveLinkBridge": 0,
+    "MLPBridge": 0,
+    "CrossAttentionBridge": 1
+  },
+  "ties": {
+    "RecursiveLinkBridge": 1,
+    "MLPBridge": 1,
+    "CrossAttentionBridge": 0
+  },
+  "total_wins": 3,
+  "total_losses": 1,
+  "total_ties": 2,
+  "n_planned": 9,
+  "n_effective": 6,
+  "n_degenerate": 3,
+  "degenerate_metrics": [
+    {
+      "baseline": "RecursiveLinkBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_degenerate": true,
+      "baseline_degenerate": true,
+      "gtm_value_constant": 0.125,
+      "baseline_value_constant": 0.1875
+    },
+    {
+      "baseline": "MLPBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_degenerate": true,
+      "baseline_degenerate": true,
+      "gtm_value_constant": 0.125,
+      "baseline_value_constant": 0.1875
+    },
+    {
+      "baseline": "CrossAttentionBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_degenerate": true,
+      "baseline_degenerate": true,
+      "gtm_value_constant": 0.125,
+      "baseline_value_constant": 0.1875
+    }
+  ],
+  "alpha_raw": 0.05,
+  "alpha_corrected": 0.008333333333333333,
+  "tests": [
+    {
+      "baseline": "RecursiveLinkBridge",
+      "metric": "round_trip_fidelity",
+      "gtm_mean": 0.9739257266133713,
+      "baseline_mean": 0.9818564773796368,
+      "degenerate": false,
+      "t_stat": -3.002479925525954,
+      "p": 0.02613832188565875,
+      "cohens_d": -1.898935038718949,
+      "significant": false,
+      "outcome_for_gtm": "tie"
+    },
+    {
+      "baseline": "RecursiveLinkBridge",
+      "metric": "mi_h",
+      "gtm_mean": 1.2171526992182249,
+      "baseline_mean": 1.105440438820051,
+      "degenerate": false,
+      "t_stat": 5.532673696881545,
+      "p": 0.0014609148943699707,
+      "cohens_d": 3.499170086529942,
+      "significant": true,
+      "outcome_for_gtm": "win"
+    },
+    {
+      "baseline": "RecursiveLinkBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_mean": 0.125,
+      "baseline_mean": 0.1875,
+      "degenerate": true,
+      "t_stat": null,
+      "p": null,
+      "cohens_d": null,
+      "significant": false,
+      "outcome_for_gtm": "excluded"
+    },
+    {
+      "baseline": "MLPBridge",
+      "metric": "round_trip_fidelity",
+      "gtm_mean": 0.9739257266133713,
+      "baseline_mean": 0.9837945407650821,
+      "degenerate": false,
+      "t_stat": -3.7578837321307796,
+      "p": 0.011111999958109756,
+      "cohens_d": -2.3766943551254682,
+      "significant": false,
+      "outcome_for_gtm": "tie"
+    },
+    {
+      "baseline": "MLPBridge",
+      "metric": "mi_h",
+      "gtm_mean": 1.2171526992182249,
+      "baseline_mean": 1.0770173506495726,
+      "degenerate": false,
+      "t_stat": 6.74996902823106,
+      "p": 0.0005565894168718457,
+      "cohens_d": 4.26905525296071,
+      "significant": true,
+      "outcome_for_gtm": "win"
+    },
+    {
+      "baseline": "MLPBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_mean": 0.125,
+      "baseline_mean": 0.1875,
+      "degenerate": true,
+      "t_stat": null,
+      "p": null,
+      "cohens_d": null,
+      "significant": false,
+      "outcome_for_gtm": "excluded"
+    },
+    {
+      "baseline": "CrossAttentionBridge",
+      "metric": "round_trip_fidelity",
+      "gtm_mean": 0.9739257266133713,
+      "baseline_mean": 0.5640825986155855,
+      "degenerate": false,
+      "t_stat": 23.082222838651965,
+      "p": 1.5363951203362277e-05,
+      "cohens_d": 14.59847952593949,
+      "significant": true,
+      "outcome_for_gtm": "win"
+    },
+    {
+      "baseline": "CrossAttentionBridge",
+      "metric": "mi_h",
+      "gtm_mean": 1.2171526992182249,
+      "baseline_mean": 1.2889194289218715,
+      "degenerate": false,
+      "t_stat": -5.712625456763919,
+      "p": 0.00046346521040505653,
+      "cohens_d": -3.6129815725667456,
+      "significant": true,
+      "outcome_for_gtm": "loss"
+    },
+    {
+      "baseline": "CrossAttentionBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_mean": 0.125,
+      "baseline_mean": 0.1875,
+      "degenerate": true,
+      "t_stat": null,
+      "p": null,
+      "cohens_d": null,
+      "significant": false,
+      "outcome_for_gtm": "excluded"
+    }
+  ],
+  "has_ablation": false
+}

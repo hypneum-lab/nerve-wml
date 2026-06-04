@@ -1,9 +1,13 @@
 """Aggregate matched-capacity scale sweep on Sleep-EDF EEG."""
 import json
 from pathlib import Path
+
 import numpy as np
+
 from nerve_wml.methodology import (
-    mi_plugin_discrete, null_model_mi, entropy_discrete,
+    entropy_discrete,
+    mi_plugin_discrete,
+    null_model_mi,
 )
 
 results = []

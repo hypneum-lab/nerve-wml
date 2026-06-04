@@ -216,16 +216,85 @@ def test_role_parameter_default_none_is_current_behavior():
     assert a.shape == (2, mux._t_grid.numel())  # 1-channel shape
 
 
-def test_role_parameter_when_provided_raises():
-    """role=<tensor> raises NotImplementedError — 2-channel carrier is
-    deferred to bouba_sens v1.2 per issue #1 Q5 (additive extension, not
-    in-band 32/32 alphabet split)."""
+def test_role_returns_two_channel_carrier():
+    # role provided -> [B, 2, T] carrier.
+    mux = GammaThetaMultiplexer(seed=0)
+    cfg = mux.cfg
+    codes = torch.randint(0, cfg.alphabet_size, (3, cfg.symbols_per_theta))
+    role = torch.randint(0, 2, codes.shape)
+    out = mux.forward(codes, role=role)
+    assert out.shape == (3, 2, mux._t_grid.numel())
+
+
+def test_role_channel_zero_is_out_of_band():
+    # Channel 0 is byte-identical to forward(codes): the role channel is
+    # additive/out-of-band, so the 64-code alphabet is never touched (Q5).
+    mux = GammaThetaMultiplexer(seed=0)
+    cfg = mux.cfg
+    codes = torch.randint(0, cfg.alphabet_size, (2, cfg.symbols_per_theta))
+    role = torch.randint(0, 2, codes.shape)
+    base = mux.forward(codes)
+    out = mux.forward(codes, role=role)
+    assert torch.equal(out[:, 0, :], base)
+
+
+def test_role_shape_mismatch_raises():
+    # role must match codes shape exactly.
     mux = GammaThetaMultiplexer(seed=0)
     cfg = mux.cfg
     codes = torch.randint(0, cfg.alphabet_size, (1, cfg.symbols_per_theta))
-    role = torch.zeros_like(codes)
-    with pytest.raises(NotImplementedError, match="out-of-band role"):
+    role = torch.zeros((1, cfg.symbols_per_theta - 1), dtype=torch.long)
+    with pytest.raises(ValueError, match="role shape"):
         mux.forward(codes, role=role)
+
+
+def test_role_prediction_on_gamma_error_on_theta():
+    # Per Role/Phase: PREDICTION energy lands in the gamma band (rFFT bin 7),
+    # ERROR in the theta band (bin 1). Spectral separability is how a
+    # downstream nerve recovers pi vs epsilon from the out-of-band channel.
+    cfg = GammaThetaConfig(sample_rate_hz=1000.0)
+    mux = GammaThetaMultiplexer(cfg, seed=0)
+    codes = torch.zeros((1, cfg.symbols_per_theta), dtype=torch.long)
+    pred_ch = mux.forward(codes, role=torch.zeros_like(codes))[0, 1]
+    err_ch = mux.forward(codes, role=torch.ones_like(codes))[0, 1]
+    pred_spec = torch.fft.rfft(pred_ch).abs()
+    err_spec = torch.fft.rfft(err_ch).abs()
+    gamma_bin, theta_bin = 7, 1
+    assert pred_spec[gamma_bin] > pred_spec[theta_bin]
+    assert err_spec[theta_bin] > err_spec[gamma_bin]
+    assert pred_spec[gamma_bin] > err_spec[gamma_bin]
+    assert err_spec[theta_bin] > pred_spec[theta_bin]
+
+
+def test_role_channel_zero_unchanged_under_noise():
+    """Channel 0 of the role-carrier must be byte-identical to forward(role=None)
+    even when noise is applied, provided the same RNG state is used for both
+    calls. The out-of-band design (Q5) guarantees independence between channels.
+    """
+    mux = GammaThetaMultiplexer(seed=0)
+    cfg = mux.cfg
+    codes = torch.randint(0, cfg.alphabet_size, (2, cfg.symbols_per_theta))
+    role = torch.randint(0, 2, codes.shape)
+    noise = AWGN(sigma=0.05)
+
+    torch.manual_seed(42)
+    base = mux.forward(codes, noise=noise)
+
+    torch.manual_seed(42)
+    out = mux.forward(codes, noise=noise, role=role)
+
+    assert torch.equal(out[:, 0, :], base)
+
+
+def test_forward_raises_on_invalid_role_values():
+    """forward must raise ValueError when role contains values outside {0, 1}."""
+    mux = GammaThetaMultiplexer(seed=0)
+    cfg = mux.cfg
+    codes = torch.randint(0, cfg.alphabet_size, (2, cfg.symbols_per_theta))
+    bad_role = torch.zeros(codes.shape, dtype=torch.long)
+    bad_role[0, 0] = 2  # invalid value
+    with pytest.raises(ValueError, match="role must contain only 0"):
+        mux.forward(codes, role=bad_role)
 
 
 def test_carrier_spectrum_dominated_by_gamma_band():

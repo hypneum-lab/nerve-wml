@@ -1,0 +1,11 @@
+device=mps, torch=2.12.0, mps_avail=True
+/private/tmp/nerve-wml-macm1-sci/eval.py:72: UserWarning: The operator 'aten::linalg_svd' is not currently supported on the MPS backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/mps/MPSFallback.mm:34.)
+  u, _, vh = torch.linalg.svd(m)
+[progress] n=256 elapsed=5.3s cells=250 skipped=0
+[progress] n=512 elapsed=12.2s cells=500 skipped=0
+[progress] n=1024 elapsed=23.6s cells=750 skipped=0
+[progress] n=2048 elapsed=58.8s cells=1000 skipped=0
+[progress] n=4096 elapsed=126.6s cells=1250 skipped=0
+[progress] n=8192 elapsed=321.9s cells=1500 skipped=0
+[progress] n=16384 elapsed=999.6s cells=1750 skipped=0
+wrote result.json (1750 cells, 0 skipped, 999.6s)

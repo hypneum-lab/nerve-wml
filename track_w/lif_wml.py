@@ -50,6 +50,8 @@ class LifWML(nn.Module):
         # Codebook: each code is a spike pattern (binary-like target).
         init = (torch.rand(alphabet_size, n_neurons, generator=gen) > 0.7).float()
         self.codebook = nn.Parameter(init)
+        # Python 3.14 runtime_checkable workaround: see BioWML for context.
+        self.__dict__["codebook"] = self._parameters["codebook"]
 
         # Membrane state — re-init per episode via `.reset_state()`.
         self.register_buffer("v_mem", torch.zeros(n_neurons))

@@ -35,7 +35,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa: N812
 
 from track_w.tasks.hard_flow_proxy import HardFlowProxyTask
 

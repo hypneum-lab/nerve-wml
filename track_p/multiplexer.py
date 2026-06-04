@@ -117,6 +117,7 @@ class GammaThetaMultiplexer(nn.Module):
 
     constellation: nn.Parameter
     _t_grid: Tensor
+    plasticity_step: Tensor
 
     def __init__(
         self,
@@ -234,24 +235,30 @@ class GammaThetaMultiplexer(nn.Module):
                 (default) returns the clean signal.
             role: optional [B, K] long carrying Role.PREDICTION / Role.ERROR
                 per symbol. None (default) is the 1-channel case and is
-                what bouba_sens v0.1 uses. When provided, returns a
-                2-channel carrier (shape [B, 2, T]) — pending bouba_sens
-                v1.2 per issue #1 Q5 arbitration (out-of-band not in-band
-                split, to preserve the full 64-code alphabet).
+                what bouba_sens v0.1 uses. When provided, returns a 2-channel
+                carrier (shape [B, 2, T]); the role channel is out-of-band
+                (additive) so channel 0 is unchanged and the full 64-code
+                alphabet is preserved (issue #1 Q5: out-of-band, not in-band).
 
         Returns:
             carrier: [B, T] float32 when role is None.
-            carrier: [B, 2, T] float32 when role is provided (future).
+            carrier: [B, 2, T] float32 when role is provided (channel 0 =
+                code carrier, channel 1 = role: π on γ band, ε on θ band).
         """
         if codes.shape[-1] > self.cfg.symbols_per_theta:
             raise ValueError(
                 f"K={codes.shape[-1]} exceeds symbols_per_theta="
                 f"{self.cfg.symbols_per_theta} (Lisman-Idiart capacity bound)"
             )
-        if role is not None:
-            raise NotImplementedError(
-                "out-of-band role channel pending — bouba_sens v1.2 scope "
-                "per issue #1 Q5 arbitration"
+        if role is not None and role.shape != codes.shape:
+            raise ValueError(
+                f"role shape {tuple(role.shape)} must match codes shape "
+                f"{tuple(codes.shape)}"
+            )
+        if role is not None and not torch.all((role == 0) | (role == 1)):
+            raise ValueError(
+                f"role must contain only 0 (PREDICTION) or 1 (ERROR), "
+                f"got unique values {role.unique().tolist()}"
             )
         k_active = codes.shape[-1]
         t = self._t_grid  # [n_samples]
@@ -310,7 +317,31 @@ class GammaThetaMultiplexer(nn.Module):
         if noise is not None:
             carrier = noise.apply(carrier)
 
-        return carrier
+        if role is None:
+            return carrier
+
+        # Out-of-band role channel (issue #1 Q5: additive extension that
+        # preserves the full 64-code alphabet — channel 0 stays byte-identical
+        # to the role=None carrier). PREDICTION rides the γ band (rFFT bin 7),
+        # ERROR the θ band (bin 1), matching Role/Phase in nerve_core.
+        # neuroletter. Symbol windows reuse the code-channel Gaussians so the
+        # role aligns symbol-for-symbol.
+        role_f = role[..., :k_active].to(carrier.dtype)  # [B, k_active] 0=π 1=ε
+        theta_osc = torch.cos(two_pi_theta_t)  # bin-1 θ oscillation
+        pred_env = (
+            (1.0 - role_f).unsqueeze(-1) * gaussian_masks.unsqueeze(0)
+        ).sum(dim=1)  # [B, n_samples]
+        err_env = (
+            role_f.unsqueeze(-1) * gaussian_masks.unsqueeze(0)
+        ).sum(dim=1)
+        role_carrier = (
+            pred_env * gamma_i.unsqueeze(0) + err_env * theta_osc.unsqueeze(0)
+        ) * theta_env.unsqueeze(0)
+        role_carrier = role_carrier.to(torch.float32)
+        if noise is not None:
+            role_carrier = noise.apply(role_carrier)
+
+        return torch.stack([carrier, role_carrier], dim=1)  # [B, 2, T]
 
     def demodulate(
         self,
@@ -339,6 +370,12 @@ class GammaThetaMultiplexer(nn.Module):
                 downstream loss back through the channel into the constellation
                 (bouba_sens CrossModalNerve.fuse θ-replay path).
         """
+        if carrier.ndim == 3:
+            raise ValueError(
+                f"demodulate expects a 1-channel carrier [B, T], got shape "
+                f"{tuple(carrier.shape)}. Pass carrier[:, 0] for the code "
+                f"channel; role-channel decoding is not yet supported."
+            )
         batch, n_samples = carrier.shape
         t = self._t_grid
         k_cap = self.cfg.symbols_per_theta

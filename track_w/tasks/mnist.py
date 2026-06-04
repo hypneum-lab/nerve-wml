@@ -24,7 +24,7 @@ class MNISTTask:
     ) -> None:
         if batch_classes != 10:
             raise ValueError("MNISTTask currently uses the full 10 classes")
-        from torchvision import datasets, transforms  # lazy import
+        from torchvision import datasets, transforms  # type: ignore[import-untyped]  # lazy import
 
         root = os.environ.get(
             "MNIST_ROOT",

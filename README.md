@@ -9,6 +9,137 @@ Citation : each release is archived on Zenodo (concept DOI [10.5281/zenodo.19656
 
 Research engine that validates a discrete-code communication layer between heterogeneous neural modules (World Model Languages, or WMLs). Modules exchange **neuroletters** over a sparse learned topology, multiplexed on gamma/theta rhythms, and converted between local codebooks by per-edge transducers. The paper draft is at [`papers/paper1/main.tex`](papers/paper1/main.tex); the full spec is at [`docs/superpowers/specs/2026-04-18-nerve-wml-design.md`](docs/superpowers/specs/2026-04-18-nerve-wml-design.md).
 
+## 2026-05-20 — Gap-analysis remediation sprint
+
+Reinforcement sprint that hardened the empirical claims via systematic
+statistical scrutiny. **97 commits, 13 PRs merged**, +458 fast-suite
+tests passing (from 385 baseline). Detailed entry in [`CHANGELOG.md`](CHANGELOG.md).
+
+**6 initial claims revised** under scrutiny:
+
+1. *learned strictly dominates relative_rep* → tie at `n_anchors=64`
+   (Δ=0.0001, p=0.627, n=50, bit-exact M5 ↔ macM1).
+2. *GTM doesn't collapse (synchrony 0.20 > 0.08)* → metric anti-monotone
+   (null=0.32 > GTM=0.20 > simple_gating=0.08); replaced with
+   `spectral_entropy` (Roy & Vetterli 2007 effective rank).
+3. *AKOrN minimal clusters with simple_gating* → sub-parametrised; at
+   `n_oscillators=64, n_steps=32, lr=0.05` AKOrN reaches synchrony 0.45.
+4. *CKNNA grows with N (signal)* → mechanical decay artefact (Gröger,
+   Wen & Brbić 2026 Prop 4.2). Signal/null d_z grows monotonically.
+5. *HSIC golden=8.5320 is stable scientific number* → standalone HSIC
+   non-informative (`|r|≤0.015` with 7 other alignment metrics on 1750
+   cells); always normalise to linear-CKA.
+6. *spectral_entropy 4-arm strict ordering* → B-dependent (Renf 10);
+   robust 2-arm: gtm > null, gtm < simple_gating at all B.
+
+**7 findings now publishable:**
+
+- AKOrN top-cell at n=50 = phase-aligner not coder: synchrony 0.53 ± 0.20
+  (cross-host: macM3 0.49 ± 0.19), accuracy bimodal 0.38 ± 0.31.
+- 3/4 substrates (gtm, simple_gating, null) **bit-exact cross-arch**
+  (M1 g13s ↔ M3 Pro g15s ↔ M5 g17g) under PyTorch deterministic path;
+  Kuramoto Euler integrator is the only cross-arch-divergent arm.
+- MLX `random.normal` cross-arch non-bit-exact (M1 vs M3+/M5), opened
+  upstream as [ml-explore/mlx#3568](https://github.com/ml-explore/mlx/issues/3568).
+- macM3 ~2-3× faster than macm1 on Python+torch multiproc CPU.
+- MLX 2× faster than `torch.MPS` at N=16384 for CKNNA Gram (`scripts/cknna_mlx_bench.py`).
+- Task scope (alphabet=64, K=7) saturates gtm and simple_gating equally;
+  spectral_entropy is the only discriminating axis.
+- Empirical confirmation of Gröger 2026 Prop 4.2 `E[mKNN]=k/(n-1)` on
+  synthetic Gaussian substrate (see `papers/paper1/supplementary/cknna-n-dependence-replication/`).
+
+**Methodology institutionalised:**
+
+The protocol *every numerical claim must trace to a JSON cell or
+executed log line in the same session* is now enforced by
+`scripts/factcheck_audit.py --ci` and runs as a GitHub Actions check
+on every PR touching `docs/superpowers/research/` or the audit script.
+**Current state: 32 OK / 0 DIVERGENT / 2 ORPHAN** (orphans = JSONs on
+unmerged branches).
+
+## 2026-05-11 milestones — N8 → N14 portfolio sprints
+
+Tonight's six-sprint push closed the GammaThetaMultiplexer (GTM) empirical
+arc and locked four scaling pre-registrations for future hardware sprints.
+Headline numbers below remain the v1.2.3 baseline ; the new work
+characterises the GTM contract envelope and shipped six critic-driven
+fixes (ablation void, degenerate-metric handling, Cat C honest framing,
+Jonckheere wrong test, β-VAE confound, paper/JSON count mismatch).
+
+| Sprint | Verdict / artifact | Notes |
+|---|---|---|
+| **N8 Q1** GTM benchmark (HardFlowProxyTask N=2) | **tied** (3W / 5L / 1T vs latent-space baselines) | mi_h dominance preserved across all 8 conditions |
+| **N9 Q1+** scaling N=16 | **tied-stable** (3W / 5L / 1T identical to N=2) | seed-stable across 5 seeds |
+| **N9 Q1++** FlowProxyTask 4-class | **tied-stable-cross-task** (3W / 1L / 2T post-degenerate-exclusion) | confirms tie generalises beyond HardFlow |
+| **N8 Q2** 15 adversarial substrates (Cat A/B/C) | **`ge_3_FP_reformulate`** | Conformance Criterion C+ now requires C2 axiom property tests in addition to structural invariants |
+| **N9 Q2+** Cat D modular / E replay-loop / F asymmetric (10 more) | **25 / 25 cumulative FP** | structural layer alone insufficient at 6 categories |
+| **N10-A / N10-C** | **pre-reg locked, deferred** | ImageNet-100 + ResNet50 + GTM bottleneck (β-VAE β=1.0 fixed per critic) ; Procgen multi-agent GTM communication |
+| **N11-A / N11-C** | **pre-reg locked, deferred** | I-JEPA + GTM predictor on ImageNet self-supervised ; Dreamer V3 + GTM dynamics on Atari-100k |
+| **N13 / N14** | **pre-reg locked, deferred** | OFAT GTM internals (5 hyperparams × 4-5 levels × 5 seeds) ; Latin Hypercube 7-dim coverage (50 points × 5 seeds) |
+
+Cumulative on master HEAD `7528ada` : **295 commits**, **v1.8.1** released
+on PyPI, 12 OSF-style pre-registrations across the Hypneum programme,
+7 verdicts shipped on the GTM axis, 5 pre-regs deferred to future
+scaling sprints, 1 critic-saver retract closed downstream
+(`bouba_sens` Q3+, see that repo's README).
+
+Methodology lessons promoted to portfolio-wide discipline :
+multi-seed-first-class (single-seed claims are fragile, see `bouba_sens`
+N9 Q3 Retract evidence), degenerate-metric handling in `analyse.py`,
+Cohen's d effect sizes added to verdict tables, **honest reporting of
+underpowered ablations** (the cosine plasticity schedule's effect on
+GTM outcomes is below the noise floor for HardFlowProxyTask : the
+constellation is 128 of 17,888 trainable parameters (0.7 %), so
+scaling its gradient by a cosine schedule does not produce a measurable
+behavioural difference (Δ < 0.005 RTF, less than seed standard
+deviation). This is a **negative result** consistent with the
+convergent-evidence framing : on HardFlowProxyTask, plasticity
+scheduling is **not load-bearing** — the discrete-channel structure
+(PSK alphabet + Gumbel quantization) drives the `mi_h` advantage, not
+the temporal modulation of constellation learning. A larger fraction
+of the model would need to participate in the schedule for the
+ablation to discriminate ; we leave this as a methodological
+observation for future work, e.g. per-symbol learned embeddings, or a
+`constellation_lock_after` ablation with the constellation frozen
+mid-training).
+
+---
+
+## 2026-05-19 update — related-work consolidation + BioFieldWML plan
+
+Paper 1's §Related Work grew from 5 to 6 threads (new "Adjacent abstraction
+layers" thread, NIR at model-graph IR + AER at transport — orthogonal
+abstraction layers, not competitors), §Information Transmission Test (6)
+added a "Global vs Local alignment" paragraph addressing the two 2026 PRH
+critiques, and the GTM rationale was re-grounded on Bastos 2020 / Friston
+2025 / Ruffini 2025. In parallel, a 4th conformant substrate plan
+(`BioFieldWML`) was versioned for the first time, sitting alongside the
+existing `MlpWML` / `LifWML` / `TransformerWML` substrates under the WML
+Protocol.
+
+| Item | Where | What |
+|---|---|---|
+| §Related Work extended (5 → 6 threads) | `papers/paper1/main.tex` | New "Adjacent abstraction layers" thread positions nerve-wml against NIR (model IR) and AER (transport) — orthogonal abstraction layers |
+| §Information Tx Test (6) PRH refinement | `papers/paper1/main.tex` | New "Global vs Local alignment" paragraph engages `platoscave2026` + `aristotelianprh2026`; nerve-wml's mutual-kNN measurement claimed as *local* (null-calibrated 18.8× random), not global |
+| GTM re-grounding | `papers/paper1/main.tex` | Replaces sole reliance on Bastos & Friston 2012 with Bastos 2020 predictive routing + Friston 2025 + Ruffini 2025 laminar Comparator |
+| HNN positioning (closes #13) | `papers/paper1/main.tex` "Surrogate-gradient SNN" thread | Cites Liu et al. 2024 (NSR) and positions nerve-wml in the *weak-coupling* corner of the HNN taxonomy |
+| BioFieldWML plan versioned | `docs/superpowers/plans/2026-05-19-bio-substrate-wml.md` | Plan for a 4th conformant substrate alongside MLP / LIF / Transformer; 5 (b)-classified mechanisms encapsulated inside `step()` (Tomé STDP, Pignatelli IE, Palacios SNN-PC, Bellitto WSCL, Tucker-Friston E/I); cross-refs dream-of-kiki `biophysical-stratification` spec |
+
+Headline measurements and claims A/B remain unchanged — this update is
+documentation and planning only, not new experimental findings.
+
+**(i)+(ii) framing:** `BioFieldWML` is the **(i)** side — one conformant
+substrate among N, DR-3 preserved, fully encapsulated under the existing WML
+Protocol. The **(ii)** side is the new dream-of-kiki biophysical-stratification
+sub-theory (`dream-of-kiki/docs/specs/2026-05-20-biophysical-stratification.md`).
+The two documents are linked but independent: nerve-wml's bio-substrate plan
+does not depend on the stratification theory being finalised, and vice versa.
+
+**Open follow-up:** `nerve-wml#16` — complete `friston2025pivot` bibliographic
+metadata (volume/pages/DOI) before final paper submission.
+
+---
+
 ## Status — v1.8.0 (2026-04-24, on PyPI)
 
 Installable via `pip install nerve-wml`. For the real
@@ -104,6 +235,32 @@ The sister project `bouba_sens` (2026-04-21, `github.com/hypneum-lab/bouba_sens`
 | [`gate-llm-advisor-passed`](../../releases/tag/gate-llm-advisor-passed) | Env-gated, never-raising `NerveWmlAdvisor` for micro-kiki, < 50 ms warm latency |
 
 Paper drafts: `paper-v0.2-draft` … `paper-v0.9-draft` track the iterations that produced the v1.2 claims above. Release tags `v1.0.0`, `v1.1.0` … `v1.1.4`, `v1.2.0`, `v1.2.3`, `v1.3.0`, `v1.4.0`, `v1.5.0`, `v1.5.1` archive the code snapshots; see [`CHANGELOG.md`](CHANGELOG.md) for per-version findings.
+
+## Track-W hardening — EWC vs rehearsal (2026-05-30, PR #46)
+
+Continual-learning hardening of gate W on a deliberately difficult task
+(`HardSplitTask` — shared 12-class head, Tasks 0 and 1 on non-overlapping
+label splits). Three methods compared under matched settings:
+
+| Method | Forgetting ↓ (lower = better) | Notes |
+|---|---|---|
+| **Rehearsal** (20 % replay) | **0.034** | Best by a wide margin |
+| **EWC** (λ=1000) | 0.532 | Meaningful regularisation vs none |
+| **None** (fine-tune only) | 0.767 | Catastrophic forgetting baseline |
+
+Honest framing: this is a diagnostic comparison on a single hard task, not a
+new gate. EWC at λ=1000 provides significant regularisation (0.532 vs 0.767),
+but rehearsal (0.034) dominates when a replay buffer is available. Raw numbers
+trace to `docs/superpowers/research/2026-05-30-w4-ewc-comparison.json`.
+
+Implementation in `track_w/continual/`:
+- `ewc.py` — `estimate_fisher(wml, data_loader)` (diagonal Fisher from
+  squared log-likelihood gradients) + `penalty(wml, fisher, theta_star, lam)`.
+  Respects W-1 (no mutation of another WML's parameters) and W-2 (codebook
+  regularised alongside MLP weights).
+- `rehearsal.py` — `RehearsalBuffer` dataclass (fixed-replay, batch-mixing
+  for Task 1 training, same scaffold reused by `run_w4_compare`).
+- `tasks/hard_split.py` — `HardSplitTask` shared-head 12-class split task.
 
 ## Post-v1.2.3 API additions (2026-04-21)
 
@@ -202,7 +359,7 @@ Sibling repositories:
 ```
 nerve_core/        Neuroletter, Nerve + WML Protocols, invariants (N-1..N-5, W-1..W-4)
 track_p/           Track-P — SimNerve, VQCodebook, Transducer, SparseRouter, AdaptiveCodebook
-track_w/           Track-W — MockNerve, MlpWML, LifWML, toy tasks, training loop, pool factory
+track_w/           Track-W — MockNerve + 6 WML substrates (MlpWML, LifWML, TransformerWML, BioWML, BioFieldWML, SpikingKikiWML), toy tasks, training loop, pool factory. See `docs/substrate-paradigms.md` for the paradigm map.
 bridge/            Merge, dream, LLM advisor — SimNerveAdapter, MergeTrainer, DreamBridge, NerveWmlAdvisor
 harness/           R1 reproducibility — run_registry
 interpret/         Gate Interp — code_semantics, clustering, HTML renderer

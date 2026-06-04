@@ -32,9 +32,14 @@ from pathlib import Path
 
 import numpy as np
 
-import mne
-from mne.datasets import sleep_physionet
-
+try:
+    import mne
+    from mne.datasets import sleep_physionet
+except ImportError as _e:  # pragma: no cover -- guarded extras
+    raise ImportError(
+        "mne is required for EEG preprocessing but not installed. "
+        "Install with: pip install nerve-wml[interpret]"
+    ) from _e
 
 SLEEP_STAGE_MAP = {
     "Sleep stage W": 0,
@@ -160,9 +165,12 @@ def main() -> None:
         x_tr, y_tr, x_va, y_va, x_te, y_te = _split_per_subject(
             epochs, labels, seed=subj_id,
         )
-        all_x_train.append(x_tr); all_y_train.append(y_tr)
-        all_x_val.append(x_va);   all_y_val.append(y_va)
-        all_x_test.append(x_te);  all_y_test.append(y_te)
+        all_x_train.append(x_tr)
+        all_y_train.append(y_tr)
+        all_x_val.append(x_va)
+        all_y_val.append(y_va)
+        all_x_test.append(x_te)
+        all_y_test.append(y_te)
         n_total_epochs += epochs.shape[0]
         print(
             f"  subject {subj_id}: {epochs.shape[0]} epochs "

@@ -232,6 +232,7 @@ def run_test_1_mi_on_moons(seeds=None, steps: int = 400, batch: int = 2048):
     HardFlowProxyTask-specific artefact.
     """
     import numpy as np
+
     from track_w.tasks.moons import MoonsTask
 
     if seeds is None:
@@ -501,8 +502,12 @@ def run_test_3_pool_scale(n_wmls=16, seeds=None, steps=400, batch=512, merge_ste
                     x, y = task.sample(batch=batch)
                     pi_m = mlp.emit_head_pi(mlp.core(x))
                     feat = t(pi_m)
-                    acc_m = (lif.emit_head_pi(feat)[:, : task.n_classes].argmax(-1) == y).float().mean().item()
-                    acc_ref = (mlp.emit_head_pi(mlp.core(x))[:, : task.n_classes].argmax(-1) == y).float().mean().item()
+                    acc_m = (
+                        lif.emit_head_pi(feat)[:, : task.n_classes].argmax(-1) == y
+                    ).float().mean().item()
+                    acc_ref = (
+                        mlp.emit_head_pi(mlp.core(x))[:, : task.n_classes].argmax(-1) == y
+                    ).float().mean().item()
                     pair_ratios.append(acc_m / max(acc_ref, 1e-6))
         results.append({
             "seed":         seed,

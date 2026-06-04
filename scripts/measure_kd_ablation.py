@@ -145,7 +145,7 @@ def condition_b_kd_through_transducer(
     transducer = torch.nn.Linear(alphabet, lif.n_neurons)
     opt = torch.optim.Adam(transducer.parameters(), lr=1e-2)
 
-    T = temperature
+    T = temperature  # noqa: N806 — KD distillation temperature, math notation
     alpha_soft = 0.5
     for _ in range(steps):
         x, y = task.sample(batch=64)
@@ -185,7 +185,7 @@ def condition_c_vanilla_kd(
     lif = LifWML(id=0, n_neurons=16, seed=seed + 20)
     opt = torch.optim.Adam(lif.parameters(), lr=1e-2)
 
-    T = temperature
+    T = temperature  # noqa: N806 — KD distillation temperature, math notation
     alpha_soft = 0.5
     for _ in range(steps):
         x, y = task.sample(batch=64)
@@ -260,7 +260,7 @@ def run_kd_ablation(
 
 def main() -> None:
     r = run_kd_ablation(seeds=[0, 1, 2], teacher_steps=400, transfer_steps=300)
-    print(f"KD match-compute ablation on HardFlowProxyTask (3 seeds):")
+    print("KD match-compute ablation on HardFlowProxyTask (3 seeds):")
     print()
     for rec in r["per_seed"]:
         print(f"  seed={rec['seed']} | teacher={rec['acc_teacher']:.3f} "

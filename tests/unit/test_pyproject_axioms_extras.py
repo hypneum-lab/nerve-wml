@@ -16,6 +16,7 @@ caught at CI time, before the GitHub release workflow fails.
 """
 from __future__ import annotations
 
+import re
 import tomllib
 from pathlib import Path
 
@@ -25,8 +26,26 @@ def _load_pyproject() -> dict:
     return tomllib.loads(path.read_text())
 
 
-def test_version_is_1_8_0():
-    assert _load_pyproject()["project"]["version"] == "1.8.0"
+def test_version_matches_changelog_top_entry():
+    """Pyproject version must match the top non-Unreleased CHANGELOG section.
+
+    Tautological version literals (e.g. test_version_is_1_8_0) drift on every
+    bump and produce false-red CI signal. Deriving from CHANGELOG anchors
+    the assertion to the release process: every bump updates both files.
+    """
+    declared = _load_pyproject()["project"]["version"]
+
+    changelog_path = Path(__file__).resolve().parents[2] / "CHANGELOG.md"
+    changelog = changelog_path.read_text()
+    # First "## [X.Y.Z] — DATE" line that is not Unreleased (em-dash U+2014)
+    pattern = r"^## \[(\d+\.\d+\.\d+)\] — \d{4}-\d{2}-\d{2}"
+    match = re.search(pattern, changelog, re.MULTILINE)
+    assert match is not None, "No semver-tagged release header in CHANGELOG.md"
+    top_release = match.group(1)
+    assert declared == top_release, (
+        f"pyproject version {declared} does not match top CHANGELOG release "
+        f"{top_release}; one of the two was not updated during the release."
+    )
 
 
 def test_no_vcs_dependency_in_optional_deps():

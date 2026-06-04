@@ -10,7 +10,8 @@ Wiring per ``docs/integration-dream-of-kiki.md`` :
 
 - DR-0 (replay) → ``SimNerve`` event buffer (default ``n_wmls = |modalities|``)
 - DR-1 (downscale) → per-edge :class:`Transducer` entropy regulariser
-- DR-2 (restructure) → :func:`bridge.transducer_resize.resize_transducer` (not wired at construction ; invoked by downstream consolidation)
+- DR-2 (restructure) → :func:`bridge.transducer_resize.resize_transducer`
+  (not wired at construction ; invoked by downstream consolidation)
 - DR-3 (recombine) → :class:`Transducer` gating mode read from spec
 - DR-4 (bit-exact R1) → ``SimNerve(seed=...)`` + per-transducer deterministic init
 

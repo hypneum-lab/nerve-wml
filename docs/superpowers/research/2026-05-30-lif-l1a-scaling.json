@@ -1,0 +1,54 @@
+[
+  {
+    "n_neurons": 128,
+    "input_dim": 64,
+    "seed": 0,
+    "T_ticks": 8,
+    "n_steps": 2000,
+    "acc_untrained": 0.083984375,
+    "loss_step100": 0.7035002708435059,
+    "loss_step2000": 0.3092319965362549,
+    "acc_final": 0.85546875,
+    "loss_descent": true,
+    "gate_passed": true
+  },
+  {
+    "n_neurons": 256,
+    "input_dim": 64,
+    "seed": 0,
+    "T_ticks": 8,
+    "n_steps": 2000,
+    "acc_untrained": 0.078125,
+    "loss_step100": 0.6730059385299683,
+    "loss_step2000": 0.3584435284137726,
+    "acc_final": 0.857421875,
+    "loss_descent": true,
+    "gate_passed": true
+  },
+  {
+    "n_neurons": 512,
+    "input_dim": 64,
+    "seed": 0,
+    "T_ticks": 8,
+    "n_steps": 2000,
+    "acc_untrained": 0.056640625,
+    "loss_step100": 0.6643627882003784,
+    "loss_step2000": 0.2891283631324768,
+    "acc_final": 0.88671875,
+    "loss_descent": true,
+    "gate_passed": true
+  },
+  {
+    "n_neurons": 1024,
+    "input_dim": 64,
+    "seed": 0,
+    "T_ticks": 8,
+    "n_steps": 2000,
+    "acc_untrained": 0.130859375,
+    "loss_step100": 0.6625038385391235,
+    "loss_step2000": 0.2242732048034668,
+    "acc_final": 0.890625,
+    "loss_descent": true,
+    "gate_passed": true
+  }
+]

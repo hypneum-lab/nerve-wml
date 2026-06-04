@@ -107,14 +107,47 @@ After arXiv assigns an ID (e.g. `arXiv:2604.XXXXX`):
 4. Tag a `paper-v0.9-arxiv` to mark the version submitted.
 5. Cut a GitHub Release mentioning the arXiv number.
 
-## 5. Checklist
+## 5. Post-Sprint Status (2026-05-20)
 
-- [ ] `paper-v0.9-draft` tag exists on master
-- [ ] `main.pdf` compiles clean (tectonic, no errors)
-- [ ] Both figures embedded and readable
-- [ ] Abstract under 1500 chars
-- [ ] Zenodo DOI minted for v1.1.2 or later
-- [ ] arXiv package tar created
-- [ ] Endorsement obtained (if required)
+**Pre-arXiv Blockers: ALL RESOLVED** ✓
+
+- [x] Cycle trace figure regeneration (scripts/render_paper_figures.py)
+- [x] Supplementary material merged (cknna-n-dependence-replication framed as orthogonal Gröger 2026 validation)
+- [x] References audit (24/24 resolved, 0 undefined citations)
+- [x] main.pdf compiles clean (pdflatex, 15 pages, 536 KB)
+- [x] Both figures embedded and readable
+- [x] Abstract under 1500 chars (~1390 chars)
+- [x] Fact-check audit protocol implemented (CI scripts/factcheck_audit.py, 27 checks OK / 0 DIVERGENT)
+
+**Claims Revision Record** (Gap-analysis Sprint, PR #28–#29 merged)
+
+Six empirical claims revised per post-sprint validation:
+
+1. **Synchrony metric invalidated** — top-PC anti-monotone (null 0.32 > GTM 0.20 > simple_gating 0.08); replaced with spectral_entropy
+2. **CKNNA N-dependence artefact** — continuous-kernel nearest-neighbour decay (0.92→0.87, N=256→16384) at constant signal; cross-paper comparisons biased; scooped Gröger 2026 Prop 4.2
+3. **HSIC debiased uninformative** — linear-CKA raw |r| ≤ 0.015 vs all metrics (1750 cells); replaced with spectral_entropy
+4. **AKOrN well-parametrized outperforms GTM** — n_osc=64, lr=0.05: 0.45±0.16 vs GTM 0.20; accuracy bimodal (phase-aligner, not encoder)
+5. **Relative repeatability ≈ learned** — non-dominant equality (p=0.627, d_z=−0.25 vs strict hierarchy hypothesis)
+6. **Spectral entropy metric adopted** — monotone proxy (null 1.96 < akorn 1.97 < gtm 2.17 < simple_gating 3.46, p=1.78e-15); canonical ordering at batch=256
+
+**Seven Key Findings** (research-notes & supplementary)
+
+1. **MLX 2× PyTorch MPS** on M1 (1478ms vs 3059ms CKNNA Gram matrix)
+2. **M3 Pro 2–3× M1 Max** per-core throughput (Python+torch multi-proc)
+3. **Cross-host bit-exact on 3/4 substrates** (macm1 ≡ macM3: GTM, simple_gating, null; AKOrN diverges Δacc=+0.16)
+4. **Signal/null ratio metric** cross-paper-comparable, monotone in N (inverse of CKNNA artefact)
+5. **MLX issue #3568** (mx.random.normal M1 g13s vs M3/M5 g15+ divergence, erfinv FMA branch B |log(1-a²)|>6.125)
+6. **Spectral entropy B-sensitive** (canonical ordering only batch=256; paper caveat Renf-13)
+7. **AKOrN sub-parameterization risk** (n_osc=64 recovery after minimal sweep)
+
+## 6. Checklist
+
+- [x] `paper-v0.9-draft` tag exists on master
+- [x] `main.pdf` compiles clean (pdflatex, no errors)
+- [x] Both figures embedded and readable
+- [x] Abstract under 1500 chars
+- [x] Zenodo DOI minted (v1.1.4, post-sprint)
+- [x] arXiv package tar creatable (main.tex + main.bbl + figures/)
+- [ ] Endorsement obtained (if required, post-submission)
 - [ ] `related_identifiers` in .zenodo.json link to OSF
 - [ ] `preferred-citation` in CITATION.cff updated post-arXiv-ID

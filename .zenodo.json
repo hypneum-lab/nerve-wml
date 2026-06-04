@@ -1,18 +1,20 @@
 {
-  "title": "nerve-wml v1.2.0: Substrate-Agnostic Nerve Protocol for Inter-WML Communication",
-  "description": "v1.1.0 release extends the substrate-agnostic nerve protocol to THREE structurally distinct substrates (MlpWML dense MLP, LifWML surrogate-gradient spiking, TransformerWML attention-based) and adds direct empirical measurement of inter-substrate information transmission. Key findings (v1.1.0, April 2026): four-point scaling law for the polymorphism gap (median 10.7% at N=2 shrinking to ~2.4% at N=32 and plateau at N=64, 15/15 direction-stable seeds); mutual information MI/H between substrate-emitted codes = 0.91 at N=1 strengthening to 0.96 at N=16 pool scale (192 cross-pair measurements); round-trip fidelity MLP-LIF-MLP = 0.99; cross-substrate merge ratio 0.97 (frozen LIF recovers MLP task competence from emitted codes alone). These upgrade Claim B (substrate-agnostic information transmission) from architectural postulate to empirical finding. Eleven gates from v1.0.0 continue to validate: protocol correctness (Gate P), MLP-LIF polymorphism (Gate W), merge fine-tuning (Gate M), resolved scientific shortcuts (Gate M2), scaling (Gate Scale), neuroletter-semantics (Gate Interp), INT8 Loihi/Akida export (Gate Neuro), dream-of-kiki consolidation (Gate Dream partial), adaptive alphabet (Gate Adaptive), and micro-kiki LLM advisor (Gate LLM Advisor). Paper drafts v0.3 through v0.8 track the iterations. Cited in the parent research program's Paper 1 section 7.4 (dreamOfkiki cross-substrate validation).",
+  "title": "nerve-wml v1.8.0: Substrate-Agnostic Nerve Protocol with Axioms-Axis Integration",
+  "description": "v1.8.0 release integrates the dream-of-kiki axioms axis (DR-0..DR-4 frozen Axiom dataclasses) as first-class inputs to the substrate-agnostic nerve protocol. The DR-2 weakened predicate (upstream amendment 2026-04-21, precondition excluding RESTRUCTURE-before-REPLAY permutations) is consumed automatically; downstream substrate handlers no longer need to re-derive the predicate. Strictly additive: the dict-based spec contract from v1.7.0 is preserved unchanged. The headline result is the GammaThetaMultiplexer (PR #2, merged 2026-04-20, master commit 77efb4d): biophysically realistic phase-coupled oscillation transport between heterogeneous neural components, gated by gamma-theta phase coherence, with no learned weights on the carrier itself. This is conceptually adjacent to but mathematically disjoint from the concurrent RecursiveLink projection (RecursiveMAS, Yang et al. arXiv:2604.25917, 2026-04-28); the convergence is discussed in dream-of-kiki Paper 2 (related work paragraph + rebuttal pocket). Eleven gates from v1.0.0 continue to validate: protocol correctness (Gate P), MLP-LIF polymorphism (Gate W), merge fine-tuning (Gate M), resolved scientific shortcuts (Gate M2), scaling (Gate Scale), neuroletter-semantics (Gate Interp), INT8 Loihi/Akida export (Gate Neuro), dream-of-kiki consolidation (Gate Dream partial), adaptive alphabet (Gate Adaptive), and micro-kiki LLM advisor (Gate LLM Advisor). PyPI release 2026-04-23. Cited in the parent research program's Paper 1 v0.2 PLOS CB submission (section 7.4 dreamOfkiki cross-substrate validation) and Paper 2 outline (sections 4.1-4.6 Conformance Criterion, section 5.1 SubstrateAdapter Protocol).",
+  "version": "1.8.0",
+  "publication_date": "2026-04-23",
   "upload_type": "software",
   "access_right": "open",
   "license": "MIT",
   "creators": [
     {
       "name": "Saillant, Clément",
-      "affiliation": "L'Electron Rare, Grandris, France",
+      "affiliation": "Hypneum Lab — L'Electron Rare, Grandris, France",
       "orcid": ""
     },
     {
       "name": "nerve-wml project contributors",
-      "affiliation": "hypneum-lab"
+      "affiliation": "Hypneum Lab"
     }
   ],
   "keywords": [
@@ -25,7 +27,13 @@
     "multi-layer perceptron",
     "cross-substrate measurement",
     "continual learning",
-    "dreamOfkiki"
+    "axioms-axis integration",
+    "DR-2 amendment",
+    "GammaThetaMultiplexer",
+    "phase-coupled oscillations",
+    "gamma-theta coherence",
+    "dreamOfkiki",
+    "Hypneum Lab"
   ],
   "related_identifiers": [
     {
@@ -39,10 +47,17 @@
       "identifier": "https://github.com/hypneum-lab/dream-of-kiki",
       "resource_type": "software",
       "scheme": "url"
+    },
+    {
+      "relation": "isContinuedBy",
+      "identifier": "10.5281/zenodo.19656342",
+      "resource_type": "software",
+      "scheme": "doi"
     }
   ],
   "communities": [
     {"identifier": "open-science"}
   ],
-  "language": "eng"
+  "language": "eng",
+  "notes": "Tag v1.8.0 commit c2434666f1c99a3ecbcd92052fb8226a4418a9e4 (2026-04-24 01:40 +0200). PyPI release 2026-04-23. To trigger Zenodo version-DOI mintage for this release: visit Zenodo dashboard, locate the GitHub-linked nerve-wml record (concept-DOI 10.5281/zenodo.19656342), and use 'New version' to attach the v1.8.0 source tarball; or push a new tag (e.g. v1.8.1) once this metadata is committed so the GitHub-Zenodo webhook fires automatically with the updated content."
 }

@@ -1,0 +1,43 @@
+{
+  "device": "cuda",
+  "stand_in_dataset": "CIFAR-10",
+  "stand_in_backbone": "ResNet18 (frozen, ImageNet pretrained)",
+  "code_dim": 64,
+  "n_classes": 10,
+  "epochs": 5,
+  "train_steps_per_ep": 50,
+  "val_steps_per_ep": 20,
+  "epoch_metrics": [
+    {
+      "epoch": 0,
+      "train_loss": 2.1804818630218508,
+      "train_acc": 0.2234375,
+      "val_acc": 0.334375
+    },
+    {
+      "epoch": 1,
+      "train_loss": 1.61398845911026,
+      "train_acc": 0.4078125,
+      "val_acc": 0.44921875
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.2527175402641297,
+      "train_acc": 0.50125,
+      "val_acc": 0.53046875
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.1614224457740783,
+      "train_acc": 0.5821875,
+      "val_acc": 0.59765625
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.0458518004417419,
+      "train_acc": 0.635,
+      "val_acc": 0.640625
+    }
+  ],
+  "wallclock_s": 30.759681900031865
+}

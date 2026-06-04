@@ -1,4 +1,5 @@
 import pytest
+
 from track_w.configs.wml_config import WmlConfig
 
 

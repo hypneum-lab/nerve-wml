@@ -1,0 +1,15 @@
+{
+  "task": "HardFlowProxyTask",
+  "n_classes": 12,
+  "n_neurons": 1024,
+  "input_dim": 64,
+  "seed": 0,
+  "T_ticks": 8,
+  "n_steps": 2000,
+  "acc_untrained": 0.130859375,
+  "loss_step100": 0.6625038385391235,
+  "loss_step2000": 0.2242732048034668,
+  "acc_final": 0.890625,
+  "loss_descent": true,
+  "gate_passed": true
+}

@@ -27,17 +27,17 @@ import json
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa: N812
 
-from track_w.mock_nerve import MockNerve
-from track_w.mlp_wml import MlpWML
-from track_w.lif_wml import LifWML
 from track_w._surrogate import spike_with_surrogate
+from track_w.lif_wml import LifWML
+from track_w.mlp_wml import MlpWML
+from track_w.mock_nerve import MockNerve
 from track_w.tasks.hard_flow_proxy import HardFlowProxyTask
 from track_w.training import train_wml_on_task
 
 
-def mutual_knn(A: torch.Tensor, B: torch.Tensor, k: int = 10) -> float:
+def mutual_knn(A: torch.Tensor, B: torch.Tensor, k: int = 10) -> float:  # noqa: N803 — math notation (Huh et al. 2024)
     """Mutual k-nearest-neighbor overlap (Huh et al. 2024)."""
     n = A.shape[0]
     assert B.shape[0] == n
@@ -154,7 +154,10 @@ def main() -> None:
     print()
     print(f"=== Platonic RH mutual_knn (N={n_eval}, {len(seeds)} seeds) ===")
     print()
-    header = f"{'k':>4}{'chance':>10}{'random':>10}{'mlp<->lif median':>20}{'IQR':>20}{'xRandom':>10}"
+    header = (
+        f"{'k':>4}{'chance':>10}{'random':>10}"
+        f"{'mlp<->lif median':>20}{'IQR':>20}{'xRandom':>10}"
+    )
     print(header)
     print("-" * len(header))
     for k in ks:
@@ -178,7 +181,8 @@ def main() -> None:
     print()
     print(f"Focus k={k_focus}: median={ref['mlp_lif_median']:.4f}, threshold={threshold:.4f}")
     print(f"Verdict@k=10:     {'SIGNAL' if sig_focus else 'NO SIGNAL'}")
-    print(f"Robust across k: {'YES -- signal stable across k in [5,10,20,50]' if sig_all else 'NO'}")
+    robust_msg = "YES -- signal stable across k in [5,10,20,50]" if sig_all else "NO"
+    print(f"Robust across k: {robust_msg}")
     print()
     print(f"Output: {out_path}")
 

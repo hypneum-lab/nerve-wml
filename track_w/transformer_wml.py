@@ -30,6 +30,8 @@ from nerve_core.protocols import Nerve
 class TransformerWML(nn.Module):
     """WML with a Transformer encoder core + independent π/ε emission heads."""
 
+    input_proj: nn.Linear | None
+
     def __init__(
         self,
         id:            int,
@@ -69,6 +71,8 @@ class TransformerWML(nn.Module):
             self.codebook = nn.Parameter(
                 torch.randn(alphabet_size, d_model, generator=gen) * 0.1
             )
+            # Python 3.14 runtime_checkable workaround: see BioWML for context.
+            self.__dict__["codebook"] = self._parameters["codebook"]
 
             # Optional input projection for input_dim != d_model (v1.2).
             if self.input_dim != d_model:

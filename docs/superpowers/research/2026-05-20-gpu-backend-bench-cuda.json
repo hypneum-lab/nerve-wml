@@ -1,0 +1,43 @@
+{
+  "device": "cuda",
+  "torch_version": "2.11.0+cu130",
+  "cknna": [
+    {
+      "n": 256,
+      "wall_s_trimmed_mean": 0.00015189157178004584,
+      "wall_s_min": 0.0001463610678911209,
+      "wall_s_max": 0.0003795879893004894,
+      "score": 1.0
+    },
+    {
+      "n": 1024,
+      "wall_s_trimmed_mean": 0.0002473054143289725,
+      "wall_s_min": 0.0002459459938108921,
+      "wall_s_max": 0.0002598077990114689,
+      "score": 1.0
+    },
+    {
+      "n": 4096,
+      "wall_s_trimmed_mean": 0.002607993936787049,
+      "wall_s_min": 0.0026008430868387222,
+      "wall_s_max": 0.0026156939566135406,
+      "score": 1.0
+    },
+    {
+      "n": 8192,
+      "wall_s_trimmed_mean": 0.011647896996388832,
+      "wall_s_min": 0.011643044650554657,
+      "wall_s_max": 0.011765009723603725,
+      "score": 1.0
+    },
+    {
+      "n": 16384,
+      "error": "OutOfMemoryError: CUDA out of memory. Tried to allocate 2.00 GiB. GPU 0 has a total capacity of 23.48 GiB of which 737.06 MiB is free. Process 14579 has 648.00 MiB memory in use. Process 48204 has 370.36 MiB memory in use. Process 24911 has 10.33 GiB memory in use. Process 30450 has 5.18 GiB memory in use. Including non-PyTorch memory, this process has 4.47 GiB memory in use. Of the allocated memory 3.77 GiB is allocated by PyTorch, and 262.50 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)"
+    }
+  ],
+  "transducer_train": {
+    "steps": 500,
+    "wall_s": 0.2129652015864849,
+    "final_loss": 0.015474454499781132
+  }
+}

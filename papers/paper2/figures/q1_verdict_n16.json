@@ -1,0 +1,139 @@
+{
+  "verdict": "tied",
+  "narrative": "Tied (3W/5L/1T over 9 non-degenerate comparisons). Paper 2 reframes as convergent evidence: GTM matches latent-space baselines on round-trip while preserving phase-coupled biological plausibility, with stronger MI per code unit.",
+  "wins": {
+    "RecursiveLinkBridge": 1,
+    "MLPBridge": 1,
+    "CrossAttentionBridge": 1
+  },
+  "losses": {
+    "RecursiveLinkBridge": 2,
+    "MLPBridge": 2,
+    "CrossAttentionBridge": 1
+  },
+  "ties": {
+    "RecursiveLinkBridge": 0,
+    "MLPBridge": 0,
+    "CrossAttentionBridge": 1
+  },
+  "total_wins": 3,
+  "total_losses": 5,
+  "total_ties": 1,
+  "n_planned": 9,
+  "n_effective": 9,
+  "n_degenerate": 0,
+  "degenerate_metrics": [],
+  "alpha_raw": 0.05,
+  "alpha_corrected": 0.005555555555555556,
+  "tests": [
+    {
+      "baseline": "RecursiveLinkBridge",
+      "metric": "round_trip_fidelity",
+      "gtm_mean": 0.6227455200473843,
+      "baseline_mean": 0.9907780924446753,
+      "degenerate": false,
+      "t_stat": -13.94385328800063,
+      "p": 0.0001534161009523469,
+      "cohens_d": -8.818867149861958,
+      "significant": true,
+      "outcome_for_gtm": "loss"
+    },
+    {
+      "baseline": "RecursiveLinkBridge",
+      "metric": "mi_h",
+      "gtm_mean": 1.233035666881505,
+      "baseline_mean": 0.4570435874107419,
+      "degenerate": false,
+      "t_stat": 31.655946700974894,
+      "p": 1.0929156201862569e-08,
+      "cohens_d": 20.020978612794764,
+      "significant": true,
+      "outcome_for_gtm": "win"
+    },
+    {
+      "baseline": "RecursiveLinkBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_mean": 0.1625,
+      "baseline_mean": 0.9125,
+      "degenerate": false,
+      "t_stat": -34.64101615137755,
+      "p": 5.273561136566246e-10,
+      "cohens_d": -21.90890230020664,
+      "significant": true,
+      "outcome_for_gtm": "loss"
+    },
+    {
+      "baseline": "MLPBridge",
+      "metric": "round_trip_fidelity",
+      "gtm_mean": 0.6227455200473843,
+      "baseline_mean": 0.9871219380642785,
+      "degenerate": false,
+      "t_stat": -13.682445759418,
+      "p": 0.00013231138918367268,
+      "cohens_d": -8.653538512294624,
+      "significant": true,
+      "outcome_for_gtm": "loss"
+    },
+    {
+      "baseline": "MLPBridge",
+      "metric": "mi_h",
+      "gtm_mean": 1.233035666881505,
+      "baseline_mean": 0.49631869823695973,
+      "degenerate": false,
+      "t_stat": 24.500565114447724,
+      "p": 8.700162921223263e-09,
+      "cohens_d": 15.495517944583757,
+      "significant": true,
+      "outcome_for_gtm": "win"
+    },
+    {
+      "baseline": "MLPBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_mean": 0.1625,
+      "baseline_mean": 0.825,
+      "degenerate": false,
+      "t_stat": -33.52014319778482,
+      "p": 1.2864797789273316e-09,
+      "cohens_d": -21.2,
+      "significant": true,
+      "outcome_for_gtm": "loss"
+    },
+    {
+      "baseline": "CrossAttentionBridge",
+      "metric": "round_trip_fidelity",
+      "gtm_mean": 0.6227455200473843,
+      "baseline_mean": 0.4147262728807579,
+      "degenerate": false,
+      "t_stat": 6.144240185207194,
+      "p": 0.0003312345265425147,
+      "cohens_d": 3.8859586952779073,
+      "significant": true,
+      "outcome_for_gtm": "win"
+    },
+    {
+      "baseline": "CrossAttentionBridge",
+      "metric": "mi_h",
+      "gtm_mean": 1.233035666881505,
+      "baseline_mean": 1.0668058434203744,
+      "degenerate": false,
+      "t_stat": 1.9636984438330152,
+      "p": 0.11313748809397109,
+      "cohens_d": 1.241951944048111,
+      "significant": false,
+      "outcome_for_gtm": "tie"
+    },
+    {
+      "baseline": "CrossAttentionBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_mean": 0.1625,
+      "baseline_mean": 0.275,
+      "degenerate": false,
+      "t_stat": -5.196152422706633,
+      "p": 0.000826275165988681,
+      "cohens_d": -3.286335345030997,
+      "significant": true,
+      "outcome_for_gtm": "loss"
+    }
+  ],
+  "has_ablation": false
+}

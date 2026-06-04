@@ -1,0 +1,36 @@
+{
+  "session": "2026-05-30-w4-ewc-comparison",
+  "description": "T5 EWC sweep results on HardSplitTask — honest multi-seed reporting",
+  "protocol": {
+    "task": "HardSplitTask",
+    "n_seeds": 5,
+    "seeds": [0, 1, 2, 3, 4],
+    "steps_per_task": 400,
+    "model": "MlpWML(d_hidden=16)",
+    "optimizer": "Adam(lr=1e-2)"
+  },
+  "ewc_sweep": {
+    "lams_swept": [1.0, 10.0, 100.0, 1000.0],
+    "results": {
+      "1.0":    {"mean_forgetting": 0.7942, "std_forgetting": 0.1475},
+      "10.0":   {"mean_forgetting": 0.7891, "std_forgetting": 0.1439},
+      "100.0":  {"mean_forgetting": 0.6998, "std_forgetting": 0.0963},
+      "1000.0": {"mean_forgetting": 0.5315, "std_forgetting": 0.1060}
+    },
+    "best_lam": 1000.0,
+    "best_mean_forgetting": 0.5315
+  },
+  "multi_seed_none_mean": 0.767,
+  "multi_seed_rehearsal_mean": 0.034,
+  "multi_seed_ewc_mean_lam1": 0.705,
+  "ewc_vs_none_best_lam_mean": {
+    "ewc_best_lam": 1000.0,
+    "ewc_mean_forgetting": 0.5315,
+    "none_mean_forgetting": 0.767,
+    "delta": -0.235,
+    "ewc_beats_none": true
+  },
+  "finding": "rehearsal dominates (0.034) >> EWC@best-lam=1000 (0.531) >> none (0.767). EWC requires large lambda (>=1000) on this XOR-like hard task. Rehearsal remains the gold standard for this regime.",
+  "test_gate": "test_gate_w4_ewc.py::test_ewc_beats_none_baseline — PASS (assert ewc_mean < none_mean at best_lam)",
+  "commit_ref": "feat/track-w-hardening-ewc"
+}

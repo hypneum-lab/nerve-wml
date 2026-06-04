@@ -1,0 +1,53 @@
+name: test
+
+# Gates every PR + master push on lint + type + tests, so the next
+# metadata-drift bug like the one fixed in v1.8.1's [Unreleased]
+# CHANGELOG cannot ship to PyPI uncaught (publish.yml has no
+# precondition on test results today).
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Sync dependencies
+        run: uv sync --all-extras
+
+      - name: Lint (ruff check, full repo)
+        run: uv run ruff check .
+
+      - name: Type-check (mypy, full source)
+        run: uv run mypy nerve_core track_p track_w
+
+      # Excludes the `slow` marker. No coverage gate (no
+      # --cov-fail-under set in pyproject).
+      - name: Test (pytest, exclude slow)
+        run: uv run pytest -m "not slow" --no-cov
+
+      - name: Validate doc-truth (N4 Task 5)
+        continue-on-error: true
+        run: uv run python scripts/check_status_truth.py

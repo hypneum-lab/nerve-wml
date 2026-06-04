@@ -1,0 +1,139 @@
+{
+  "verdict": "tied",
+  "narrative": "Tied (3W/5L/1T over 9 non-degenerate comparisons). Paper 2 reframes as convergent evidence: GTM matches latent-space baselines on round-trip while preserving phase-coupled biological plausibility, with stronger MI per code unit.",
+  "wins": {
+    "RecursiveLinkBridge": 1,
+    "MLPBridge": 1,
+    "CrossAttentionBridge": 1
+  },
+  "losses": {
+    "RecursiveLinkBridge": 2,
+    "MLPBridge": 2,
+    "CrossAttentionBridge": 1
+  },
+  "ties": {
+    "RecursiveLinkBridge": 0,
+    "MLPBridge": 0,
+    "CrossAttentionBridge": 1
+  },
+  "total_wins": 3,
+  "total_losses": 5,
+  "total_ties": 1,
+  "n_planned": 9,
+  "n_effective": 9,
+  "n_degenerate": 0,
+  "degenerate_metrics": [],
+  "alpha_raw": 0.05,
+  "alpha_corrected": 0.005555555555555556,
+  "tests": [
+    {
+      "baseline": "RecursiveLinkBridge",
+      "metric": "round_trip_fidelity",
+      "gtm_mean": 0.6832819081305914,
+      "baseline_mean": 0.9908385392216029,
+      "degenerate": false,
+      "t_stat": -10.654364604062978,
+      "p": 0.00043872526330310843,
+      "cohens_d": -6.738411834143415,
+      "significant": true,
+      "outcome_for_gtm": "loss"
+    },
+    {
+      "baseline": "RecursiveLinkBridge",
+      "metric": "mi_h",
+      "gtm_mean": 1.1983111904267234,
+      "baseline_mean": 0.3961745681319043,
+      "degenerate": false,
+      "t_stat": 26.312856864113954,
+      "p": 2.8648464922353987e-07,
+      "cohens_d": 16.64171188731915,
+      "significant": true,
+      "outcome_for_gtm": "win"
+    },
+    {
+      "baseline": "RecursiveLinkBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_mean": 0.1375,
+      "baseline_mean": 0.8875,
+      "degenerate": false,
+      "t_stat": -42.42640687119285,
+      "p": 1.0500124056242042e-10,
+      "cohens_d": -26.832815729997478,
+      "significant": true,
+      "outcome_for_gtm": "loss"
+    },
+    {
+      "baseline": "MLPBridge",
+      "metric": "round_trip_fidelity",
+      "gtm_mean": 0.6832819081305914,
+      "baseline_mean": 0.9879967223431031,
+      "degenerate": false,
+      "t_stat": -10.510140248634054,
+      "p": 0.000422572777627759,
+      "cohens_d": -6.6471963426983995,
+      "significant": true,
+      "outcome_for_gtm": "loss"
+    },
+    {
+      "baseline": "MLPBridge",
+      "metric": "mi_h",
+      "gtm_mean": 1.1983111904267234,
+      "baseline_mean": 0.4298269225276277,
+      "degenerate": false,
+      "t_stat": 19.473357400242627,
+      "p": 5.109398001014072e-08,
+      "cohens_d": 12.316032615052368,
+      "significant": true,
+      "outcome_for_gtm": "win"
+    },
+    {
+      "baseline": "MLPBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_mean": 0.1375,
+      "baseline_mean": 0.825,
+      "degenerate": false,
+      "t_stat": -38.890872965260115,
+      "p": 2.0998505116617212e-10,
+      "cohens_d": -24.59674775249769,
+      "significant": true,
+      "outcome_for_gtm": "loss"
+    },
+    {
+      "baseline": "CrossAttentionBridge",
+      "metric": "round_trip_fidelity",
+      "gtm_mean": 0.6832819081305914,
+      "baseline_mean": 0.47746041804085537,
+      "degenerate": false,
+      "t_stat": 6.01738708048116,
+      "p": 0.0006019955165377171,
+      "cohens_d": 3.8057297474382796,
+      "significant": true,
+      "outcome_for_gtm": "win"
+    },
+    {
+      "baseline": "CrossAttentionBridge",
+      "metric": "mi_h",
+      "gtm_mean": 1.1983111904267234,
+      "baseline_mean": 1.0845272013534666,
+      "degenerate": false,
+      "t_stat": 1.5063539998123108,
+      "p": 0.19030296872469188,
+      "cohens_d": 0.9527019203823507,
+      "significant": false,
+      "outcome_for_gtm": "tie"
+    },
+    {
+      "baseline": "CrossAttentionBridge",
+      "metric": "bandwidth_efficiency",
+      "gtm_mean": 0.1375,
+      "baseline_mean": 0.2625,
+      "degenerate": false,
+      "t_stat": -7.0710678118654755,
+      "p": 0.00010495362247997342,
+      "cohens_d": -4.4721359549995805,
+      "significant": true,
+      "outcome_for_gtm": "loss"
+    }
+  ],
+  "has_ablation": true
+}

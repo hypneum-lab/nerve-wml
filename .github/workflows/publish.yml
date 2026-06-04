@@ -35,8 +35,40 @@ permissions:
   contents: read
 
 jobs:
+  # N3 loose-end #7: gate release on test pass. Duplicates test.yml
+  # steps because cross-workflow `workflow_run` does not chain off
+  # `release` events (only off other workflow_run/push/pr triggers).
+  # Keep these steps identical to .github/workflows/test.yml.
+  test:
+    name: Lint + type + tests (release gate)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Sync dependencies
+        run: uv sync --all-extras
+
+      - name: Lint (ruff check, scoped to nerve_core)
+        run: uv run ruff check nerve_core
+
+      - name: Type-check (mypy, full source)
+        run: uv run mypy nerve_core track_p track_w
+
+      - name: Test (pytest, exclude slow)
+        run: uv run pytest -m "not slow" --no-cov
+
   build:
     name: Build wheel + sdist
+    needs: test  # N3 loose-end #7: do not build for release if tests are red
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

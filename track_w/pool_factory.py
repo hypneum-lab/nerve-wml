@@ -107,3 +107,37 @@ def build_triple_pool(
                 id=i, d_model=16, n_layers=2, n_heads=2, seed=wml_seed,
             ))
     return pool
+
+
+def build_pool_with_bio(n: int, *, seed: int = 0) -> list:
+    """Build an N-WML pool cycling MLP / LIF / Transformer / Bio.
+
+    id % 4 == 0 -> MlpWML, 1 -> LifWML, 2 -> TransformerWML,
+    3 -> BioWML (offline MockBioCultureClient). Per-WML seeds are
+    derived from `seed * 1000 + i`, matching the other pool builders,
+    so the pool is deterministic. The bio substrate is always
+    mock-backed here; use BioWML.from_env() for real hardware.
+    """
+    from track_w.bio_clients import MockBioCultureClient
+    from track_w.bio_wml import BioWML
+
+    pool: list = []
+    for i in range(n):
+        wml_seed = seed * 1000 + i
+        kind = i % 4
+        if kind == 0:
+            pool.append(MlpWML(id=i, d_hidden=16, seed=wml_seed))
+        elif kind == 1:
+            pool.append(LifWML(id=i, n_neurons=16, seed=wml_seed))
+        elif kind == 2:
+            pool.append(TransformerWML(
+                id=i, d_model=16, n_tokens=4, n_heads=2,
+                seed=wml_seed,
+            ))
+        else:
+            pool.append(BioWML(
+                id=i,
+                client=MockBioCultureClient(seed=wml_seed),
+                d_hidden=16, seed=wml_seed,
+            ))
+    return pool

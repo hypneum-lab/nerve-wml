@@ -15,8 +15,10 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
-from track_p.transducer import Transducer, TransducerGating
-
+from track_p.transducer import (  # noqa: E402 — gated by importorskip above
+    Transducer,
+    TransducerGating,
+)
 
 _ALPHABET = 16
 
@@ -76,11 +78,36 @@ def test_gumbel_softmax_returns_soft_distribution():
 
 
 def test_gumbel_softmax_is_differentiable():
-    """Gradient must flow back into the transducer logits via the soft path."""
+    """Gradient must flow back into the transducer logits via the soft path.
+
+    Root cause analysis (N3 Task 9, 2026-05-10): the original test
+    used ``loss = out.sum()`` where ``out`` is a per-row softmax
+    distribution. Each row sums to exactly 1.0, so the *true*
+    mathematical gradient of ``sum(softmax(x + gumbel))`` w.r.t. x is
+    identically zero — the row-sum is invariant to the logits. On
+    macOS/Py3.14 floating-point summation produced a tiny non-zero
+    grad from numerical drift (roughly 4.0 + tiny noise back-propped
+    to nonzero); on Linux/Py3.12 a different summation order gave
+    exactly 4.0, hence exactly-zero grad — and the test (correctly)
+    failed. The xfail in N2 Task 4 was masking a broken assertion,
+    not a platform limitation.
+
+    Fix: pick a loss whose gradient w.r.t. logits is genuinely
+    nonzero. ``out[:, 0].sum()`` projects onto a single column —
+    its derivative is a non-trivial function of every logit (the
+    softmax cross-entropy structure), so backward produces nonzero
+    gradient on every platform.
+    """
+    torch.set_grad_enabled(True)
     torch.manual_seed(0)
     t = Transducer(alphabet_size=_ALPHABET, gating=TransducerGating.GUMBEL_SOFTMAX)
+    assert t.logits.requires_grad
     out = t.forward(_src())
-    loss = out.sum()
+    assert out.requires_grad, "soft path must produce a grad-tracked tensor"
+    assert out.grad_fn is not None, "autograd graph broken before backward"
+    # Project onto column 0 — the row-sum invariance trap that broke
+    # the original test does not apply here.
+    loss = out[:, 0].sum()
     loss.backward()
     assert t.logits.grad is not None
     assert torch.isfinite(t.logits.grad).all()

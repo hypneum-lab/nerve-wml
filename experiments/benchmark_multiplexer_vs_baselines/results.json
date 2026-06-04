@@ -1,0 +1,225 @@
+{
+  "config": {
+    "steps": 800,
+    "batch": 64,
+    "dim": 16,
+    "n_classes": 12,
+    "code_dim": 16,
+    "seeds": [
+      0,
+      17,
+      42,
+      73,
+      101
+    ],
+    "archs": [
+      "gtm",
+      "recursive_link",
+      "mlp_bridge",
+      "cross_attention"
+    ],
+    "out": "experiments/benchmark_multiplexer_vs_baselines/results.json"
+  },
+  "results": [
+    {
+      "arch": "GTMBridge",
+      "seed": 0,
+      "train_loss_final": 0.5330237150192261,
+      "round_trip_fidelity": 0.753855508513805,
+      "mi_h": 1.2432501914717586,
+      "bandwidth_efficiency": 0.125,
+      "n_params": 17888,
+      "train_time_s": 2.0953419539146125
+    },
+    {
+      "arch": "GTMBridge",
+      "seed": 17,
+      "train_loss_final": 0.5655182003974915,
+      "round_trip_fidelity": 0.6707475298782859,
+      "mi_h": 1.1241394706151004,
+      "bandwidth_efficiency": 0.1875,
+      "n_params": 17888,
+      "train_time_s": 3.762734069954604
+    },
+    {
+      "arch": "GTMBridge",
+      "seed": 42,
+      "train_loss_final": 0.5915839672088623,
+      "round_trip_fidelity": 0.7237158025718835,
+      "mi_h": 1.2518265035390115,
+      "bandwidth_efficiency": 0.125,
+      "n_params": 17888,
+      "train_time_s": 2.082049136981368
+    },
+    {
+      "arch": "GTMBridge",
+      "seed": 73,
+      "train_loss_final": 0.5969066619873047,
+      "round_trip_fidelity": 0.5838365446833274,
+      "mi_h": 1.1397415351921625,
+      "bandwidth_efficiency": 0.125,
+      "n_params": 17888,
+      "train_time_s": 3.856730309082195
+    },
+    {
+      "arch": "GTMBridge",
+      "seed": 101,
+      "train_loss_final": 0.5372536778450012,
+      "round_trip_fidelity": 0.6842541550056547,
+      "mi_h": 1.2325982513155838,
+      "bandwidth_efficiency": 0.125,
+      "n_params": 17888,
+      "train_time_s": 2.129311013966799
+    },
+    {
+      "arch": "RecursiveLinkBridge",
+      "seed": 0,
+      "train_loss_final": 0.022128723561763763,
+      "round_trip_fidelity": 0.9911640753758288,
+      "mi_h": 0.44129404159169205,
+      "bandwidth_efficiency": 0.875,
+      "n_params": 4256,
+      "train_time_s": 0.7234041760675609
+    },
+    {
+      "arch": "RecursiveLinkBridge",
+      "seed": 17,
+      "train_loss_final": 0.018671881407499313,
+      "round_trip_fidelity": 0.9894121752284006,
+      "mi_h": 0.38121869132523223,
+      "bandwidth_efficiency": 0.875,
+      "n_params": 4256,
+      "train_time_s": 0.2825055019930005
+    },
+    {
+      "arch": "RecursiveLinkBridge",
+      "seed": 42,
+      "train_loss_final": 0.01994672231376171,
+      "round_trip_fidelity": 0.9908106767414612,
+      "mi_h": 0.3998322355532965,
+      "bandwidth_efficiency": 0.875,
+      "n_params": 4256,
+      "train_time_s": 0.2863175349775702
+    },
+    {
+      "arch": "RecursiveLinkBridge",
+      "seed": 73,
+      "train_loss_final": 0.010964336805045605,
+      "round_trip_fidelity": 0.9914765649669594,
+      "mi_h": 0.3598914444419282,
+      "bandwidth_efficiency": 0.875,
+      "n_params": 4256,
+      "train_time_s": 0.2804343069437891
+    },
+    {
+      "arch": "RecursiveLinkBridge",
+      "seed": 101,
+      "train_loss_final": 0.013390720821917057,
+      "round_trip_fidelity": 0.9913292037953649,
+      "mi_h": 0.3986364277473729,
+      "bandwidth_efficiency": 0.9375,
+      "n_params": 4256,
+      "train_time_s": 0.28564014681614935
+    },
+    {
+      "arch": "MLPBridge",
+      "seed": 0,
+      "train_loss_final": 0.02938971295952797,
+      "round_trip_fidelity": 0.9853443347616214,
+      "mi_h": 0.4997894449658767,
+      "bandwidth_efficiency": 0.8125,
+      "n_params": 4256,
+      "train_time_s": 0.2634257711470127
+    },
+    {
+      "arch": "MLPBridge",
+      "seed": 17,
+      "train_loss_final": 0.026695193722844124,
+      "round_trip_fidelity": 0.9849018575498709,
+      "mi_h": 0.41172573607015744,
+      "bandwidth_efficiency": 0.8125,
+      "n_params": 4256,
+      "train_time_s": 0.26134209404699504
+    },
+    {
+      "arch": "MLPBridge",
+      "seed": 42,
+      "train_loss_final": 0.0465690940618515,
+      "round_trip_fidelity": 0.9809937213002563,
+      "mi_h": 0.47692294192186424,
+      "bandwidth_efficiency": 0.8125,
+      "n_params": 4256,
+      "train_time_s": 0.25592082692310214
+    },
+    {
+      "arch": "MLPBridge",
+      "seed": 73,
+      "train_loss_final": 0.0063434503972530365,
+      "round_trip_fidelity": 0.9951919278956085,
+      "mi_h": 0.3366471412853673,
+      "bandwidth_efficiency": 0.875,
+      "n_params": 4256,
+      "train_time_s": 0.25633253483101726
+    },
+    {
+      "arch": "MLPBridge",
+      "seed": 101,
+      "train_loss_final": 0.009519195184111595,
+      "round_trip_fidelity": 0.9935517702081581,
+      "mi_h": 0.4240493483948728,
+      "bandwidth_efficiency": 0.8125,
+      "n_params": 4256,
+      "train_time_s": 0.2553310371004045
+    },
+    {
+      "arch": "CrossAttentionBridge",
+      "seed": 0,
+      "train_loss_final": 1.0426323413848877,
+      "round_trip_fidelity": 0.5133325003512859,
+      "mi_h": 1.198940608903719,
+      "bandwidth_efficiency": 0.25,
+      "n_params": 800,
+      "train_time_s": 0.2674528530333191
+    },
+    {
+      "arch": "CrossAttentionBridge",
+      "seed": 17,
+      "train_loss_final": 0.8782762289047241,
+      "round_trip_fidelity": 0.4543904383731021,
+      "mi_h": 1.0863199653792954,
+      "bandwidth_efficiency": 0.25,
+      "n_params": 800,
+      "train_time_s": 0.26823268411681056
+    },
+    {
+      "arch": "CrossAttentionBridge",
+      "seed": 42,
+      "train_loss_final": 0.9839318990707397,
+      "round_trip_fidelity": 0.5282661129742849,
+      "mi_h": 1.1994323237283642,
+      "bandwidth_efficiency": 0.25,
+      "n_params": 800,
+      "train_time_s": 0.29469536803662777
+    },
+    {
+      "arch": "CrossAttentionBridge",
+      "seed": 73,
+      "train_loss_final": 0.8606575727462769,
+      "round_trip_fidelity": 0.4331522999492814,
+      "mi_h": 0.8171164999753093,
+      "bandwidth_efficiency": 0.3125,
+      "n_params": 800,
+      "train_time_s": 0.27181839011609554
+    },
+    {
+      "arch": "CrossAttentionBridge",
+      "seed": 101,
+      "train_loss_final": 0.9192677140235901,
+      "round_trip_fidelity": 0.4581607385563229,
+      "mi_h": 1.1208266087806456,
+      "bandwidth_efficiency": 0.25,
+      "n_params": 800,
+      "train_time_s": 0.261029405053705
+    }
+  ]
+}

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import torch
 
-from track_p.multiplexer import GammaThetaConfig, GammaThetaMultiplexer
+from track_p.multiplexer import GammaThetaMultiplexer
 
 
 def test_defaults_preserve_v130_behaviour() -> None:

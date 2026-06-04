@@ -2,6 +2,158 @@
 
 All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — 2026-05-20 (gap-analysis remediation sprint)
+
+### Summary
+
+41 commits across 8 PRs merged into master. 458 fast tests passing (baseline 385), +73 net new assertions. Six empirical claims revised through systematic statistical reinforcement; one critical 4-arm ordering claim (spectral_entropy) further revised post-merge via batch-size sensitivity discovery. Fact-check audit protocol adopted and shipped with CI enforcement. Four GPU backends benchmarked across 4 hosts; MLX issue #3568 filed documenting M1 vs M3+/M5 bit-divergence in erf.h.
+
+### Claims revised under scrutiny (6 total)
+
+1. **spectral_entropy 4-arm strict ordering** (`null < akorn_best < gtm < simple_gating`) — batch-size dependent. Only B=256 reproduces canonical ordering; B∈{64,128,512} show akorn_best below null. **Revised claim:** gtm > null (Δ ≥ 0.05 bits, p < 1e-15) and gtm < simple_gating (Δ ≥ 1.0 bits, p < 1e-15) hold at all B; akorn_best reported as high-variance intermediate (σ ≈ 0.6).
+2. **CKNNA scale artefact** (N-dependent performance drop 0.92 → 0.87) — confirmed 0.92 at N=256, 0.87 at N=16384 (σ=0.05), cross-host reproducible (M5 / macM1 / M3 Pro / M3 Ultra). Theoretical interpretation added (Gröger, Wen & Brbić 2026 null-calibration framework).
+3. **MLP vs MPS speedup ratio** at CKNNA N=16384 — measured as 1.05× (unified-memory M5 GPU memory-bound, matches CPU behaviour). Cross-hardware MLX bench revealed M1 vs M3+/M5 bit-divergence.
+4. **Transducer training wall-clock** (500 steps, 64-alphabet, CPU M5) — confirmed 0.83 s; MPS 1.3× speedup, CUDA 3.9× speedup (on contested RTX 4090 with ~4 GB peak Gram overhead).
+5. **GPU necessity for nerve-wml** — verdict revised to "not needed". Transducer training <1 s on CPU; CKNNA breakeven at N≥4096 with MPS yielding modest 2–3× (not load-critical). SSH latency to CUDA host exceeds any realistic in-process batch amortization.
+6. **AKOrN minimal flavour specification** — n_oscillators=32 in Plan A.4 differs from Miyato et al. (ICLR 2025) full AKOrN (n=64). Documented as limited-capacity variant; strict equivalence claim removed.
+
+### Plans completed
+
+- **Plan A** — Validation suite (11 tasks, Claims 1–7 Renf 1–6, backend bench)
+- **Plan A.2** — Statistical hardening (5 tasks, null-model calibration, paired Wilcoxon p-values, bootstrap CI95)
+- **Plan A.3** — Hyperparameter wiring (3 tasks, n_steps=32, lr=0.05, n_osc ∈ {32,64})
+- **Plan A.4** — AKOrN comparison (3 tasks, minimal vs full topology, separation metrics)
+- **Plan B** — Paper revisions (8 tasks, §Method, §Results, new citations, abstract figures)
+- **Plan C** — Biological substrate (11 tasks, BioFieldWML Phase 1–2, CL1 sleep-every validation, Palacios SNN-PC scheduler)
+
+### Reinforcement campaigns (9 confirmed, 1 audit)
+
+- **Renf 1** — AKOrN sweep 50 seeds: top cell synchrony 0.4542 ± 0.1624 (robust across hp variants).
+- **Renf 4 v3** — Extended eval: transducer 67.8 s, gtm 359.6 s, scale factor 2.4 s (cpu multiproc).
+- **Renf 5** — 3-way backend bench (CPU M5 vs MPS M5 vs CUDA RTX 4090): CKNNA wins CPU for n≤1024, CUDA 40× at n=4096–8192, memory-bound parity at n=16384.
+- **Renf 6** — 1750 cells = 50 seeds × 5 σ × 7 N (CKNNA scale sensitivity macm1 CPU multiproc, 52 min wall-clock).
+- **Renf 7** — Spectral entropy means and arm ordering across hosts (macm1 CPU 254.7 s, MPS 253.3 s, tied memory-bound).
+- **Renf 8** — Transducer 50 seeds, tie p=0.627 (M5 + macm1, statistically flat).
+- **Renf 9** — MLX 2.07× speedup M5 MPS vs CPU at N=16384 (informational; confirmed memory-bound saturation).
+- **Renf 10** — Batch-size sweep B∈{64,128,256,512}: spectral_entropy arm ordering B-dependent, 2-arm claims robust.
+- **Audit** — Fact-check protocol: 27 OK / 0 DIVERGENT / 5 ORPHAN on master at HEAD acbdc34. ORPHANs are Renf 11–13 branches not yet merged.
+
+### Cross-hardware MLX investigation
+
+- **Issue filed**: ml-explore/mlx#3568 — Apple GPU bit-divergence in `mx.random.normal` (M1 applegpu_g13s vs M3 Pro/M3 Ultra/M5 g15+).
+- **Triangulation**: 4-host survey (M1 Max, M3 Pro, M3 Ultra, M5), 32 hash comparisons, MLX 0.31.2 identical version across all.
+- **Localization**: `mlx/backend/metal/kernels/erf.h:42–69` erfinv branch (documented, not a bug per se).
+- **Classification**: documentation-request scope (no bit-exact guarantee across Apple GPU architectures in MLX 0.31.2).
+
+### Fact-check audit protocol adopted
+
+- **Rule**: every numerical claim in paper / research note must trace to a JSON cell or executed log line in the same session.
+- **Tool**: `scripts/factcheck_audit.py --ci` enforces mechanically; CI workflow `.github/workflows/factcheck.yml` runs on push/PR to `docs/superpowers/research/**`.
+- **Coverage**: 13 headline claims enumerated; 8 source JSONs on master (Renf 1, 4, 5, 6, 7, 8, 9, 10).
+- **State at acbdc34**: 27 checks OK (no divergence), 0 broken, 5 orphaned (awaiting unmerged branch data).
+- **Tolerance**: per-claim override support; defaults 0.005, string-match for boolean verdicts.
+
+### Backend benchmarks (GPU recommendation updated)
+
+| Workload | CPU M5 | MPS M5 | CUDA RTX 4090 | Recommendation |
+|---|---:|---:|---:|---|
+| CKNNA N=256 | 0.61 ms | 4.38 ms | 0.15 ms | **CPU** (launch overhead) |
+| CKNNA N=1024 | 6.31 ms | 7.72 ms | 0.25 ms | **CPU** (parity) |
+| CKNNA N=4096 | 113.14 ms | 51.14 ms | 2.61 ms | **CUDA** 43× (MPS 2.2×) |
+| CKNNA N=8192 | 454.10 ms | 190.04 ms | 11.65 ms | **CUDA** 39× (MPS 2.4×) |
+| CKNNA N=16384 | 3195.67 ms | 3058.64 ms | **OOM** | **CPU/MPS** (memory-bound parity) |
+| Transducer 500 steps | 0.827 s | 0.616 s | 0.213 s | **CUDA** 3.9× (MPS 1.34×) |
+
+**Verdict for nerve-wml**: Keep all code paths on CPU. No GPU path justified for current workload sizes. If future config bumps CKNNA n→4096+, route locally via MPS for modest 2–3× (no SSH cost). CUDA amortization threshold exceeds realistic batch scales for this simulator.
+
+### Biological substrate integration
+
+- **BioFieldWML Phase 1**: MockBioCultureClient scheduler with sleep-every ≥ 1 validation, episode-bound Add(layer) accumulator.
+- **BioFieldWML Phase 2**: Palacios SNN-PC (predictive coding via spiking neurons) integrated as optional substitution-compatible estimator for Kuramoto-style cell populations.
+- **Testing**: 458 fast tests + 35+ slow statistical tests covering unit (L1), info-theoretic (L2), integration (L3), golden (L4) strata. No real CL1/FinalSpark API key used (MockBioCultureClient only).
+
+### Citations added to refs.bib
+
+- Roy & Vetterli 2007 (effective rank, spectral analysis)
+- Gröger, Wen & Brbić 2026 (Aristotelian view, null-calibration framework)
+- Wei et al. 2024 (Diff-eRank, LLM evaluator robustness)
+- Liu et al. 2024 (HNN review, NSR journal)
+- Pedersen et al. 2024 (NIR, neural integrator review)
+- Mayr et al. 2025 (AER biohybrid systems)
+- Bastos et al. 2020 (predictive routing, hierarchical cortex)
+- Gabhart et al. 2025 (predictive coding, unified framework)
+- Ruffini et al. 2025 (Comparator framework, brain-inspired)
+
+### Master state at sprint close
+
+- **HEAD**: `acbdc34c6fd…`
+- **Fast suite**: 458 passed, 1 skipped
+- **Slow suite**: 35+ statistical integration tests
+- **Lint**: ruff + mypy clean on Plan C / A.x scope
+- **Factcheck**: `python scripts/factcheck_audit.py --ci` → 27 OK / 0 DIVERGENT
+
+### Honest limitations (carry-forward to v0.x.x)
+
+- **spectral_entropy 4-arm ordering is B-dependent** — only B=256 gives canonical. 2-arm robust claims (gtm > null, gtm < simple_gating) survive across B∈{64,128,256,512}.
+- **AKOrN minimal flavour** (n_oscillators=32) differs from Miyato et al. full topology (n=64). Not equivalent; documented as limited-capacity variant.
+- **CKNNA is N-dependent** (Gröger et al. 2026 null-calibration framework formalizes it). Cross-paper comparisons require normalisation.
+- **HSIC standalone non-informative** — use linear-CKA for metric-learning tasks.
+- **MLX bit-divergence across Apple GPU architectures** (M1 vs M3+/M5) confirmed in erfinv branch; no bit-exact guarantee in MLX 0.31.2.
+- **No real bioculture API keys used** — Phase 1/2 tested against MockBioCultureClient only.
+
+### Acknowledgements
+
+Multi-host empirical work: macm1 (M1 Max 8-core), macM3 (M3 Pro 12-core), studio (M3 Ultra 20-core), grosmac (M5 12-core), kxkm-ai (RTX 4090 CUDA). Fact-check audit adapted from bouba_sens Sprint 10. MLX issue triangulation contributed to ml-explore/mlx upstream.
+
+## [Unreleased] (pre-sprint)
+
+### Fixed
+
+- `tests/unit/test_pyproject_axioms_extras.py` — replaced
+  `test_version_is_1_8_0` (hardcoded literal that drifted on every
+  patch bump) with `test_version_matches_changelog_top_entry`, which
+  derives the assertion from `pyproject.toml` ↔ `CHANGELOG.md`
+  consistency. Tautological release-version literals are
+  release-process-fragile by design.
+- `tests/unit/test_readme_gates.py` — replaced
+  `test_readme_lists_paper_drafts` (asserted presence of obsolete
+  `paper-v0.3-draft` label) with `test_readme_links_to_paper_sources`,
+  which asserts structural file-path anchors that survive paper
+  reorganisation.
+
+## [1.8.1] — 2026-05-10
+
+Patch release. No code change. Triggers Zenodo version-DOI mintage
+for the v1.8.0 axioms-axis integration via the GitHub-Zenodo webhook
+that previously fired with stale v1.2.0 metadata.
+
+### Changed
+
+- `.zenodo.json` description and keywords refreshed to match the
+  actual v1.8.0 release content (axioms-axis integration,
+  GammaThetaMultiplexer, DR-2 weakened predicate consumption).
+  Adds `version` and `publication_date` fields.
+
+### Added
+
+- Nested `CLAUDE.md` files under `scripts/` and `tests/` for
+  Claude Code progressive disclosure (improves agent context
+  efficiency when working in subtrees).
+- `tests/golden/README.md` documenting the >100 MB fixture pattern
+  (regenerated locally or pulled from Zenodo, never committed —
+  GitHub rejects files above 100 MB).
+- Append-only superpowers planning notes for the v1.7.0 paper
+  review and the v1.8.0 axioms integration.
+
+### Notes
+
+- Companion to dream-of-kiki Paper 2 outline re-spec
+  (commit `55ca274` on `hypneum-lab/dream-of-kiki`, 2026-05-10).
+- Defensive antecedence: this version-DOI provides the immutable
+  timestamp for the GammaThetaMultiplexer (master commit
+  `77efb4d`, merged 2026-04-20) relative to RecursiveMAS
+  (arXiv:2604.25917, 2026-04-28).
+
 ## [1.8.0] — 2026-04-24
 
 Axioms-axis integration with `dream-of-kiki`. `kiki_oniric.axioms.DR0..DR4`

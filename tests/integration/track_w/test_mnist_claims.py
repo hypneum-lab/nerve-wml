@@ -1,5 +1,6 @@
 """MNIST real-data validation of Claims A and B (v1.2 track 1)."""
 import os
+
 import pytest
 
 pytest.importorskip("torchvision")

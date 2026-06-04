@@ -23,3 +23,6 @@ reports/
 
 # LaTeX root-level artefacts
 /texput.log
+.DS_Store
+.remember/
+tests/golden/*.npz
