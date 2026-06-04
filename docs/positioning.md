@@ -41,8 +41,13 @@ directly test. Three concrete distinctions:
    across architectures (Morcos 2018, Kornblith 2019) reports
    geometric alignment for models trained on the same task. Our
    specific finding is that argmax-discretized outputs over a shared
-   64-code alphabet share 91–96 % of their information — a stronger
-   statement at the output surface, where the protocol actually lives.
+   64-code alphabet share a high fraction of their information
+   (**post-VQ** MI/H ≈ 0.93, N=5000, bias-corrected, permutation p<0.01)
+   — a statement at the output surface, where the protocol actually
+   lives. **Caveat (ADR-0001):** this is post-VQ; the **pre-VQ
+   continuous** KSG value is ≈0.10, i.e. the argmax quantisation
+   amplifies apparent shared information ~10×, so the figure must be
+   cited alongside the continuous value, not as bare "91–96 %".
 
 ## Empirical: CKA vs our MI/H
 
@@ -236,9 +241,9 @@ alphabet (a protocol), not a continuous embedding.
 - **Wentworth, "Natural Abstractions" (alignmentforum, 2021)** —
   non-academic but widely discussed: posits that different cognitive
   systems trained on similar environments converge on similar
-  abstractions. Our 0.91–0.96 MI/H is consistent with this if read
-  as empirical evidence, though the task distribution is
-  synthetic/MNIST-only.
+  abstractions. Our **post-VQ** MI/H ≈ 0.93 (pre-VQ continuous ≈0.10,
+  ADR-0001) is consistent with this if read as empirical evidence,
+  though the task distribution is synthetic/MNIST-only.
 - **Moschella et al. 2022, "Relative representations enable zero-shot
   latent space communication"** (ICLR 2023 notable top 5 %,
   arXiv:2209.15430). **Full method verified 2026-04-20** via
@@ -283,10 +288,12 @@ alphabet (a protocol), not a continuous embedding.
   mechanism is angle-preservation via continuous similarity-to-
   anchors; ours is label-permutation invariance via learned VQ
   codebook + per-edge transducers. Their claim is zero-shot
-  stitchability of continuous embeddings; our claim is 91–96 %
-  MI/H of discrete code emissions and 97–99 % task-fidelity under
-  cross-substrate transducer. Both enable cross-architecture
-  communication; neither subsumes the other.
+  stitchability of continuous embeddings; our claim is a **post-VQ**
+  MI/H ≈ 0.93 of discrete code emissions (N=5000, bias-corrected,
+  p<0.01; **pre-VQ continuous KSG ≈ 0.10** — VQ amplifies ~10×, see
+  ADR-0001) and 97–99 % task-fidelity under cross-substrate
+  transducer. Both enable cross-architecture communication; neither
+  subsumes the other.
 
 - **Nature Machine Intelligence 2025 editorial** "Are neural network
   representations universal or idiosyncratic?" (s42256-025-01139-y,
