@@ -9,6 +9,27 @@ Citation : each release is archived on Zenodo (concept DOI [10.5281/zenodo.19656
 
 Research engine that validates a discrete-code communication layer between heterogeneous neural modules (World Model Languages, or WMLs). Modules exchange **neuroletters** over a sparse learned topology, multiplexed on gamma/theta rhythms, and converted between local codebooks by per-edge transducers. The paper draft is at [`papers/paper1/main.tex`](papers/paper1/main.tex); the full spec is at [`docs/superpowers/specs/2026-04-18-nerve-wml-design.md`](docs/superpowers/specs/2026-04-18-nerve-wml-design.md).
 
+## 2026-06-04 — External-review response (MI bias + prior art)
+
+Two external-review items answered with merged work and two ADRs; the
+substrate-agnosticism claim was requalified in lockstep across the paper and this
+README. See [`CHANGELOG.md`](CHANGELOG.md) and the ADRs for detail.
+
+- **REVIEW ② (MI estimator bias)** — [ADR-0001](docs/adr/0001-mi-bias-correction-and-null-model.md).
+  Added a Panzeri–Treves bias-corrected estimator and a permutation null for every
+  estimator, re-measured on the real codes (N=5000, 3 seeds). **Two-stage honest
+  verdict:** the MI/H ≈ 0.93 **post-VQ** figure *survives* bias/null (plug-in 0.932,
+  PT 0.931, null ~0.005, p<0.01) — held by large N, not by seed stability — **but is
+  over-stated ~10×**: debiased KSG on the **pre-VQ continuous** embeddings gives
+  MI/H ≈ **0.10**. The argmax quantisation manufactures most of the apparent alignment.
+  The 0.93 is never to be cited alone — always "post-VQ" + the ≈0.10 continuous value.
+- **REVIEW ① (novelty / prior art)** — [ADR-0002](docs/adr/0002-novelty-vs-prior-art-relative-representations.md).
+  Cross-architecture representational convergence is **conceded as prior art**
+  (Moschella 2022, PRH Huh 2024); the contribution is delimited to **measurement at
+  the discrete protocol-output level** on heterogeneous MLP/LIF substrates, not the
+  observation of convergence. Paper §Related Work / "Delimiting the contribution" /
+  §Threats requalified accordingly.
+
 ## 2026-05-20 — Gap-analysis remediation sprint
 
 Reinforcement sprint that hardened the empirical claims via systematic
@@ -170,7 +191,15 @@ data, architecture scale, and temporal streaming. Two claims are quantified:
 Three structurally distinct substrates (stateless MLP, spiking LIF with surrogate-gradient, attention-based Transformer) reach comparable accuracies via the shared Nerve Protocol.
 
 **Claim B — Substrate-agnostic information transmission (codes align).**
-Independent substrates share 91–96 % of their emitted code information; a frozen LIF can recover a trained MLP's task competence via a learned linear transducer.
+Independent substrates share a high fraction of their emitted **post-VQ discrete**
+code information (MI/H ≈ 0.93 on the argmax codes, N=5000, bias-corrected
+Panzeri–Treves, permutation p<0.01); a frozen LIF can recover a trained MLP's
+task competence via a learned linear transducer. **Caveat (ADR-0001):** this
+post-VQ figure is *not* a small-sample artefact, but it overstates shared
+information by ~10× — debiased Kraskov–KSG on the **pre-VQ continuous**
+embeddings of the same activations gives MI/H ≈ **0.10**. The argmax
+quantisation manufactures most of the apparent alignment, so the 0.93 must
+always be read as post-VQ and cited alongside the ≈0.10 continuous value.
 
 ### Headline measurements
 
@@ -178,7 +207,7 @@ Independent substrates share 91–96 % of their emitted code information; a froz
 |---|---|---|
 | **Pool scaling law** (MLP ↔ LIF, HardFlow) | $N=2 \to 10.71\%$, $N=16 \to 6.71\%$, $N=32 \to 2.39\%$, $N=64 \to 2.73\%$ plateau. 5 % contract holds distributionally at $N \geq 32$. | `figures/w2_hard_scaling.pdf` |
 | **Triple-substrate pool** (MLP + LIF + TRF) | $N=15 \to 8.16\%$, $N=30 \to 5.86\%$, $N=60 \to 4.33\%$ | v1.1.4 |
-| **Mutual information** (codes MLP ↔ LIF) | $\mathrm{MI}/H = 0.91$ at $N=1$ (5 seeds), **0.96** at $N=16$ pool (192 cross-pairs) | `figures/info_transmission.pdf` |
+| **Mutual information** (codes MLP ↔ LIF, **post-VQ discrete**) | $\mathrm{MI}/H \approx 0.93$ on argmax codes (N=5000, 3 seeds; bias-corrected Panzeri–Treves 0.931, permutation null ~0.005, **p<0.01**). **Pre-VQ continuous (KSG) $\approx 0.10$** — VQ amplifies ~10× (ADR-0001). Historical pool figures: 0.91 at $N=1$, 0.96 at $N=16$ (same post-VQ caveat). | `figures/info_transmission.pdf`, [ADR-0001](docs/adr/0001-mi-bias-correction-and-null-model.md) |
 | **Round-trip fidelity** (MLP → LIF → MLP) | **0.99** mean (3 seeds) | v0.8 |
 | **Cross-substrate merge** (LIF fed by MLP codes only) | **0.97** mean (3 seeds) | v0.8 |
 | **MNIST real data** | MLP 0.942, LIF 0.941, gap **1.03 %**, MI/H **0.882** | `figures/mnist_scaling.pdf` |
@@ -198,7 +227,7 @@ LIF's spike dynamics give it a substrate-intrinsic $\sim 2$–$3\%$ expressivity
 1. **The original 12.1 % gap was a decoder asymmetry bug, not a substrate limit.** LIF had a fixed cosine decoder, MLP had a learned head; symmetrizing flipped the sign (LIF now leads).
 2. **Single-seed measurements lie.** Multi-seed revealed the N=16 median is 6.7 %, not the lucky 1.68 %.
 3. **Scaling law is real and monotonic.** Four-point decay $10.7\% \to 6.7\% \to 2.4\% \to 2.7\%$ plateau.
-4. **Claim B is empirical, not architectural.** MI 0.91–0.96, round-trip 0.99, cross-merge 0.97.
+4. **Claim B is empirical, not architectural.** MI/H ≈ 0.93 **post-VQ** (N=5000, debiased, p<0.01; pre-VQ continuous ≈0.10 — VQ amplifies ~10×, ADR-0001), round-trip 0.99, cross-merge 0.97.
 5. **Substrate-direction is stable in 19/20 seeds.** LIF's spike edge is a real property, not noise.
 6. **Architecture scale and pool scale are orthogonal.** Pool compresses the gap; arch width amplifies it.
 7. **Code alignment is structural, not task-gated.** MI at filler timesteps $\approx$ MI at trained timesteps (0.71 vs 0.72).

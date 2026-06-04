@@ -2,6 +2,75 @@
 
 All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — 2026-06-04 (external-review response: MI bias + prior art)
+
+Two external-review items answered with merged work, two ADRs, and a lockstep
+paper requalification of the substrate-agnosticism claim. No headline number was
+fabricated or inflated; the interpretive scope was narrowed and the bias/
+representation caveat is now mandatory on every citation of the MI/H figure.
+
+### REVIEW ② — MI/entropy estimator bias (ADR-0001)
+
+`docs/adr/0001-mi-bias-correction-and-null-model.md` (accepted). Answers the
+"strongest attack" (Paninski 2003 / Panzeri 2007): a plug-in MI carries a
+positive finite-sample bias, so an inflated MI/H could be the null expectation
+rather than evidence of alignment.
+
+- **Added** a **Panzeri–Treves** analytic bias-corrected discrete estimator
+  (`mi_panzeri_treves_discrete`) and a **permutation null for every estimator**
+  (shuffle the `c_MLP ↔ c_LIF` pairing). Re-measurement on the real saved codes
+  (`tests/golden/codes_mlp_lif.npz`, N=5000 eval samples, 3 seeds, 800-step
+  training) via `scripts/remeasure_mi_review_item2.py`.
+- **Two-stage honest verdict:**
+  1. *Not* a sampling-bias / null artefact. At N=5000 the plug-in bias is
+     negligible (0.007 bit): plug-in MI/H **0.932**, Panzeri–Treves **0.931**,
+     Miller-Madow 0.939, permutation null ~0.005, **p < 0.01** across all seeds.
+     The figure is held up by large N, **not** by seed-to-seed stability.
+  2. *But* ~**10× over-stated** as "shared information". The 0.93 is post-VQ
+     (argmax over a ~7–27-symbol alphabet). Debiased **Kraskov–KSG on the
+     pre-VQ continuous embeddings** of the same activations gives MI/H ≈
+     **0.095** — the argmax quantisation manufactures most of the apparent
+     alignment (H(a) collapses alongside it). VQ amplification ratio ≈ **9.8×**.
+- **Sampling-bias control** (two independent 8-symbol streams, true MI = 0)
+  reproduces the Panzeri mechanism quantitatively: plug-in null MI = 1.395 bit
+  at N=20 → 0.007 bit at N=5000; Panzeri–Treves drives it to ~0.
+
+### REVIEW ① — novelty vs prior art (ADR-0002 + paper requalification)
+
+`docs/adr/0002-novelty-vs-prior-art-relative-representations.md` (accepted).
+Answers the prior-art attack (Relative Representations / zero-shot stitching,
+Moschella et al. 2022 arXiv:2209.15430; Platonic-vs-Aristotelian, arXiv:2602.14486).
+
+- **Conceded as prior art:** cross-architecture representational convergence is
+  **not novel to this work** — it was established by Moschella et al. and the
+  zero-shot stitching literature in 2022–2023 (PRH, Huh et al. 2024). No
+  experiment re-run; the existing controls (Test 10 frozen-encoder, ADR-0001)
+  already bound the claim.
+- **Contribution delimited** (lockstep edit across three sites in
+  `papers/paper1/main.tex`): §Related Work explicit concession; new
+  "Delimiting the contribution" paragraph (`sec:contribution-delim`) splitting
+  *established (not claimed)* from *new here* = measurement at the **discrete
+  protocol-output** level on structurally heterogeneous MLP / spiking-LIF /
+  Transformer substrates; §Threats Test (10) "Platonic-vs-Aristotelian caveat"
+  noting a low gap / high MI is bounded by shared task+data+objective and does
+  *not* demonstrate a task-independent universal code.
+
+### Paper requalified (lockstep, ADR-0001)
+
+`papers/paper1/main.tex` — the MI/H figure is now stated as a **post-VQ**
+measurement at the §Claim B measurement site, in the contributions list, and in
+a new "Bias and representation caveat" passage: survives Panzeri–Treves
+debiasing (0.931) and the permutation null (~0.005, p < 0.01), **but** KSG on
+the pre-VQ continuous embeddings gives MI/H ≈ 0.095, so the figure must be cited
+alongside the continuous value. Paper-integration tests pass (13/13).
+
+### Documentation
+
+- `README.md` — Claim B and the headline MI table now cite the post-VQ figure
+  with the N=5000 / debiased / p<0.01 qualifier **and** the pre-VQ continuous
+  value ≈0.10; the bare "0.91–0.96 / 0.96" wording no longer stands without the
+  VQ caveat.
+
 ## [Unreleased] — 2026-05-20 (gap-analysis remediation sprint)
 
 ### Summary
