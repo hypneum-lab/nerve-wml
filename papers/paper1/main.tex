@@ -40,7 +40,9 @@ $N=15$ to $4.3\%$ at $N=60$ over 5 seeds each.
 independently trained substrates on the same input, the mutual
 information between their emitted codes over the 64-code alphabet
 is $\mathrm{MI} / H = 0.91$ at $N=1$, strengthening to $0.96$ at
-$N=16$ pool scale (192 cross-pair measurements). Round-trip fidelity
+$N=16$ pool scale (192 cross-pair measurements) --- on post-VQ
+discrete codes; the pre-VQ continuous value is $\approx 0.10$
+(debiased, see \S\ref{sec:info-tx} and ADR-0001). Round-trip fidelity
 through learned transducers MLP $\to$ LIF $\to$ MLP retains $99\%$
 of direct-MLP accuracy; cross-substrate merge (a frozen LIF decoding
 MLP-emitted codes alone through a learned transducer) retains
@@ -334,6 +336,8 @@ $N=64$ (5 seeds) & $2.73\%$  & $3.71\%$  & 5/5 \\
 The scaling law in \S Threats establishes \textbf{substrate-equivalent task competence}: MLP and LIF cohorts reach comparable accuracies at pool scale, with a $\sim 2\text{--}3\%$ plateau gap. That is Claim A. The title of this paper promises more: \emph{substrate-agnostic information transmission} (Claim B) --- that neuroletters emitted by one substrate can be \emph{decoded coherently} by another. This section reports three direct measurements of Claim B, complemented by a post-hoc mutual-kNN validation in Test~(6) that situates nerve-wml as an empirical instantiation of the Platonic Representation Hypothesis~\cite{huh2024platonic} on heterogeneous biologically-inspired substrates.
 
 \textbf{(1) Mutual information between emitted codes.} For $x$ sampled from \texttt{HardFlowProxyTask}, let $c_{\text{MLP}}(x)$ and $c_{\text{LIF}}(x)$ be the $\arg\max$ codes from each substrate's $\pi$ head. Over five seeds at $N=1$, $\operatorname{MI}(c_{\text{MLP}}, c_{\text{LIF}}) / H(c_{\text{MLP}}) \approx 0.91$. Extended to the $N=16$ pool (64 MLP--LIF cross-pairs per seed over three seeds, 192 pair measurements total), the ratio \emph{strengthens} to $0.96$ --- pool-scale averaging aligns codes across substrates, not just accuracies. Two independently trained substrate populations share $\sim 95\%$ of their code information; they are \emph{not} encoding orthogonally despite different dynamics.
+
+\emph{Bias and representation caveat (v0.8).} This ratio is measured on \emph{post-VQ} $\arg\max$ codes at $N=5000$. It is \emph{not} a small-sample artefact: it survives Panzeri--Treves debiasing ($0.931$) and a permutation null ($\text{null mean} \approx 0.005$, $p<0.01$), answering the external-review concern that an inflated plug-in MI could be the null expectation. It is, however, \emph{representation-dependent}: computing Kraskov--KSG mutual information on the \emph{pre-VQ continuous} embeddings of the same activations yields $\mathrm{MI}/H \approx 0.095$, so the argmax quantisation amplifies the apparent shared information by $\sim 10\times$. The discrete figure must be read as a post-VQ, debiased measurement and cited alongside the continuous value (see ADR-0001).
 
 \textbf{(2) Round-trip fidelity.} A two-stage pipeline
 $x \to \texttt{MLP.emit} \to T_{M \to L} \to \texttt{LIF.emit} \to T_{L \to M} \to \arg\max$

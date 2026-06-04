@@ -115,6 +115,68 @@ def mi_miller_madow_discrete(
     return float(mi_corrected / h_a)
 
 
+def mi_panzeri_treves_discrete(
+    codes_a: np.ndarray,
+    codes_b: np.ndarray,
+) -> float:
+    """Panzeri-Treves bias-corrected MI/H(a) on integer codes.
+
+    The plug-in MI estimator carries a *positive* finite-sample bias:
+    even for two independent variables it returns MI > 0 (the bias is
+    ~ (B_a - 1)(B_b - 1)/(2N) in expectation; Panzeri & Treves 1996,
+    Treves & Panzeri 1995). This is exactly the estimator artefact
+    raised in REVIEW.md item (2): "a true-MI=0 neuron yields a plug-in
+    estimate of 0.202 bit at N=20" -> an inflated MI is the NULL
+    expectation, not evidence of alignment.
+
+    The Panzeri-Treves analytic correction subtracts an estimate of
+    that bias. In nats the leading-order bias of the plug-in MI is
+
+        bias = - ( R_ab - R_a - R_b + 1 ) / (2 N)
+
+    where R_a, R_b, R_ab are the numbers of *occupied* response bins
+    of the marginals and the joint respectively (the naive estimator of
+    the relevant degrees of freedom). Because plug-in MI is biased
+    *upward*, the bias term above is positive in magnitude and is
+    SUBTRACTED from the plug-in MI:
+
+        MI_corrected = MI_plugin - ( R_ab - R_a - R_b + 1 ) / (2 N)
+
+    Returned value is normalised by H(a) to match the plug-in
+    convention, so both estimators live on the same scale.
+
+    Note vs Miller-Madow: Miller-Madow corrects each *entropy* term and
+    for MI the marginal corrections largely cancel, leaving a term that
+    moves the estimate *up*. Panzeri-Treves corrects the *information*
+    directly and, with occupied-bin counts, moves the plug-in estimate
+    *down* -- which is the direction that matters for the
+    positive-bias / null-floor critique.
+    """
+    if codes_a.shape != codes_b.shape:
+        raise ValueError("shape mismatch")
+    if codes_a.ndim != 1:
+        raise ValueError("expected 1-D")
+    if codes_a.size == 0:
+        raise ValueError("empty arrays")
+
+    n = codes_a.shape[0]
+    mi_hat = mi_plugin_discrete(codes_a, codes_b)
+    h_a = entropy_discrete(codes_a)
+    if h_a == 0:
+        return 0.0
+
+    r_a = np.unique(codes_a).size
+    r_b = np.unique(codes_b).size
+    # occupied joint bins
+    pair = codes_a.astype(np.int64) * (int(codes_b.max()) + 1) + codes_b
+    r_ab = np.unique(pair).size
+
+    mi_unnorm = mi_hat * h_a
+    bias = (r_ab - r_a - r_b + 1) / (2.0 * n)
+    mi_corrected = mi_unnorm - bias
+    return float(mi_corrected / h_a)
+
+
 def _chebyshev_pairwise(points: np.ndarray) -> np.ndarray:
     """Return (N, N) Chebyshev (L-inf) pairwise distance matrix."""
     diff = points[:, None, :] - points[None, :, :]
