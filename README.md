@@ -98,8 +98,8 @@ Jonckheere wrong test, β-VAE confound, paper/JSON count mismatch).
 | **N11-A / N11-C** | **pre-reg locked, deferred** | I-JEPA + GTM predictor on ImageNet self-supervised ; Dreamer V3 + GTM dynamics on Atari-100k |
 | **N13 / N14** | **pre-reg locked, deferred** | OFAT GTM internals (5 hyperparams × 4-5 levels × 5 seeds) ; Latin Hypercube 7-dim coverage (50 points × 5 seeds) |
 
-Cumulative on master HEAD `7528ada` : **295 commits**, **v1.8.1** released
-on PyPI, 12 OSF-style pre-registrations across the Hypneum programme,
+Cumulative on master HEAD `60d433d` : **295+ commits**, **v1.9.0** tagged
+(PyPI publish pending), 12 OSF-style pre-registrations across the Hypneum programme,
 7 verdicts shipped on the GTM axis, 5 pre-regs deferred to future
 scaling sprints, 1 critic-saver retract closed downstream
 (`bouba_sens` Q3+, see that repo's README).

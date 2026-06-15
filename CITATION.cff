@@ -21,6 +21,7 @@ repository-code: "https://github.com/hypneum-lab/nerve-wml"
 url: "https://github.com/hypneum-lab/nerve-wml"
 license: MIT
 license-url: "https://github.com/hypneum-lab/nerve-wml/blob/master/LICENSE"
+version: "1.9.0"
 keywords:
   - substrate-agnostic protocol
   - World Model Language
@@ -40,7 +41,7 @@ identifiers:
   - type: url
     value: "https://osf.io/v7a2j"
     description: "Parent research program OSF project"
-date-released: 2026-04-21
+date-released: 2026-06-15
 preferred-citation:
   type: unpublished
   title: "dreamOfkiki: A Substrate-Agnostic Formal Framework for Dream-Based Knowledge Consolidation in Artificial Cognitive Systems"
