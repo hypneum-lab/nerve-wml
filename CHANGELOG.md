@@ -2,7 +2,9 @@
 
 All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — 2026-06-04 (external-review response: MI bias + prior art)
+## [Unreleased]
+
+## [1.9.0] — 2026-06-15
 
 Two external-review items answered with merged work, two ADRs, and a lockstep
 paper requalification of the substrate-agnosticism claim. No headline number was
@@ -70,6 +72,32 @@ alongside the continuous value. Paper-integration tests pass (13/13).
   with the N=5000 / debiased / p<0.01 qualifier **and** the pre-VQ continuous
   value ≈0.10; the bare "0.91–0.96 / 0.96" wording no longer stands without the
   VQ caveat.
+
+### Added (substrates & track-w/track-p, since v1.8.1)
+
+- **L1a Full-LIF sim training + scaling sweep** (#48) — `feat(lif)`: end-to-end
+  LIF simulation training with alphabet scaling sweep; closes the L1a gate.
+- **EWC hardening — honest rehearsal vs EWC** (#46) — `feat(track-w)`:
+  diagonal Fisher EWC (`track_w/continual/ewc.py`) alongside fixed-replay
+  `RehearsalBuffer` (`rehearsal.py`); honest head-to-head comparison shipped.
+- **EWC hardening + track_w status docs** (#47) — `docs(track-w)`: documents
+  the EWC / rehearsal verdict and updated substrate status.
+- **SpikingKikiWML substrate scaffold** (#38) — `feat(track_w)`: new conformant
+  substrate `SpikingKikiWML` under the WML Protocol.
+- **MmapNpzProvider for SpikingKiki bundle** (#39) — `feat(track_w)`:
+  memory-mapped NPZ provider for zero-copy spike bundle access.
+- **Spiking-kiki bridge design notes** (#40) — `docs`: bridge #5/#6 design
+  notes formalising the SpikingKiki ↔ nerve-wml interface.
+- **Refresh track_w substrate list in README** (#41) — `docs(readme)`.
+- **SpikingKikiBioClient bio coupling** (#42) — `feat(track_w)`: bio coupling
+  client for the SpikingKiki bridge.
+- **SpikingKikiBlockProvider Protocol** (#43) — `feat(track_w)`: typed Protocol
+  for block-level SpikingKiki providers.
+- **WML substrate paradigms map** (#37) — `docs`: rate-LIF / PC-VMP / wet-bio
+  bridge paradigm map added to docs.
+- **track-p role out-of-band 2-channel carrier** (#45) — `feat(track-p)`:
+  role tag delivered over a separate out-of-band channel alongside the
+  primary nerve carrier; closes the role-carrier gate.
 
 ## [Unreleased] — 2026-05-20 (gap-analysis remediation sprint)
 
