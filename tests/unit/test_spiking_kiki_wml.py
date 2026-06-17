@@ -69,6 +69,36 @@ def test_block_projection_loaded_from_provider() -> None:
     assert torch.equal(wml.block_projection, expected)
 
 
+def test_lif_integrate_forward_unchanged_and_differentiable() -> None:
+    # SuperSpike surrogate: forward is the exact hard-threshold spike count
+    # (integers in [0, T]); backward is smooth so gradients flow.
+    p = _provider()
+    wml = SpikingKikiWML(id=0, provider=p, block_idx=0, n_micro_ticks=8, seed=0)
+    wml.reset_state()
+    drive = torch.randn(wml.hidden_dim, requires_grad=True)
+    spike_count = wml._lif_integrate(drive)
+    assert torch.all(spike_count == spike_count.round())
+    assert float(spike_count.detach().max().item()) <= wml.n_micro_ticks
+    spike_count.sum().backward()
+    assert drive.grad is not None
+    assert float(drive.grad.abs().sum()) > 0.0
+
+
+def test_readout_trains_through_spikes() -> None:
+    # Gradients reach the learnable readout (input_proj, emit_head) through the
+    # rate-LIF — the substrate is trainable, not just runnable.
+    p = _provider()
+    wml = SpikingKikiWML(id=0, provider=p, block_idx=0, n_micro_ticks=8, seed=0)
+    wml.reset_state()
+    x = torch.randn(wml.input_dim)
+    drive = wml.input_proj(x) @ wml.block_projection
+    logits = wml.emit_head_pi(wml._lif_integrate(drive))
+    logits.sum().backward()
+    assert wml.input_proj.weight.grad is not None
+    assert float(wml.input_proj.weight.grad.abs().sum()) > 0.0
+    assert wml.emit_head_pi.weight.grad is not None
+
+
 def test_block_projection_is_frozen_buffer_not_parameter() -> None:
     p = _provider()
     wml = SpikingKikiWML(id=0, provider=p, seed=0)
