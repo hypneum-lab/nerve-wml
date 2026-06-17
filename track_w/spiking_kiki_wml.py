@@ -33,6 +33,27 @@ from nerve_core.protocols import Nerve
 _DEFAULT_T:         int   = 128
 _DEFAULT_THRESHOLD: float = 0.0625
 _DEFAULT_TAU:       float = 1.0
+_SURROGATE_BETA:    float = 10.0
+
+
+class _SuperSpike(torch.autograd.Function):
+    """Heaviside spike with a SuperSpike (Zenke & Ganguli 2018) surrogate
+    gradient. Forward is the exact hard threshold ``(x > 0).float()`` —
+    bit-identical to the previous implementation, so the spiking forward path
+    and all conformance behaviour are unchanged — while the backward pass uses
+    the smooth surrogate ``1 / (1 + beta*|x|)^2`` so a readout can be trained
+    through the rate-LIF (input_proj / emit_head / codebook).
+    """
+
+    @staticmethod
+    def forward(ctx: object, x: Tensor) -> Tensor:
+        ctx.save_for_backward(x)
+        return (x > 0).float()
+
+    @staticmethod
+    def backward(ctx: object, grad_output: Tensor) -> Tensor:
+        (x,) = ctx.saved_tensors
+        return grad_output / (1.0 + _SURROGATE_BETA * x.abs()) ** 2
 
 
 @runtime_checkable
@@ -380,7 +401,9 @@ class SpikingKikiWML(nn.Module):
         spike_count = torch.zeros_like(drive)
         for _ in range(self.n_micro_ticks):
             self.v_mem = self.v_mem + (1.0 / self.tau) * (-self.v_mem + drive)
-            spikes = (self.v_mem > self.threshold).float()
+            # Hard-threshold forward (unchanged) with a SuperSpike surrogate
+            # backward, so a readout can be trained through the rate-LIF.
+            spikes = _SuperSpike.apply(self.v_mem - self.threshold)
             spike_count = spike_count + spikes
             self.v_mem = self.v_mem * (1.0 - spikes)
         return spike_count
