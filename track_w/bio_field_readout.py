@@ -44,6 +44,18 @@ cross-batch state) — required for a clean supervised probe.
 This is intentionally a *probe*, not a re-implementation: if the SNN-PC
 belief features carry no task signal, the readout will sit at chance, and
 that is a valid (null) outcome to report.
+
+Ablation hook
+-------------
+``feature_mask`` (default ``("mu", "sigma", "error")``) selects which of
+the three per-neuron belief sub-features the probe concatenates. It is
+**additive** — the VMP belief dynamics are untouched; only which columns of
+the closed-form posterior feed the trained head change, with
+``feature_width`` and the codebook/head shapes following the mask. Dropping
+``"error"`` (``("mu", "sigma")``, width ``2 * n_neurons``) tests whether the
+readout edge is genuine belief-state ``(mu, sigma)`` expressivity or an
+``|error|``-feature shortcut (``|error| = |observed|`` since the prior mu is
+0, i.e. the raw input projection).
 """
 from __future__ import annotations
 
@@ -84,8 +96,15 @@ class BioFieldWMLReadout(nn.Module):
     seed:
         Local-generator seed for the codebook / projection / head init.
         Does NOT mutate the global RNG (W-4).
+    feature_mask:
+        Subset of ``("mu", "sigma", "error")`` selecting which per-neuron
+        belief sub-features the probe concatenates (canonical order
+        mu -> sigma -> error). Default = full triple. Additive ablation
+        hook; VMP dynamics unchanged. ``feature_width`` becomes
+        ``len(feature_mask) * n_neurons``.
     """
 
+    feature_mask: tuple[str, ...]
     feature_width: int
 
     def __init__(
@@ -99,13 +118,32 @@ class BioFieldWMLReadout(nn.Module):
         sigma_confident: float = 0.5,
         sleep_every: int = 4,
         seed: int | None = None,
+        feature_mask: tuple[str, ...] = ("mu", "sigma", "error"),
     ) -> None:
         super().__init__()
         self.id = id
         self.n_neurons = n_neurons
         self.alphabet_size = alphabet_size
         self.input_dim = input_dim
-        self.feature_width = 3 * n_neurons
+
+        # Belief-feature ablation selector (additive; VMP dynamics
+        # unchanged). ``feature_mask`` chooses which of the three per-neuron
+        # belief sub-features the probe concatenates, in canonical order
+        # mu -> sigma -> error. Default = full ``[mu, sigma, |error|]`` (the
+        # committed behaviour, width ``3 * n_neurons``). Dropping ``"error"``
+        # gives the belief-state-only ``[mu, sigma]`` probe used to test
+        # whether the readout edge is genuine (mu, sigma) expressivity or an
+        # ``|error|``-feature shortcut. The VMP update itself is untouched —
+        # only which columns of its output feed the head.
+        canonical = ("mu", "sigma", "error")
+        if not feature_mask or any(f not in canonical for f in feature_mask):
+            raise ValueError(
+                f"feature_mask must be a non-empty subset of {canonical}, "
+                f"got {feature_mask!r}"
+            )
+        # Deduplicate while pinning canonical order.
+        self.feature_mask = tuple(f for f in canonical if f in feature_mask)
+        self.feature_width = len(self.feature_mask) * n_neurons
 
         # Wrapped substrate — its dynamics (VMP update rule, emission
         # scheduling) are reused unchanged. We instantiate it so the
@@ -184,7 +222,16 @@ class BioFieldWMLReadout(nn.Module):
         sigma_post = torch.sqrt(var_post)
 
         error = observed - mu_prior  # = observed (prior mu is 0)
-        return torch.cat([mu_post, sigma_post, error.abs()], dim=-1)
+
+        # Select sub-features per the ablation mask (canonical order
+        # mu -> sigma -> error). The VMP computation above is unchanged;
+        # only the concatenation is filtered.
+        parts: dict[str, Tensor] = {
+            "mu": mu_post,
+            "sigma": sigma_post,
+            "error": error.abs(),
+        }
+        return torch.cat([parts[f] for f in self.feature_mask], dim=-1)
 
     def core(self, x: Tensor) -> Tensor:
         """Map task input ``[B, input_dim]`` to belief features ``[B, 3*n]``.
