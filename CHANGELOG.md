@@ -4,6 +4,50 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.9.1] — 2026-06-20
+
+Null-control and bootstrap CI for the LIF spike-expressivity edge (finding #5).
+The previously missing null closes the methodological gap flagged at review:
+the directional LIF advantage was reported in 19/20 pairwise seeds but had no
+same-substrate null to exclude init-variance as an alternative explanation.
+
+### Added
+
+- **`nerve_wml.methodology.accuracy_edge_null`** — two reusable primitives:
+  `accuracy_edge_bootstrap_ci(edges)` returns `AccuracyEdgeCiResult` (bootstrap
+  95 % CI on per-seed signed accuracy differences, sign-rate, zero-exclusion
+  flag); `same_substrate_null_result(null_edges)` returns
+  `SameSubstrateNullResult` (init-variance band: mean |edge|, abs_p95,
+  symmetry CI). Both exported from `nerve_wml.methodology`.
+- **12 unit tests** (`tests/unit/test_accuracy_edge_null.py`): symmetric null
+  includes zero; constant positive edge CI excludes zero; sign-rate near 50/50
+  for symmetric null; abs_p95 correct; empty-input raises; reproducibility.
+- **`scripts/lif_edge_null_replication.py`** — committed driver that imports
+  the real `run_w2_hard` / `_run_w2_hard_scale` from `scripts/track_w_pilot.py`
+  and the new methodology helpers. Header note: Run on kxkm-ai per compute policy.
+- **`papers/paper1/figures/lif_edge_null_n50.json`** — result artifact from the
+  kxkm-ai x86 Linux CPU run (n=50 seeds, 2026-06-19, ~1708 s).
+
+### Result (from `lif_edge_null_n50.json`)
+
+Pooled sign-rate: **173/200** favour LIF. Bootstrap CI95 **excludes 0 at every
+N ∈ {2, 16, 32, 64}** (CI95: N=2 [+0.050, +0.084]; N=16 [+0.019, +0.029];
+N=32 [+0.007, +0.014]; N=64 [+0.007, +0.012]). MLP-vs-MLP same-substrate null
+is symmetric around 0 at every N (sign-rate ≈ coin-flip; null CI includes 0).
+Real edge is **2.7×–5.4×** the null mean |edge| at pool scale (N=16: 5.4×;
+N=32: 2.7×; N=64: 4.4×). **N=2 caveat:** fat right tail in the null means a
+single seed's edge can be matched by init luck (`real_edge_exceeds_null_p95=False`);
+effect is cleanest at pool scale (N≥16) where the null collapses (~0.002–0.004)
+and `real_ci_lo_above_null_p95` holds. Compute: x86 Linux CPU (cross-arch
+replication of macM1 origin). Not a GPU result.
+
+### Documentation
+
+- README finding #5 and direction-stability row updated to cite the null+CI
+  result (n=50, cross-arch, CI95 excludes 0 all N, 2.7×–5.4× null, caveat N=2).
+- README "probably novel" paragraph reframes the edge magnitude honestly
+  (~1–7% at pool scale) and adds the null-control evidence.
+
 ## [1.9.0] — 2026-06-15
 
 Two external-review items answered with merged work, two ADRs, and a lockstep
