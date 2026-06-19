@@ -4,6 +4,52 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.9.2] — 2026-06-20
+
+Null-control for the two surviving findings: scaling-plateau real floor and
+pool-scale vs architecture-scale orthogonality. The committed
+`run_bigger_arch.py` reported a ~26 % relative gap at d=128 on 3 seeds
+with no null; this release closes the methodological gap with n=50 seeds
+and a symmetric MLP-vs-MLP init-variance null for both.
+
+### Added
+
+- **`papers/paper1/figures/orthogonality_null_n50.json`** — arch-scale
+  null-control artifact (n=50, d ∈ {16,128}, N=16, kxkm-ai x86 Linux CPU).
+  d=128: real edge 0.1204 CI95 [0.1075,0.1326] excl.0, 49/50 positive,
+  4.83× symmetric init-variance null; d=16: 0.0099 CI95 [0.0073,0.0125],
+  43/50, 3.14× null.
+- **`papers/paper1/figures/ortho_corner_check_n10.json`** — N×d corner check
+  (10 seeds × {N=2,N=64} × {d=16,d=128}): d=128 gap ~0.20 at N=2 and N=64
+  (pool-scale ~unchanged); d=16 gap 0.036→0.020 as N grows — axes confirmed
+  independent.
+- **`scripts/orthogonality_null_replication.py`** — committed driver importing
+  the existing `run_bigger_arch` / `track_w_pilot` drivers and the
+  `nerve_wml.methodology` helpers (no inline duplication of null logic).
+  Header note: Run on kxkm-ai per compute policy, CPU cross-arch.
+
+### Result (from `orthogonality_null_n50.json` + `lif_edge_null_n50.json`)
+
+**Orthogonality (finding #6):** d=128 LIF–MLP edge 0.1204, CI95 [0.1075,
+0.1326] excludes 0, 49/50 seeds positive, **4.83× symmetric init-variance
+null**. d=16: 0.0099, CI95 [0.0073,0.0125], 43/50, 3.14× null. N×d corner
+confirms pool-scale and arch-scale move the gap independently.
+
+**Scaling plateau (finding #1 / #3):** at N=64 edge 0.0092, CI95
+[0.0066,0.0118] excludes 0, 40/50 positive, ~2× above null p95 → real
+non-zero ~1 % floor confirmed (from committed `lif_edge_null_n50.json`).
+
+Honest scope: substrate-INTRINSIC effects on HardFlowProxyTask, NOT
+agnostic/SOTA.
+
+### Documentation
+
+- README architecture-scale row updated to cite null+CI (d=128 4.83× null,
+  d=16 3.14× null, N×d corner, both JSON artifacts).
+- README findings #6 and "probably novel" paragraph updated with null
+  evidence and N=64 plateau CI.
+- README summary sentence updated with N=64 ~1 % floor CI.
+
 ## [1.9.1] — 2026-06-20
 
 Null-control and bootstrap CI for the LIF spike-expressivity edge (finding #5).

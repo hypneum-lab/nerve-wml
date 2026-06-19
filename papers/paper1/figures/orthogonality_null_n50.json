@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "source": "parsed from orthogonality_null_n50.log verdict lines (heavy phase completed deterministically; corner crash was post-compute, fixed + re-run separately)",
+    "device": "x86 Linux CPU (RTX 4090 host, ops on CPU)",
+    "task": "HardFlowProxyTask(dim=16,n_classes=12), N=16",
+    "note": "substrate-INTRINSIC arch-scale effect; NOT agnostic/SOTA. relative gap = |mean_mlp-mean_lif|/mean_mlp; signed edge = mean_lif-mean_mlp.",
+    "n_seeds": 50,
+    "steps": 300,
+    "n_boot": 10000,
+    "corner_seeds": 50
+  },
+  "orthogonality_arch_scale": {
+    "16": {
+      "d_hidden": 16,
+      "n_wmls": 16,
+      "n_seeds": 50,
+      "real_signed_edge": {
+        "mean_abs_edge": 0.0099,
+        "ci95_lo": 0.0073,
+        "ci95_hi": 0.0125,
+        "ci_excludes_zero": true,
+        "sign_rate_pos": 43,
+        "sign_rate_neg": 7
+      },
+      "real_relative_gap_mean": 0.0213,
+      "mlp_vs_mlp_null": {
+        "mean_abs_edge": 0.0032,
+        "abs_p95": 0.0082,
+        "symmetric": true
+      },
+      "verdict": {
+        "real_abs_edge_exceeds_null_p95": true,
+        "real_over_null_ratio": 3.1386748844375965,
+        "ci_excludes_zero": true,
+        "null_symmetric": true
+      }
+    },
+    "128": {
+      "d_hidden": 128,
+      "n_wmls": 16,
+      "n_seeds": 50,
+      "real_signed_edge": {
+        "mean_abs_edge": 0.1204,
+        "ci95_lo": 0.1075,
+        "ci95_hi": 0.1326,
+        "ci_excludes_zero": true,
+        "sign_rate_pos": 49,
+        "sign_rate_neg": 1
+      },
+      "real_relative_gap_mean": 0.2063,
+      "mlp_vs_mlp_null": {
+        "mean_abs_edge": 0.0249,
+        "abs_p95": 0.0571,
+        "symmetric": true
+      },
+      "verdict": {
+        "real_abs_edge_exceeds_null_p95": true,
+        "real_over_null_ratio": 4.827721221613156,
+        "ci_excludes_zero": true,
+        "null_symmetric": true
+      }
+    }
+  },
+  "scaling_plateau_committed": {
+    "2": {
+      "real_mean_edge": 0.06640625,
+      "real_sign_pos": 46,
+      "real_ci95": [
+        0.0498427734375,
+        0.0836328125
+      ],
+      "real_ci_excludes_zero": true,
+      "null_mean_abs_edge": 0.022734375,
+      "null_abs_p95": 0.10361328124999994,
+      "real_edge_exceeds_null_p95": false,
+      "real_ci_lo_above_null_p95": false
+    },
+    "16": {
+      "real_mean_edge": 0.02380859375,
+      "real_sign_pos": 45,
+      "real_ci95": [
+        0.018979248046874998,
+        0.028803833007812498
+      ],
+      "real_ci_excludes_zero": true,
+      "null_mean_abs_edge": 0.0043798828125,
+      "null_abs_p95": 0.011987304687499999,
+      "real_edge_exceeds_null_p95": true,
+      "real_ci_lo_above_null_p95": true
+    },
+    "32": {
+      "real_mean_edge": 0.01040771484375,
+      "real_sign_pos": 42,
+      "real_ci95": [
+        0.00735333251953125,
+        0.01353271484375
+      ],
+      "real_ci_excludes_zero": true,
+      "null_mean_abs_edge": 0.00385498046875,
+      "null_abs_p95": 0.008636474609374998,
+      "real_edge_exceeds_null_p95": true,
+      "real_ci_lo_above_null_p95": false
+    },
+    "64": {
+      "real_mean_edge": 0.009241943359375,
+      "real_sign_pos": 40,
+      "real_ci95": [
+        0.00664300537109375,
+        0.011788330078125
+      ],
+      "real_ci_excludes_zero": true,
+      "null_mean_abs_edge": 0.002099609375,
+      "null_abs_p95": 0.004705810546875,
+      "real_edge_exceeds_null_p95": true,
+      "real_ci_lo_above_null_p95": true
+    }
+  },
+  "corner_check": {
+    "N2_d16": {
+      "n_wmls": 2,
+      "d_hidden": 16,
+      "n_seeds": 10,
+      "gap_rel_mean": 0.035517539241255044,
+      "gap_rel_median": 0.021292901364428685,
+      "gap_rel_std": 0.03360257460128448
+    },
+    "N2_d128": {
+      "n_wmls": 2,
+      "d_hidden": 128,
+      "n_seeds": 10,
+      "gap_rel_mean": 0.19731516714519923,
+      "gap_rel_median": 0.13080855749567405,
+      "gap_rel_std": 0.14979170788043103
+    },
+    "N64_d16": {
+      "n_wmls": 64,
+      "d_hidden": 16,
+      "n_seeds": 10,
+      "gap_rel_mean": 0.019802526318258917,
+      "gap_rel_median": 0.015603614351004748,
+      "gap_rel_std": 0.014595845304775727
+    },
+    "N64_d128": {
+      "n_wmls": 64,
+      "d_hidden": 128,
+      "n_seeds": 10,
+      "gap_rel_mean": 0.20495795677186018,
+      "gap_rel_median": 0.19611256784515116,
+      "gap_rel_std": 0.05196875612681243
+    }
+  }
+}

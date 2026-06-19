@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "torch": "2.12.1+cu130",
+    "cuda_available": true,
+    "device_name": "NVIDIA GeForce RTX 4090",
+    "actual_compute_device": "cpu",
+    "n_seeds": 50,
+    "steps": 300,
+    "task": "HardFlowProxyTask(dim=16,n_classes=12)",
+    "note": "substrate-INTRINSIC arch-scale effect; NOT agnostic/SOTA. relative gap = |mean_mlp-mean_lif|/mean_mlp (mirrors run_bigger_arch); signed edge = mean_lif-mean_mlp.",
+    "elapsed_sec": 312.2380814552307
+  },
+  "orthogonality_arch_scale": {},
+  "corner_check": {
+    "N2_d16": {
+      "n_wmls": 2,
+      "d_hidden": 16,
+      "n_seeds": 10,
+      "gap_rel_mean": 0.035517539241255044,
+      "gap_rel_median": 0.021292901364428685,
+      "gap_rel_std": 0.03360257460128448
+    },
+    "N2_d128": {
+      "n_wmls": 2,
+      "d_hidden": 128,
+      "n_seeds": 10,
+      "gap_rel_mean": 0.19731516714519923,
+      "gap_rel_median": 0.13080855749567405,
+      "gap_rel_std": 0.14979170788043103
+    },
+    "N64_d16": {
+      "n_wmls": 64,
+      "d_hidden": 16,
+      "n_seeds": 10,
+      "gap_rel_mean": 0.019802526318258917,
+      "gap_rel_median": 0.015603614351004748,
+      "gap_rel_std": 0.014595845304775727
+    },
+    "N64_d128": {
+      "n_wmls": 64,
+      "d_hidden": 128,
+      "n_seeds": 10,
+      "gap_rel_mean": 0.20495795677186018,
+      "gap_rel_median": 0.19611256784515116,
+      "gap_rel_std": 0.05196875612681243
+    }
+  }
+}
