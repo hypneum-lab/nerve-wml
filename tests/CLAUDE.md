@@ -2,7 +2,7 @@
 
 ## Framework
 
-pytest — 507 tests: 458 fast (L1–L2 unit/invariant), 49 slow (L3–L4 integration/golden).
+pytest — 605 tests: 44 marked slow (L3–L4 integration/golden); remainder run unlabelled.
 
 ## Running
 
