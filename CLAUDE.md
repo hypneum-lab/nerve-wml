@@ -18,7 +18,7 @@ Research engine for substrate-agnostic inter-WML nerve protocol. Python 3.12 + u
 
 ```bash
 uv sync --all-extras        # install
-uv run pytest               # 507 tests (458 fast L1–L2, 49 slow L3–L4)
+uv run pytest               # 605 tests (44 marked slow; remainder unlabelled)
 uv run pytest -m "not slow" # skip long tests
 uv run ruff check .
 uv run mypy nerve_core track_p
@@ -37,4 +37,4 @@ Science claims tested on ≥2 Apple Silicon archs (macm1 g13s + macM3 g15s / M5 
 
 ## Invariants load-bearing
 
-See `docs/invariants/` and the spec. Never weaken N-1..N-5 or W-1..W-4 without a spec update.
+See `nerve_core/invariants.py` and the spec. Never weaken N-1..N-5 or W-1..W-4 without a spec update.
