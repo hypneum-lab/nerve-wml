@@ -144,7 +144,7 @@ Protocol.
 | §Information Tx Test (6) PRH refinement | `papers/paper1/main.tex` | New "Global vs Local alignment" paragraph engages `platoscave2026` + `aristotelianprh2026`; nerve-wml's mutual-kNN measurement claimed as *local* (null-calibrated 18.8× random), not global |
 | GTM re-grounding | `papers/paper1/main.tex` | Replaces sole reliance on Bastos & Friston 2012 with Bastos 2020 predictive routing + Friston 2025 + Ruffini 2025 laminar Comparator |
 | HNN positioning (closes #13) | `papers/paper1/main.tex` "Surrogate-gradient SNN" thread | Cites Liu et al. 2024 (NSR) and positions nerve-wml in the *weak-coupling* corner of the HNN taxonomy |
-| BioFieldWML plan versioned | `docs/superpowers/plans/2026-05-19-bio-substrate-wml.md` | Plan for a 4th conformant substrate alongside MLP / LIF / Transformer; 5 (b)-classified mechanisms encapsulated inside `step()` (Tomé STDP, Pignatelli IE, Palacios SNN-PC, Bellitto WSCL, Tucker-Friston E/I); cross-refs dream-of-kiki `biophysical-stratification` spec |
+| BioFieldWML plan versioned | `docs/superpowers/plans/2026-05-19-bio-substrate-wml.md` | Plan for a 4th conformant substrate alongside MLP / LIF / Transformer; 5 (b)-classified mechanisms encapsulated inside `step()` (Tomé STDP, Pignatelli IE, Lee et al. 2024 SNN-PC, Bellitto WSCL, Tucker-Friston E/I); cross-refs dream-of-kiki `biophysical-stratification` spec |
 
 Headline measurements and claims A/B remain unchanged — this update is
 documentation and planning only, not new experimental findings.

@@ -3,7 +3,8 @@
 Phase 1 (Bellitto, 2024 — Wake-Sleep Continual Learning):
     Internal wake/sleep scheduler. Sleep calls are silent (N-1).
 
-Phase 2 (Palacios et al. 2024 — arXiv:2409.05386):
+Phase 2 (Lee et al. 2024, Frontiers in Computational Neuroscience,
+    DOI 10.3389/fncom.2024.1338280):
     Variational message passing (VMP) for spiking predictive coding.
     Each neuron maintains a belief (μ, σ) over expected spike counts
     from a ``BioCultureClient``.  On wake calls, a closed-form Gaussian
@@ -17,7 +18,7 @@ Phase 2 (Palacios et al. 2024 — arXiv:2409.05386):
     by construction.
 
 See docs/superpowers/plans/2026-05-19-bio-substrate-wml.md
-§"Ref B-3" (Palacios SNN-PC) for the design input.
+§"Ref B-3" (Lee et al. 2024 SNN-PC) for the design input.
 
 Wake/sleep convention (documented for TDD tests)
 -------------------------------------------------
@@ -49,7 +50,7 @@ from nerve_core.protocols import Nerve
 
 
 class BioFieldWML(nn.Module):
-    """Wake/sleep-scheduled WML substrate with Palacios SNN-PC VMP.
+    """Wake/sleep-scheduled WML substrate with Lee et al. 2024 SNN-PC VMP.
 
     Parameters
     ----------
@@ -122,7 +123,7 @@ class BioFieldWML(nn.Module):
         self._call_count     = 0
         self._bio_client     = bio_client
 
-        # Palacios SNN-PC belief state.
+        # Lee et al. 2024 SNN-PC belief state.
         # μ: per-neuron expected spike count (rate prediction).
         # σ: per-neuron rate uncertainty (standard deviation).
         # Initialised to vague prior (μ=0, σ=1) — uninformative.
@@ -144,7 +145,7 @@ class BioFieldWML(nn.Module):
             torch.set_rng_state(saved_rng)
 
     # ------------------------------------------------------------------
-    # Palacios SNN-PC — variational message passing
+    # Lee et al. 2024 SNN-PC — variational message passing
     # ------------------------------------------------------------------
 
     def _measure_spikes(self, t: float) -> Tensor:
@@ -186,7 +187,7 @@ class BioFieldWML(nn.Module):
     ) -> tuple[Tensor, Tensor, Tensor]:
         """Closed-form Gaussian variational message-passing update.
 
-        Approximates the Poisson-rate likelihood (Palacios 2024) with a
+        Approximates the Poisson-rate likelihood (Lee et al. 2024) with a
         Laplace-approximated Gaussian where σ²_obs = max(observed, 1) so
         the update has a closed form:
 
@@ -196,7 +197,7 @@ class BioFieldWML(nn.Module):
                       (σ²_obs + σ²_prior)
 
         The prediction error is ``observed − μ_prior`` (Poisson rate
-        residual, Palacios eq. 5).
+        residual, Lee et al. 2024 eq. 5).
 
         Mutates ``self._mu`` and ``self._sigma`` in-place and returns
         the new (μ, σ) plus the residual error (all detached, no grad).
@@ -275,7 +276,7 @@ class BioFieldWML(nn.Module):
                     ))
             return
 
-        # WAKE — Phase 2 Palacios SNN-PC VMP path.
+        # WAKE — Phase 2 Lee et al. 2024 SNN-PC VMP path.
         observed = self._measure_spikes(t)
         mu_post, sigma_post, error = self._vmp_update(observed, t)
 

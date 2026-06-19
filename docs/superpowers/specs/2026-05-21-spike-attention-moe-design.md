@@ -75,7 +75,7 @@ Per-tick t over T = `n_micro_ticks`:
    through `input_proj`.
 2. Compute Q, K, V via mmapped matmuls. To stay spike-native, accumulate
    into a leaky integrator on each head dimension rather than a softmax.
-3. **Attention via belief accumulation** (Palacios SNN-PC compatible):
+3. **Attention via belief accumulation** (Lee et al. 2024 SNN-PC compatible):
    each output position holds a (μ, σ) belief; spikes drive the residual.
    On the final micro-tick, emit the top-1 token from
    `argmax_z μ_attn(z)`.

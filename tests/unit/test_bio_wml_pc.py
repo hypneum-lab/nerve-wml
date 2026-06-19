@@ -1,7 +1,8 @@
-"""Unit tests for BioFieldWML Phase 2 — Palacios SNN-PC VMP.
+"""Unit tests for BioFieldWML Phase 2 — Lee et al. 2024 SNN-PC VMP.
 
-Reference: Palacios et al. 2024 (arXiv:2409.05386), variational message
-passing in spiking predictive-coding networks.  See
+Reference: Lee et al. 2024 (Frontiers in Computational Neuroscience,
+DOI 10.3389/fncom.2024.1338280), variational message passing in
+spiking predictive-coding networks.  See
 docs/superpowers/plans/2026-05-19-bio-substrate-wml.md §"Ref B-3".
 
 Invariants verified

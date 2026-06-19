@@ -7,8 +7,8 @@ Design ref:
 The adapter wraps a ``SpikingKikiWML`` and satisfies the
 ``BioCultureClient`` Protocol (track_w.bio_clients) without modifying
 either substrate. BioFieldWML then consumes spikingkiki spike trains
-exactly as it consumes Mock / CL1 / FinalSpark cultures. The Palacios
-SNN-PC VMP update becomes a predictive-coding learning signal on the
+exactly as it consumes Mock / CL1 / FinalSpark cultures. The Lee et al.
+2024 SNN-PC VMP update becomes a predictive-coding learning signal on the
 silicon culture.
 
 Spatial bucketing: contiguous groups (simpler, tied to .npz layout).
