@@ -218,7 +218,7 @@ always be read as post-VQ and cited alongside the ≈0.10 continuous value.
 | **Real neural data** (Sleep-EDF EEG, v1.6.0) | See paper Test (9); Claim B confirmed on 5-class sleep-stage via `MlpWML.from_spectrogram` + d_hidden=128 | `figures/mi_eeg_d128_spectro.json` |
 | **Frozen-encoder baseline** (review F3, v1.7.0) | Shared MI/H=0.95 (matches nerve-wml Test 1), Distinct MI/H=0.76 (without shared frontend); Claim B reframed as "VQ protocol supplies shared frontend through codebook" | `figures/baseline_frozen_encoder.json` |
 | **Matched-capacity scale sweep** (Sleep-EDF, v1.7.0) | Sweet spot at d=128: MI/H=0.72, MLP=0.82, LIF=0.83, gap=0.006. Scale-invariant polymorphy at d ∈ {32, 64, 128}. d=16 insufficient for LIF convergence on real EEG; d=256 MLP overfits while LIF holds | `figures/eeg_matched_scale_sweep.json` |
-| **Direction stability** (LIF ≥ MLP on hard task) | **19/20** pairwise seeds (4/5 at N=2; 5/5 at N=16, 32, 64) + 5/5 triple-substrate, preserved on Sleep-EDF (+0.007 LIF edge) | — |
+| **Direction stability** (LIF ≥ MLP on hard task) | **19/20** pairwise seeds (4/5 at N=2; 5/5 at N=16, 32, 64) + 5/5 triple-substrate, preserved on Sleep-EDF (+0.007 LIF edge). **Null-controlled (n=50):** pooled sign-rate 173/200 favour LIF; bootstrap CI95 on per-seed signed edge excludes 0 at every N; MLP-vs-MLP same-substrate null symmetric around 0 (sign-rate ≈ coin-flip); real edge 2.7×–5.4× null mean \|edge\| at pool scale. N=2 fat-tail caveat: single seeds can match null p95 by init luck; effect cleanest at N≥16 where null collapses (~0.002–0.004). Cross-arch replication: x86 Linux CPU vs macM1 origin. | `papers/paper1/figures/lif_edge_null_n50.json`, `scripts/lif_edge_null_replication.py` |
 
 LIF's spike dynamics give it a substrate-intrinsic $\sim 2$–$3\%$ expressivity edge on XOR-style boundaries (plateau floor). Pool averaging compresses this, architecture width amplifies it.
 
@@ -228,7 +228,7 @@ LIF's spike dynamics give it a substrate-intrinsic $\sim 2$–$3\%$ expressivity
 2. **Single-seed measurements lie.** Multi-seed revealed the N=16 median is 6.7 %, not the lucky 1.68 %.
 3. **Scaling law is real and monotonic.** Four-point decay $10.7\% \to 6.7\% \to 2.4\% \to 2.7\%$ plateau.
 4. **Claim B is empirical, not architectural.** MI/H ≈ 0.93 **post-VQ** (N=5000, debiased, p<0.01; pre-VQ continuous ≈0.10 — VQ amplifies ~10×, ADR-0001), round-trip 0.99, cross-merge 0.97.
-5. **Substrate-direction is stable in 19/20 seeds.** LIF's spike edge is a real property, not noise.
+5. **Substrate-direction is stable in 19/20 seeds and survives a null-control (n=50, cross-arch).** LIF's spike edge is a real property, not noise: pooled sign-rate 173/200, bootstrap CI95 excludes 0 at every N (N∈{2,16,32,64}), MLP-vs-MLP same-substrate null symmetric around 0, real edge 2.7×–5.4× the null mean |edge| at pool scale. At N=2 single seeds can match the null 95th-percentile band by init luck (fat right tail); effect is cleanest at N≥16. Compute: x86 Linux CPU (cross-arch replication of macM1 origin). See `papers/paper1/figures/lif_edge_null_n50.json`.
 6. **Architecture scale and pool scale are orthogonal.** Pool compresses the gap; arch width amplifies it.
 7. **Code alignment is structural, not task-gated.** MI at filler timesteps $\approx$ MI at trained timesteps (0.71 vs 0.72).
 
@@ -240,7 +240,7 @@ LIF's spike dynamics give it a substrate-intrinsic $\sim 2$–$3\%$ expressivity
 
 ### What the paper genuinely claims vs not
 
-Three findings probably novel: (1) the four-point scaling law with plateau at $\sim 2\text{–}3\%$ substrate-intrinsic floor, (2) reproducible $\sim 2\text{–}3\%$ LIF spike-expressivity edge over matched-capacity MLP on XOR-on-noise (19/20 seeds), (3) orthogonality of pool-scale (compresses gap) and architecture-scale (amplifies gap).
+Three findings probably novel: (1) the four-point scaling law with plateau at $\sim 2\text{–}3\%$ substrate-intrinsic floor, (2) reproducible $\sim 1\text{–}7\%$ LIF spike-expressivity edge over matched-capacity MLP on XOR-on-noise (19/20 pairwise seeds; 173/200 pooled n=50; bootstrap CI95 excludes 0 at every N; 2.7×–5.4× a symmetric same-substrate null at pool scale; cleanest at N≥16 — N=2 fat-tail caveat applies), (3) orthogonality of pool-scale (compresses gap) and architecture-scale (amplifies gap). Honest scope: this is a substrate-intrinsic edge on a single synthetic task (HardFlowProxyTask), not a substrate-agnostic or SOTA claim.
 
 The paper explicitly does **not** claim: a new learning algorithm, superiority over knowledge distillation on task accuracy, or universal representations — that debate is addressed by Saxe 2024 and the Nature MI 2025 editorial (s42256-025-01139-y) cited in `docs/positioning.md`.
 
