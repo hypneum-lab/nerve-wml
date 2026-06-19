@@ -1861,13 +1861,14 @@ and that untagged neurons are unaffected.
 
 ---
 
-### Ref B-3 — Palacios et al. 2024 (arXiv:2409.05386)
+### Ref B-3 — Lee et al. 2024 (Frontiers in Computational Neuroscience, DOI 10.3389/fncom.2024.1338280)
 
-**SNN-PC survey — Fristonian extension (variational message
-passing, per-neuron spike-time prediction).**
+**SNN-PC model — predictive coding with spiking neurons and feedforward
+gist signalling (variational message passing, per-neuron spike-time
+prediction).**
 
 **Mechanism.**
-Palacios 2024 extends predictive coding (PC) to spiking networks:
+Lee et al. 2024 extend predictive coding (PC) to spiking networks:
 each neuron maintains a belief over *when* peers will spike and
 minimises variational free energy via local variational message
 passing (VMP). Prediction errors are Poisson-rate residuals

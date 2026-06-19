@@ -121,7 +121,7 @@ alongside the continuous value. Paper-integration tests pass (13/13).
 - **Plan A.3** — Hyperparameter wiring (3 tasks, n_steps=32, lr=0.05, n_osc ∈ {32,64})
 - **Plan A.4** — AKOrN comparison (3 tasks, minimal vs full topology, separation metrics)
 - **Plan B** — Paper revisions (8 tasks, §Method, §Results, new citations, abstract figures)
-- **Plan C** — Biological substrate (11 tasks, BioFieldWML Phase 1–2, CL1 sleep-every validation, Palacios SNN-PC scheduler)
+- **Plan C** — Biological substrate (11 tasks, BioFieldWML Phase 1–2, CL1 sleep-every validation, Lee et al. 2024 SNN-PC scheduler)
 
 ### Reinforcement campaigns (9 confirmed, 1 audit)
 
@@ -166,7 +166,7 @@ alongside the continuous value. Paper-integration tests pass (13/13).
 ### Biological substrate integration
 
 - **BioFieldWML Phase 1**: MockBioCultureClient scheduler with sleep-every ≥ 1 validation, episode-bound Add(layer) accumulator.
-- **BioFieldWML Phase 2**: Palacios SNN-PC (predictive coding via spiking neurons) integrated as optional substitution-compatible estimator for Kuramoto-style cell populations.
+- **BioFieldWML Phase 2**: Lee et al. 2024 SNN-PC (predictive coding via spiking neurons, Frontiers Comput. Neurosci., DOI 10.3389/fncom.2024.1338280) integrated as optional substitution-compatible estimator for Kuramoto-style cell populations.
 - **Testing**: 458 fast tests + 35+ slow statistical tests covering unit (L1), info-theoretic (L2), integration (L3), golden (L4) strata. No real CL1/FinalSpark API key used (MockBioCultureClient only).
 
 ### Citations added to refs.bib

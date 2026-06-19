@@ -31,7 +31,7 @@ substrate.
 | **In-silico MLP baseline** | `track_w/mlp_wml.py::MlpWML` | Dense linear + nonlinearity | Standard backprop on `codebook` + readout heads | Track W foundation |
 | **In-silico LIF (rate-coded)** | `track_w/lif_wml.py::LifWML` | Leaky integrate-and-fire over `T` micro-ticks, rate decode | Surrogate-gradient backprop | Track W foundation |
 | **In-silico Transformer** | `track_w/transformer_wml.py::TransformerWML` | Multi-head attention over codebook history | Standard backprop | Track W foundation |
-| **BioField PC-VMP** | `track_w/bio_field_wml.py::BioFieldWML` | Spiking field with `μ/σ` belief + `PRED γ` / `ERROR θ` Neuroletter roles | Predictive coding via variational message passing (Palacios SNN-PC, arXiv:2409.05386) | nerve-wml Phase 2 (PR #24, 2026-05-20) |
+| **BioField PC-VMP** | `track_w/bio_field_wml.py::BioFieldWML` | Spiking field with `μ/σ` belief + `PRED γ` / `ERROR θ` Neuroletter roles | Predictive coding via variational message passing (Lee et al. 2024 SNN-PC, Frontiers Comput. Neurosci., DOI 10.3389/fncom.2024.1338280) | nerve-wml Phase 2 (PR #24, 2026-05-20) |
 | **Wet biology** | `track_w/bio_wml.py::BioWML` | Remote biological neural culture via `BioCultureClient` (stim/read-back) | Codebook + emit heads via backprop on decoded spike codes | Track W bio-substrate plan, mock in CI |
 
 ## Cross-repo bridges
