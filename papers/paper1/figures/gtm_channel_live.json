@@ -1,0 +1,71 @@
+{
+  "constellation_path": "runs/gtm_channel/constellation.pt",
+  "live_loop": {
+    "full_protocol_transducer_plus_gtm": {
+      "untrained": {
+        "fidelity": 0.01020408163265306,
+        "matched": 1,
+        "n": 98
+      },
+      "trained": {
+        "fidelity": 0.01020408163265306,
+        "matched": 1,
+        "n": 98
+      }
+    },
+    "gtm_only_identity_transducer": {
+      "untrained": {
+        "fidelity": 1.0,
+        "matched": 98,
+        "n": 98
+      },
+      "trained": {
+        "fidelity": 1.0,
+        "matched": 98,
+        "n": 98
+      }
+    }
+  },
+  "cross_substrate": {
+    "transducer_plus_gtm": {
+      "untrained": {
+        "survival": 0.046875,
+        "matched": 3,
+        "n": 64,
+        "edge": [
+          0,
+          1
+        ]
+      },
+      "trained": {
+        "survival": 0.0625,
+        "matched": 4,
+        "n": 64,
+        "edge": [
+          0,
+          1
+        ]
+      }
+    },
+    "gtm_only_identity_transducer": {
+      "untrained": {
+        "survival": 1.0,
+        "matched": 64,
+        "n": 64,
+        "edge": [
+          0,
+          1
+        ]
+      },
+      "trained": {
+        "survival": 1.0,
+        "matched": 64,
+        "n": 64,
+        "edge": [
+          0,
+          1
+        ]
+      }
+    }
+  }
+}
