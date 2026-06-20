@@ -46,8 +46,13 @@ discrete codes; the pre-VQ continuous value is $\approx 0.10$
 through learned transducers MLP $\to$ LIF $\to$ MLP retains $99\%$
 of direct-MLP accuracy; cross-substrate merge (a frozen LIF decoding
 MLP-emitted codes alone through a learned transducer) retains
-$97\%$. The finding generalizes to a structurally independent
-distribution (MoonsTask, $\mathrm{MI} / H = 0.74$). A post-hoc analysis via Huh et al.'s~\cite{huh2024platonic} mutual-kNN kernel on continuous pre-VQ embeddings yields cross-substrate alignment $0.174$ at $k{=}10$ ($18.8\times$ the random baseline, 3 seeds), situating nerve-wml as an empirical validation of the Platonic Representation Hypothesis on heterogeneous biologically-inspired substrates. All numeric claims
+$97\%$. Through the \emph{full deployable discrete protocol} --- a
+learned per-edge codebook transducer and a $\gamma/\theta$
+phase-amplitude-coupling channel --- round-trip fidelity is $0.924$
+of direct accuracy (20 seeds), recovering the idealised continuous-logit
+path to within the discretisation cost. The finding generalizes to a
+structurally independent distribution (MoonsTask, $\mathrm{MI} / H =
+0.74$). A post-hoc analysis via Huh et al.'s~\cite{huh2024platonic} mutual-kNN kernel on continuous pre-VQ embeddings yields cross-substrate alignment $0.174$ at $k{=}10$ ($18.8\times$ the random baseline, 3 seeds), situating nerve-wml as an empirical validation of the Platonic Representation Hypothesis on heterogeneous biologically-inspired substrates. All numeric claims
 are reproducible via \texttt{uv run pytest} with explicit seeds;
 code and figures of this v1.7.0 snapshot are archived on Zenodo
 (concept DOI \href{https://doi.org/10.5281/zenodo.19656342}{10.5281/zenodo.19656342},
@@ -689,7 +694,47 @@ compresses substrate-intrinsic differences to the reproducible
 $2$--$3\%$ plateau independently of the matched $d_{\mathrm{hidden}}$
 chosen.
 
-Together Tests (1)--(3) pin Claim B empirically: the Nerve Protocol does more than expose a shared interface --- it carries information that crosses the substrate boundary with minimal loss. The tests \texttt{test\_mi\_between\_substrates\_is\_high}, \texttt{test\_mi\_at\_pool\_scale\_strengthens}, \texttt{test\_round\_trip\_fidelity\_preserves\_accuracy}, and \texttt{test\_cross\_substrate\_merge\_approaches\_mlp\_accuracy} pin the measurements. Tests~(10) and (11) of v1.7.0 refine this conclusion: the protocol carries information that otherwise requires a shared frontend (Test~10) and does so robustly across matched-capacity scales (Test~11).
+\textbf{(12) End-to-end deployable protocol ($\gamma/\theta$ PAC
+channel, v1.9.4).} Tests~(2)--(3) measure transmission on the
+\emph{idealised} path: the transducer operates on continuous logit
+vectors and fidelity is read \emph{before} the discrete
+\texttt{GammaThetaMultiplexer} --- the deployable phase-amplitude-coupling
+codec of \texttt{track\_p/multiplexer.py} --- is engaged. We close that
+gap by routing a single integer code per symbol through the \emph{full}
+discrete protocol: a learned per-edge transducer ($64{\times}64$
+codebook, \texttt{track\_p/transducer.py}) followed by the
+$\gamma/\theta$ channel with its learned 64-point PSK constellation,
+then demodulation. On 20 seeds of \texttt{HardFlowProxyTask} ($d{=}16$,
+12-class; $800$ train steps, $400$ transducer steps, alphabet $64$), the
+fidelity ratio
+$\text{acc}_{\text{round-trip}} / \text{acc}_{\text{direct}}$ is
+(a)~idealised (paper path, continuous logits, no channel)
+$1.007$ \mbox{[0.975, 1.037]};
+(b)~\emph{untrained} transducer $+$ channel
+$0.168$ \mbox{[0.158, 0.179]}, its round-trip accuracy ($0.092$)
+collapsing to chance ($1/12$);
+(c)~\emph{trained} transducer $+$ channel, i.e.\ the full real protocol,
+$\mathbf{0.924}$ \mbox{[0.892, 0.954]}.
+Path~(c) recovers path~(a) to within the discretisation cost: a single
+integer code carries $\sim 8\%$ less than a continuous logit vector. The
+decomposition is unambiguous. The $\gamma/\theta$ channel's
+code-survival is $1.00$ at every seed and condition --- the PSK
+constellation is analytically max-min-distance optimal, so the channel
+is \emph{never} the bottleneck (and training it only erodes noise
+robustness). The untrained per-edge transducer is the bottleneck;
+task-supervised Gumbel-softmax training of its codebook closes the gap.
+This extends Claim~B from the idealised continuous-logit measurement to
+the \emph{deployable} discrete protocol: the learned codebook transducer
+and the $\gamma/\theta$ PAC channel are load-bearing end-to-end. We
+frame this as a \emph{consolidation} rather than a new phenomenon --- the
+underlying cross-substrate alignment is the Platonic effect of Test~(6)
+(and, more broadly, of model stitching and relative representations);
+the contribution here is that it survives a concrete
+digital-communication channel, not only a continuous read-out.
+Reproducible via \texttt{scripts/transmission\_full\_protocol.py} (data
+\texttt{figures/transmission\_full\_protocol.json}).
+
+Together Tests (1)--(3) pin Claim B empirically: the Nerve Protocol does more than expose a shared interface --- it carries information that crosses the substrate boundary with minimal loss. The tests \texttt{test\_mi\_between\_substrates\_is\_high}, \texttt{test\_mi\_at\_pool\_scale\_strengthens}, \texttt{test\_round\_trip\_fidelity\_preserves\_accuracy}, and \texttt{test\_cross\_substrate\_merge\_approaches\_mlp\_accuracy} pin the measurements. Tests~(10) and (11) of v1.7.0 refine this conclusion: the protocol carries information that otherwise requires a shared frontend (Test~10) and does so robustly across matched-capacity scales (Test~11). Test~(12) of v1.9.4 closes the deployment gap: transmission survives the \emph{full} discrete $\gamma/\theta$ protocol, not only the idealised continuous-logit read-out.
 
 \section{Reproducibility}
 

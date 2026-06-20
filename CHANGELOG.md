@@ -4,6 +4,34 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.9.4] — 2026-06-20
+
+Paper 1 §Information Transmission gains Test (12): end-to-end validation
+of Claim B through the *full deployable discrete protocol* (learned
+per-edge codebook transducer + γ/θ PAC channel), closing the
+idealised-path gap of Tests (2)–(3). Framed honestly as a consolidation
+of the existing cross-substrate alignment (Platonic effect, Test 6), not
+a new phenomenon.
+
+### Added
+
+- **Paper 1 Test (12), §Information Transmission** — fidelity ratio
+  acc_roundtrip/acc_direct over 20 seeds on HardFlowProxyTask through
+  the real discrete protocol: (a) idealised continuous-logit path 1.007
+  CI95 [0.975, 1.037]; (b) untrained transducer + γ/θ channel 0.168
+  [0.158, 0.179] (round-trip accuracy 0.092 ≈ chance 1/12); (c) trained
+  transducer + γ/θ channel **0.924** [0.892, 0.954]. γ/θ channel
+  code-survival 1.00 at every seed (PSK constellation analytically
+  max-min-distance optimal → never the bottleneck); the untrained
+  per-edge transducer is the bottleneck, task-supervised Gumbel-softmax
+  training closes the gap; ~8% residual is the discretisation cost.
+  Numbers trace to `papers/paper1/figures/transmission_full_protocol.json`.
+
+### Changed
+
+- **Abstract Claim B** now reports deployable-protocol round-trip
+  fidelity (0.924) alongside the idealised-path 99%/97% figures.
+
 ## [1.9.3] — 2026-06-20
 
 BioFieldWML Phase 2 (SNN-PC belief substrate) transitions from unit-test-only
