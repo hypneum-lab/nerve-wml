@@ -4,6 +4,46 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+## [1.9.3] — 2026-06-20
+
+BioFieldWML Phase 2 (SNN-PC belief substrate) transitions from unit-test-only
+scaffolding to a measured pilot result on HardFlowProxyTask (12-class
+XOR-on-noise, n=50, kxkm x86 CPU). Ablation discloses that the |error| feature
+is a task-aligned shortcut; the honest substrate-intrinsic edge is μ-driven.
+
+### Added
+
+- **`papers/paper1/figures/biofield_edge_null_n50.json`** — full [μ,σ,|error|]
+  probe result (n=50, HardFlowProxyTask, kxkm x86 CPU, ~212 s). BioField acc
+  0.8502 vs MLP 0.5549; mean edge +0.2953 CI95 [0.2745,0.3150] (50/50
+  positive, CI excludes 0, exceeds symmetric init-variance null p95=0.1036).
+- **`papers/paper1/figures/biofield_ablation_n50.json`** — feature-mask
+  ablation: three variants (full [μ,σ,|error|], no_error [μ,σ], mu_only [μ])
+  each run n=50 against the same MLP baseline and MLP-vs-MLP null (~380 s).
+
+### Result (from `biofield_edge_null_n50.json` + `biofield_ablation_n50.json`)
+
+**Honest headline — substrate-intrinsic edge is +0.14, not +0.30.**
+
+| Variant | Mean edge | CI95 | Sign rate | > null p95 |
+|---|---|---|---|---|
+| Full [μ,σ,\|error\|] | **+0.2953** | [0.2745, 0.3150] | 50/50 | yes |
+| No error [μ,σ] | **+0.1391** | [0.1161, 0.1616] | 48/50 | yes |
+| μ only | **+0.1413** | [0.1178, 0.1651] | 48/50 | yes |
+| MLP-vs-MLP null | −0.0041 (mean abs 0.0227) | [−0.0168, 0.0077] | ~coin-flip | — |
+
+The full +0.2953 edge must be reported alongside the explicit caveat that
+~0.16 of it is the |error|=|input_proj(x)| feature — a task-aligned shortcut,
+not a belief-state property. Removing |error| isolates the genuine
+belief-substrate expressivity edge: **+0.1391 (μ,σ) / +0.1413 (μ only),
+CI95 excludes 0, 48/50 positive, above symmetric init-variance null p95=0.1036**.
+σ adds nothing beyond μ alone (Δ ≈ 0.002). **μ-driven.** Honest scope:
+substrate-INTRINSIC on HardFlowProxyTask; NOT agnostic/SOTA.
+
+### Changed
+
+- `pyproject.toml` version bump `1.9.2` → `1.9.3`.
+
 ## [1.9.2] — 2026-06-20
 
 Null-control for the two surviving findings: scaling-plateau real floor and
@@ -256,7 +296,7 @@ alongside the continuous value. Paper-integration tests pass (13/13).
 ### Biological substrate integration
 
 - **BioFieldWML Phase 1**: MockBioCultureClient scheduler with sleep-every ≥ 1 validation, episode-bound Add(layer) accumulator.
-- **BioFieldWML Phase 2**: Lee et al. 2024 SNN-PC (predictive coding via spiking neurons, Frontiers Comput. Neurosci., DOI 10.3389/fncom.2024.1338280) integrated as optional substitution-compatible estimator for Kuramoto-style cell populations.
+- **BioFieldWML Phase 2**: Lee et al. 2024 SNN-PC (predictive coding via spiking neurons, Frontiers Comput. Neurosci., DOI 10.3389/fncom.2024.1338280) integrated as optional substitution-compatible estimator for Kuramoto-style cell populations. **Phase 2 is no longer unit-test-only scaffolding**: see v1.9.3 for the measured pilot result on HardFlowProxyTask (genuine belief-state edge +0.14, μ-driven, CI95 excludes 0, > null).
 - **Testing**: 458 fast tests + 35+ slow statistical tests covering unit (L1), info-theoretic (L2), integration (L3), golden (L4) strata. No real CL1/FinalSpark API key used (MockBioCultureClient only).
 
 ### Citations added to refs.bib
