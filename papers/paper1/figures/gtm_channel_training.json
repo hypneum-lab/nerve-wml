@@ -1,0 +1,392 @@
+{
+  "_about": "GTM \u03b3/\u03b8 PAC channel-coding experiment. Part 1 trains the constellation for round-trip code reconstruction; Part 2 re-runs transmission through the trained channel. Run on kxkm-ai (CPU, pure-torch). See scripts/train_gtm_channel.py + scripts/eval_gtm_channel_live.py.",
+  "part1_training": {
+    "canonical_run": "clean (train_sigma=0.0), K=7",
+    "config": {
+      "gamma_hz": 40.0,
+      "theta_hz": 6.0,
+      "sample_rate_hz": 1000.0,
+      "alphabet_size": 64,
+      "symbols_per_theta": 7,
+      "modulation": "psk"
+    },
+    "hparams": {
+      "steps": 4000,
+      "batch": 256,
+      "lr": 0.01,
+      "seed": 0,
+      "tau": 1.0,
+      "eval_batch": 2048,
+      "train_sigma": 0.0,
+      "k_active": 7
+    },
+    "chance_fidelity": 0.015625,
+    "baseline_fidelity_untrained_clean": 1.0,
+    "final_fidelity_clean": 1.0,
+    "plateau_fidelity": 1.0,
+    "k1_clean_trained": 0.1671316921710968,
+    "k1_clean_untrained": 0.1591796875,
+    "trajectory": [
+      {
+        "step": 0,
+        "fidelity": 1.0,
+        "loss": null
+      },
+      {
+        "step": 100,
+        "fidelity": 1.0,
+        "loss": 4.162966251373291
+      },
+      {
+        "step": 200,
+        "fidelity": 1.0,
+        "loss": 4.133572578430176
+      },
+      {
+        "step": 300,
+        "fidelity": 1.0,
+        "loss": 4.138975620269775
+      },
+      {
+        "step": 400,
+        "fidelity": 1.0,
+        "loss": 4.162435054779053
+      },
+      {
+        "step": 500,
+        "fidelity": 1.0,
+        "loss": 4.174957752227783
+      },
+      {
+        "step": 600,
+        "fidelity": 1.0,
+        "loss": 4.110981464385986
+      },
+      {
+        "step": 700,
+        "fidelity": 1.0,
+        "loss": 4.123424053192139
+      },
+      {
+        "step": 800,
+        "fidelity": 1.0,
+        "loss": 4.086282730102539
+      },
+      {
+        "step": 900,
+        "fidelity": 1.0,
+        "loss": 4.162359714508057
+      },
+      {
+        "step": 1000,
+        "fidelity": 1.0,
+        "loss": 4.1749138832092285
+      },
+      {
+        "step": 1100,
+        "fidelity": 1.0,
+        "loss": 4.068053245544434
+      },
+      {
+        "step": 1200,
+        "fidelity": 1.0,
+        "loss": 4.161600589752197
+      },
+      {
+        "step": 1300,
+        "fidelity": 1.0,
+        "loss": 4.201806545257568
+      },
+      {
+        "step": 1400,
+        "fidelity": 1.0,
+        "loss": 4.117905616760254
+      },
+      {
+        "step": 1500,
+        "fidelity": 1.0,
+        "loss": 4.145576477050781
+      },
+      {
+        "step": 1600,
+        "fidelity": 1.0,
+        "loss": 4.1072516441345215
+      },
+      {
+        "step": 1700,
+        "fidelity": 1.0,
+        "loss": 4.118096828460693
+      },
+      {
+        "step": 1800,
+        "fidelity": 1.0,
+        "loss": 4.180283069610596
+      },
+      {
+        "step": 1900,
+        "fidelity": 1.0,
+        "loss": 4.120059013366699
+      },
+      {
+        "step": 2000,
+        "fidelity": 1.0,
+        "loss": 4.106873989105225
+      },
+      {
+        "step": 2100,
+        "fidelity": 1.0,
+        "loss": 4.144191265106201
+      },
+      {
+        "step": 2200,
+        "fidelity": 1.0,
+        "loss": 4.090481758117676
+      },
+      {
+        "step": 2300,
+        "fidelity": 1.0,
+        "loss": 4.176347732543945
+      },
+      {
+        "step": 2400,
+        "fidelity": 1.0,
+        "loss": 4.112725257873535
+      },
+      {
+        "step": 2500,
+        "fidelity": 1.0,
+        "loss": 4.154388904571533
+      },
+      {
+        "step": 2600,
+        "fidelity": 1.0,
+        "loss": 4.101977825164795
+      },
+      {
+        "step": 2700,
+        "fidelity": 1.0,
+        "loss": 4.142319202423096
+      },
+      {
+        "step": 2800,
+        "fidelity": 1.0,
+        "loss": 4.1520185470581055
+      },
+      {
+        "step": 2900,
+        "fidelity": 1.0,
+        "loss": 4.188560962677002
+      },
+      {
+        "step": 3000,
+        "fidelity": 1.0,
+        "loss": 4.135056495666504
+      },
+      {
+        "step": 3100,
+        "fidelity": 1.0,
+        "loss": 4.198701858520508
+      },
+      {
+        "step": 3200,
+        "fidelity": 1.0,
+        "loss": 4.151045322418213
+      },
+      {
+        "step": 3300,
+        "fidelity": 1.0,
+        "loss": 4.191089153289795
+      },
+      {
+        "step": 3400,
+        "fidelity": 1.0,
+        "loss": 4.1535820960998535
+      },
+      {
+        "step": 3500,
+        "fidelity": 1.0,
+        "loss": 4.104846954345703
+      },
+      {
+        "step": 3600,
+        "fidelity": 1.0,
+        "loss": 4.15425443649292
+      },
+      {
+        "step": 3700,
+        "fidelity": 1.0,
+        "loss": 4.175297260284424
+      },
+      {
+        "step": 3800,
+        "fidelity": 1.0,
+        "loss": 4.138672828674316
+      },
+      {
+        "step": 3900,
+        "fidelity": 1.0,
+        "loss": 4.134657859802246
+      },
+      {
+        "step": 4000,
+        "fidelity": 1.0,
+        "loss": 4.11030912399292
+      }
+    ],
+    "noise_sweep_trained_vs_psk": [
+      {
+        "sigma": 0.0,
+        "fidelity_trained": 1.0,
+        "fidelity_untrained_psk": 1.0
+      },
+      {
+        "sigma": 0.01,
+        "fidelity_trained": 0.8274693131446839,
+        "fidelity_untrained_psk": 0.9643554806709289
+      },
+      {
+        "sigma": 0.05,
+        "fidelity_trained": 0.5315987825393677,
+        "fidelity_untrained_psk": 0.6702706575393677
+      },
+      {
+        "sigma": 0.1,
+        "fidelity_trained": 0.3659458696842194,
+        "fidelity_untrained_psk": 0.4369977653026581
+      },
+      {
+        "sigma": 0.2,
+        "fidelity_trained": 0.22169364094734192,
+        "fidelity_untrained_psk": 0.24143415093421935
+      },
+      {
+        "sigma": 0.5,
+        "fidelity_trained": 0.10019531399011612,
+        "fidelity_untrained_psk": 0.10266462117433547
+      }
+    ],
+    "elapsed_sec": 22.3781418800354
+  },
+  "part1_noise_capacity_probe": {
+    "_about": "Trained UNDER AWGN sigma=0.1 to probe whether the constellation has learnable noise-robust capacity. It does not: trained < untrained-PSK at every sigma, so PSK init is already optimal.",
+    "hparams": {
+      "steps": 4000,
+      "batch": 256,
+      "lr": 0.01,
+      "seed": 0,
+      "tau": 1.0,
+      "eval_batch": 2048,
+      "train_sigma": 0.1,
+      "k_active": 7
+    },
+    "final_fidelity_eval_at_sigma": 0.3641880452632904,
+    "baseline_fidelity_untrained_eval_at_sigma": 0.4378487765789032,
+    "noise_sweep_trained_vs_psk": [
+      {
+        "sigma": 0.0,
+        "fidelity_trained": 1.0,
+        "fidelity_untrained_psk": 1.0
+      },
+      {
+        "sigma": 0.01,
+        "fidelity_trained": 0.82021484375,
+        "fidelity_untrained_psk": 0.9640066981315613
+      },
+      {
+        "sigma": 0.05,
+        "fidelity_trained": 0.5345703005790711,
+        "fidelity_untrained_psk": 0.6705915093421936
+      },
+      {
+        "sigma": 0.1,
+        "fidelity_trained": 0.36794084310531616,
+        "fidelity_untrained_psk": 0.4355050206184387
+      },
+      {
+        "sigma": 0.2,
+        "fidelity_trained": 0.22064732313156127,
+        "fidelity_untrained_psk": 0.23846261203289032
+      },
+      {
+        "sigma": 0.5,
+        "fidelity_trained": 0.0982282355427742,
+        "fidelity_untrained_psk": 0.10012555569410324
+      }
+    ]
+  },
+  "part2_live_transmission": {
+    "constellation_path": "runs/gtm_channel/constellation.pt",
+    "live_loop": {
+      "full_protocol_transducer_plus_gtm": {
+        "untrained": {
+          "fidelity": 0.01020408163265306,
+          "matched": 1,
+          "n": 98
+        },
+        "trained": {
+          "fidelity": 0.01020408163265306,
+          "matched": 1,
+          "n": 98
+        }
+      },
+      "gtm_only_identity_transducer": {
+        "untrained": {
+          "fidelity": 1.0,
+          "matched": 98,
+          "n": 98
+        },
+        "trained": {
+          "fidelity": 1.0,
+          "matched": 98,
+          "n": 98
+        }
+      }
+    },
+    "cross_substrate": {
+      "transducer_plus_gtm": {
+        "untrained": {
+          "survival": 0.046875,
+          "matched": 3,
+          "n": 64,
+          "edge": [
+            0,
+            1
+          ]
+        },
+        "trained": {
+          "survival": 0.0625,
+          "matched": 4,
+          "n": 64,
+          "edge": [
+            0,
+            1
+          ]
+        }
+      },
+      "gtm_only_identity_transducer": {
+        "untrained": {
+          "survival": 1.0,
+          "matched": 64,
+          "n": 64,
+          "edge": [
+            0,
+            1
+          ]
+        },
+        "trained": {
+          "survival": 1.0,
+          "matched": 64,
+          "n": 64,
+          "edge": [
+            0,
+            1
+          ]
+        }
+      }
+    }
+  },
+  "verdict": {
+    "part1": "Clean K=7 round-trip is already 1.0 at PSK init (zero headroom) and stays 1.0 after training: the \u03b3/\u03b8 PAC channel IS a functional code-carrier, but the constellation is analytically optimal at init, not learned. Under AWGN, training cannot beat untrained PSK (PSK is the max-min-distance optimum); the channel limit is the AWGN SNR ceiling, not the constellation.",
+    "part2": "Isolated GTM-only channel (identity transducer) carries codes losslessly (1.000) in both the live MLP+LIF loop and the cross-substrate A->B sweep, trained and untrained alike. The ~1 percent full-protocol live number is entirely the UNTRAINED TRANSDUCER scrambling codes, not the channel. The protocol machinery is load-bearing AND functional: the channel does not cap information."
+  }
+}
