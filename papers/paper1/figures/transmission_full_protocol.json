@@ -1,0 +1,478 @@
+{
+  "experiment": "transmission_full_protocol",
+  "metric": "fidelity_ratio = acc_roundtrip / acc_direct (paper Test 2)",
+  "paths": {
+    "a": "idealised: continuous-logit nn.Linear transducers, NO GTM (paper's measured path, run_test_2_round_trip_fidelity)",
+    "b": "untrained track_p.transducer.Transducer (code->code) + GTM channel, discrete codes; only LIF-side linear decoder trained",
+    "c": "TRAINED track_p.transducer.Transducer (gumbel-softmax) + GTM channel, discrete codes; transducer + LIF-side decoder trained"
+  },
+  "config": {
+    "task": "HardFlowProxyTask(dim=16, n_classes=12)",
+    "n_seeds": 20,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "train_steps": 800,
+    "transducer_steps": 400,
+    "batch": 512,
+    "alphabet_size": 64,
+    "gtm_modulation": "psk",
+    "gtm_seed": 42
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "a": {
+        "acc_direct": 0.498046875,
+        "acc_roundtrip": 0.53515625,
+        "fidelity_ratio": 1.0745098039215686
+      },
+      "b": {
+        "acc_direct": 0.498046875,
+        "acc_roundtrip": 0.08203125,
+        "fidelity_ratio": 0.16470588235294117,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.498046875,
+        "acc_roundtrip": 0.4765625,
+        "fidelity_ratio": 0.9568627450980393,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 1,
+      "a": {
+        "acc_direct": 0.53515625,
+        "acc_roundtrip": 0.53515625,
+        "fidelity_ratio": 1.0
+      },
+      "b": {
+        "acc_direct": 0.53515625,
+        "acc_roundtrip": 0.109375,
+        "fidelity_ratio": 0.20437956204379562,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.53515625,
+        "acc_roundtrip": 0.541015625,
+        "fidelity_ratio": 1.010948905109489,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 2,
+      "a": {
+        "acc_direct": 0.5703125,
+        "acc_roundtrip": 0.541015625,
+        "fidelity_ratio": 0.9486301369863014
+      },
+      "b": {
+        "acc_direct": 0.5703125,
+        "acc_roundtrip": 0.0859375,
+        "fidelity_ratio": 0.1506849315068493,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.5703125,
+        "acc_roundtrip": 0.455078125,
+        "fidelity_ratio": 0.797945205479452,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 3,
+      "a": {
+        "acc_direct": 0.61328125,
+        "acc_roundtrip": 0.650390625,
+        "fidelity_ratio": 1.0605095541401275
+      },
+      "b": {
+        "acc_direct": 0.61328125,
+        "acc_roundtrip": 0.09765625,
+        "fidelity_ratio": 0.1592356687898089,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.61328125,
+        "acc_roundtrip": 0.517578125,
+        "fidelity_ratio": 0.8439490445859873,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 4,
+      "a": {
+        "acc_direct": 0.625,
+        "acc_roundtrip": 0.619140625,
+        "fidelity_ratio": 0.990625
+      },
+      "b": {
+        "acc_direct": 0.625,
+        "acc_roundtrip": 0.107421875,
+        "fidelity_ratio": 0.171875,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.625,
+        "acc_roundtrip": 0.556640625,
+        "fidelity_ratio": 0.890625,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 5,
+      "a": {
+        "acc_direct": 0.505859375,
+        "acc_roundtrip": 0.521484375,
+        "fidelity_ratio": 1.0308880308880308
+      },
+      "b": {
+        "acc_direct": 0.505859375,
+        "acc_roundtrip": 0.0703125,
+        "fidelity_ratio": 0.138996138996139,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.505859375,
+        "acc_roundtrip": 0.47265625,
+        "fidelity_ratio": 0.9343629343629344,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 6,
+      "a": {
+        "acc_direct": 0.5078125,
+        "acc_roundtrip": 0.53515625,
+        "fidelity_ratio": 1.0538461538461539
+      },
+      "b": {
+        "acc_direct": 0.5078125,
+        "acc_roundtrip": 0.095703125,
+        "fidelity_ratio": 0.18846153846153846,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.5078125,
+        "acc_roundtrip": 0.478515625,
+        "fidelity_ratio": 0.9423076923076923,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 7,
+      "a": {
+        "acc_direct": 0.58203125,
+        "acc_roundtrip": 0.53515625,
+        "fidelity_ratio": 0.9194630872483222
+      },
+      "b": {
+        "acc_direct": 0.58203125,
+        "acc_roundtrip": 0.115234375,
+        "fidelity_ratio": 0.19798657718120805,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.58203125,
+        "acc_roundtrip": 0.556640625,
+        "fidelity_ratio": 0.9563758389261745,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 8,
+      "a": {
+        "acc_direct": 0.5390625,
+        "acc_roundtrip": 0.48046875,
+        "fidelity_ratio": 0.8913043478260869
+      },
+      "b": {
+        "acc_direct": 0.5390625,
+        "acc_roundtrip": 0.080078125,
+        "fidelity_ratio": 0.14855072463768115,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.5390625,
+        "acc_roundtrip": 0.458984375,
+        "fidelity_ratio": 0.8514492753623188,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 9,
+      "a": {
+        "acc_direct": 0.509765625,
+        "acc_roundtrip": 0.51953125,
+        "fidelity_ratio": 1.0191570881226053
+      },
+      "b": {
+        "acc_direct": 0.509765625,
+        "acc_roundtrip": 0.08203125,
+        "fidelity_ratio": 0.16091954022988506,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.509765625,
+        "acc_roundtrip": 0.50390625,
+        "fidelity_ratio": 0.9885057471264368,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 10,
+      "a": {
+        "acc_direct": 0.66015625,
+        "acc_roundtrip": 0.69921875,
+        "fidelity_ratio": 1.0591715976331362
+      },
+      "b": {
+        "acc_direct": 0.66015625,
+        "acc_roundtrip": 0.078125,
+        "fidelity_ratio": 0.11834319526627218,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.66015625,
+        "acc_roundtrip": 0.521484375,
+        "fidelity_ratio": 0.7899408284023669,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 11,
+      "a": {
+        "acc_direct": 0.546875,
+        "acc_roundtrip": 0.5390625,
+        "fidelity_ratio": 0.9857142857142858
+      },
+      "b": {
+        "acc_direct": 0.546875,
+        "acc_roundtrip": 0.095703125,
+        "fidelity_ratio": 0.175,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.546875,
+        "acc_roundtrip": 0.513671875,
+        "fidelity_ratio": 0.9392857142857143,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 12,
+      "a": {
+        "acc_direct": 0.5546875,
+        "acc_roundtrip": 0.46484375,
+        "fidelity_ratio": 0.8380281690140845
+      },
+      "b": {
+        "acc_direct": 0.5546875,
+        "acc_roundtrip": 0.095703125,
+        "fidelity_ratio": 0.17253521126760563,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.5546875,
+        "acc_roundtrip": 0.478515625,
+        "fidelity_ratio": 0.8626760563380281,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 13,
+      "a": {
+        "acc_direct": 0.625,
+        "acc_roundtrip": 0.63671875,
+        "fidelity_ratio": 1.01875
+      },
+      "b": {
+        "acc_direct": 0.625,
+        "acc_roundtrip": 0.08203125,
+        "fidelity_ratio": 0.13125,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.625,
+        "acc_roundtrip": 0.509765625,
+        "fidelity_ratio": 0.815625,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 14,
+      "a": {
+        "acc_direct": 0.5390625,
+        "acc_roundtrip": 0.5625,
+        "fidelity_ratio": 1.0434782608695652
+      },
+      "b": {
+        "acc_direct": 0.5390625,
+        "acc_roundtrip": 0.087890625,
+        "fidelity_ratio": 0.16304347826086957,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.5390625,
+        "acc_roundtrip": 0.533203125,
+        "fidelity_ratio": 0.9891304347826086,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 15,
+      "a": {
+        "acc_direct": 0.515625,
+        "acc_roundtrip": 0.552734375,
+        "fidelity_ratio": 1.071969696969697
+      },
+      "b": {
+        "acc_direct": 0.515625,
+        "acc_roundtrip": 0.11328125,
+        "fidelity_ratio": 0.2196969696969697,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.515625,
+        "acc_roundtrip": 0.517578125,
+        "fidelity_ratio": 1.003787878787879,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 16,
+      "a": {
+        "acc_direct": 0.48828125,
+        "acc_roundtrip": 0.5625,
+        "fidelity_ratio": 1.152
+      },
+      "b": {
+        "acc_direct": 0.48828125,
+        "acc_roundtrip": 0.083984375,
+        "fidelity_ratio": 0.172,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.48828125,
+        "acc_roundtrip": 0.46875,
+        "fidelity_ratio": 0.96,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 17,
+      "a": {
+        "acc_direct": 0.5234375,
+        "acc_roundtrip": 0.509765625,
+        "fidelity_ratio": 0.9738805970149254
+      },
+      "b": {
+        "acc_direct": 0.5234375,
+        "acc_roundtrip": 0.095703125,
+        "fidelity_ratio": 0.1828358208955224,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.5234375,
+        "acc_roundtrip": 0.486328125,
+        "fidelity_ratio": 0.9291044776119403,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 18,
+      "a": {
+        "acc_direct": 0.515625,
+        "acc_roundtrip": 0.546875,
+        "fidelity_ratio": 1.0606060606060606
+      },
+      "b": {
+        "acc_direct": 0.515625,
+        "acc_roundtrip": 0.087890625,
+        "fidelity_ratio": 0.17045454545454544,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.515625,
+        "acc_roundtrip": 0.53125,
+        "fidelity_ratio": 1.0303030303030303,
+        "gtm_code_survival": 1.0
+      }
+    },
+    {
+      "seed": 19,
+      "a": {
+        "acc_direct": 0.5234375,
+        "acc_roundtrip": 0.5,
+        "fidelity_ratio": 0.9552238805970149
+      },
+      "b": {
+        "acc_direct": 0.5234375,
+        "acc_roundtrip": 0.091796875,
+        "fidelity_ratio": 0.17537313432835822,
+        "gtm_code_survival": 1.0
+      },
+      "c": {
+        "acc_direct": 0.5234375,
+        "acc_roundtrip": 0.513671875,
+        "fidelity_ratio": 0.9813432835820896,
+        "gtm_code_survival": 1.0
+      }
+    }
+  ],
+  "summary": {
+    "a": {
+      "fidelity_ratio_mean": 1.0073877875698984,
+      "fidelity_ratio_ci95": [
+        0.9750285807061707,
+        1.0374677812762712
+      ],
+      "fidelity_ratio_std": 0.07261858015622115,
+      "acc_roundtrip_mean": 0.55234375,
+      "acc_direct_mean": 0.54892578125
+    },
+    "b": {
+      "fidelity_ratio_mean": 0.1683163959684995,
+      "fidelity_ratio_ci95": [
+        0.15803564367840292,
+        0.1787289401544403
+      ],
+      "fidelity_ratio_std": 0.024269349361308777,
+      "acc_roundtrip_mean": 0.09189453125,
+      "acc_direct_mean": 0.54892578125,
+      "gtm_code_survival_mean": 1.0
+    },
+    "c": {
+      "fidelity_ratio_mean": 0.9237264546226089,
+      "fidelity_ratio_ci95": [
+        0.891904064201554,
+        0.9541313716806645
+      ],
+      "fidelity_ratio_std": 0.07369774380136132,
+      "acc_roundtrip_mean": 0.50458984375,
+      "acc_direct_mean": 0.54892578125,
+      "gtm_code_survival_mean": 1.0
+    }
+  },
+  "wall_clock_s": 146.3124588120263
+}
