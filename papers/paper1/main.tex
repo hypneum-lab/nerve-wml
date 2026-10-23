@@ -67,18 +67,58 @@ for the full framework. Section~\ref{sec:method} reproduces the
 essentials for readers.
 
 \section{Related Work}
+\label{sec:related}
 
-The nerve protocol sits at the intersection of four research lines. We relate each briefly below.
+The nerve protocol sits at the intersection of six research lines. We relate each briefly below.
 
-\textbf{Predictive coding.} Rao and Ballard~\cite{rao1999predictive} introduced predictive coding as a unifying interpretation of extra-classical receptive-field effects in the visual cortex, where each layer transmits its prediction downstream and receives a residual error upstream. Bastos et al.~\cite{bastos2012canonical} then proposed the canonical microcircuit for predictive coding, mapping predictions to $\gamma$-band activity in superficial layers and errors to $\theta$/$\alpha$-band activity in deep layers. Our $\gamma$/$\theta$ multiplexing (see \S\ref{sec:method}) is a direct computational transcription of this canonical microcircuit, with $\gamma$-priority replacing the biological phase-locking.
+\textbf{Predictive coding.} Rao and Ballard~\cite{rao1999predictive} introduced predictive coding as a unifying interpretation of extra-classical receptive-field effects in the visual cortex, where each layer transmits its prediction downstream and receives a residual error upstream. Bastos et al.~\cite{bastos2012canonical} then proposed the canonical microcircuit for predictive coding, mapping predictions to $\gamma$-band activity in superficial layers and errors to $\theta$/$\alpha$-band activity in deep layers. The framing has since been refined: Bastos et
+al.~\cite{bastos2020routing} reframe hierarchical message passing as
+\emph{predictive routing} --- a layer- and rhythm-specific mechanism in
+which top-down predictions in deep-layer $\alpha$/$\beta$ rhythms gate
+the $\gamma$-band feedforward channel, so that errors propagate only
+when predictions fail, with Gabhart, Xiong \& Bastos~\cite{gabhart2025predictive} subsequently
+framing predictive coding itself as a cognitive process organised around such rhythm-specific routing.
+The closest computational instantiation
+is the laminar neural-mass Comparator of Ruffini et
+al.~\cite{ruffini2025comparator}, which realises cross-frequency
+$\gamma$/$\theta$ coupling as a laminar Comparator for prediction error evaluation, the substrate of predictive routing in the Bastos et al.~\cite{bastos2020routing} sense.
+Our $\gamma$/$\theta$ multiplexing (see \S\ref{sec:method}) is a
+computational transcription of this predictive-routing view rather than
+of the 2012 microcircuit alone: $\gamma$-priority is the engineering
+analogue of the rhythm-specific gating that routes prediction and error
+onto distinct channels.
 
 \textbf{Discrete latent codebooks.} van den Oord et al.~\cite{vandenoord2017neural} introduced VQ-VAE, the vector-quantized variational auto-encoder in which a continuous encoder output is snapped to one of $K$ discrete codes. We reuse the commitment-loss training recipe for each WML's local codebook (\S\ref{sec:method}). Zeghidour et al.~\cite{zeghidour2022soundstream} observed that random-init VQ training collapses onto a small subset of codes, and proposed codebook rotation --- re-seeding unused codes with live input points. Our Plan 4a experiments confirm that rotation is necessary for random-init convergence on the $64$-code alphabet (\S\ref{sec:experiments}). Liu et al.~\cite{liu2021dvnc} further demonstrated VQ bottlenecks as inter-module communication channels (DVNC), validating that discretisation improves compositional generalisation when neural modules recombine. More recently, Peng et al.~\cite{peng2025gridlikevq} introduce Grid-like Code Quantization to compress observation-action sequences in world models, drawing on grid-cell attractor dynamics as a biologically-motivated VQ prior. Zhao et al.~\cite{zhao2025channelawarevq} propose channel-aware VQ for semantic communication on discrete channels, framing VQ as a joint source-channel coding problem. Our nerve-wml is orthogonal: we treat the codebook as a fixed protocol alphabet and measure the information-theoretic alignment of substrates emitting into this alphabet, rather than optimising the codebook for a specific communication channel or world-model prior.
 
-\textbf{Surrogate-gradient spiking neural networks.} Neftci et al.~\cite{neftci2019surrogate} survey surrogate-gradient training of SNNs, where the non-differentiable Heaviside spike is replaced at back-propagation time by a smooth pseudo-derivative (we use the fast-sigmoid variant). This makes our \texttt{LifWML} implementation directly trainable alongside the differentiable \texttt{MlpWML} through the same task loss, which is the precondition for our polymorphie claim.
+\textbf{Surrogate-gradient spiking neural networks.} Neftci et al.~\cite{neftci2019surrogate} survey surrogate-gradient training of SNNs, where the non-differentiable Heaviside spike is replaced at back-propagation time by a smooth pseudo-derivative (we use the fast-sigmoid variant). This makes our \texttt{LifWML} implementation directly trainable alongside the differentiable \texttt{MlpWML} through the same task loss, which is the precondition for our polymorphie claim. At the systems level, Liu et al.~\cite{liu2024hybrid} survey \emph{hybrid neural networks} (HNN) --- the fusion of artificial- and spiking-network lineages --- and propose a qualitative taxonomy distinguishing \emph{tight} from \emph{weak} coupling. Their reference systems co-train a single hybrid network on dedicated neuromorphic hardware; nerve-wml instead occupies the \emph{weak-coupling} corner of that taxonomy, keeping each substrate independently trained and sharing only a discrete-code protocol, and it renders the resulting interface falsifiable through formal invariants (N-1--N-5, W-1--W-4) and a measured shared-information criterion rather than leaving the integration qualitative.
 
 \textbf{Representation similarity and cross-architecture communication.} Kornblith et al.~\cite{kornblith2019similarity} introduced linear and RBF Centered Kernel Alignment (CKA), a Hilbert--Schmidt Independence Criterion-based metric that is invariant to orthogonal transformation and isotropic scaling of hidden representations. Morcos, Raghu, and Bengio~\cite{morcos2018insights} introduced Projection-Weighted CCA (PWCCA) on the same broad question. Both operate on \emph{continuous} hidden states. Moschella et al.~\cite{moschella2022relative} subsequently proposed \emph{relative representations}: encoding each sample as a vector of cosine similarities to a fixed anchor set, which achieves invariance to angle-preserving transformations and enables zero-shot model stitching across independently trained models (their own Table~5 reports, for example, a ViT$\to$ResNet50 stitch accuracy of $4.69\%$ absolute vs $84.46\%$ relative on CIFAR-100). \emph{We state plainly that the existence of cross-architecture representational convergence is not novel to this work:} Moschella et al.\ and the subsequent zero-shot stitching literature established by 2022--2023 that independently trained networks converge to latent spaces differing only by an angle-preserving transform, with stitching achievable \emph{without} retraining. Our contribution is therefore not the observation of convergence per se, but its measurement at the \emph{discrete protocol-output} level across structurally heterogeneous biologically-inspired substrates (\S\ref{sec:info-tx}, \S\ref{sec:contribution-delim}). Their Figure~7 mentions vector-quantised anchors as an alternative similarity function but explicitly leaves the discrete variant as future work. Saxe et al.~\cite{saxe2024universality} argue empirically for a representation-universality hypothesis across biological and artificial networks using representational dissimilarity analysis (Pearson correlation of RDMs), also on continuous representations. Huh et al.~\cite{huh2024platonic} generalise these findings into the \emph{Platonic Representation Hypothesis}: representations across architectures, modalities, and training objectives converge toward a shared statistical model of reality. Our mutual-kNN alignment measurement in \S\ref{sec:info-tx}~(6) situates nerve-wml as an empirical validation of PRH on \emph{structurally heterogeneous biologically-inspired substrates} --- ANN vs spiking LIF with surrogate-gradient --- rather than the vision/language cross-modality pairs that dominate their evidence. We use \emph{biologically-inspired} rather than \emph{biological} to distinguish surrogate-gradient LIF from actual neural recordings, consistent with~\cite{aristotelianprh2026}'s caution against rhetorical overextension of PRH. Our measured $0.174$ sits near the lower bound of Huh et al.'s cross-modality range ($0.15$--$0.25$), which extends up to $\sim 0.50$ for same-modality pairs; this placement reflects the structural heterogeneity between ANN and spiking substrates, not a ceiling on PRH validity.
 
 Our \texttt{MI}/\texttt{H} ratio on emitted discrete codes (\S\ref{sec:info-tx}) occupies the slot this family leaves open: we measure, at the discrete protocol-output level, what Kornblith's CKA, Morcos's PWCCA, Moschella's relative representations, and Saxe's RDMs measure on continuous hidden states. Empirically we observe $\mathrm{MI}/\mathrm{H} \approx 0.953$ versus $\mathrm{CKA}$ on the corresponding argmax one-hots of $0.910$ (\S\ref{sec:info-tx}); the $4.3$-percentage-point gap tracks soft many-to-one code mappings that kernel-alignment metrics miss by construction.
+
+\textbf{Adjacent abstraction layers: model IRs and event transports.}
+Two recent lines define communication structure for brain-inspired
+systems at abstraction layers that bracket the nerve protocol, and we
+position against both to forestall a category error. The Neuromorphic
+Intermediate Representation~\cite{pedersen2024nir} is a
+\emph{static computational-graph IR} --- a hardware-agnostic instruction
+set that lets a single spiking model be compiled onto Loihi, SpiNNaker,
+or a simulator without rewriting; it standardises \emph{what graph} a
+substrate runs. The nerve protocol operates one layer above: it is a
+\emph{runtime} communication contract between already-instantiated,
+independently trained modules, with learned per-edge transducers and
+typed $(\pi, \varepsilon)$ roles, and it makes no claim about the
+internal graph of any WML. Conversely, Address-Event Representation and
+its recent UDP-over-Ethernet biohybrid formalisation~\cite{aer2025biohybrid}
+specify a \emph{transport and encoding} layer --- how individual spike
+events are timestamped, addressed, and physically carried between a
+silicon and a biological population. The nerve protocol is
+substrate-agnostic precisely because it does not fix a transport: a
+neuroletter is a typed, phase-tagged symbol whose \emph{semantics} are
+learned, and AER (or any other event bus) could serve as its physical
+carrier. NIR governs the model, AER governs the wire; nerve-wml
+governs the learned message in between, and is orthogonal to both by
+construction rather than by competition.
 
 \textbf{Knowledge distillation.} Hinton et al.~\cite{hinton2015distilling} proposed training a student network end-to-end by minimising the weighted loss $\alpha\,\mathrm{CE}(p_S(\cdot; T), p_T(\cdot; T))\,T^2 + (1-\alpha)\,\mathrm{CE}_{\mathrm{hard}}(y)$, where $T$ is a temperature that softens the teacher's class distribution. Our cross-substrate merge (Test (3), \S\ref{sec:info-tx}) is structurally different: both substrates are \emph{frozen}, only a linear transducer between their emission spaces is trained, supervision is ground-truth labels only, and the passed message is a logit vector over a $64$-code protocol alphabet rather than a softmax over $n_{\mathrm{classes}}$ label values. This separates protocol channel capacity from student learning capacity.
 
@@ -96,7 +136,7 @@ metrics leave open (\S\ref{sec:info-tx}, with a $4.3$pp CKA gap that kernel alig
 misses by construction); (b) the substrate pair is deliberately \emph{structurally
 heterogeneous and biologically-inspired} (stateless MLP vs surrogate-gradient spiking LIF,
 later vs attention Transformer), not the vision/language pairs dominating prior evidence;
-(c) the integration of the five threads above into a single substrate-agnostic protocol
+(c) the integration of the six threads above into a single substrate-agnostic protocol
 with an explicit discrete-code measurement methodology. The nerve protocol contributes
 (a)--(c), not the underlying convergence phenomenon nor any individual technique.
 
@@ -118,13 +158,21 @@ invariant (N-3: $\text{role}{=}\varepsilon \Leftrightarrow
 \text{phase}{=}\theta$) functions as a \emph{formal correctness
 contract} --- a type-checker for letter well-formedness at
 composition time --- rather than a differential computational
-mechanism. In the experiments reported in this paper all substrates
-emit $\pi$ letters in the $\gamma$ phase exclusively (\S Threats to
-Validity), so the invariant is satisfied by construction; its value
-is catching composition bugs when downstream modules inadvertently
-emit malformed letters (\S\,(7) guard-injection test). The
-Bastos-Friston 2012 cortical-microcircuit citation is preserved as
-the structural inspiration, not as a claim of empirical mechanism.
+mechanism. In the experiments reported in this paper all substrates emit $\pi$
+letters in the $\gamma$ phase exclusively (\S Threats to Validity), so
+the invariant is satisfied by construction; its value is catching
+composition bugs when downstream modules inadvertently emit malformed
+letters (\S\,(7) guard-injection test). The structural inspiration is
+the predictive-routing account of Bastos et
+al.~\cite{bastos2020routing} and the 2025 cognitive-process framing by Gabhart et al.~\cite{gabhart2025predictive}, in
+which prediction and error occupy rhythm-specific channels; the earlier
+canonical-microcircuit formulation~\cite{bastos2012canonical} is the
+precursor of that account. We cite this lineage as design inspiration,
+not as a claim of empirical neural mechanism --- the N-3 invariant is a
+formal correctness contract, and the Ruffini et
+al.~\cite{ruffini2025comparator} Comparator circuit is named as the
+closest biophysical model should a future version seek a mechanistic
+grounding.
 
 \subsection{WML polymorphism}
 \texttt{MlpWML} implements the WML protocol via a 4-layer MLP and
@@ -390,6 +438,27 @@ Test~(1), this situates nerve-wml as an empirical PRH validation on
 structurally heterogeneous substrates at both continuous (pre-VQ) and
 discrete (post-VQ) representational levels. Reproducible via
 \texttt{uv run python scripts/platonic\_rh\_alignment.py}.
+
+\textit{Global versus local alignment.} Two 2026 critiques sharpen what
+a PRH-style claim may legitimately assert.
+\cite{platoscave2026} report that cross-model representational
+alignment is fragile and \emph{degrades with model scale}, and
+\cite{aristotelianprh2026} show that \emph{global} convergence is in
+large part a width/depth confounder: once alignment is null-calibrated
+against capacity-matched random baselines, only \emph{local}
+neighbourhood structure survives as a genuine cross-substrate signal.
+Our claim is deliberately the local one. The mutual-kNN kernel of
+Table~\ref{tab:platonic-knn} measures neighbourhood overlap at small
+$k$, and we report it \emph{relative to a capacity-matched random
+baseline} ($18.8\times$ at $k{=}10$) precisely so the figure is
+null-calibrated in the sense those critiques demand. We therefore claim
+that MLP and spiking-LIF substrates share \emph{local} representational
+geometry under the nerve protocol --- not that they converge to a
+single global Platonic representation. This is the conservative reading
+that the 2026 evidence supports, and it is sufficient for the
+substrate-agnostic transmission claim, which only requires that a
+decoder can recover neighbours, not that the two embedding spaces are
+globally isometric.
 
 \textbf{(7) Multi-estimator robustness (v1.5.3).} To address the
 single-estimator caveat raised by \texttt{bouba\_sens} section~6.3,
@@ -835,12 +904,42 @@ backward-compatible with the v1.2.3 scientific baseline
 \texttt{gate-*-passed} invariant tags.
 
 \section{Limitations and Future Work}
+\label{sec:limitations}
 The experiments in this draft use toy signals and small WML pools
 ($N=4$). Scaling to larger pools, LLM-backed WMLs, and hardware
 neuromorphic deployment is left for follow-up work. The $\gamma$
 priority rule suffices in simulation; a phase-locked oscillator
 regime would give the same invariant without the rule and is a
 natural next step.
+
+\subsection{Untested Empirical Scope}
+
+\emph{We enumerate explicitly what has not been empirically validated, to delimit the scope of the claims made in this paper.}
+
+\begin{enumerate}
+\item \textbf{Synthetic Gaussian substrates only.} The scientific evaluation conducted on macM1 (1750 cells across 50 seeds, 8 metrics, Renf 6 in \texttt{docs/superpowers/research/}) uses purely synthetic Gaussian noise: $x = \mathrm{randn}$, $y = x + \sigma\varepsilon$. Real model representations---LLM hidden states, vision embeddings, neuroscience recordings---may exhibit different algebraic and statistical structure. The supplementary CKNNA N-dependence replication shows the predicted decay that we report; whether real codebooks on real model embeddings exhibit the same decay is conjecture pending empirical validation on live model checkpoints.
+
+\item \textbf{BioWML never validated against real CL1/FinalSpark API.} The substrate-agnostic claim extends to BioWML by Protocol conformance---the four WML classes implement the same contract---rather than by empirical accuracy parity with MlpWML, LifWML, and TransformerWML on a shared task. Validation against a real bioculture API (CL1 Petri-dish, FinalSpark array) has not been undertaken; a runbook exists at \texttt{docs/superpowers/research/2026-05-20-bio-api-credentials.md} but remains unexercised.
+
+\item \textbf{No head-to-head performance benchmark versus prior work.} Plan B (Claim A, \S\ref{sec:related}) differentiates the nerve-wml protocol qualitatively from prior discrete-code inter-module schemes (DVNC~\cite{liu2021dvnc}, NIR~\cite{pedersen2024nir}, AER~\cite{aer2025biohybrid}) in structural terms. No end-to-end accuracy or information-transmission benchmark against these three alternatives exists in this paper.
+
+\item \textbf{AKOrN minimal flavour.} The KuramotoMultiplexer used in ablations (Fig.~7) employs learned oscillation frequency $\omega$, coupling strength $K$, and linear readout over 8--32 Euler steps. This is not equivalent to the production AKOrN implementation of Miyato et al.~(ICLR 2025), which uses phase-aware readout and additional constraints. The synchrony spectral-entropy comparison (Renf 7) should be revisited against the full AKOrN architecture in future work.
+
+\item \textbf{Seed scope $n=50$.} Robustness holds within seeds 0--49 (Wilcoxon $p < 10^{-15}$ over the measured range), but generalisation to broader seed populations (e.g., 100, 1000+) is conjecture. Renf 11 (currently unmerged on \texttt{feat/deep-verifications}) provides partial evidence by comparing seed windows 0--49 vs.\ 50--99 vs.\ 1000--1049; until those results land on master, the 50-seed claim remains scope-limited.
+
+\item \textbf{Task scope and MI saturation.} All GTM (gamma-theta multiplex) ablations (Renf 7, Fig.~7) measure the same task configuration: alphabet=64, n\_symbols=7, 128 codes per batch. Mutual information saturates at 2.22 bits on this task. Whether the two competing arms (simple\_gating, akorn\_best) separate on harder routing problems (e.g., alphabet=128, n\_symbols=14, 256 codes per batch) is conjecture pending Renf 13 (\texttt{feat/deep-verifications}). All three arms reach the same accuracy and MI on the current task; the only discriminating axis is carrier spectral structure, not downstream task performance.
+
+\item \textbf{MLX cross-Apple-Silicon non-bit-exact.} The MLX library's \texttt{mx.random.normal} produces numerically distinct outputs across Apple Silicon generations: M1 family (`applegpu\_g13s`) outputs diverge from M3 family onwards (`g15+`, `g16+`). This is reported as ml-explore/mlx\#3568 (open). Numerical reproducibility of any result in this paper relying on MLX holds only within an architectural class (e.g., M1 to M1), not cross-generation.
+
+\item \textbf{Solo author, no internal review.} This paper has not undergone pre-submission internal review. Mitigations adopted during preparation: the fact-check audit (\texttt{scripts/factcheck\_audit.py --ci}) enforces that every numerical claim traces to JSON data from an executed research session, multi-seed measurement (n=50) is standardised across reinforcement runs (Renf 1--8), paired Wilcoxon tests with bootstrap confidence intervals are applied throughout, and five initial claims were revised during the gap-analysis sprint (documented in \texttt{CHANGELOG.md}). The audit currently reports 27 OK / 0 DIVERGENT on master (2026-05-20).
+
+\item \textbf{Spectral entropy 4-arm ordering is B-dependent.} As documented in \S\ref{sec:limitations} (Renf 10, \texttt{2026-05-20-renf10-batch-sensitivity.md}), the strict 4-arm ordering `null < akorn\_best < gtm < simple\_gating' reported in Renf 7 holds only at batch size B=256. At $B \in \{64, 128, 512\}$ the AKOrN arm exhibits seed-variance $\sigma_{H_\mathrm{spec}} \approx 0.6$ and its rank flips with random initialisation. The robust, B-invariant claim is the two pairwise gaps: `gtm > null' ($\Delta \geq 0.05$ bits, $p < 10^{-15}$ at all $B$) and `gtm $\ll$ simple\_gating' (gap $\geq 1.0$ bits, $p < 10^{-15}$ at all $B$).
+
+\item \textbf{CKNNA is N-dependent metric.} The continuous-kernel nearest-neighbour alignment (Gröger et al.~2026) used to validate Claim B (Platonic Representation Hypothesis on discrete codes, \S\ref{sec:info-tx}) is a function of sample count N and pool size. The reported alignment 0.174 at k=10 (3 seeds) represents cross-substrate heterogeneous ANN vs.\ spiking LIF, not a universal constant. Reproducibility requires exact N, k, and seed specification.
+
+\end{enumerate}
+
+Several of these limitations admit straightforward empirical resolution: CL1/FinalSpark API access for item~2, broader seed populations for item~5, head-to-head DVNC/NIR/AER benchmarks for item~3. Others are scope decisions for this paper version (item~4, item~7); their resolution requires substantial additional engineering or interdisciplinary collaboration not undertaken here. All remaining limitations are tracked as future work in the specification (\texttt{docs/superpowers/specs/}).
 
 \textbf{$\gamma/\theta$ empirical stress.} The $\gamma/\theta$ multiplexing
 invariant (N-3: $\text{role}{=}\varepsilon \Leftrightarrow \text{phase}{=}\theta$,
@@ -865,10 +964,88 @@ while strict\_n3=False lets them pass silently. Together, these three
 ablations establish that N-3 is a formal correctness contract --- a
 type-checker for the protocol --- rather than a differential mechanism:
 measurable impact requires deliberate violation injection rather than
-emerging from a correct pipeline. This does not invalidate the
-Bastos-Friston 2012 ancestry, since biological $\gamma / \theta$
-multiplexing is also a correctness-enforcing constraint, not a free
-parameter that tunes computational behaviour.
+emerging from a correct pipeline. This does not invalidate the predictive-routing ancestry
+(\cite{bastos2012canonical, bastos2020routing, gabhart2025predictive}),
+since biological $\gamma / \theta$ rhythm-specific routing is itself a
+gating constraint that determines \emph{when} error channels open, not
+a free parameter that tunes computational behaviour.
+
+\textbf{Carrier-spectrum metric — applying the standard effective-rank diagnostic.}
+A pilot run of the GTM (gamma-theta multiplex) ablation reported a
+\texttt{\_synchrony\_index} per arm, defined as the fraction of carrier
+variance carried by the top principal component of the centered batch.
+The intended reading was ``high \texttt{synchrony\_index} = collapse onto a
+single mode''. A 4-arm replication on $50$ seeds $\times$ $3$ hosts
+(\texttt{null}, \texttt{akorn\_best}, \texttt{gtm},
+\texttt{simple\_gating}; see \texttt{docs/superpowers/research/2026-05-20-synchrony-replacement.md})
+shows this proxy is \emph{anti-monotone} with respect to the intended
+semantics: $\text{null}{=}0.32 > \text{gtm}{=}0.20 > \text{simple\_gating}{=}0.08$
+(paired Wilcoxon $p < 10^{-15}$). A trained-but-broken model
+(null arm: GTM trained on shuffled supervision) concentrates variance
+on one mode and therefore scores \emph{higher} than a model that
+successfully decomposes the task, inverting the intended reading. This
+anti-monotonicity is precisely the failure mode that effective-rank-style
+metrics \cite{royvetterli2007erank} were originally introduced to avoid.
+
+We therefore replace \texttt{\_synchrony\_index} with the spectral-entropy
+form of effective rank \cite{royvetterli2007erank}, $H_{\text{spec}} =
+-\sum_i p_i \log p_i$ with $p_i = \sigma_i^2 / \sum_j \sigma_j^2$ ---
+the standard collapse-analysis quantity, recently reapplied to
+representation-evaluation in LLM hidden states \cite{wei2024differank}.
+A batch-size sensitivity sweep over $B \in \{64, 128, 256, 512\}$
+(50 seeds $\times$ 4 arms $\times$ 4 batch sizes; see
+\texttt{docs/superpowers/research/2026-05-20-renf10-batch-sensitivity.md})
+shows that the \emph{strict 4-arm ordering} is $B$-dependent and only
+holds at $B = 256$; at $B \in \{64, 128, 512\}$ the
+\texttt{akorn\_best} arm exhibits high seed-variance
+($\sigma_{H_{\text{spec}}} \approx 0.6$ across seeds vs.\
+$\sigma \approx 0.01$ for \texttt{gtm}) and its rank against
+\texttt{null} flips with the random-init realisation. The robust
+claims that survive this sweep at every $B$ are two pairwise
+gaps: $H_{\text{spec}}(\text{gtm}) > H_{\text{spec}}(\text{null})$
+($\Delta \geq 0.05$ bits, paired Wilcoxon $p < 10^{-15}$ at all $B$),
+and $H_{\text{spec}}(\text{gtm}) \ll H_{\text{spec}}(\text{simple\_gating})$
+(gap $\geq 1.0$ bits, paired Wilcoxon $p < 10^{-15}$ at all $B$).
+At the originally-reported $B = 256$ point the four arms are
+$\text{null} (1.74 \pm 0.13) <
+ \text{akorn\_best} (2.04 \pm 0.6) <
+ \text{gtm} (2.19 \pm 0.01) <
+ \text{simple\_gating} (3.62 \pm 0.02)$.
+The semantics are direct: high entropy means information is distributed
+across many effective modes; low entropy means collapse onto few modes.
+\texttt{simple\_gating}, which encodes $7$ symbols $\times$ $64$ codes in
+independent slots, naturally occupies the most modes; the null arm
+collapses; \texttt{gtm} sits in between. We report \texttt{akorn\_best}
+as an \emph{intermediate but high-variance} arm rather than a fourth
+strictly-ranked position, because its placement against \texttt{null}
+is not stable across batch sizes.
+
+With spectral entropy as the carrier-spectrum metric and a
+permutation-shuffled null arm as the cross-condition baseline ---
+a special case of the null-calibration framework formalised by
+\cite{aristotelianprh2026} --- the defensible claim becomes:
+\emph{GTM exhibits a spectral entropy
+($H_{\text{spec}}(\text{gtm}) \in [2.14, 2.20]$ across
+$B \in \{64,128,256,512\}$, $\sigma \approx 0.01$)
+significantly higher than the degenerate null arm at every $B$ tested
+($\Delta \geq 0.05$ bits, $p < 10^{-15}$) and significantly lower than
+\texttt{simple\_gating}'s independent-symbol decomposition at every $B$
+tested (gap $\geq 1.0$ bits, $p < 10^{-15}$). GTM occupies the
+gtm-and-akorn region of the spectrum, below \texttt{simple\_gating}'s
+per-symbol decomposition; this position reflects band-multiplexing
+compression: GTM encodes $7$ symbols into fewer effective modes than
+a one-symbol-per-slot encoding would require.} This is a claim of
+\emph{significant pairwise gaps against two reference arms}, not a
+strict 4-arm ranking and not extremality --- weaker than the original
+``GTM does not collapse'' framing but defensible without the
+metric-monotonicity caveat and robust to batch-size variation.\footnote{%
+The \texttt{\_synchrony\_index} routine in
+\texttt{track\_p/multiplexer.py} still uses the top-PC variance
+definition pending a production-code migration PR
+(\texttt{docs/superpowers/issues/2026-05-20-spectral-entropy-migration.md}).
+The quantity reported in this paper is \texttt{spectral\_entropy}
+from \texttt{scripts/synchrony\_alternatives.py}, committed on
+\texttt{master} at SHA \texttt{076f770}.}
 
 Wiring the adaptive-alphabet operations into live WMLs at training
 time (rather than post-hoc on checkpoints) is tracked in spec \S 13
