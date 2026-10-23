@@ -20,7 +20,7 @@ from pathlib import Path
 import mlx.core as mx
 
 from . import comm, train
-from .codes import ARM_CODES, CONDITION_CODES
+from .codes import ARM_CODES, CONDITION_CODES, SEED_HOST, SEEDS
 from .gtm_mlx import GTMConfigMLX
 from .policy import PairPolicy, param_count
 
@@ -31,10 +31,30 @@ PROCGEN_COMMIT = "5e1dbf3"
 QT_VERSION = "5.15.19"
 DEFAULT_SDKROOT = ("/Applications/Xcode.app/Contents/Developer/Platforms/"
                    "MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk")
-PLANNING_H_PER_RUN = 16.0
-PLANNING_TOTAL_H = 800.0
+PLANNING_H_PER_RUN = 17.6  # macM1, amendment (second round): ~790 pair-steps/s
+PLANNING_TOTAL_H = 528.0  # macM1: 30 runs x 17.6 h (the bottleneck host)
 TOTAL_PAIR_STEPS = 50_000_000
-N_GTM_RUNS, N_OTHER_RUNS = 10, 40  # gtm: 5 registered + 5 closed; others
+N_RUNS = 60  # 6 seeds x (6 registered + 4 closed arms)
+RUNS_PER_HOST = 30  # 3 seeds per host x 10 runs per seed
+GTM_RUNS_PER_HOST = 6  # 3 seeds x (registered + closed)
+N_EVAL_MODELS = 60
+# KXKM-AI (RTX 4090), micro_batch_pairs 512 + clear_cache: measured
+# 1,286-1,295 pair-steps/s (bench/kxkm/README.md, branch feat/n10c-grad-accum,
+# PR #53); the amendment uses 1,290. Evaluation ~6.7 min per model on KXKM.
+KXKM_PAIR_STEPS_PER_S = 1290.0
+KXKM_EVAL_S_PER_MODEL = 402.0
+PROCGEN_X86_WHEEL = "procgen-0.10.7-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+PROCGEN_X86_WHEEL_SHA256 = (
+    "4b594d14e42f0f2166e59a9e294477b906eb99c90c3343b570b7124cbc865f53")
+KXKM_VERSIONS = {  # venv310 on KXKM-AI, recorded 2026-10-23; re-verify at deploy
+    "python": "3.10.18", "mlx": "0.31.1", "mlx-cuda-12": "0.31.1",
+    "numpy": "1.26.4", "gym3": "0.3.3", "gym": "0.26.2", "procgen": "0.10.7",
+}
+HOST_TRAIN_SETTINGS = {
+    "macm1": {"micro_batch_pairs": "none (full minibatch)", "clear_cache": "off",
+              "n_workers": "1"},
+    "kxkm": {"micro_batch_pairs": "512", "clear_cache": "on", "n_workers": "1"},
+}
 STATUS = "DRAFT — to be filed on OSF by the PI as stage 2 before any run"
 
 RULINGS = [
@@ -68,6 +88,9 @@ RULINGS = [
     "softmax; identical across passes and models. Evaluation episodes are capped "
     "at 5,000 steps (an error, not an outcome). Evaluation messages are "
     "deterministic (GTM argmax symbols).",
+    "R4: gradient accumulation (micro_batch_pairs, clear_cache; PR #53) and "
+    "n_workers (PR #54) are separate branches; both must be merged before the "
+    "filing commit is recorded. The KXKM-AI settings above refer to them.",
     "Task 9: smoke runs = 1 per arm in the registered condition plus gtm in the "
     "closed condition, 200,000 pair-steps each (7 runs), training levels only. "
     "The amendment allows up to 3 per arm of up to 1M steps; more may be added "
@@ -145,28 +168,35 @@ def arm_params() -> dict[str, dict]:
 
 
 def compute_estimate(results: dict) -> dict:
-    """Option D estimate: 50 runs x 50M pair-steps + one evaluation each.
+    """Two-host estimate: 60 runs x 50M pair-steps, 30 per host.
 
-    gtm runs (10) use the measured gtm rate; the other 40 runs use the
-    measured nocomm rate as the proxy (mlp/atoc/dial/eng are not
-    throughput-measured; their smoke-run rates are listed separately).
+    macM1 (seeds 0, 17, 42): 6 gtm runs at the measured gtm rate, 24 others
+    at the measured nocomm rate (proxy), training only. KXKM-AI (seeds 73,
+    101, 131): 30 runs at the KXKM rate, plus the evaluation of all 60
+    models (macM1 checkpoints are copied to KXKM). The hosts run in
+    parallel; the wall time is set by the slower host.
     """
     g, n = results["gtm"], results["nocomm"]
 
-    def per_run(r: dict) -> float:
-        train_h = TOTAL_PAIR_STEPS / r["pair_steps_per_s"] / 3600
-        return train_h + r["eval_proxy"]["seconds_per_model_2x200"] / 3600
+    def train_h(r: dict) -> float:
+        return TOTAL_PAIR_STEPS / r["pair_steps_per_s"] / 3600
 
-    hg, hn = per_run(g), per_run(n)
-    total = N_GTM_RUNS * hg + N_OTHER_RUNS * hn
-    worst = (N_GTM_RUNS + N_OTHER_RUNS) * max(hg, hn)
+    hg, hn = train_h(g), train_h(n)
+    mac = GTM_RUNS_PER_HOST * hg + (RUNS_PER_HOST - GTM_RUNS_PER_HOST) * hn
+    kx_run = TOTAL_PAIR_STEPS / KXKM_PAIR_STEPS_PER_S / 3600
+    kx_train = RUNS_PER_HOST * kx_run
+    kx_eval = N_EVAL_MODELS * KXKM_EVAL_S_PER_MODEL / 3600
+    wall = max(mac, kx_train + kx_eval)
     return {
         "hours_per_run_gtm": hg, "hours_per_run_nocomm": hn,
-        "total_hours": total, "total_days": total / 24,
-        "conservative_total_hours_all_runs_at_slowest": worst,
+        "macm1_hours": mac, "kxkm_hours_per_run": kx_run,
+        "kxkm_train_hours": kx_train, "kxkm_eval_hours": kx_eval,
+        "wall_hours": wall, "wall_days": wall / 24,
+        "bottleneck_host": "macm1" if mac >= kx_train + kx_eval else "kxkm",
+        "total_hours": mac + kx_train + kx_eval,
         "planning_h_per_run": PLANNING_H_PER_RUN,
         "planning_total_hours": PLANNING_TOTAL_H,
-        "exceeds_planning": total > PLANNING_TOTAL_H,
+        "exceeds_planning": mac > PLANNING_TOTAL_H,
     }
 
 
@@ -216,28 +246,34 @@ def _fmt_estimate(thr: dict | None) -> list[str]:
                 "throughput).", ""]
     e = compute_estimate(thr["results"])
     lines = [
-        "Option D: 50 runs (10 gtm: 5 registered + 5 closed; 40 others), each "
-        f"{TOTAL_PAIR_STEPS:,} pair-steps, plus one evaluation per trained model. "
-        "The gtm rate is used for gtm runs; the nocomm rate is used as a proxy for "
-        "the other 40 runs (mlp, atoc, dial, eng were not throughput-measured; see "
-        "the smoke-run rates).", "",
-        f"- per run: gtm {e['hours_per_run_gtm']:.1f} h, others (nocomm proxy) "
-        f"{e['hours_per_run_nocomm']:.1f} h",
-        f"- total: **{e['total_hours']:.0f} h = {e['total_days']:.1f} days** of "
-        "continuous single-job compute",
-        f"- if all 50 runs ran at the slower measured rate: "
-        f"{e['conservative_total_hours_all_runs_at_slowest']:.0f} h",
-        f"- amendment planning figure: about {PLANNING_H_PER_RUN:.0f} h per run, "
-        f"about {PLANNING_TOTAL_H:.0f} h (33 days)", ""]
+        f"Option D on two hosts: {N_RUNS} runs (36 registered + 24 closed), "
+        f"each {TOTAL_PAIR_STEPS:,} pair-steps, {RUNS_PER_HOST} per host. macM1 "
+        "uses the gtm rate for its 6 gtm runs and the nocomm rate as a proxy for "
+        "its 24 other runs (mlp, atoc, dial, eng were not throughput-measured). "
+        f"KXKM-AI uses {KXKM_PAIR_STEPS_PER_S:.0f} pair-steps/s (micro_batch_pairs "
+        "= 512 + clear_cache; bench/kxkm/README.md, PR #53). ALL evaluations run on "
+        "KXKM-AI (macM1 checkpoints are copied there), about "
+        f"{KXKM_EVAL_S_PER_MODEL / 60:.1f} min per model.", "",
+        f"- macM1: {RUNS_PER_HOST} runs, gtm {e['hours_per_run_gtm']:.1f} h and "
+        f"others (nocomm proxy) {e['hours_per_run_nocomm']:.1f} h per run, total "
+        f"**{e['macm1_hours']:.0f} h = {e['macm1_hours'] / 24:.1f} days**",
+        f"- KXKM-AI: {RUNS_PER_HOST} runs x {e['kxkm_hours_per_run']:.1f} h = "
+        f"**{e['kxkm_train_hours']:.0f} h** training, plus "
+        f"{e['kxkm_eval_hours']:.1f} h for the {N_EVAL_MODELS} evaluations",
+        f"- hosts run in parallel; wall time **{e['wall_hours']:.0f} h = "
+        f"{e['wall_days']:.1f} days**, set by {e['bottleneck_host']} (the "
+        "bottleneck)",
+        f"- amendment planning figure: macM1 about {PLANNING_H_PER_RUN:.1f} h per "
+        f"run, about {PLANNING_TOTAL_H:.0f} h (22 days); KXKM about 324 h", ""]
     if e["exceeds_planning"]:
-        lines += [f"**The measured estimate EXCEEDS the amendment's planning figure "
-                  f"({e['total_hours']:.0f} h versus about {PLANNING_TOTAL_H:.0f} h, "
-                  f"{e['total_hours'] / PLANNING_TOTAL_H:.2f} times).** The amendment "
-                  "text has not been changed; whether to revise it, reduce scope, or "
-                  "accept the longer run is the PI's decision.", ""]
+        lines += [f"**The measured macM1 estimate EXCEEDS the amendment's planning "
+                  f"figure ({e['macm1_hours']:.0f} h versus about "
+                  f"{PLANNING_TOTAL_H:.0f} h).** The amendment text has not been "
+                  "changed; whether to revise it or accept the longer run is the "
+                  "PI's decision.", ""]
     else:
-        lines += ["The measured estimate is within the amendment's planning figure.",
-                  ""]
+        lines += ["The measured macM1 estimate is within the amendment's planning "
+                  "figure.", ""]
     return lines
 
 
@@ -303,7 +339,10 @@ def write_manifest(out: Path) -> None:
           f"- `ARM_CODES = {ARM_CODES}`",
           f"- `CONDITION_CODES = {CONDITION_CODES}`",
           "- Run randomness: `numpy.random.SeedSequence([seed, arm_code, cond_code])`, "
-          "seeds {0, 17, 42, 73, 101}.",
+          "seeds {0, 17, 42, 73, 101, 131} (the five registered seeds and 131, "
+          "fixed by the amendment's outcome-blind rule), 6 seeds x 10 arm-condition "
+          "cells = 60 runs. Seed-to-host mapping: macM1: seeds {0, 17, 42}; KXKM-AI: "
+          "seeds {73, 101, 131} (host fixed per seed; see section 4).",
           "- Bus: all arms send m in {0,1}^16 per agent per step; shape and binary "
           "values asserted at evaluation for all arms and in training for all arms "
           "except DIAL (soft DRU outputs in training).", "",
@@ -359,7 +398,8 @@ def write_manifest(out: Path) -> None:
           f"{train.VALUE_COEF}, entropy coefficient {train.ENTROPY_COEF}, max "
           f"gradient norm {train.MAX_GRAD_NORM}.",
           f"- {train.EPOCHS} epochs per update, minibatch {train.MINIBATCH_PAIRS} "
-          "pair-steps (= 2,048 agent-samples), per-minibatch advantage "
+          "pair-steps (= 2,048 agent-samples; on KXKM-AI computed by gradient "
+          "accumulation over micro-batches, same update), per-minibatch advantage "
           "normalisation, 64 parallel coop envs, 128-step rollouts (16,384 "
           "agent-samples per update).",
           f"- Budget {TOTAL_PAIR_STEPS:,} pair-steps per run (about 6,104 updates); "
@@ -370,7 +410,8 @@ def write_manifest(out: Path) -> None:
           "checkpoint is kept (registered failure rule).", "",
           "## 3. Scope", "",
           "Caveflyer-coop and Maze-coop are **not run** under this registration "
-          "(scope option D). N10-C makes no statement about them.", "",
+          "(scope option D). N10-C makes no statement about them. 60 runs on two hosts "
+          "(30 per host), see section 4.", "",
           "## 4. Measured throughput, compute estimate and Procgen build record", "",
           "### Measured training throughput (macM1)", ""]
     lines += _fmt_throughput(thr)
@@ -391,9 +432,49 @@ def write_manifest(out: Path) -> None:
           f"- Python {build['python']} ({build['platform']}); MLX "
           f"{build['mlx']} (runtime {build['mlx_runtime']}); numpy "
           f"{build['numpy']}; gym3 {build['gym3']}; gym {build['gym']}.",
-          "- The patch changes the build configuration only, not game code. "
-          "Equivalence with the official x86-64 builds has not been checked. All "
-          "N10-C runs use this single build.", "",
+          "- The patch changes the build configuration only, not game code. This "
+          "build is used for the macM1 training runs only (seeds 0, 17, 42).", "",
+          "### Hosts, seed-to-host mapping and KXKM-AI record", "",
+          "Host is a block factor fixed per seed; all arms and both conditions of a "
+          "seed run on that seed's host.", ""]
+    for host, label, hw in (
+            ("macm1", "macM1", "Apple M1 Max, 32 GB, MLX Metal"),
+            ("kxkm", "KXKM-AI", "RTX 4090 24 GB, MLX CUDA 12")):
+        sd = [s for s in SEEDS if SEED_HOST[s] == host]
+        st = HOST_TRAIN_SETTINGS[host]
+        lines.append(
+            "- " + label + ": seeds {" + ", ".join(map(str, sd)) + "} (" + hw
+            + "); micro_batch_pairs = " + st["micro_batch_pairs"]
+            + ", clear_cache = " + st["clear_cache"] + ", n_workers = "
+            + st["n_workers"] + " (planned launch value; confirm at launch).")
+    kv = KXKM_VERSIONS
+    lines += [
+          "- KXKM-AI software (venv310, recorded 2026-10-23, re-verify at deploy): "
+          + ", ".join(f"{k} {v}" for k, v in kv.items())
+          + "; `CUDA_HOME` must point at the CUDA headers for the JIT kernels. "
+          "Version pins: mlx 0.31.1 and mlx-cuda-12 0.31.1 on KXKM-AI; MLX 0.31.1 "
+          "(Metal) on macM1.",
+          f"- KXKM-AI Procgen build: the official Procgen 0.10.7 x86-64 wheel "
+          f"`{PROCGEN_X86_WHEEL}`, PyPI SHA-256 `{PROCGEN_X86_WHEEL_SHA256}`.",
+          "- ALL evaluations (200 held-out levels, intact and shuffled passes, "
+          "cross-seed probe) run on KXKM-AI with the x86-64 build; macM1 "
+          "checkpoints are copied there. **The two Procgen builds are NOT "
+          "bit-identical**: on 20 of 20 CoinRun levels tested the frame / reward "
+          "streams differ between macM1 (arm64) and KXKM-AI (x86-64), although "
+          "each machine is deterministic across reruns; frames agree early in an "
+          "episode on some levels and diverge late (reports/bench-m3-kxkm-es.md "
+          "and its frames files). macM1-trained models are therefore evaluated "
+          "on the x86 rendering.", "",
+          "### Reproducibility (nondeterminism)", "",
+          "On both Metal and CUDA, MLX 0.31.1 convolution backward in the IMPALA "
+          "trunk is nondeterministic (Metal about 1e-7 relative, CUDA about 1.4e-5 "
+          "to 4.5e-5 relative per gradient; initialisation, forward pass and the "
+          "first rollout are bit-identical; no deterministic switch exists). Runs "
+          "are statistically, not bitwise, reproducible from the seed; an "
+          "infrastructure-failure restart with the same seed stream will not "
+          "retrace the same trajectory. Evidence: "
+          "`experiments/procgen_multiagent_gtm_comm/bench/kxkm/repeat/` and "
+          "`bench/kxkm/README.md` (branch feat/n10c-grad-accum, PR #53).", "",
           "## Smoke runs and development disclosure", ""]
     lines += _fmt_smoke(sm)
     lines += ["Development used only the stub (unit tests with scripted environments), "
@@ -404,7 +485,9 @@ def write_manifest(out: Path) -> None:
           "After each run and each evaluation, the run directory (`run.json`, "
           "checkpoints, EvalRecord JSON) is copied to electron-server (Tailscale "
           "100.78.191.52) for storage. The copy is post-hoc storage only and "
-          "changes no registered quantity. Destination path: **to be filled by "
+          "changes no registered quantity. macM1 checkpoints are additionally copied to "
+          "KXKM-AI for evaluation (campaign `sync` step). Destination path: "
+          "**to be filled by "
           "the PI before filing**: `<PATH>`. (This item is outside items 1-4 of the "
           "amendment's manifest list; flagged for the PI.)", "",
           "## Implementation rulings disclosed", ""]
