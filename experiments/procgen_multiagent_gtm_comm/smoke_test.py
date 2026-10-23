@@ -21,7 +21,12 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
-    env = ProcgenCoopEnv(env_name="coinrun", n_agents=2, seed=args.seed)
+    # Smoke only: the stub is allowed here, never in scientific runs.
+    env = ProcgenCoopEnv(
+        env_name="coinrun", n_agents=2, seed=args.seed, allow_stub=True
+    )
+    if env.using_stub:
+        print("WARNING: procgen not installed ; running on the stub env.")
     obs = env.reset()
     print(
         f"reset OK. n_agents={len(obs)}, obs[0].shape={obs[0].shape}, "
