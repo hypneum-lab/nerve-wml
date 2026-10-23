@@ -54,22 +54,27 @@ class _Block:
     ) -> None:
         self.n = len(seeds)
         self.team_summary = team_summary
-        self.envs = [
-            ProcgenCoopEnv(
-                seed=seed,
-                team_summary=team_summary,
-                num_levels=num_levels,
-                start_level=start_level,
-                env_factory=env_factory,
-            )
-            for seed in seeds
-        ]
+        self.envs: list[ProcgenCoopEnv] = []
         self._shared = obs_buf is not None
         self.obs = obs_buf if self._shared else np.empty(
             (self.n, 2, 64, 64, 3), dtype=np.uint8
         )
-        for k, e in enumerate(self.envs):
-            self.obs[k] = np.stack(e._last_obs)
+        try:
+            for seed in seeds:  # incremental: earlier envs are closed on failure
+                self.envs.append(
+                    ProcgenCoopEnv(
+                        seed=seed,
+                        team_summary=team_summary,
+                        num_levels=num_levels,
+                        start_level=start_level,
+                        env_factory=env_factory,
+                    )
+                )
+            for k, e in enumerate(self.envs):
+                self.obs[k] = np.stack(e._last_obs)
+        except BaseException:
+            self.close()
+            raise
 
     def _ret_obs(self) -> np.ndarray | None:
         # Shared-memory blocks publish obs through the buffer, not the pipe.
@@ -91,11 +96,25 @@ class _Block:
         return flag, rem
 
     def reset(self) -> tuple:
+        try:
+            return self._reset()
+        except BaseException:
+            self.close()
+            raise
+
+    def _reset(self) -> tuple:
         for k, e in enumerate(self.envs):
             self.obs[k] = np.stack(e.reset())
         return (self._ret_obs(), self.summary(), *self.window())
 
     def step(self, actions: np.ndarray) -> tuple:
+        try:
+            return self._step(actions)
+        except BaseException:
+            self.close()
+            raise
+
+    def _step(self, actions: np.ndarray) -> tuple:
         team = np.zeros(self.n, dtype=np.float32)
         done = np.zeros(self.n, dtype=bool)
         finished = np.zeros((self.n, 2), dtype=bool)
@@ -176,6 +195,8 @@ class VecCoopEnv:
         env_factory: Callable[[int], Any] | None = None,
         n_workers: int = 1,
     ) -> None:
+        if n_pairs < 1:
+            raise ValueError("n_pairs must be >= 1")
         if n_workers < 1:
             raise ValueError("n_workers must be >= 1")
         self.n_pairs = n_pairs

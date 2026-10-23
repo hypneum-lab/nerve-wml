@@ -175,7 +175,13 @@ class ProcgenCoopEnv:
         self._episode += 1
         rand_seed = self._level_seed()
         # Same rand_seed for every agent: both play the same level.
-        self._envs = [self._make_env(rand_seed) for _ in range(self.n_agents)]
+        self._envs = []
+        try:
+            for _ in range(self.n_agents):
+                self._envs.append(self._make_env(rand_seed))
+        except BaseException:
+            self.close()
+            raise
         self._finished = [False] * self.n_agents
         self._steps_since_first_coin = None
         self._first_coin_agent = None

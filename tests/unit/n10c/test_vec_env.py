@@ -183,7 +183,13 @@ def _trace(n_workers: int) -> list:
 
 def test_vec_env_identical_across_worker_counts() -> None:
     ref = _trace(1)
-    assert any(x.dtype == bool and x.any() for x in ref)  # resets happen
+    assert _trace(1)[1].tolist() == ref[1].tolist()  # repeatable in-process
+    # ref layout: 4 reset arrays, then 9 per step
+    steps = [ref[4 + 9 * i: 4 + 9 * (i + 1)] for i in range(50)]
+    done = np.stack([x[3] for x in steps])
+    finished = np.stack([x[4] for x in steps])
+    assert done.any()  # auto-resets happen
+    assert (finished & ~done[..., None]).any()  # frozen agents occur
     for n_workers in (2, 4):
         got = _trace(n_workers)
         assert len(got) == len(ref)
@@ -211,3 +217,113 @@ def test_vec_env_workers_closed_on_close() -> None:
     vec.reset()
     vec.close()
     assert not any(p.is_alive() for p in procs)
+
+
+def _shm_gone(name: str) -> bool:
+    from multiprocessing import shared_memory
+
+    try:
+        shared_memory.SharedMemory(name=name).close()
+    except FileNotFoundError:
+        return True
+    return False
+
+
+class _Tracking:
+    """Closure factory recording envs; fails on the ``fail_on``-th call."""
+
+    def __init__(self, fail_on: int | None = None, fail_t: int | None = None):
+        self.made: list[_Scripted] = []
+        self.closed: list[_Scripted] = []
+        self.fail_on, self.fail_t = fail_on, fail_t
+
+    def __call__(self, rand_seed: int):
+        if self.fail_on is not None and len(self.made) == self.fail_on:
+            raise RuntimeError("ctor failure")
+        outer = self
+        t_fail = self.fail_t
+
+        class E(_Scripted):
+            def act(self, a):
+                super().act(a)
+                if t_fail is not None and self.t == t_fail:
+                    raise RuntimeError("step failure")
+
+            def close(self):
+                outer.closed.append(self)
+
+        env = E(rand_seed, set())
+        self.made.append(env)
+        return env
+
+
+def test_inprocess_ctor_failure_closes_earlier_envs() -> None:
+    f = _Tracking(fail_on=5)
+    with pytest.raises(RuntimeError, match="ctor failure"):
+        VecCoopEnv(4, run_seed_sequence(0, "gtm", "registered"), True,
+                   env_factory=f)
+    assert len(f.made) == 5
+    assert {id(e) for e in f.made} <= {id(e) for e in f.closed}
+
+
+def test_inprocess_step_failure_closes_envs() -> None:
+    f = _Tracking(fail_t=1)
+    vec = VecCoopEnv(2, run_seed_sequence(0, "gtm", "registered"), True,
+                     env_factory=f)
+    vec.reset()
+    f.closed.clear()
+    with pytest.raises(RuntimeError, match="step failure"):
+        for _ in range(3):
+            vec.step(_act(2))
+    assert f.closed  # live envs closed on the error path
+
+
+def test_inprocess_reset_failure_closes_envs() -> None:
+    f = _Tracking()
+    vec = VecCoopEnv(2, run_seed_sequence(0, "gtm", "registered"), True,
+                     env_factory=f)
+    f.fail_on = len(f.made) + 1  # second env of the reset fails
+    f.closed.clear()
+    with pytest.raises(RuntimeError, match="ctor failure"):
+        vec.reset()
+    assert f.closed
+
+
+def test_shm_unlinked_after_close_and_failures(monkeypatch) -> None:
+    from multiprocessing import shared_memory
+
+    from experiments.procgen_multiagent_gtm_comm.harness import vec_env
+    from tests.unit.n10c.scripted_env import (
+        failing_factory,
+        init_failing_factory,
+    )
+
+    names: list[str] = []
+
+    class Rec(shared_memory.SharedMemory):
+        def __init__(self, *a, **k):
+            super().__init__(*a, **k)
+            if k.get("create"):
+                names.append(self.name)
+
+    class NS:
+        SharedMemory = Rec
+
+    monkeypatch.setattr(vec_env, "shared_memory", NS)
+    vec = _rand_vec(2)
+    vec.reset()
+    vec.close()
+    with pytest.raises(RuntimeError, match="scripted init failure"):
+        _rand_vec(2, factory=init_failing_factory)
+    vec = _rand_vec(2, factory=failing_factory)
+    vec.reset()
+    with pytest.raises(RuntimeError, match="scripted env failure"):
+        for _ in range(6):
+            vec.step(np.zeros((6, 2), dtype=np.int32))
+    assert len(names) == 3
+    assert all(_shm_gone(n) for n in names)
+
+
+def test_n_pairs_validated() -> None:
+    with pytest.raises(ValueError):
+        VecCoopEnv(0, run_seed_sequence(0, "gtm", "registered"), True)

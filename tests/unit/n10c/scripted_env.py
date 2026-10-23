@@ -9,15 +9,16 @@ _CALLS: dict[int, int] = {}
 class RandScripted:
     """Behaviour is a pure function of (rand_seed, agent index, step).
 
-    The agent index is the creation order for a given level seed (the
-    coop wrapper builds agent 0 then agent 1 with the same seed).
+    The agent role alternates per level seed (the coop wrapper builds
+    agent 0 then agent 1 with the same seed); only the parity of the
+    creation count is used, never a generation count.
     """
 
     def __init__(self, rand_seed: int, fail_at: int | None = None) -> None:
         n = _CALLS.get(rand_seed, 0)
         _CALLS[rand_seed] = n + 1
         self.agent = n % 2
-        self.rng = np.random.default_rng([rand_seed, self.agent, n // 2])
+        self.rng = np.random.default_rng([rand_seed, self.agent])
         self.coin_at = int(self.rng.integers(0, 6))
         self.die_at = int(self.rng.integers(3, 9))
         self.fail_at = fail_at
@@ -47,3 +48,7 @@ def rand_factory(rand_seed: int) -> RandScripted:
 
 def failing_factory(rand_seed: int) -> RandScripted:
     return RandScripted(rand_seed, fail_at=3)
+
+
+def init_failing_factory(rand_seed: int) -> RandScripted:
+    raise RuntimeError("scripted init failure")
