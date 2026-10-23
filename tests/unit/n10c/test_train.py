@@ -313,41 +313,142 @@ def test_nonfinite_micro_stops_before_apply(tmp_path):
 def _run_params(tmp_path, arm, micro, name, *, total=PER_UPDATE, mbp=4):
     """(params after update 1, params after the last update, RunRecord)."""
     snaps = {}
+    rollouts = {}
 
     def hook(update, model):
         snaps[update] = {k: np.array(v) for k, v in
                          tree_flatten(model.parameters())}
 
+    def rhook(update, buf):
+        if update == 1:
+            rollouts.update({n: np.array(getattr(buf, n)) for n in (
+                "obs", "actions", "logp", "value", "returns")})
+
     rec = train_run(
         arm, 5, "registered", total, tmp_path / name, env_factory=_factory(),
         n_pairs=NP, horizon=H, log_every_pair_steps=PER_UPDATE,
         ckpt_every_pair_steps=PER_UPDATE, minibatch_pairs=mbp,
-        micro_batch_pairs=micro, _fault_hook=hook,
+        micro_batch_pairs=micro, _fault_hook=hook, _rollout_hook=rhook,
     )
+    _run_params.rollouts = rollouts  # first rollout of the last call
     return snaps[1], snaps[max(snaps)], rec
 
 
+LR_ = 5e-4
+
+
+def _max_abs_diff(a, b):
+    return max(float(np.abs(a[k] - b[k]).max()) for k in a)
+
+
 @pytest.mark.parametrize("arm", ["gtm", "dial", "mlp", "nocomm"])
-def test_accumulation_matches_full_batch(tmp_path, arm):
-    ref, _, _ = _run_params(tmp_path, arm, None, "ref")
-    acc, _, _ = _run_params(tmp_path, arm, 2, "acc")
-    assert ref.keys() == acc.keys()
-    # Relaxed on purpose: the strict (rel 1e-5) equivalence is asserted on
-    # the gradients in test_accumulated_grad_matches_full_batch_all_arms.
-    # Adam's step is ~lr*sign(g), so a ~1e-7 gradient difference (float
-    # summation order) flips near-zero-gradient entries by up to 2*lr per
-    # step; params can therefore only be compared up to that bound.
-    # 3 epochs x 2 minibatches = 6 optimizer steps.
-    worst_abs, close, size = 0.0, 0, 0
-    for k in ref:
-        d = np.abs(ref[k] - acc[k])
-        worst_abs = max(worst_abs, float(d.max()))
-        close += int((d <= 1e-5 * (np.abs(ref[k]) + 1e-3)).sum())
-        size += d.size
-    assert worst_abs <= 6 * 2 * 5e-4 + 1e-6
-    # run-to-run (non-bit-exact Metal) the fraction within 1e-5 varied
-    # 0.69-0.999: only a sanity check that most entries agree.
-    assert close / size > 0.5
+def test_same_mode_repeat_control(tmp_path, arm):
+    """Same seed, same mode, run twice: inputs are bit-identical, the
+    parameters after one update are NOT (see the localisation test below),
+    and accumulation does not add error beyond the same-mode noise floor."""
+    p1, _, _ = _run_params(tmp_path, arm, None, "rep1")
+    r1 = dict(_run_params.rollouts)
+    p2, _, _ = _run_params(tmp_path, arm, None, "rep2")
+    r2 = dict(_run_params.rollouts)
+    for n in r1:  # identical init + rollout inputs (forward is bit-exact)
+        assert np.array_equal(r1[n], r2[n]), n
+    pa, _, _ = _run_params(tmp_path, arm, 2, "acc")
+    # 3 epochs x 2 minibatches = 6 Adam steps; a ~1e-7 trunk-gradient
+    # difference flips near-zero entries by up to 2*lr per step.
+    bound = 6 * 2 * LR_ + 1e-6
+    floor = _max_abs_diff(p1, p2)  # same-mode noise floor (not hidden)
+    assert floor <= bound
+    assert _max_abs_diff(p1, pa) <= bound
+
+
+@pytest.mark.parametrize("arm", ["mlp", "gtm"])
+def test_nondeterminism_is_localised_to_conv_backward(arm):
+    # Measured finding (Metal, MLX 0.31.1): init and forward are
+    # bit-identical across repeats; so are the gradients of every tensor
+    # outside the IMPALA conv stack. Only conv weight/bias gradients
+    # (trunk.blocks.*) vary run to run, by ~1e-9 absolute (~1e-7 rel),
+    # with or without mx.compile (conv backward reductions are not
+    # order-deterministic). Not the GTM path, not accumulation.
+    m1 = PairPolicy(arm, mx.random.key(1))
+    m2 = PairPolicy(arm, mx.random.key(1))
+    f1, f2 = tree_flatten(m1.parameters()), tree_flatten(m2.parameters())
+    assert all(np.array_equal(np.array(a), np.array(b))
+               for (_, a), (_, b) in zip(f1, f2, strict=True))
+    opt = optim.Adam(learning_rate=LR_)
+    opt.init(m1.trainable_parameters())
+    gs = _make_steps(m1, opt, False, plastic=False)[0]
+    mb = _rand_mb(8, seed=3)
+    mb["noise"] = (m1.sample_noise(8, mx.random.key(5)) if m1.noise_dim
+                   else mb["noise"])
+    k = mx.random.key(0)
+    out = [m1(mb["obs"], mb["summary"], None, train=True, key=k,
+              noise=mb["noise"] if m1.noise_dim else None) for _ in range(2)]
+    assert np.array_equal(np.array(out[0].logits), np.array(out[1].logits))
+    gr = [dict(tree_flatten(accumulate_minibatch(gs, mb, None, k)[1]))
+          for _ in range(4)]
+    for g in gr[1:]:
+        for name, a in gr[0].items():
+            a, b = np.array(a), np.array(g[name])
+            if not name.startswith("trunk.blocks"):
+                assert np.array_equal(a, b), name
+            else:
+                assert np.abs(a - b).max() <= 1e-5 * (np.abs(a).max() + 1e-12)
+
+
+def test_optimizer_equivalence_vs_independent_adam():
+    """Same params AND Adam state, one fixed minibatch through both paths;
+    each resulting update is compared with an independent numpy Adam
+    (MLX Adam default: no bias correction, b1 .9, b2 .999, eps 1e-8)
+    applied to that path's own finalized gradient."""
+    def build():
+        m = PairPolicy("mlp", mx.random.key(1))
+        mx.eval(m.parameters())
+        o = optim.Adam(learning_rate=LR_)
+        o.init(m.trainable_parameters())
+        gs_, ap_, _ = _make_steps(m, o, False, plastic=False)
+        return m, o, gs_, ap_
+
+    (ma, oa, gsa, apa), (mb_, ob, gsb, apb) = build(), build()
+    k = mx.random.key(0)
+    warm = _rand_mb(8, seed=1)
+    # ONE warm gradient applied to both clones (recomputing it per clone
+    # would already differ at ~1e-9: conv backward is not bit-repeatable).
+    _, g, _ = accumulate_minibatch(gsa, warm, None, k)
+    g = finalize_grads(g, None)[0]
+    mx.eval(g)
+    for m, o, ap in ((ma, oa, apa), (mb_, ob, apb)):
+        ap(g)
+        mx.eval(m.state, o.state)
+    p0 = {n: np.array(v, np.float64) for n, v in tree_flatten(ma.parameters())}
+    p0b = {n: np.array(v, np.float64) for n, v in tree_flatten(mb_.parameters())}
+    assert all(np.array_equal(p0[n], p0b[n]) for n in p0)  # cloned start
+
+    def adam_state(o):
+        st = dict(tree_flatten(o.state))
+        return ({n: np.array(st[n + ".m"], np.float64) for n in p0},
+                {n: np.array(st[n + ".v"], np.float64) for n in p0})
+
+    m0, v0 = adam_state(oa)
+    assert all(np.abs(m0[n]).max() > 0 for n in p0 if "weight" in n)
+    mbx = _rand_mb(8, seed=2, ret_scale=10.0)
+    for m, o, gs, ap, micro in ((ma, oa, gsa, apa, None),
+                                (mb_, ob, gsb, apb, 3)):
+        _, acc, ok = accumulate_minibatch(gs, mbx, micro, k)
+        assert ok
+        g, _ = finalize_grads(acc, None)
+        mx.eval(g)
+        gn = {n: np.array(v, np.float64) for n, v in tree_flatten(g)}
+        ap(g)
+        mx.eval(m.state, o.state)
+        got = {n: np.array(v, np.float64) for n, v in tree_flatten(m.parameters())}
+        for n in p0:
+            mm = 0.9 * m0[n] + 0.1 * gn[n]
+            vv = 0.999 * v0[n] + 0.001 * gn[n] ** 2
+            exp = p0[n] - LR_ * mm / (np.sqrt(vv) + 1e-8)
+            # float32 state/param arithmetic: abs error <= ~1e-7 on
+            # parameters of magnitude <= ~1 (eps32 = 6e-8), rel 1e-5 on
+            # the update itself for the sqrt/division chain.
+            assert np.allclose(got[n], exp, rtol=1e-5, atol=2e-7), (micro, n)
 
 
 @pytest.mark.parametrize("arm", ["gtm", "dial", "mlp", "nocomm"])
