@@ -6,18 +6,19 @@
 **OSF registration:** no N11-C-specific OSF identifier is recorded in this repository. The programme-level OSF pre-registration is [10.17605/OSF.IO/Q6JYN](https://doi.org/10.17605/OSF.IO/Q6JYN) (dreamOfkiki, locked 2026-04-19).
 **Data status at drafting:** no N11-C code or run exists in this repository (no `experiments/dreamer_gtm_dynamics_atari100k/`). The CartPole dev-kickoff smoke has not been committed.
 
-The locked pre-registration file is not modified. This amendment is append-only and takes effect only once filed. Where it conflicts with the locked file, this amendment governs.
+The locked pre-registration file is not modified. This amendment is append-only and takes effect only once filed. Where it conflicts with the locked file, this amendment governs. The locked file labels its research hypothesis "H0" ; this amendment calls it the **research hypothesis**.
 
 ## Summary of the change
 
 1. **Estimation / pilot reframing (PI decision 2026-10-23). This changes the interpretation of the study.** N11-C becomes an estimation (pilot) study. It reports effect estimates with confidence intervals and makes **no superiority verdict**. The C'-headline / C'-tied-stable / C'-loses labels and their win-count thresholds are **not applied**. Seeds, games, arms and the registered compute are unchanged.
 2. **Replace the IRIS comparator with the published ITC agent** (Simulus with ITC decoding, run as a full-agent comparator). IRIS is kept as the fallback if the ITC code cannot be run.
 3. **State why DreamerV3**, and not Dreamer 4, is the target architecture.
-4. Withdraw the locked file's reduced-seed and "top-2 promising games" provisions. Correct the compute statement.
+4. Freeze a common Atari-100k protocol for all arms, independent per-arm random streams, and a required immutable configuration manifest.
+5. Withdraw the locked file's reduced-seed and "top-2 promising games" provisions. Correct the compute statement.
 
 ## Rationale
 
-- **Power.** With 5 seeds per arm and game and Bonferroni correction the registered per-game tests have little power. Recomputed for independent normal groups, equal variances, 5 seeds per arm, two-sided Welch-type t-tests (df = 8):
+- **Power.** With 5 seeds per arm and game and Bonferroni correction the registered per-game tests have little power. Fixed-df (df = 8) two-sided t calculations for two independent normal groups of 5 with equal variances:
 
   | Family | Comparisons | Per-test α | Power at d = 1 | d for 80 % power |
   |---|---:|---:|---:|---:|
@@ -33,18 +34,25 @@ The locked pre-registration file is not modified. This amendment is append-only 
 ### Comparator arm (frozen)
 
 - **Removed from the comparison set:** IRIS-transformer-dynamics as a module inside DreamerV3. Published IRIS scores may be quoted as context and are not part of any contrast.
-- **Added: the published ITC Atari agent** (Simulus with ITC decoding), run from the official code at the commit recorded in the pre-run supplement, with its published Atari-100k configuration, the same 100k environment-step budget, the same 6 games and the same 5 seeds. It is labelled "**full-agent comparator**" in all reporting. GTM-vs-ITC contrasts compare whole agents (DreamerV3 with a GTM transition predictor versus Simulus+ITC). They are not comparisons of matched dynamics modules.
+- **Added: the published ITC Atari agent** (Simulus with ITC decoding), run from the official code at the commit recorded in the manifest, with its published agent hyperparameters, under the **common protocol** below, on the same 6 games with the same 5 seed labels. It is labelled "**full-agent comparator**" in all reporting. GTM-vs-ITC contrasts compare whole agents (DreamerV3 with a GTM transition predictor versus Simulus+ITC). They are not comparisons of matched dynamics modules.
 - **Not used:** a module-level port of ITC decoding into the DreamerV3 RSSM. It would be a new, unvalidated adaptation, not the published comparator.
-- **Environment settings:** each agent uses its codebase's published Atari-100k settings. Every difference from the DreamerV3 settings (sticky actions, frame skip, episode cap, evaluation protocol) is listed in the supplement and in the report.
+- **Comparability:** if the official ITC code cannot be configured to the common protocol, the ITC arm is still run, under its own published protocol, and every GTM-vs-ITC result is described only as a comparison of **different agent-and-environment packages**, never as agent performance under equal conditions. Whether the common protocol can be applied is recorded in the manifest before any Atari-100k run.
 - **Reproduction check (reported, never an exclusion criterion):** per-game ITC means from this study are reported next to the published ITC numbers.
-- **Fallback, decided before any Atari-100k run on availability only:** the official ITC code is smoke-run on Pong for 10k environment steps. If it is not publicly available, or does not complete this smoke without error, the comparator is the official **IRIS** agent (the registered alternative, run as a full agent under the same rules). The outcome is recorded in the supplement. Smoke runs are excluded from all analyses.
+- **Fallback, decided before any Atari-100k run on availability only:** the official ITC code is smoke-run on Pong for 10k environment steps. If it is not publicly available, or does not complete this smoke without error, the comparator is the official **IRIS** agent (the registered alternative, run as a full agent under the same rules). The outcome is recorded in the manifest. Smoke runs are excluded from all analyses.
 
 ### Why DreamerV3 and not Dreamer 4 (rationale, no design change)
 
-- **Interface:** H0 concerns replacing the RSSM transition predictor `(h_t) → ẑ_{t+1}`. Dreamer 4 does not use the RSSM transition-predictor MLP that H0 targets, so the registered intervention has no direct counterpart there.
+- **Interface:** the research hypothesis concerns replacing the RSSM transition predictor `(h_t) → ẑ_{t+1}`. Dreamer 4 does not use the RSSM transition-predictor MLP that it targets, so the registered intervention has no direct counterpart there.
 - **Benchmark fit:** Atari-100k is a standard sample-efficiency benchmark for DreamerV3, with published reference scores. The control arm is therefore anchored to an established baseline.
 - **Compute and tooling:** the registered budget is a single RTX 4090 with an open PyTorch port (`dreamerv3-torch`, per the dev kickoff). Dreamer 4 is designed for a much larger compute scale.
 - **Consequence for claims:** any N11-C result is a statement about RSSM-based world models (DreamerV3 class). It must not be extrapolated to transformer world models such as Dreamer 4 or ITC beyond what the full-agent comparison itself shows.
+
+### Common Atari-100k protocol (all arms, frozen)
+
+- **Budget:** 100k agent steps = 400k emulator frames (frame skip 4), counted from the first environment interaction, including random warm-up steps.
+- **Emulator:** ALE v5 games, minimal action set, `repeat_action_probability = 0` (no sticky actions), maximum 108,000 frames per episode, up to 30 no-op starts. Observation preprocessing (resolution, colour) is part of each agent and follows its published configuration.
+- **Training:** life loss is not a terminal signal for the agent's returns.
+- **Evaluation:** after the full budget, 100 evaluation episodes with the final checkpoint, without exploration noise beyond the agent's own evaluation mode. The score is the mean undiscounted episode return. Human-normalised score = (agent − random) / (human − random) × 100, with the per-game random and human reference scores used by the DreamerV3 Atari-100k evaluation, listed in the manifest.
 
 ### Unchanged
 
@@ -54,11 +62,11 @@ Control arm (standard DreamerV3 MLP transition), 6 games (Pong, Breakout, Asteri
 
 ### Primary estimand (aggregate across games)
 
-Per arm, A_arm = (1/6) Σ_g HNS̄_g,arm, where HNS̄_g,arm is the mean over 5 seeds of the human-normalised score on game g. The estimand is the relative gain θ = A_GTM / A_MLP − 1. This is the aggregate named in the registered H0.
+Per arm, A_arm = (1/6) Σ_g HNS̄_g,arm, where HNS̄_g,arm is the mean over 5 seeds of the human-normalised score on game g. The estimand is the relative gain θ = A_GTM / A_MLP − 1. This is the aggregate named in the registered research hypothesis.
 
-- **Interval:** 95 % two-sided percentile bootstrap. B = 10,000 resamples with `numpy.random.default_rng(20261023)`, stratified by game: the 5 seeds are resampled with replacement within each game and arm, independently across arms (unpaired), and θ is recomputed from each resample.
-- **Denominator rule:** θ is undefined (category *pilot-undefined*) if the 2.5th percentile of the bootstrap distribution of A_MLP is ≤ 0. The absolute difference A_GTM − A_MLP, with its interval from the same resamples, is always reported.
-- **Reference value (SESOI):** Δ = 0.10. The registered H0 says "exceeds baseline … score by ≥ 10 %". It is read here as a relative gain of 10 % of the baseline's aggregate score. *(PI confirmation item 2.)* The value was set on 2026-05-11 as the smallest sample-efficiency gain worth a Paper 2 section. It was not derived from a power analysis.
+- **Interval:** 95 % Fieller interval for the ratio ρ = A_GTM / A_MLP, then θ = ρ − 1. With a = A_GTM and b = A_MLP, v_a = (1/36) Σ_g s²_g,GTM / 5 and v_b likewise (s²_g,arm is the seed variance on game g), arms independent, the interval is the set of ρ with (a − ρb)² ≤ t² · (v_a + ρ² v_b). t is the 97.5 % quantile at df = min(ν_a, ν_b), where ν_a = v_a² / Σ_g [(s²_g,GTM / 180)² / 4] is the Satterthwaite df of v_a, and ν_b likewise. The interval assumes approximately normal seed-level scores. With 5 seeds per game this cannot be checked well, and it is read as a pilot estimate. No bootstrap is used.
+- **Denominator rule:** θ is undefined (category *pilot-undefined*) if b² ≤ t² · v_b (the Fieller set is then unbounded) or if b = 0. The absolute difference A_GTM − A_MLP is always reported, with interval (a − b) ± t · √(v_a + v_b) at the same t.
+- **Reference value (SESOI):** Δ = 0.10. The registered research hypothesis says "exceeds baseline … score by ≥ 10 %". It is read here as a relative gain of 10 % of the baseline's aggregate score. *(PI confirmation item 2.)* The value was set on 2026-05-11 as the smallest sample-efficiency gain worth a Paper 2 section. It was not derived from a power analysis.
 
 ### Pilot categories (mutually exclusive, exhaustive, applied in this order)
 
@@ -83,9 +91,9 @@ Categories 1 and 2 cannot both hold because L ≤ U. None is a superiority, equi
 - **Welch's t-test with Bonferroni α = 0.00417 as a verdict:** replaced by the adjusted intervals. p-values are not used to label outcomes.
 - **Compute-budget provisions** "Reduced subset: 6 games × 3 archs × 3 seeds", "Realistic minimum: … 1 seed. Then add seeds for top-2 promising games", and the risk-factor statement on "reducing to 1–3 seeds": **withdrawn**. All 3 arms × 6 games × 5 seeds are required. Seeds are never added, and games never selected, on the basis of results.
 
-## Pairing and randomness
+## Randomness
 
-Seeds are the same integers across arms. Environment stochasticity and initialisation are consumed differently by each agent, and the comparator is a different codebase. Arms are therefore analysed as independent groups.
+The registered seeds {0, 17, 42, 73, 101} are seed labels. Run (arm a, game g, seed s) draws all of its randomness (initialisation, environment seeds, exploration) from `numpy.random.SeedSequence([s, a, g])`, with fixed integer codes listed in the manifest. Randomness is therefore independent across arms, and arms are analysed as independent groups.
 
 ## Failure, exclusion and replacement
 
@@ -98,25 +106,26 @@ Seeds are the same integers across arms. Environment stochasticity and initialis
 
 Any superiority claim requires a separate, future confirmatory pre-registration with a powered N. Its sample size is computed from the pilot's seed-level variance (the upper one-sided 80 % confidence limit of the pooled SD). The pilot data are not reused in its confirmatory test.
 
-## Pre-run supplement (required, immutable, part of this registration)
+## Configuration manifest (required, immutable, part of this registration)
 
-Before the first Atari-100k run, the PI files a dated supplement on OSF as an update to this registration. It may contain only:
+Before the first Atari-100k run, the PI files a dated manifest on OSF as an update to this registration. It may contain only:
 
-1. the commit of the DreamerV3 port with the GTM transition predictor, and of the MLP control ;
-2. the comparator outcome under the fallback rule (ITC or IRIS), its repository URL and commit, and the list of environment-setting differences ;
-3. the measured per-run cost of each arm on the target hardware, and the compute plan under PI confirmation item 1.
+1. the commit of the DreamerV3 port with the GTM transition predictor and of the MLP control, including the GTM–RSSM interface (how (z_t, h_t, a_t) is projected to the GTM code and decoded to ẑ_{t+1}, and how the discrete stochastic state is handled) and the integer codes for arms and games ;
+2. the comparator outcome under the fallback rule (ITC or IRIS), its repository URL and commit, and whether the common protocol can be applied to it ;
+3. the per-game random and human reference scores ;
+4. the measured per-run cost of each arm on the target hardware, and the compute plan under PI confirmation item 1.
 
-Each item is determined by the rules above, without access to any Atari-100k result of this study. The supplement cannot be changed after filing. Runs started before it is filed are excluded from all analyses and reported.
+Development that informs the manifest may use only the CartPole dev kickoff, the 10k-step Pong smoke of the comparator, and unit tests. It never uses full-budget runs on the 6 registered games. The manifest cannot be changed after filing. Runs started before it is filed are excluded from all analyses and reported.
 
 ## Effect on hypotheses
 
-The H0 statement (GTM-dynamics DreamerV3 exceeds baseline DreamerV3 mean normalised human score by ≥ 10 % over 6 games) is kept as the **primary estimand and its reference value**. It is no longer tested for a superiority verdict at 5 seeds. H0 compares against the MLP control, not against IRIS or ITC.
+The research hypothesis (GTM-dynamics DreamerV3 exceeds baseline DreamerV3 mean normalised human score by ≥ 10 % over 6 games) is kept as the **primary estimand and its reference value**. It is no longer tested for a superiority verdict at 5 seeds. It compares against the MLP control, not against IRIS or ITC.
 
 **Flags for the PI:** (a) the reframing changes how every N11-C outcome may be interpreted and worded in Paper 2 §11, and must be filed as a change of interpretation ; (b) swapping IRIS for the ITC full agent changes which comparator enters 6 of the 12 secondary contrasts, and must be filed as a change to the comparison set.
 
 ## Compute
 
-- **Registered design:** 3 arms × 6 games × 5 seeds = **90 runs**. At the registered estimate of about 24 h per run, this is **2,160 GPU-h, about 90 days sequential** on one RTX 4090. The locked file's "4 parallel runs, ~22 days" assumes four-fold throughput on one GPU, which has not been measured. The ITC full agent's per-run cost may differ from DreamerV3's and is measured for the supplement.
+- **Registered design:** 3 arms × 6 games × 5 seeds = **90 runs**. At the registered estimate of about 24 h per run, this is **2,160 GPU-h, about 90 days sequential** on one RTX 4090. The locked file's "4 parallel runs, ~22 days" assumes four-fold throughput on one GPU, which has not been measured. The ITC full agent's per-run cost may differ from DreamerV3's and is measured for the manifest.
 - **Feasibility (PI confirmation item 1).** The registered design does not fit a single RTX 4090 in a reasonable time. Options, decided before filing, by whole arms only:
   - A. Fund the full 90 runs (for example on multi-GPU hardware): about 2,160 GPU-h plus the comparator's cost difference.
   - B. Drop the comparator arm: 60 runs, about 1,440 GPU-h. The primary estimand is unaffected, and the 6 comparator contrasts are not reported.

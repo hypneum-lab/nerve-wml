@@ -6,17 +6,17 @@
 **OSF registration:** no N10-A-specific OSF identifier is recorded in this repository. The programme-level OSF pre-registration is [10.17605/OSF.IO/Q6JYN](https://doi.org/10.17605/OSF.IO/Q6JYN) (dreamOfkiki, locked 2026-04-19).
 **Data status at drafting:** the ImageNet-100 sweep has not started. The only N10-A run so far is a pipeline smoke test on a CIFAR-10 / frozen ResNet18 stand-in, GTM arm only, 5 epochs (`experiments/imagenet100_gtm_bottleneck/smoke_results.json`). No baseline arm has been trained and no ImageNet-100 result exists.
 
-The locked pre-registration file is not modified. This amendment is append-only and takes effect only once filed. Where it conflicts with the locked file, this amendment governs.
+The locked pre-registration file is not modified. This amendment is append-only and takes effect only once filed. Where it conflicts with the locked file, this amendment governs. The locked file labels its research hypothesis "H0" ; this amendment calls it the **research hypothesis**.
 
 ## Summary of the change
 
 1. **Estimation / pilot reframing (PI decision 2026-10-23). This changes the interpretation of the study.** N10-A becomes an estimation (pilot) study. It reports effect estimates with confidence intervals and makes **no superiority verdict**. The A-headline / A-tied-stable / A-loses labels and their win-count thresholds are **not applied**. Seeds, arms, metrics and compute are unchanged.
 2. **Oscillator-family comparator** added as a fourth bottleneck, reported in a separate family, with the claim it can support restricted to "GTM versus this adapted comparator".
-3. Pairing, failure / exclusion / replacement rules and a required immutable pre-run supplement are specified. The registered third baseline is fixed.
+3. Independent per-arm random streams, failure / exclusion / replacement rules, frozen architecture and metric settings, and a required immutable configuration manifest are specified. The registered third baseline is fixed.
 
 ## Rationale
 
-- **Power.** With 5 seeds per arm and Bonferroni correction the registered win-count tests have little power. Recomputed for independent normal groups, equal variances, 5 seeds per arm, two-sided Welch-type t-tests (df = 8):
+- **Power.** With 5 seeds per arm and Bonferroni correction the registered win-count tests have little power. Fixed-df (df = 8) two-sided t calculations for two independent normal groups of 5 with equal variances:
 
   | Family | Comparisons | Per-test α | Power at d = 1 | d for 80 % power |
   |---|---:|---:|---:|---:|
@@ -35,10 +35,10 @@ The locked pre-registration file is not modified. This amendment is append-only 
 
 ### Primary estimand
 
-θ = mean top-1 (GTM, code_dim = 32) − mean top-1 (VQ-VAE, code_dim = 32), in percentage points on the ImageNet-100 val split, means over the 5 seeds. This is the contrast named in the registered H0.
+θ = mean top-1 (GTM, code_dim = 32) − mean top-1 (VQ-VAE, code_dim = 32), in percentage points on the ImageNet-100 val split, means over the 5 seeds. This is the contrast named in the registered research hypothesis.
 
 - **Interval:** two-sided 95 % Welch CI: difference in means ± t(0.975, ν) · √(s₁²/5 + s₂²/5), ν the Welch–Satterthwaite df.
-- **Reference value (SESOI):** Δ = 1.5 pp, the threshold in the registered H0. It was set on 2026-05-11 as the smallest top-1 gain that would justify a bottleneck claim in Paper 2. It was not derived from a power analysis (no variance data existed). In this pilot it is a reference line for reading the interval, not a decision threshold for superiority.
+- **Reference value (SESOI):** Δ = 1.5 pp, the threshold in the registered research hypothesis. It was set on 2026-05-11 as the smallest top-1 gain that would justify a bottleneck claim in Paper 2. It was not derived from a power analysis (no variance data existed). In this pilot it is a reference line for reading the interval, not a decision threshold for superiority.
 
 ### Pilot categories (mutually exclusive, exhaustive, applied in this order)
 
@@ -93,7 +93,7 @@ This is a KoPE-*style adaptation* to a feature bottleneck on frozen ResNet50 fea
 - **Smoke data:** ImageNet-100 *training* features only. A fixed 10 % of training images, drawn with `numpy.random.default_rng(20261023)`, is held out as smoke-val. The official val split is never used in the smoke.
 - **Smoke run:** code_dim = 32, seed 0, 10 epochs, registered optimizer.
 - **Failure:** any non-finite loss or gradient ; or final smoke-val top-1 < 10 % (chance = 1 %) ; or final-epoch training loss not lower than epoch-1 training loss.
-- If the KoPE-style module fails, the WONN-style module is smoked with the same criterion. If both fail, the oscillator set is not run, and this is reported as a deviation. The primary estimand and the headline set are unaffected. Smoke runs are excluded from all analyses, and their pass/fail outcome is recorded in the pre-run supplement. Only one oscillator arm enters the analysis.
+- If the KoPE-style module fails, the WONN-style module is smoked with the same criterion. If both fail, the oscillator set is not run, and this is reported as a deviation. The primary estimand and the headline set are unaffected. Smoke runs are excluded from all analyses, and their pass/fail outcome is recorded in the configuration manifest. Only one oscillator arm enters the analysis.
 
 ### Claim restriction for the oscillator set
 
@@ -101,11 +101,22 @@ Beating one adapted oscillator bottleneck cannot separate phase–amplitude coup
 
 ### Unchanged
 
-Backbone (frozen ResNet50), dataset (ImageNet-100), preprocessing, code_dim sweep {32, 64, 128}, seeds {0, 17, 42, 73, 101}, the 5 metrics, optimiser settings, and the three registered baselines (with the third fixed as above).
+Backbone (frozen ResNet50), dataset (ImageNet-100), preprocessing, code_dim sweep {32, 64, 128}, seeds {0, 17, 42, 73, 101}, the 5 metrics, optimiser settings, and the three registered baselines (with the third fixed and their settings frozen as below).
 
 ## Pairing and randomness
 
-Seeds are the same integers across arms. Each seed fixes the data order through a dedicated generator that is shared across arms, so for a given seed every arm sees the same minibatch order. Parameter initialisation differs across arms because the architectures differ. Identical seed integers therefore do not make the arms paired, and every contrast is analysed as two independent groups of 5 (Welch).
+The registered seeds {0, 17, 42, 73, 101} are seed labels. Run (arm a, code_dim c, seed s) draws all of its randomness (initialisation, data order, Gumbel noise) from `numpy.random.SeedSequence([s, a, c])`, with fixed integer arm codes listed in the manifest. Randomness is therefore independent across arms, and every contrast is analysed as two independent groups of 5 (Welch). All metrics are computed on fixed evaluation sets (the ImageNet-100 val split and its ImageNet-C counterparts), and estimands are defined conditional on these sets.
+
+## Frozen architecture and metric settings
+
+These close choices that the locked file left open:
+
+- **VQ-VAE:** one codebook of 512 vectors of dimension code_dim, commitment weight 0.25, EMA codebook update with decay 0.99 (van den Oord et al. 2017 defaults).
+- **β-VAE:** Gaussian code of dimension code_dim, β = 1.0, the classifier reads the posterior mean at evaluation.
+- **GTM:** `GTMBridge` with alphabet_size = 64 and the code_dim of the sweep, as in N8 T13.
+- **MI(code, label):** every arm's val codes are discretised by k-means with k = 64 clusters, fit on the training codes with seed 20261023. MI is the plug-in estimate, in bits, between cluster index and label on the val split. The same pipeline is used for discrete and continuous codes.
+- **OOD top-1:** the unweighted mean of top-1 over the 5 registered ImageNet-C corruptions at severity 3, on the val images of the 100 classes.
+- **Bandwidth efficiency:** the number of principal components needed to reach 95 % of the variance of the val codes.
 
 ## Failure, exclusion and replacement
 
@@ -114,19 +125,19 @@ Seeds are the same integers across arms. Each seed fixes the data order through 
 - No run is excluded or replaced on the basis of its metric values. Restarts and training failures are reported per arm.
 - If a bug that affects an arm's registered configuration is found after runs have started, all runs of every affected arm are repeated with the fixed code, and this is reported as a deviation.
 
-## Pre-run supplement (required, immutable, part of this registration)
+## Configuration manifest (required, immutable, part of this registration)
 
-Before the first ImageNet-100 sweep run, the PI files a dated supplement on OSF as an update to this registration. It may contain only:
+Before the first ImageNet-100 sweep run, the PI files a dated manifest on OSF as an update to this registration. It may contain only:
 
-1. the commit of the training / evaluation harness used for every run ;
+1. the commit of the training / evaluation harness used for every run, and the integer arm codes ;
 2. the ImageNet-100 class list (the CMC 100-class subset) and the SHA-256 of the cached feature files ;
 3. the smoke outcome (pass/fail and the three smoke quantities) and the resulting oscillator choice (KoPE-style, WONN-style or none).
 
-Each item is determined by the rules above, without access to any sweep result. The supplement cannot be changed after filing. Runs started before it is filed are excluded from all analyses and reported.
+Development that informs the manifest may use only the CIFAR-10 stand-in, the smoke procedure above, and unit tests. It never uses the ImageNet-100 val split. The manifest cannot be changed after filing. Runs started before it is filed are excluded from all analyses and reported.
 
 ## Effect on hypotheses
 
-The H0 statement (GTM top-1 at code_dim = 32 exceeds VQ-VAE by ≥ 1.5 pp) is kept as the **primary estimand and its reference value**. It is no longer tested for a superiority verdict at 5 seeds. **Flag for the PI:** this changes how every N10-A outcome may be interpreted and worded in Paper 2 §8, and must be filed as a change of interpretation, not as a clarification.
+The research hypothesis (GTM top-1 at code_dim = 32 exceeds VQ-VAE by ≥ 1.5 pp) is kept as the **primary estimand and its reference value**. It is no longer tested for a superiority verdict at 5 seeds. **Flag for the PI:** this changes how every N10-A outcome may be interpreted and worded in Paper 2 §8, and must be filed as a change of interpretation, not as a clarification.
 
 ## Compute delta
 
