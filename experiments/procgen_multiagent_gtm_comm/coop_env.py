@@ -179,13 +179,13 @@ class ProcgenCoopEnv:
         try:
             for _ in range(self.n_agents):
                 self._envs.append(self._make_env(rand_seed))
+            self._finished = [False] * self.n_agents
+            self._steps_since_first_coin = None
+            self._first_coin_agent = None
+            self._last_obs = [self._read_obs(env) for env in self._envs]
         except BaseException:
             self.close()
             raise
-        self._finished = [False] * self.n_agents
-        self._steps_since_first_coin = None
-        self._first_coin_agent = None
-        self._last_obs = [self._read_obs(env) for env in self._envs]
 
     def reset(self) -> list[np.ndarray]:
         self._reset_envs()

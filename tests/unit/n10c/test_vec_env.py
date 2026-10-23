@@ -183,7 +183,9 @@ def _trace(n_workers: int) -> list:
 
 def test_vec_env_identical_across_worker_counts() -> None:
     ref = _trace(1)
-    assert _trace(1)[1].tolist() == ref[1].tolist()  # repeatable in-process
+    again = _trace(1)  # repeatable in-process: the complete trace
+    assert len(again) == len(ref)
+    assert all(np.array_equal(a, b) for a, b in zip(ref, again, strict=True))
     # ref layout: 4 reset arrays, then 9 per step
     steps = [ref[4 + 9 * i: 4 + 9 * (i + 1)] for i in range(50)]
     done = np.stack([x[3] for x in steps])
@@ -232,7 +234,9 @@ def _shm_gone(name: str) -> bool:
 class _Tracking:
     """Closure factory recording envs; fails on the ``fail_on``-th call."""
 
-    def __init__(self, fail_on: int | None = None, fail_t: int | None = None):
+    def __init__(self, fail_on: int | None = None, fail_t: int | None = None,
+                 fail_obs_on: int | None = None):
+        self.fail_obs_on = fail_obs_on
         self.made: list[_Scripted] = []
         self.closed: list[_Scripted] = []
         self.fail_on, self.fail_t = fail_on, fail_t
@@ -242,12 +246,18 @@ class _Tracking:
             raise RuntimeError("ctor failure")
         outer = self
         t_fail = self.fail_t
+        obs_fail = self.fail_obs_on == len(self.made)
 
         class E(_Scripted):
             def act(self, a):
                 super().act(a)
                 if t_fail is not None and self.t == t_fail:
                     raise RuntimeError("step failure")
+
+            def observe(self):
+                if obs_fail and self.t == -1:
+                    raise RuntimeError("observe failure")
+                return super().observe()
 
             def close(self):
                 outer.closed.append(self)
@@ -271,11 +281,10 @@ def test_inprocess_step_failure_closes_envs() -> None:
     vec = VecCoopEnv(2, run_seed_sequence(0, "gtm", "registered"), True,
                      env_factory=f)
     vec.reset()
-    f.closed.clear()
     with pytest.raises(RuntimeError, match="step failure"):
         for _ in range(3):
             vec.step(_act(2))
-    assert f.closed  # live envs closed on the error path
+    assert {id(e) for e in f.made} <= {id(e) for e in f.closed}
 
 
 def test_inprocess_reset_failure_closes_envs() -> None:
@@ -283,10 +292,18 @@ def test_inprocess_reset_failure_closes_envs() -> None:
     vec = VecCoopEnv(2, run_seed_sequence(0, "gtm", "registered"), True,
                      env_factory=f)
     f.fail_on = len(f.made) + 1  # second env of the reset fails
-    f.closed.clear()
     with pytest.raises(RuntimeError, match="ctor failure"):
         vec.reset()
-    assert f.closed
+    assert {id(e) for e in f.made} <= {id(e) for e in f.closed}
+
+
+@pytest.mark.parametrize("which", [0, 1, 3])
+def test_initial_observe_failure_closes_every_env(which) -> None:
+    f = _Tracking(fail_obs_on=which)
+    with pytest.raises(RuntimeError, match="observe failure"):
+        VecCoopEnv(2, run_seed_sequence(0, "gtm", "registered"), True,
+                   env_factory=f)
+    assert {id(e) for e in f.made} <= {id(e) for e in f.closed}
 
 
 def test_shm_unlinked_after_close_and_failures(monkeypatch) -> None:
