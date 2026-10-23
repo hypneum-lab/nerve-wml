@@ -6,7 +6,7 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 
 ## 1. Commit, integer codes and bus
 
-- Harness commit at manifest time: `c37a2955609e782ff725ae085ee403a0e49caeab` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
+- Harness commit at manifest time: `2fb622c234f767b5ea5d8ca38438be867093d86c` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
 - Code identity independent of git (SHA-256 of each file at manifest time):
 
 | file | SHA-256 |
@@ -14,15 +14,15 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 | `experiments/procgen_multiagent_gtm_comm/coop_env.py` | `9fcf95ea0736f7e7821e4872d587ce1c98f1114506095f1eaa11639bba253873` |
 | `experiments/procgen_multiagent_gtm_comm/harness/__init__.py` | `82d6bfc42ee49ac2c985f1463ca97a7cc7f36cb74218ce296702f05be4701e56` |
 | `experiments/procgen_multiagent_gtm_comm/harness/bus.py` | `1bb3bc23aec588da8bfb73864215e00ee5a4510324ff3d1045bb0b9af21703c2` |
-| `experiments/procgen_multiagent_gtm_comm/harness/codes.py` | `84244b17f076bf0154054e615f2df51d9b4d16fae69cf630c0a83089124c1098` |
+| `experiments/procgen_multiagent_gtm_comm/harness/codes.py` | `be5208212e135a17315e7f51e7837aacd7be8a1ca5bcce185f49f1b3cccbe1da` |
 | `experiments/procgen_multiagent_gtm_comm/harness/comm.py` | `88bc176ab933cde3dfb2849c66b08c8b8dc5244566758a84f6255c3e7904a98d` |
 | `experiments/procgen_multiagent_gtm_comm/harness/evaluate.py` | `44a407f539ac212fda7cdb6adfc72a505b9c2a281329322bbbb517de1080b82f` |
 | `experiments/procgen_multiagent_gtm_comm/harness/gtm_mlx.py` | `daba415dcf627927c9545501f4c8592448b8e1f4667dc50b0de0459385f92faf` |
-| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `6d4e63522b5f77b9c596a7e8a550913933a3a54882cf0ebc3c523e61dfe5194e` |
+| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `675e8af1bbf344e77ddfd8c29e36afa09f9798ca425b24095a558048df3caa36` |
 | `experiments/procgen_multiagent_gtm_comm/harness/policy.py` | `b1fc49bcb2b0648ba74aaef2b8d2d6aec1e6a6935ff19651a97251bc756b9826` |
 | `experiments/procgen_multiagent_gtm_comm/harness/rollout.py` | `5f291b8c99eed91e1bd62320b842ed2b51af349297da7340b11901e962aa65a5` |
 | `experiments/procgen_multiagent_gtm_comm/harness/throughput.py` | `f0c03a4eb62184a114b83c3ba6a839b6542dc067a5728a64580477f234de616f` |
-| `experiments/procgen_multiagent_gtm_comm/harness/train.py` | `2e0bca0ddcba78230d02a5eedeec7e51a9bda447fcaac12f7ad8e04a9f2d0a16` |
+| `experiments/procgen_multiagent_gtm_comm/harness/train.py` | `579d8c473930b9049f719e7c2c553bd16a648a99bf4997f9eea49acbf762042d` |
 | `experiments/procgen_multiagent_gtm_comm/harness/vec_env.py` | `81b8b8446916bd7eb5015be472fae5b1bc55aea3c01cfd2f4ac1b6d8a69e2d2a` |
 | `experiments/procgen_multiagent_gtm_comm/harness/requirements.lock` | `8609ef54bb4d5879bcd4159fa45624048da05b4e077e15ca2bee748fa09724e8` |
 
@@ -104,7 +104,7 @@ The measured macM1 estimate is within the amendment's planning figure.
 
 - Build patch: `experiments/procgen_multiagent_gtm_comm/bench/procgen-0.10.7-arm64-build.patch`, **SHA-256 `df9bbfa1d454ee51cbea1b8af47fbb1966a79f4a075357ba2a4c95acca834e7f`**.
 - Procgen 0.10.7, source commit `5e1dbf3`; installed package version: 0.10.7+5e1dbf3.
-- Qt 5.15.19 (Qt 5.15.19 via Homebrew `qt@5`, found through `PROCGEN_CMAKE_PREFIX_PATH`); observed: `qt@5 5.15.19`.
+- Qt 5.15.19 (Qt 5.15.19 via Homebrew `qt@5`, found through `PROCGEN_CMAKE_PREFIX_PATH`); observed: `unavailable (FileNotFoundError)`.
 - clang: `Apple clang version 21.0.0 (clang-2100.1.1.101) | Target: arm64-apple-darwin27.0.0`
 - Xcode: `Xcode 26.6 | Build version 17F113`
 - SDKROOT: `/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk` (documented build value (SDKROOT not set in this shell)); `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`; `CMAKE_POLICY_VERSION_MINIMUM=3.5`.
@@ -115,8 +115,8 @@ The measured macM1 estimate is within the amendment's planning figure.
 
 Host is a block factor fixed per seed; all arms and both conditions of a seed run on that seed's host.
 
-- macM1: seeds {0, 17, 42} (Apple M1 Max, 32 GB, MLX Metal); micro_batch_pairs = none (full minibatch), clear_cache = off, n_workers = 1 (planned launch value; confirm at launch; no measurement, default 1).
-- KXKM-AI: seeds {73, 101, 131} (RTX 4090 24 GB, MLX CUDA 12); micro_batch_pairs = 512, clear_cache = on, n_workers = 8 (planned launch value; confirm at launch; measured +8 % end to end vs 1, bench/kxkm/README.md).
+- macM1: seeds {0, 17, 42} (Apple M1 Max, 32 GB, MLX Metal); micro_batch_pairs = none (full minibatch), clear_cache = off, n_workers = 1 (registered per-host implementation setting, `harness/codes.py` HOST_SETTINGS, applied by run_campaign to every run of this host and recorded in each run.json; n_workers 1 is the default, not measured).
+- KXKM-AI: seeds {73, 101, 131} (RTX 4090 24 GB, MLX CUDA 12); micro_batch_pairs = 512, clear_cache = on, n_workers = 8 (registered per-host implementation setting, `harness/codes.py` HOST_SETTINGS, applied by run_campaign to every run of this host and recorded in each run.json; n_workers 8 measured +8 % end to end vs 1, bench/kxkm/README.md).
 - KXKM-AI software (venv310, recorded 2026-10-23, re-verify at deploy): python 3.10.18, mlx 0.31.1, mlx-cuda-12 0.31.1, numpy 1.26.4, gym3 0.3.3, gym 0.26.2, procgen 0.10.7; `CUDA_HOME` must point at the CUDA headers for the JIT kernels. Version pins: mlx 0.31.1 and mlx-cuda-12 0.31.1 on KXKM-AI; MLX 0.31.1 (Metal) on macM1.
 - KXKM-AI Procgen build: the official Procgen 0.10.7 x86-64 wheel `procgen-0.10.7-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl`, PyPI SHA-256 `4b594d14e42f0f2166e59a9e294477b906eb99c90c3343b570b7124cbc865f53`.
 - ALL evaluations (200 held-out levels, intact and shuffled passes, cross-seed probe) run on KXKM-AI with the x86-64 build; macM1 checkpoints are copied there. **The two Procgen builds are NOT bit-identical**: on 20 of 20 CoinRun levels tested the frame / reward streams differ between macM1 (arm64) and KXKM-AI (x86-64), although each machine is deterministic across reruns; frames agree early in an episode on some levels and diverge late. Evidence, procedure and result archived in `experiments/procgen_multiagent_gtm_comm/bench/procgen-builds/README.md`; SHA-256 of the archived files:
