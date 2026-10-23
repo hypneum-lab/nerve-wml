@@ -11,6 +11,8 @@ from experiments.procgen_multiagent_gtm_comm.harness.codes import (  # noqa: E40
 )
 from experiments.procgen_multiagent_gtm_comm.harness.evaluate import (  # noqa: E402
     bandwidth_entropy,
+    cross_pairs,
+    cross_play_policy,
     derangement,
     donor_received,
     evaluate_model,
@@ -196,3 +198,101 @@ def test_all_arms_evaluate(arm):
     rec = evaluate_policy(_model(arm), arm, "closed", range(3),
                           env_factory=_factory([0, 2, 1]))
     assert len(rec.returns_intact) == 3 and 0.0 <= rec.bandwidth_bits <= 16.0
+
+
+# ---- cross-seed cross-play probe (amendment 2026-10-23) ----------------
+
+def test_cross_pairs_fixed_order_wraps():
+    assert cross_pairs() == [(0, 17), (17, 42), (42, 73), (73, 101),
+                             (101, 131), (131, 0)]
+    assert cross_pairs((5, 6, 7)) == [(5, 6), (6, 7), (7, 5)]
+
+
+@pytest.mark.parametrize("arm", ["mlp", "gtm", "dial", "atoc", "eng", "nocomm"])
+def test_cross_with_identical_model_equals_intact(arm):
+    c0s = [0, 2, 5, 1]
+    f1, f2 = _factory(c0s), _factory(c0s)
+    m = _model(arm)
+    rec = evaluate_policy(m, arm, "registered", range(4), env_factory=f1)
+    cross = cross_play_policy(m, m, arm, "registered", range(4),
+                              env_factory=f2)
+    assert cross.returns_cross == rec.returns_intact
+    assert cross.lengths_cross == rec.lengths_intact
+    assert cross.R_cross == rec.R_intact
+    n_env = 2 * 4  # two agent envs per level
+    assert [e.acts for e in f2.log[:n_env]] == [e.acts for e in f1.log[:n_env]]
+
+
+def test_cross_roles_use_own_model_and_receive_partner_message():
+    c0s = [3, 3]
+    a, b = _model("mlp", 0), _model("mlp", 1)
+    calls = {"a": [], "b": []}
+
+    class Spy:
+        def __init__(self, m, k):
+            self.m, self.k = m, k
+
+        def __call__(self, *x, **kw):
+            out = self.m(*x, **kw)
+            calls[self.k].append((kw.get("recv_bits"), np.array(out.hard_bits),
+                                  np.array(out.logits)))
+            return out
+
+    f = _factory(c0s)
+    cross_play_policy(Spy(a, "a"), Spy(b, "b"), "mlp", "registered", range(1),
+                      env_factory=f)
+    # per step: one send pass (no recv_bits) then one pass with recv_bits
+    sa = [c for c in calls["a"] if c[0] is None]
+    sb = [c for c in calls["b"] if c[0] is None]
+    ra = [c for c in calls["a"] if c[0] is not None]
+    rb = [c for c in calls["b"] if c[0] is not None]
+    assert len(sa) == len(sb) == len(ra) == len(rb) == 4
+    for t in range(4):
+        # role 0 (model a) receives role 1's message emitted by model b
+        np.testing.assert_array_equal(np.array(ra[t][0])[0, 0], sb[t][1][0, 1])
+        # role 1 (model b) receives role 0's message emitted by model a
+        np.testing.assert_array_equal(np.array(rb[t][0])[0, 1], sa[t][1][0, 0])
+    # the messages a and b emit differ (different seeds), so the test is live
+    assert not np.array_equal(sa[0][1], sb[0][1])
+    # recorded actions: role 0 from a's logits, role 1 from b's
+    acts = [e.acts for e in f.log[:2]]
+    from experiments.procgen_multiagent_gtm_comm.harness.evaluate import (
+        _sample_actions,
+    )
+    rng = level_rng(0)
+    for t in range(4):
+        lg = np.stack([ra[t][2][0, 0], rb[t][2][0, 1]])
+        exp = _sample_actions(lg, rng)
+        assert acts[0][t] == int(exp[0]) and acts[1][t] == int(exp[1])
+
+
+def test_cross_nocomm_actions_are_each_models_own():
+    c0s = [30, 30]
+    a, b = _model("nocomm", 0), _model("nocomm", 1)
+    logs = {}
+    for k, (m0, m1) in {"ab": (a, b), "aa": (a, a), "bb": (b, b)}.items():
+        logs[k] = _factory(c0s)
+        cross_play_policy(m0, m1, "nocomm", "closed", range(2),
+                          env_factory=logs[k])
+    # no messages are used, so role 0 of (a, b) acts exactly as role 0 of
+    # (a, a) and role 1 exactly as role 1 of (b, b); the models differ
+    n = len(logs["ab"].log)
+    assert n == 4
+    for e in (0, 2):
+        assert logs["ab"].log[e].acts == logs["aa"].log[e].acts
+    for e in (1, 3):
+        assert logs["ab"].log[e].acts == logs["bb"].log[e].acts
+    assert any(logs["aa"].log[e].acts != logs["bb"].log[e].acts
+               for e in range(4))
+
+
+def test_cross_record_roundtrip_and_untrained(tmp_path):
+    from experiments.procgen_multiagent_gtm_comm.harness.evaluate import (
+        cross_play_model,
+    )
+    rec = cross_play_model(None, None, "mlp", "registered", 0, 17, range(2),
+                           env_factory=_factory([0, 1]))
+    d = json.loads(rec.to_json())
+    assert d["seed_role0"] == 0 and d["seed_role1"] == 17
+    assert d["untrained"] is True and d["levels"] == [0, 2]
+    assert d["R_cross"] == rec.R_cross

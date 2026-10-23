@@ -12,6 +12,11 @@ bits, no noise).
   other role emitted at step min(t, T_pi(j) - 1) of intact level pi(j).
   Messages computed in the shuffled pass are not delivered.
 
+Cross-seed cross-play probe (evaluation only, descriptive; amendment
+2026-10-23): role 0 from the model of seed s, role 1 from the model of the
+next seed in ``SEEDS`` (wrapping), same arm and condition; one pass over
+the same levels with the intact-pass action generators and intact messages.
+
 S = R_intact - R_shuffled; bandwidth = plug-in entropy (bits) of the
 16-bit messages over all intact steps. A checkpoint of ``None`` (training
 failed before any finite checkpoint) evaluates the untrained policy built
@@ -32,7 +37,7 @@ import numpy as np
 from experiments.procgen_multiagent_gtm_comm.coop_env import ProcgenCoopEnv
 
 from .bus import MessageBus
-from .codes import ARM_CODES, CONDITION_CODES, init_key_int
+from .codes import ARM_CODES, CONDITION_CODES, SEEDS, init_key_int
 from .policy import PairPolicy
 from .train import EngCounters
 
@@ -62,6 +67,29 @@ class EvalRecord:
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), indent=2)
+
+
+@dataclass
+class CrossRecord:
+    arm: str
+    condition: str
+    seed_role0: int | None
+    seed_role1: int | None
+    ckpt_role0: str | None
+    ckpt_role1: str | None
+    untrained: bool  # True if either role used an untrained init
+    levels: list[int]  # [start, stop)
+    R_cross: float
+    returns_cross: list[float]
+    lengths_cross: list[int]
+
+    def to_json(self) -> str:
+        return json.dumps(asdict(self), indent=2)
+
+
+def cross_pairs(seeds: tuple[int, ...] = SEEDS) -> list[tuple[int, int]]:
+    """Fixed cross-play pairing: (role-0 seed, role-1 seed), wrapping."""
+    return [(s, seeds[(k + 1) % len(seeds)]) for k, s in enumerate(seeds)]
 
 
 def level_rng(j: int) -> np.random.Generator:
@@ -162,6 +190,114 @@ def _run_level(model, arm: str, team_summary: bool, j: int,
         env.close()
 
 
+def _run_level_cross(model0, model1, arm: str, team_summary: bool, j: int,
+                     env_factory, bus: MessageBus):
+    """One intact-message episode on level j with role 0 = ``model0`` and
+    role 1 = ``model1``. Returns (return, length).
+
+    Each step: a send pass per model (a message depends only on the
+    sender's own observation, never on what it receives), then a receive
+    pass in which model r receives the other model's role-(1-r) message.
+    The role-r action logits come from model r only.
+    """
+    env = ProcgenCoopEnv(
+        seed=j, team_summary=team_summary, num_levels=1, start_level=j,
+        env_factory=env_factory,
+    )
+    try:
+        rng = level_rng(j)
+        counters = EngCounters(1)
+        obs = np.stack(env._last_obs)[None]
+        summ = np.zeros((1, 2, 2), np.float32)
+        if team_summary:
+            summ[0] = np.stack(env.team_summaries())
+        key = mx.random.key(0)
+        t = 0
+        while True:
+            eng = None
+            if arm == "eng":
+                w = [env.window_view(i) for i in range(2)]
+                eng = mx.array(counters.bits(
+                    np.array([[w[0][0], w[1][0]]]),
+                    np.array([[w[0][1], w[1][1]]]),
+                ))
+            args = (mx.array(obs).astype(mx.float32), mx.array(summ), eng)
+            sent = [np.array(m(*args, train=False, key=key).hard_bits)
+                    for m in (model0, model1)]  # [1, 2, 16] each
+            bus.deliver(np.stack([sent[0][0, 0], sent[1][0, 1]])[None],
+                        phase="eval")  # role-r message from model r; {0,1}
+            # row i of recv_bits = what agent i receives
+            recv0 = mx.array(np.stack([sent[1][0, 1], sent[0][0, 1]])[None])
+            recv1 = mx.array(np.stack([sent[1][0, 0], sent[0][0, 0]])[None])
+            lg0 = np.array(model0(*args, train=False, key=key,
+                                  recv_bits=recv0).logits)[0, 0]
+            lg1 = np.array(model1(*args, train=False, key=key,
+                                  recv_bits=recv1).logits)[0, 1]
+            actions = _sample_actions(np.stack([lg0, lg1]), rng)
+            res = env.step([int(actions[0]), int(actions[1])])
+            t += 1
+            if res.done:
+                return float(res.team_reward), t
+            if t >= MAX_EPISODE_STEPS:
+                raise RuntimeError(f"episode on level {j} exceeded {t} steps")
+            counters.update(actions[None], np.array([False]),
+                            np.array([res.info["finished"]]))
+            obs = np.stack(res.obs_per_agent)[None]
+            if team_summary:
+                summ[0] = np.stack(res.summary_per_agent)
+    finally:
+        env.close()
+
+
+def cross_play_policy(model0, model1, arm: str, condition: str, levels: range,
+                      *, env_factory: Callable[[int], Any] | None = None,
+                      seed0: int | None = None, seed1: int | None = None,
+                      ckpt0: str | None = None, ckpt1: str | None = None,
+                      untrained: bool = False) -> CrossRecord:
+    levels = list(levels)
+    team_summary = condition == "registered"
+    bus = MessageBus(arm)
+    res = [_run_level_cross(model0, model1, arm, team_summary, j, env_factory,
+                            bus) for j in levels]
+    r = [x for x, _ in res]
+    return CrossRecord(
+        arm=arm, condition=condition, seed_role0=seed0, seed_role1=seed1,
+        ckpt_role0=ckpt0, ckpt_role1=ckpt1, untrained=untrained,
+        levels=[levels[0], levels[-1] + 1], R_cross=float(np.mean(r)),
+        returns_cross=r, lengths_cross=[n for _, n in res],
+    )
+
+
+def _load_model(ckpt: Path | None, arm: str, condition: str, seed: int):
+    model = PairPolicy(arm, mx.random.key(init_key_int(seed, arm, condition)))
+    if ckpt is not None:
+        model.load_weights(str(ckpt))  # strict: every parameter must match
+    mx.eval(model.parameters())
+    return model
+
+
+def cross_play_model(ckpt0: Path | None, ckpt1: Path | None, arm: str,
+                     condition: str, seed0: int, seed1: int,
+                     levels: range = HELD_OUT, *,
+                     env_factory: Callable[[int], Any] | None = None,
+                     ) -> CrossRecord:
+    """Cross-play of role 0 = checkpoint of ``seed0`` with role 1 = checkpoint
+    of ``seed1`` (``None`` evaluates that seed's untrained init)."""
+    if arm not in ARM_CODES or condition not in CONDITION_CODES:
+        raise ValueError(f"unknown arm/condition {arm!r}/{condition!r}")
+    m0 = _load_model(ckpt0, arm, condition, seed0)
+    m1 = _load_model(ckpt1, arm, condition, seed1)
+
+    def name(c):
+        return None if c is None else Path(c).name
+
+    return cross_play_policy(
+        m0, m1, arm, condition, levels, env_factory=env_factory,
+        seed0=seed0, seed1=seed1, ckpt0=name(ckpt0), ckpt1=name(ckpt1),
+        untrained=ckpt0 is None or ckpt1 is None,
+    )
+
+
 def evaluate_policy(model, arm: str, condition: str, levels: range, *,
                     env_factory: Callable[[int], Any] | None = None,
                     seed: int | None = None, ckpt: str | None = None,
@@ -222,6 +358,11 @@ def main() -> None:
                    help="omit to evaluate the untrained init (training failure)")
     p.add_argument("--levels", type=int, nargs=2, default=[1000, 1200],
                    metavar=("START", "STOP"))
+    p.add_argument("--cross-ckpt", type=Path, default=None,
+                   help="cross-play probe: role-1 checkpoint (role 0 is "
+                        "--ckpt); requires --cross-seed")
+    p.add_argument("--cross-seed", type=int, default=None,
+                   help="cross-play probe: seed of the role-1 model")
     p.add_argument("--out", type=Path, required=True)
     from experiments.procgen_multiagent_gtm_comm.campaign import guards
 
@@ -229,6 +370,16 @@ def main() -> None:
     a = p.parse_args()
     guards.enforce_cli(a, registered=a.levels[1] > guards.HELD_OUT_START,
                        what="held-out evaluation")
+    if (a.cross_seed is None) != (a.cross_ckpt is None) and a.cross_seed is None:
+        p.error("--cross-ckpt requires --cross-seed")
+    if a.cross_seed is not None:
+        crec = cross_play_model(a.ckpt, a.cross_ckpt, a.arm, a.condition,
+                                a.seed, a.cross_seed, range(*a.levels))
+        a.out.parent.mkdir(parents=True, exist_ok=True)
+        a.out.write_text(crec.to_json())
+        print(json.dumps({k: v for k, v in asdict(crec).items()
+                          if not k.startswith(("returns", "lengths"))}))
+        return
     rec = evaluate_model(a.ckpt, a.arm, a.condition, range(*a.levels),
                          seed=a.seed)
     a.out.parent.mkdir(parents=True, exist_ok=True)
