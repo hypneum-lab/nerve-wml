@@ -55,7 +55,7 @@ def main() -> int:
     )
     print(f"Coin events (any agent): {coin_events}")
     print(
-        f"Distribution: -0.1 (step penalty)={int((arr == -0.1).sum())}, "
+        f"Distribution: 0.0 (no team coin)={int((arr == 0.0).sum())}, "
         f"+1.0 (team coin)={int((arr == 1.0).sum())}"
     )
     return 0

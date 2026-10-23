@@ -3,8 +3,11 @@
 Wraps two single-agent procgen instances (e.g. CoinRun) into a Python
 multi-agent environment with a shared team reward signal.
 
-For CoinRun-coop: team reward = +1 if both agents reach a coin within
-DELTA_T timesteps of each other ; -0.1 step penalty otherwise. Both
+For CoinRun-coop: team reward = +1 on the step where both agents have
+reached a coin within DELTA_T timesteps of each other, else 0. There
+is no step penalty: with the old -0.1 per step, a team succeeding at
+step 13 or later scored below a team whose agent died at step 1 (N10-C
+2026-10-23 amendment). Completion time is reported separately. Both
 agents play the same level (same procgen level seed) in separate
 instances, so neither agent's image shows its partner. Each agent
 observes its own raw image. With ``team_summary=True`` it also gets a
@@ -205,8 +208,8 @@ class ProcgenCoopEnv:
                 # frame ; a finished agent keeps its last frame.
                 self._last_obs[i] = self._to_image(obs)
 
-        # Team reward logic
-        team_reward = -0.1  # step penalty
+        # Team reward logic (no step penalty, see module docstring)
+        team_reward = 0.0
         window_expired = False
         for i, hit in enumerate(coin_flags):
             if hit:

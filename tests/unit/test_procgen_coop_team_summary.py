@@ -153,7 +153,18 @@ def test_death_without_coin_ends_episode() -> None:
     assert not env.step([0, 0]).done
     result = env.step([0, 0])
     assert result.done
-    assert result.team_reward == -0.1
+    assert result.team_reward == 0.0
+
+
+def test_success_is_the_only_reward() -> None:
+    env, _ = _env(False, ({0}, {DELTA_T}))
+    rewards = []
+    while True:
+        result = env.step([0, 0])
+        rewards.append(result.team_reward)
+        if result.done:
+            break
+    assert rewards == [0.0] * DELTA_T + [1.0]
 
 
 def test_summary_is_reset_with_the_episode() -> None:
