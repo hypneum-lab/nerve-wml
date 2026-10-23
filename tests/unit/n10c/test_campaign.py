@@ -86,9 +86,20 @@ class _Eval:
         return json.dumps({"S": self.S})
 
 
+class _Cross:
+    def __init__(self, ckpt0, ckpt1, arm, cond, seed0, seed1):
+        self.R_cross = 0.25
+        self.d = {"arm": arm, "condition": cond, "seed_role0": seed0,
+                  "seed_role1": seed1, "R_cross": 0.25,
+                  "untrained": ckpt0 is None or ckpt1 is None}
+
+    def to_json(self):
+        return json.dumps(self.d)
+
+
 def _campaign(tmp_path, train, eval_fn=None, gpu=None, archive=None,
-              ckpts=True, mkdir=True, host="kxkm", **o):
-    calls = {"train": [], "eval": []}
+              ckpts=True, mkdir=True, host="kxkm", cross_fn=None, **o):
+    calls = {"train": [], "eval": [], "cross": []}
 
     def t(**kw):
         calls["train"].append(kw["arm"] + "/" + kw["condition"] + f"/{kw['seed']}")
@@ -102,9 +113,13 @@ def _campaign(tmp_path, train, eval_fn=None, gpu=None, archive=None,
         calls["eval"].append((ckpt, arm))
         return (eval_fn or (lambda *a: _Eval()))(ckpt, arm, cond, seed)
 
+    def x(ckpt0, ckpt1, arm, cond, seed0, seed1, env_factory=None):
+        calls["cross"].append((ckpt0, ckpt1, arm, cond, seed0, seed1))
+        return (cross_fn or (lambda *a: _Cross(*a)))(ckpt0, ckpt1, arm, cond, seed0, seed1)
+
     c = rc.Campaign(rc.Options(campaign_dir=tmp_path / "c", host=host, total_pair_steps=TOTAL,
                                min_free_gb=8, **o),
-                    train_fn=t, eval_fn=e, gpu_fn=gpu or (lambda: None),
+                    train_fn=t, eval_fn=e, cross_fn=x, gpu_fn=gpu or (lambda: None),
                     archive_fn=archive, log=lambda *_: None)
     (tmp_path / "c").mkdir(exist_ok=True)
     return c, calls
@@ -843,3 +858,116 @@ def test_campaign_and_manifest_agree_on_host_settings():
         assert m["clear_cache"] == ("on" if st["clear_cache"] else "off")
         mb = st["micro_batch_pairs"]
         assert m["micro_batch_pairs"] == ("none (full minibatch)" if mb is None else str(mb))
+
+
+# ---- cross-seed cross-play probe in the campaign (KXKM only) ----------
+
+def _full_kx(tmp_path, **kw):
+    """KXKM campaign whose 30 macM1 runs were synced in (trained, ckpts)."""
+    mac = _sync_fixture(tmp_path)
+    kx, calls = _campaign(tmp_path / "kx", lambda n, k: _rec(), host="kxkm", **kw)
+    for s in q.runs_for_host("macm1"):
+        st = mac.store.load(s)
+        rd = kx.run_dir(s)
+        rd.mkdir(parents=True)
+        (rd / st["last_checkpoint"]).write_text("x")
+        kx.store.save(dict(st, synced_from="macm1", synced=False))
+    return kx, calls
+
+
+def test_cross_probe_runs_for_every_complete_cell_in_fixed_pairing(tmp_path):
+    from experiments.procgen_multiagent_gtm_comm.harness.evaluate import cross_pairs
+
+    kx, calls = _full_kx(tmp_path)
+    assert kx.run() == rc.EXIT_OK
+    assert len(calls["eval"]) == 60
+    # 10 cells (6 registered + 4 closed arms) x 6 seed pairs
+    assert len(calls["cross"]) == 60
+    cells = {(a, c) for _, _, a, c, _, _ in calls["cross"]}
+    assert len(cells) == 10
+    for arm, cond in cells:
+        got = [(s0, s1) for _, _, a, c, s0, s1 in calls["cross"] if (a, c) == (arm, cond)]
+        assert got == cross_pairs()
+    # role 0 / role 1 checkpoints come from their own seed's run directory
+    ck0, ck1, arm, cond, s0, s1 = calls["cross"][0]
+    run0 = q.RunSpec(arm, s0, cond).run_id
+    run1 = q.RunSpec(arm, s1, cond).run_id
+    assert ck0.parent.name == run0 and ck1.parent.name == run1
+
+
+def test_cross_probe_waits_until_every_seed_of_the_cell_is_evaluated(tmp_path):
+    kx, calls = _campaign(tmp_path, lambda n, k: _rec(), host="kxkm")
+    assert kx.run() == rc.EXIT_OK  # macM1 seeds never synced
+    assert calls["cross"] == []
+
+
+def test_cross_probe_partial_cell_is_skipped(tmp_path):
+    kx, calls = _full_kx(tmp_path)
+    victim = q.RunSpec("gtm", 0, "registered")
+    kx.store.path(victim).unlink()  # one macM1 run not synced
+    assert kx.run() == rc.EXIT_OK
+    cells = {(a, c) for _, _, a, c, _, _ in calls["cross"]}
+    assert ("gtm", "registered") not in cells and len(cells) == 9
+
+
+def test_cross_probe_never_runs_on_macm1(tmp_path):
+    c, calls = _campaign(tmp_path, lambda n, k: _rec(), host="macm1")
+    assert c.run() == rc.EXIT_OK
+    assert calls["cross"] == []
+    with pytest.raises(rc.GuardError, match="kxkm"):
+        c.cross_pass()
+
+
+def test_cross_probe_recorded_and_resumable(tmp_path):
+    kx, calls = _full_kx(tmp_path)
+    assert kx.run() == rc.EXIT_OK
+    f = kx.dir / "cross_status" / "registered-gtm.json"
+    st = json.loads(f.read_text())
+    assert st["done"] is True and len(st["pairs"]) == 6
+    assert st["pairs"]["0-17"]["done"] and st["pairs"]["0-17"]["R_cross"] == 0.25
+    assert st["pairs"]["131-0"]["seed_role1"] == 0
+    rec = json.loads((kx.dir / "cross" / "registered-gtm-s0-s17.json").read_text())
+    assert rec["seed_role0"] == 0 and rec["seed_role1"] == 17
+    # a restart repeats nothing
+    n = len(calls["cross"])
+    kx2, calls2 = _campaign(tmp_path / "kx", lambda n, k: _rec(), host="kxkm")
+    kx2.dir = kx.dir
+    kx2.store = kx.store
+    kx2.cross_store = type(kx.cross_store)(kx.dir / "cross_status")
+    assert kx2.run() == rc.EXIT_OK and calls2["cross"] == [] and n == 60
+
+
+def test_cross_probe_failure_retried_then_flagged_and_done_pairs_kept(tmp_path):
+    attempts = []
+
+    def flaky(ckpt0, ckpt1, arm, cond, seed0, seed1):
+        if (arm, cond, seed0) == ("gtm", "registered", 42):
+            attempts.append(1)
+            raise RuntimeError("boom")
+        return _Cross(ckpt0, ckpt1, arm, cond, seed0, seed1)
+
+    kx, calls = _full_kx(tmp_path, cross_fn=flaky)
+    assert kx.run() == rc.EXIT_PROBLEMS
+    assert len(attempts) == q.MAX_EVAL_ATTEMPTS
+    st = json.loads((kx.dir / "cross_status" / "registered-gtm.json").read_text())
+    assert st["done"] is False
+    assert st["pairs"]["42-73"]["failures"] == q.MAX_EVAL_ATTEMPTS
+    assert st["pairs"]["42-73"]["done"] is False
+    assert all(p["done"] for k, p in st["pairs"].items() if k != "42-73")
+
+
+def test_cross_probe_untrained_checkpoint_passed_as_none(tmp_path):
+    kx, calls = _full_kx(tmp_path)
+    victim = q.RunSpec("dial", 101, "closed")
+    kx.pin({})
+    st = kx.store.load(victim)  # kxkm run: training failure, no finite checkpoint
+    st.update(status=q.TRAINING_FAILURE, last_checkpoint=None, eval_done=True,
+              archived=True)
+    kx.store.save(st)
+    kx.run()
+    hits = [c for c in calls["cross"] if c[2:4] == ("dial", "closed")]
+    by = {(c[4], c[5]): c for c in hits}
+    assert by[(101, 131)][0] is None and by[(101, 131)][1] is not None
+    assert by[(73, 101)][1] is None
+    rec = json.loads((kx.dir / "cross" / "closed-dial-s101-s131.json").read_text())
+    assert rec["untrained"] is True

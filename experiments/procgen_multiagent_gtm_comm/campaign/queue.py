@@ -155,3 +155,61 @@ def summarize(states: list[dict]) -> dict[str, int]:
             key = "training_failure(infra_exhausted)"
         out[key] = out.get(key, 0) + 1
     return out
+
+
+# -- cross-seed cross-play probe (KXKM only, evaluation only) -------------
+# One cell per (condition, arm). Its 6 pairs are the fixed pairing
+# ``evaluate.cross_pairs`` (role 0 = seed s, role 1 = next seed, wrapping)
+# and run only after all 6 seeds of the cell are trained AND evaluated.
+
+def cross_cells() -> list[tuple[str, str]]:
+    """(arm, condition) cells, in queue order of first appearance."""
+    out: list[tuple[str, str]] = []
+    for r in build_queue():
+        if (r.arm, r.condition) not in out:
+            out.append((r.arm, r.condition))
+    return out
+
+
+def cross_pair_list() -> list[tuple[int, int]]:
+    return [(s, SEEDS[(k + 1) % len(SEEDS)]) for k, s in enumerate(SEEDS)]
+
+
+def cross_cell_id(arm: str, condition: str) -> str:
+    return f"{condition}-{arm}"
+
+
+def cross_pair_id(seed0: int, seed1: int) -> str:
+    return f"{seed0}-{seed1}"
+
+
+class CrossStore:
+    """One JSON per cell: ``<dir>/<condition>-<arm>.json``, written atomically."""
+
+    def __init__(self, status_dir: Path) -> None:
+        self.dir = Path(status_dir)
+        self.dir.mkdir(parents=True, exist_ok=True)
+
+    def path(self, arm: str, condition: str) -> Path:
+        return self.dir / f"{cross_cell_id(arm, condition)}.json"
+
+    def load(self, arm: str, condition: str) -> dict:
+        p = self.path(arm, condition)
+        if p.exists():
+            return json.loads(p.read_text())
+        return {"cell": cross_cell_id(arm, condition), "arm": arm,
+                "condition": condition, "done": False,
+                "pairs": {cross_pair_id(a, b): {
+                    "seed_role0": a, "seed_role1": b, "done": False,
+                    "failures": 0, "R_cross": None, "untrained": None}
+                    for a, b in cross_pair_list()}}
+
+    def save(self, state: dict) -> None:
+        p = self.dir / f"{state['cell']}.json"
+        tmp = p.with_suffix(".tmp")
+        tmp.write_text(json.dumps(state, indent=2))
+        os.replace(tmp, p)
+
+
+def cross_pair_pending(pair: dict) -> bool:
+    return not pair["done"] and pair["failures"] < MAX_EVAL_ATTEMPTS

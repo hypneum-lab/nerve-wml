@@ -124,13 +124,22 @@ def _default_eval(ckpt, arm, condition, seed, env_factory=None):
                           env_factory=env_factory)
 
 
+def _default_cross(ckpt0, ckpt1, arm, condition, seed0, seed1, env_factory=None):
+    from experiments.procgen_multiagent_gtm_comm.harness.evaluate import (
+        HELD_OUT,
+        cross_play_model,
+    )
+    return cross_play_model(ckpt0, ckpt1, arm, condition, seed0, seed1, HELD_OUT,
+                            env_factory=env_factory)
+
+
 def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%S%z")
 
 
 class Campaign:
     def __init__(self, opts: Options, *, train_fn=None, eval_fn=None,
-                 gpu_fn=None, archive_fn=None, log=print) -> None:
+                 cross_fn=None, gpu_fn=None, archive_fn=None, log=print) -> None:
         if opts.host not in q.HOSTS:
             raise GuardError(f"unknown host {opts.host!r}; expected one of {q.HOSTS}")
         if not opts.trial:
@@ -144,6 +153,8 @@ class Campaign:
         self.store = q.StatusStore(self.dir / "status")
         self.train_fn = train_fn or _default_train
         self.eval_fn = eval_fn or _default_eval
+        self.cross_fn = cross_fn or _default_cross
+        self.cross_store = q.CrossStore(self.dir / "cross_status")
         self.gpu_fn = gpu_fn or gpu_free_gb
         self.archive_fn = archive_fn or rsync_archive
         self.log = log
@@ -266,6 +277,70 @@ class Campaign:
         self.event(run=spec.run_id, phase="eval", state="done", S=rec.S,
                    R_intact=rec.R_intact)
 
+    def cross_ckpt(self, arm: str, condition: str, seed: int) -> Path | None:
+        """Checkpoint of one seed's model, None = untrained init."""
+        spec = q.RunSpec(arm, seed, condition)
+        ck = self.store.load(spec)["last_checkpoint"]
+        return self.run_dir(spec) / ck if ck else None
+
+    def cross_cell_ready(self, arm: str, condition: str) -> bool:
+        """All seeds of the cell exist, are trained or failed, and evaluated."""
+        for seed in q.SEEDS:
+            spec = q.RunSpec(arm, seed, condition)
+            if not self.store.path(spec).exists():
+                return False
+            st = self.store.load(spec)
+            if st["status"] not in (q.TRAINED, q.TRAINING_FAILURE, q.DONE) \
+                    or not st["eval_done"]:
+                return False
+        return True
+
+    def cross_pass(self) -> bool:
+        """Cross-seed cross-play probe for every ready (arm, condition) cell.
+
+        KXKM only (x86 Procgen build). Resumable: a pair marked done is never
+        repeated; a failed pair is retried up to MAX_EVAL_ATTEMPTS in total.
+        Returns True when every ready cell is complete.
+        """
+        if self.o.host != "kxkm":
+            raise GuardError("the cross-play probe runs only with --host kxkm "
+                             "(x86 Procgen build)")
+        complete = True
+        out = self.dir / "cross"
+        for arm, condition in q.cross_cells():
+            if not self.cross_cell_ready(arm, condition):
+                continue
+            cs = self.cross_store.load(arm, condition)
+            for pid, pair in cs["pairs"].items():
+                s0, s1 = pair["seed_role0"], pair["seed_role1"]
+                while q.cross_pair_pending(pair):
+                    ck0 = self.cross_ckpt(arm, condition, s0)
+                    ck1 = self.cross_ckpt(arm, condition, s1)
+                    self.event(phase="cross", cell=cs["cell"], pair=pid, state="start")
+                    try:
+                        rec = self.cross_fn(ck0, ck1, arm, condition, s0, s1,
+                                            env_factory=self.o.env_factory)
+                        out.mkdir(parents=True, exist_ok=True)
+                        (out / f"{cs['cell']}-s{s0}-s{s1}.json").write_text(rec.to_json())
+                    except Exception as exc:  # noqa: BLE001
+                        pair["failures"] += 1
+                        self.cross_store.save(cs)
+                        self.event(phase="cross", cell=cs["cell"], pair=pid,
+                                   state="failed", failures=pair["failures"],
+                                   reason=f"{exc.__class__.__name__}: {exc}")
+                        continue
+                    pair.update(done=True, R_cross=float(rec.R_cross),
+                                untrained=ck0 is None or ck1 is None,
+                                ckpt_role0=None if ck0 is None else str(ck0.name),
+                                ckpt_role1=None if ck1 is None else str(ck1.name))
+                    self.cross_store.save(cs)
+                    self.event(phase="cross", cell=cs["cell"], pair=pid, state="done",
+                               R_cross=pair["R_cross"])
+            cs["done"] = all(p["done"] for p in cs["pairs"].values())
+            self.cross_store.save(cs)
+            complete = complete and cs["done"]
+        return complete
+
     def archive(self, spec: q.RunSpec, st: dict) -> None:
         if not self.o.archive_to:
             return
@@ -361,7 +436,8 @@ class Campaign:
         problems = [s for s in states if can_eval
                     and s["status"] in (q.TRAINED, q.TRAINING_FAILURE)
                     and not s["eval_done"]]
-        return EXIT_PROBLEMS if problems else EXIT_OK
+        cross_ok = self.cross_pass() if can_eval else True
+        return EXIT_PROBLEMS if problems or not cross_ok else EXIT_OK
 
 
 CKPT_RE = re.compile(r"^ckpt_(\d+)\.safetensors$")

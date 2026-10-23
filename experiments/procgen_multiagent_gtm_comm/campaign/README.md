@@ -156,3 +156,17 @@ tree must be clean, and the tag message must contain `manifest: <path>` and
 `manifest-sha256: <hex>` equal to the committed manifest's SHA-256. The
 manifest says `Status: FROZEN (tag <tag>)`. Tag, commit and SWHID are pinned
 in `campaign.json`. The DOI mode is unchanged.
+
+## Cross-seed cross-play probe and per-host settings
+
+- After the main loop, `--host kxkm` runs the cross-seed cross-play probe
+  (evaluation only) for every (arm, condition) cell whose 6 seeds are all
+  trained and evaluated (macM1 runs must have been synced and evaluated).
+  Pairing: `evaluate.cross_pairs`. State: `cross_status/<condition>-<arm>.json`
+  (resumable, at most 3 attempts per pair), records:
+  `cross/<condition>-<arm>-s<a>-s<b>.json`. An incomplete cell makes the
+  exit code 5.
+- Training settings (`micro_batch_pairs`, `clear_cache`, `n_workers`) come
+  from `harness/codes.py` `HOST_SETTINGS`, are recorded in `run.json` and in
+  each run's status file (`train_settings`), and cannot be overridden for a
+  registered run.
