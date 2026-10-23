@@ -52,3 +52,24 @@ bit-identical; the only non-identical gradients are conv weight/bias in
 accumulation, mlp and gtm alike. The head, fc and GTM tensors are
 bit-identical. Divergence beyond the single-step Adam bound comes from
 the 24 sequential steps amplifying the conv-gradient noise.
+
+## n_workers end-to-end measurement (added 2026-10-23, after PR #54)
+
+Same command as above with `--micro-batch-pairs 512 --clear-cache` and
+`--n-workers N`, gtm registered, seed 9001, 8 updates (65,536
+pair-steps), real procgen, training levels only, run one at a time in
+the order 1, 8, 1, 8. Free VRAM before each run 22.6-22.7 GB (the same
+foreign 652 MiB process only; nothing was stopped or killed). Raw files
+in `nworkers/` (`*.run.json`, `*.before.txt`, `*.out`).
+
+| n_workers | pair-steps/s (incl. warm-up) | wall s | mx peak GB |
+|---|---|---|---|
+| 1 (a, b) | 1,286.8 / 1,290.0 | 50.9 / 50.8 | 6.68 / 7.04 |
+| 8 (a, b) | 1,391.1 / 1,390.2 | 47.1 / 47.1 | 6.69 / 6.67 |
+
+Reading. `n_workers = 8` is about 8 % faster end to end than 1 in both
+pairs, with the same memory. n_workers is an implementation setting
+(not registered); the unit tests check that the first rollout is
+identical across worker counts. The manifest records `n_workers = 8`
+for KXKM-AI and 1 for macM1 (no macM1 measurement of workers exists in
+the repository).

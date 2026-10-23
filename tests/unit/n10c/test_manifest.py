@@ -233,3 +233,9 @@ def test_manifest_references_procgen_build_evidence(tmp_path):
     for f in ("frames.py", "frames2.py", "frames_kxkm.json", "frames_macm1.json",
               "h_kxkm.txt", "h_macm1.txt"):
         assert re.search(rf"\| `{re.escape(f)}` \| `[0-9a-f]{{64}}` \|", text), f
+
+
+def test_manifest_records_n_workers_per_host(tmp_path):
+    text = _manifest(tmp_path)
+    assert re.search(r"macM1: .*n_workers = 1 ", text)
+    assert re.search(r"KXKM-AI: .*n_workers = 8 ", text)

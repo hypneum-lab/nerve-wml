@@ -54,7 +54,8 @@ KXKM_VERSIONS = {  # venv310 on KXKM-AI, recorded 2026-10-23; re-verify at deplo
 HOST_TRAIN_SETTINGS = {
     "macm1": {"micro_batch_pairs": "none (full minibatch)", "clear_cache": "off",
               "n_workers": "1"},
-    "kxkm": {"micro_batch_pairs": "512", "clear_cache": "on", "n_workers": "1"},
+    # n_workers 8: +8 % end to end vs 1 (bench/kxkm/README.md, nworkers/)
+    "kxkm": {"micro_batch_pairs": "512", "clear_cache": "on", "n_workers": "8"},
 }
 # Commitment rule (amendment 2026-10-23, item 13): the manifest is committed
 # by an annotated git tag pushed to GitHub, OSF is filed afterwards. DRAFT
@@ -472,7 +473,9 @@ def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
             "- " + label + ": seeds {" + ", ".join(map(str, sd)) + "} (" + hw
             + "); micro_batch_pairs = " + st["micro_batch_pairs"]
             + ", clear_cache = " + st["clear_cache"] + ", n_workers = "
-            + st["n_workers"] + " (planned launch value; confirm at launch).")
+            + st["n_workers"] + " (planned launch value; confirm at launch"
+            + ("; measured +8 % end to end vs 1, bench/kxkm/README.md)."
+               if host == "kxkm" else "; no measurement, default 1)."))
     kv = KXKM_VERSIONS
     lines += [
           "- KXKM-AI software (venv310, recorded 2026-10-23, re-verify at deploy): "
