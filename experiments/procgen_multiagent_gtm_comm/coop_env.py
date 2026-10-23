@@ -5,8 +5,15 @@ multi-agent environment with a shared team reward signal.
 
 For CoinRun-coop: team reward = +1 if both agents reach a coin within
 DELTA_T timesteps of each other ; -0.1 step penalty otherwise. Each
-agent observes its own raw image + a low-dim "team summary" channel
-(e.g. partner agent's distance-to-coin estimate).
+agent observes its own raw image. With ``team_summary=True`` it also
+gets a declared low-dim "team summary" side channel about its partner
+(see ``TEAM_SUMMARY_DIM``) ; ``team_summary=False`` is the
+side-channel-closed control of the N10-C 2026-10-23 amendment.
+
+Procgen does not expose agent or coin positions, so the summary
+carries the partner's coin timing rather than a distance-to-coin
+estimate: [partner reached its coin inside the open DELTA_T window
+(0/1), fraction of that window still remaining (0..1)].
 
 Plan: HYPNEUM-PLANS/2026-05-11-niveau10-scaling-up.md (N10-C kickoff).
 Pre-reg: docs/milestones/n10c-procgen-multiagent-gtm-comm-2026-05-11.md.
@@ -19,6 +26,8 @@ from typing import Any
 
 import numpy as np
 
+TEAM_SUMMARY_DIM = 2
+
 
 @dataclass
 class CoopStepResult:
@@ -27,6 +36,9 @@ class CoopStepResult:
     individual_rewards: list[float]
     done: bool
     info: dict
+    # Per-agent team-summary vectors (shape [TEAM_SUMMARY_DIM]) when the
+    # side channel is open, else None.
+    summary_per_agent: list[np.ndarray] | None = None
 
 
 class ProcgenCoopEnv:
@@ -43,6 +55,9 @@ class ProcgenCoopEnv:
         Time-window for "both reached coin" reward (CoinRun-coop only).
     seed : int | None
         Seed for both env instances and for the random policy in smoke.
+    team_summary : bool
+        Open the declared "team summary" side channel (default False,
+        the side-channel-closed condition).
     """
 
     def __init__(
@@ -51,6 +66,7 @@ class ProcgenCoopEnv:
         n_agents: int = 2,
         delta_t: int = 20,
         seed: int | None = None,
+        team_summary: bool = False,
     ) -> None:
         if env_name != "coinrun":
             raise NotImplementedError(
@@ -67,6 +83,7 @@ class ProcgenCoopEnv:
         self.n_agents = n_agents
         self.delta_t = delta_t
         self.seed = seed
+        self.team_summary = team_summary
         self._envs: list[Any] = []  # underlying procgen envs
         self._steps_since_first_coin: int | None = None
         self._first_coin_agent: int | None = None
@@ -141,7 +158,28 @@ class ProcgenCoopEnv:
             individual_rewards=individual_rewards,
             done=done,
             info={"coin_flags": coin_flags},
+            summary_per_agent=self.team_summaries(),
         )
+
+    def team_summaries(self) -> list[np.ndarray] | None:
+        """Per-agent partner summary, or None when the channel is closed.
+
+        For agent i: [1, remaining window fraction] if its partner
+        reached a coin inside the currently open DELTA_T window, else
+        [0, 0].
+        """
+        if not self.team_summary:
+            return None
+        out: list[np.ndarray] = []
+        for i in range(self.n_agents):
+            vec = np.zeros(TEAM_SUMMARY_DIM, dtype=np.float32)
+            first = self._first_coin_agent
+            elapsed = self._steps_since_first_coin
+            if first is not None and first != i and elapsed is not None:
+                vec[0] = 1.0
+                vec[1] = max(0.0, (self.delta_t - elapsed) / self.delta_t)
+            out.append(vec)
+        return out
 
     def _observe(self) -> list[np.ndarray]:
         obs_list: list[np.ndarray] = []
