@@ -87,7 +87,9 @@ def _manifest(tmp_path, **kw):
 
 def test_manifest_contains_required_items(tmp_path):
     text = _manifest(tmp_path)
-    assert "DRAFT — to be filed on OSF by the PI as stage 2 before any run" in text
+    assert "**Status: DRAFT — not frozen (see freeze rule" in text
+    assert "filed on OSF" not in text and "Immutable once filed" not in text
+    assert "Immutable once frozen" in text
     heads = re.findall(r"^## (.+)$", text, re.M)
     for n in ("1.", "2.", "3.", "4."):
         assert any(h.startswith(n) for h in heads), n
@@ -213,3 +215,12 @@ def test_compute_estimate_splits_hosts():
     assert e["bottleneck_host"] == "macm1"
     assert e["total_hours"] == pytest.approx(
         e["macm1_hours"] + e["kxkm_train_hours"] + e["kxkm_eval_hours"])
+
+
+def test_frozen_status_line_and_no_draft_word(tmp_path):
+    text = _manifest(tmp_path, freeze_tag="n10c-freeze-20261024")
+    assert re.search(r"^\W*Status: FROZEN \(tag n10c-freeze-20261024\)",
+                     text, re.M)
+    assert "DRAFT" not in text
+    with pytest.raises(ValueError):
+        _manifest(tmp_path, freeze_tag="bad tag")

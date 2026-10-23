@@ -19,13 +19,19 @@ and guards), `kxkm/deploy.sh`, `kxkm/start.sh`.
 
 ## Pre-flight checklist (all must be ticked)
 
-- [ ] Stage-2 manifest filed on OSF; DOI recorded. Runs started before
-      filing are excluded by the registration.
+- [ ] Stage-2 manifest frozen by an annotated git tag (the commitment
+      point, see "freeze-tag mode" below); OSF is filed afterwards,
+      referencing tag, commit and SWHID. Runs started before the freeze
+      tag are excluded by the amendment. (Legacy DOI mode: manifest filed
+      on OSF first, DOI recorded.)
 - [ ] Manifest file committed under
-      `experiments/procgen_multiagent_gtm_comm/manifest/`, with a
-      `Status: FILED` line (no `DRAFT` anywhere), the exact OSF DOI
-      (`10.17605/OSF.IO/<ID>`, placeholders refused) and the pinned
-      commit in its text; its SHA-256 noted (`shasum -a 256 <file>`).
+      `experiments/procgen_multiagent_gtm_comm/manifest/`, named without
+      `DRAFT`, with a `Status: FROZEN (tag <tag>)` line (written by
+      `python -m ...harness.manifest --freeze-tag <tag> --out <file>`;
+      the text is `DRAFT` until then, and no `DRAFT` anywhere once
+      frozen) and the pinned commit in its text; its SHA-256 noted
+      (`shasum -a 256 <file>`). Legacy DOI mode: `Status: FILED` and the
+      exact OSF DOI (`10.17605/OSF.IO/<ID>`, placeholders refused).
 - [ ] Code commit pinned: the commit named in the manifest. HEAD of the
       deployed clone must equal it, or descend from it with every intervening commit
       touching only `docs/` or the manifest folder (the manifest cannot name its own commit). Pass it as

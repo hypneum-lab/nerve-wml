@@ -14,6 +14,7 @@ import importlib.metadata as md
 import json
 import os
 import platform
+import re
 import subprocess
 from pathlib import Path
 
@@ -55,7 +56,20 @@ HOST_TRAIN_SETTINGS = {
               "n_workers": "1"},
     "kxkm": {"micro_batch_pairs": "512", "clear_cache": "on", "n_workers": "1"},
 }
-STATUS = "DRAFT — to be filed on OSF by the PI as stage 2 before any run"
+# Commitment rule (amendment 2026-10-23, item 13): the manifest is committed
+# by an annotated git tag pushed to GitHub, OSF is filed afterwards. DRAFT
+# until then; the frozen text never contains the word DRAFT (campaign guard).
+STATUS = ("DRAFT — not frozen (see freeze rule: committed by a frozen git tag "
+          "before any run)")
+_TAG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
+
+
+def status_text(freeze_tag: str | None = None) -> str:
+    if freeze_tag is None:
+        return STATUS
+    if not _TAG_RE.match(freeze_tag):
+        raise ValueError(f"invalid freeze tag {freeze_tag!r}")
+    return f"FROZEN (tag {freeze_tag})"
 
 RULINGS = [
     "R1: the harness venv (Python 3.10) has no scipy (uv.lock pins scipy 1.17, "
@@ -89,12 +103,12 @@ RULINGS = [
     "at 5,000 steps (an error, not an outcome). Evaluation messages are "
     "deterministic (GTM argmax symbols).",
     "R4: gradient accumulation (micro_batch_pairs, clear_cache; PR #53) and "
-    "n_workers (PR #54) are separate branches; both must be merged before the "
-    "filing commit is recorded. The KXKM-AI settings above refer to them.",
+    "n_workers (PR #54) are merged into the harness branch; the freeze commit "
+    "must contain both. The KXKM-AI settings above refer to them.",
     "Task 9: smoke runs = 1 per arm in the registered condition plus gtm in the "
     "closed condition, 200,000 pair-steps each (7 runs), training levels only. "
     "The amendment allows up to 3 per arm of up to 1M steps; more may be added "
-    "before filing within that cap.",
+    "before the freeze within that cap.",
 ]
 
 
@@ -305,7 +319,8 @@ def _fmt_smoke(sm: dict | None) -> list[str]:
     return lines
 
 
-def write_manifest(out: Path) -> None:
+def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
+    status = status_text(freeze_tag)
     out = Path(out)
     thr = _load(out.parent / "throughput.json")
     sm = _load(out.parent / "smoke_runs.json")
@@ -321,13 +336,13 @@ def write_manifest(out: Path) -> None:
 
     lines: list[str] = [
         "# N10-C stage-2 configuration manifest", "",
-        f"**Status: {STATUS}.**", "",
+        f"**Status: {status}.**", "",
         "Registration: N10-C amendment of 2026-10-23, configuration manifest "
-        "(stage 2). Immutable once filed. Runs started before filing are excluded "
-        "from all analyses and reported.", "",
+        "(stage 2). Immutable once frozen. Runs started before the freeze tag are "
+        "excluded from all analyses and reported.", "",
         "## 1. Commit, integer codes and bus", "",
         f"- Harness commit at manifest time: `{git['commit']}` (source: "
-        f"{git['source']}). **The final filing commit must be re-recorded after "
+        f"{git['source']}). **The freeze commit must be re-recorded after "
         "merge**: this draft is committed in a later commit than the code it "
         "describes.",
         "- Code identity independent of git (SHA-256 of each file at manifest time):",
@@ -488,18 +503,25 @@ def write_manifest(out: Path) -> None:
           "changes no registered quantity. macM1 checkpoints are additionally copied to "
           "KXKM-AI for evaluation (campaign `sync` step). Destination path: "
           "**to be filled by "
-          "the PI before filing**: `<PATH>`. (This item is outside items 1-4 of the "
+          "the PI before the freeze**: `<PATH>`. (This item is outside items 1-4 of the "
           "amendment's manifest list; flagged for the PI.)", "",
           "## Implementation rulings disclosed", ""]
     lines += [f"- {r}" for r in RULINGS]
     lines += [""]
-    out.write_text("\n".join(lines))
+    text = "\n".join(lines)
+    if freeze_tag is not None and "DRAFT" in text:
+        raise ValueError("a frozen manifest must not contain the word DRAFT")
+    out.write_text(text)
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Write the N10-C stage-2 manifest draft")
     p.add_argument("--out", type=Path, required=True)
-    write_manifest(p.parse_args().out)
+    p.add_argument("--freeze-tag", default=None,
+                   help="write 'Status: FROZEN (tag <tag>)' instead of DRAFT; "
+                        "use a file name without 'DRAFT'")
+    a = p.parse_args()
+    write_manifest(a.out, freeze_tag=a.freeze_tag)
 
 
 if __name__ == "__main__":
