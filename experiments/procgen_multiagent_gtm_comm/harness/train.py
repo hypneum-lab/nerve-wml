@@ -484,7 +484,12 @@ def main() -> None:
                    help="mx.clear_cache() once per rollout update (after its "
                         "optimizer steps), not per minibatch")
     p.add_argument("--n-workers", type=int, default=1)
+    from experiments.procgen_multiagent_gtm_comm.campaign import guards
+
+    guards.add_guard_args(p)
     a = p.parse_args()
+    guards.enforce_cli(a, registered=a.steps >= guards.REGISTERED_BUDGET,
+                       what="registered-budget training")
     rec = train_run(
         a.arm, a.seed, a.condition, a.steps, a.out, n_pairs=a.n_pairs,
         horizon=a.horizon, log_every_pair_steps=a.log_every,

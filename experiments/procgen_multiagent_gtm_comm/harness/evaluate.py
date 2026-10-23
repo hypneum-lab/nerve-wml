@@ -223,7 +223,12 @@ def main() -> None:
     p.add_argument("--levels", type=int, nargs=2, default=[1000, 1200],
                    metavar=("START", "STOP"))
     p.add_argument("--out", type=Path, required=True)
+    from experiments.procgen_multiagent_gtm_comm.campaign import guards
+
+    guards.add_guard_args(p)
     a = p.parse_args()
+    guards.enforce_cli(a, registered=a.levels[1] > guards.HELD_OUT_START,
+                       what="held-out evaluation")
     rec = evaluate_model(a.ckpt, a.arm, a.condition, range(*a.levels),
                          seed=a.seed)
     a.out.parent.mkdir(parents=True, exist_ok=True)
