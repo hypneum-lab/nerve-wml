@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from experiments.procgen_multiagent_gtm_comm.harness.codes import (
     run_seed_sequence,
@@ -152,3 +153,61 @@ def test_autoreset_only_touches_completed_pairs() -> None:
     assert s.window[1].tolist() == [[0, 0], [19, 0]]
     assert np.all(s.summary[0] == 0.0)
     assert s.summary[1, 1, 0] == 1.0
+
+
+def _rand_vec(n_workers: int, n_pairs: int = 6, ts: bool = True,
+              factory=None):
+    from tests.unit.n10c.scripted_env import rand_factory
+
+    return VecCoopEnv(
+        n_pairs, run_seed_sequence(5, "gtm", "registered"), ts,
+        env_factory=factory or rand_factory, n_workers=n_workers,
+    )
+
+
+def _trace(n_workers: int) -> list:
+    rng = np.random.default_rng(0)
+    vec = _rand_vec(n_workers)
+    try:
+        first = vec.reset()
+        out = [first.obs, first.summary, *vec.window()]
+        for _ in range(50):
+            a = rng.integers(0, 15, (6, 2)).astype(np.int32)
+            s = vec.step(a)
+            out += [s.obs, s.summary, s.team_reward, s.done, s.finished,
+                    *s.window, *vec.window()]
+        return out
+    finally:
+        vec.close()
+
+
+def test_vec_env_identical_across_worker_counts() -> None:
+    ref = _trace(1)
+    assert any(x.dtype == bool and x.any() for x in ref)  # resets happen
+    for n_workers in (2, 4):
+        got = _trace(n_workers)
+        assert len(got) == len(ref)
+        for a, b in zip(ref, got, strict=True):
+            assert a.dtype == b.dtype and np.array_equal(a, b)
+
+
+def test_vec_env_workers_closed_on_error() -> None:
+    from tests.unit.n10c.scripted_env import failing_factory
+
+    vec = _rand_vec(2, factory=failing_factory)
+    procs = list(vec._procs)
+    assert procs and all(p.is_alive() for p in procs)
+    vec.reset()
+    with pytest.raises(RuntimeError, match="scripted env failure"):
+        for _ in range(6):
+            vec.step(np.zeros((6, 2), dtype=np.int32))
+    assert not any(p.is_alive() for p in procs)
+    vec.close()  # idempotent
+
+
+def test_vec_env_workers_closed_on_close() -> None:
+    vec = _rand_vec(3)
+    procs = list(vec._procs)
+    vec.reset()
+    vec.close()
+    assert not any(p.is_alive() for p in procs)

@@ -118,7 +118,7 @@ class EngCounters:
 
 
 def _assert_not_stub(vec: VecCoopEnv) -> None:
-    if any(getattr(e, "using_stub", False) for e in vec.envs):
+    if vec.using_stub():
         raise RuntimeError(
             "procgen stub in use: a scientific run must use real procgen "
             "(infrastructure failure, run not started)"
@@ -204,6 +204,7 @@ def train_run(
     ckpt_every_pair_steps: int = 1_000_000,
     minibatch_pairs: int = MINIBATCH_PAIRS,
     restarts: int = 0,
+    n_workers: int = 1,
     _fault_hook: Callable[[int, PairPolicy], None] | None = None,
     _rollout_hook: Callable[[int, RolloutBuffer], None] | None = None,
 ) -> RunRecord:
@@ -227,7 +228,7 @@ def train_run(
 
     vec = VecCoopEnv(
         n_pairs, env_ss, team_summary=(condition == "registered"),
-        env_factory=env_factory,
+        env_factory=env_factory, n_workers=n_workers,
     )
     try:
         _assert_not_stub(vec)  # raises before any training
@@ -400,11 +401,12 @@ def main() -> None:
     p.add_argument("--horizon", type=int, default=128)
     p.add_argument("--log-every", type=int, default=1_000_000)
     p.add_argument("--ckpt-every", type=int, default=1_000_000)
+    p.add_argument("--n-workers", type=int, default=1)
     a = p.parse_args()
     rec = train_run(
         a.arm, a.seed, a.condition, a.steps, a.out, n_pairs=a.n_pairs,
         horizon=a.horizon, log_every_pair_steps=a.log_every,
-        ckpt_every_pair_steps=a.ckpt_every,
+        ckpt_every_pair_steps=a.ckpt_every, n_workers=a.n_workers,
     )
     print(json.dumps({k: v for k, v in asdict(rec).items() if k != "losses"}))
 
