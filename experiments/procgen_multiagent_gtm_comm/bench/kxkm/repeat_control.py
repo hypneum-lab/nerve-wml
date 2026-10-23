@@ -45,5 +45,6 @@ rec = train_run(arm, 5, "registered", 65536, out / tag, n_pairs=64, horizon=128,
                 micro_batch_pairs=micro, _fault_hook=fault, _rollout_hook=rhook)
 info["rollout"] = roll
 info["failure"] = rec.training_failure
-np.savez(out / f"{tag}.params.npz", **{f"u{u}/{k}": v for u, d in snaps.items() for k, v in d.items()})
+flat = {f"u{u}/{k}": v for u, d in snaps.items() for k, v in d.items()}
+np.savez(out / f"{tag}.params.npz", **flat)
 (out / f"{tag}.info.json").write_text(json.dumps(info, indent=1))

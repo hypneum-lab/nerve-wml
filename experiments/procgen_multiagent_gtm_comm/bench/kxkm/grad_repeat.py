@@ -32,7 +32,7 @@ for _ in range(2):
           noise=mb["noise"] if m.noise_dim else None)
     mx.eval(o.logits, o.value)
     outs.append((np.array(o.logits), np.array(o.value)))
-print(arm, "forward bit-identical:", all(np.array_equal(a, b) for a, b in zip(*outs)))
+print(arm, "forward bit-identical:", all(np.array_equal(a, b) for a, b in zip(*outs, strict=True)))
 opt = optim.Adam(5e-4)
 opt.init(m.trainable_parameters())
 gs = _make_steps(m, opt, False, plastic=False)[0]
