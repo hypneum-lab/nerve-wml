@@ -173,7 +173,7 @@ def compute_estimate(results: dict) -> dict:
 def _check_levels(thr: dict) -> None:
     for arm, r in thr.get("results", {}).items():
         lv = r.get("eval_proxy", {}).get("levels")
-        if lv and max(lv) > 1000:
+        if lv and lv[1] > 1000:  # [start, stop): levels >= 1000 held out
             raise ValueError(f"{arm}: evaluation proxy must use training levels only")
 
 
@@ -283,7 +283,7 @@ def write_manifest(out: Path) -> None:
              [PKG / "coop_env.py", *sorted((PKG / "harness").glob("*.py")),
               PKG / "harness" / "requirements.lock"]}
 
-    L: list[str] = [
+    lines: list[str] = [
         "# N10-C stage-2 configuration manifest", "",
         f"**Status: {STATUS}.**", "",
         "Registration: N10-C amendment of 2026-10-23, configuration manifest "
@@ -296,8 +296,8 @@ def write_manifest(out: Path) -> None:
         "describes.",
         "- Code identity independent of git (SHA-256 of each file at manifest time):",
         "", "| file | SHA-256 |", "|---|---|"]
-    L += [f"| `{k}` | `{v}` |" for k, v in files.items()]
-    L += ["", "- Files covered: `coop_env.py` (environment), the MLX PPO-MA harness "
+    lines += [f"| `{k}` | `{v}` |" for k, v in files.items()]
+    lines += ["", "- Files covered: `coop_env.py` (environment), the MLX PPO-MA harness "
           "(`harness/`: vec_env, comm, policy, rollout, train, evaluate) and the "
           "message bus (`harness/bus.py`).",
           f"- `ARM_CODES = {ARM_CODES}`",
@@ -319,9 +319,9 @@ def write_manifest(out: Path) -> None:
           "| arm | total params | comm params | IMPALA trunk | to_msg 256->64 "
           "| fuse+pi+v |", "|---|---:|---:|---:|---:|---:|"]
     for arm, p in params.items():
-        L.append(f"| {arm} | {p['total']:,} | {p['comm']:,} | {p['trunk']:,} | "
+        lines.append(f"| {arm} | {p['total']:,} | {p['comm']:,} | {p['trunk']:,} | "
                  f"{p['to_msg']:,} | {p['fuse_pi_v']:,} |")
-    L += ["", "Comm modules (encoder/decoder sizes):",
+    lines += ["", "Comm modules (encoder/decoder sizes):",
           "- mlp: encode Linear(64 -> 16), hard bit = (m > 0), straight-through "
           "(sigmoid) in training; decode Linear(16 -> 64).",
           "- atoc: same sender; receiver cross-attends over the 16 received bit "
@@ -373,10 +373,10 @@ def write_manifest(out: Path) -> None:
           "(scope option D). N10-C makes no statement about them.", "",
           "## 4. Measured throughput, compute estimate and Procgen build record", "",
           "### Measured training throughput (macM1)", ""]
-    L += _fmt_throughput(thr)
-    L += ["### Compute estimate including evaluation", ""]
-    L += _fmt_estimate(thr)
-    L += ["### Procgen arm64 build record", "",
+    lines += _fmt_throughput(thr)
+    lines += ["### Compute estimate including evaluation", ""]
+    lines += _fmt_estimate(thr)
+    lines += ["### Procgen arm64 build record", "",
           f"- Build patch: `{build['patch_file']}`, **SHA-256 "
           f"`{build['patch_sha256']}`**.",
           f"- Procgen 0.10.7, source commit `{build['procgen_commit']}`; installed "
@@ -395,8 +395,8 @@ def write_manifest(out: Path) -> None:
           "Equivalence with the official x86-64 builds has not been checked. All "
           "N10-C runs use this single build.", "",
           "## Smoke runs and development disclosure", ""]
-    L += _fmt_smoke(sm)
-    L += ["Development used only the stub (unit tests with scripted environments), "
+    lines += _fmt_smoke(sm)
+    lines += ["Development used only the stub (unit tests with scripted environments), "
           "these smoke runs and throughput measurements on untrained policies. "
           "Levels 1000-1199 were never touched and no full-length run result was "
           "used.", "",
@@ -408,9 +408,9 @@ def write_manifest(out: Path) -> None:
           "the PI before filing**: `<PATH>`. (This item is outside items 1-4 of the "
           "amendment's manifest list; flagged for the PI.)", "",
           "## Implementation rulings disclosed", ""]
-    L += [f"- {r}" for r in RULINGS]
-    L += [""]
-    out.write_text("\n".join(L))
+    lines += [f"- {r}" for r in RULINGS]
+    lines += [""]
+    out.write_text("\n".join(lines))
 
 
 def main() -> None:

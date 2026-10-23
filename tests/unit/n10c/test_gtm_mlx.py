@@ -37,5 +37,6 @@ def test_run_seed_sequence_distinct_per_arm():
     b = run_seed_sequence(0, "mlp", "registered")
     a2 = run_seed_sequence(0, "gtm", "registered")
     assert list(a.entropy) != list(b.entropy)
-    assert list(a.entropy) == list(a2.entropy) == [0, ARM_CODES["gtm"], CONDITION_CODES["registered"]]
+    assert list(a.entropy) == list(a2.entropy)
+    assert list(a.entropy) == [0, ARM_CODES["gtm"], CONDITION_CODES["registered"]]
     assert list(b.entropy) == [0, 1, 0]

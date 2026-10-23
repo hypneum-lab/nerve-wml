@@ -88,14 +88,14 @@ def test_fieller_endpoints_satisfy_inequality_boundary():
     a = arm.mean() - nocomm.mean()
     b = eng.mean() - nocomm.mean()
     vn, va, ve = (np.var(z, ddof=1) / 5 for z in (nocomm, arm, eng))
-    Va, Vb = va + vn, ve + vn
+    var_a, var_b = va + vn, ve + vn
     # smaller Welch df of the two differences
     df_a = (va + vn) ** 2 / (va**2 / 4 + vn**2 / 4)
     df_b = (ve + vn) ** 2 / (ve**2 / 4 + vn**2 / 4)
     t = stats.t.ppf(0.975, min(df_a, df_b))
     for r in (lo, hi):
         lhs = (a - r * b) ** 2
-        rhs = t**2 * (Va - 2 * r * vn + r**2 * Vb)
+        rhs = t**2 * (var_a - 2 * r * vn + r**2 * var_b)
         assert lhs == pytest.approx(rhs, rel=1e-9)
     assert lo < rho < hi
 
@@ -204,7 +204,7 @@ def test_ni_unavailable_when_denominator_not_above_zero():
     )
 
 
-def test_positive_control_sensitive_allows_S_interpretation():
+def test_positive_control_sensitive_allows_s_interpretation():
     rep = primary_report(_fixture())
     sd = rep["S"]
     assert sd["positive_control"] == "sensitive"
@@ -213,7 +213,7 @@ def test_positive_control_sensitive_allows_S_interpretation():
     assert sd["intervals"][("gtm", "registered")]["low"] is not None
 
 
-def test_positive_control_insensitive_blocks_S_interpretation():
+def test_positive_control_insensitive_blocks_s_interpretation():
     rep = primary_report(_fixture(eng_closed_s=(-0.30, 0.34, -0.28, 0.32, 0.10)))
     assert rep["S"]["positive_control"] == "insensitive"
     assert rep["S"]["interpretable"] is False
@@ -227,7 +227,7 @@ def test_positive_control_uninterpretable_when_interval_unavailable():
     assert rep["S"]["intervals"][("eng", "closed")]["mean"] == pytest.approx(0.3)
 
 
-def test_nocomm_S_is_deterministic_check_without_interval():
+def test_nocomm_s_is_deterministic_check_without_interval():
     rep = primary_report(_fixture())
     assert rep["S"]["nocomm_zero_check"] == {"registered": True, "closed": True}
     assert ("nocomm", "registered") not in rep["S"]["intervals"]
@@ -260,7 +260,7 @@ def test_constant_decimals_are_unavailable(v):
 
 
 @pytest.mark.parametrize("v", [0.1, 0.3, 0.7])
-def test_constant_S_positive_control_uninterpretable(v):
+def test_constant_s_positive_control_uninterpretable(v):
     rep = primary_report(_fixture(eng_closed_s=(v,) * 5))
     assert rep["S"]["positive_control"] == "uninterpretable"
     assert rep["S"]["intervals"][("eng", "closed")]["low"] is None

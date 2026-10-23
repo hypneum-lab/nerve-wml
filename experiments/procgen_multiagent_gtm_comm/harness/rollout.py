@@ -9,7 +9,8 @@
 # ``compute_gae``); ``minibatches`` raises until that was done.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator
+from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -34,7 +35,7 @@ def compute_gae(
     rewards = np.asarray(rewards, np.float64)
     values = np.asarray(values, np.float64)
     nonterm = 1.0 - np.asarray(dones, np.float64)  # [T, n]
-    T = rewards.shape[0]
+    t_len = rewards.shape[0]
     next_values = np.concatenate(
         [values[1:], np.asarray(last_value, np.float64)[None]], axis=0
     )
@@ -42,7 +43,7 @@ def compute_gae(
     delta = rewards[..., None] + gamma * next_values * nt - values
     adv = np.zeros_like(values)
     gae = np.zeros_like(values[0])
-    for t in reversed(range(T)):
+    for t in reversed(range(t_len)):
         gae = delta[t] + gamma * lam * nt[t] * gae
         adv[t] = gae
     ret = adv + values
@@ -53,17 +54,17 @@ class RolloutBuffer:
     def __init__(self, n_pairs: int, horizon: int, noise_dim: int = 0):
         self.n_pairs = n_pairs
         self.horizon = horizon
-        T, n = horizon, n_pairs
-        self.obs = np.zeros((T, n, 2, 64, 64, 3), np.uint8)
-        self.summary = np.zeros((T, n, 2, 2), np.float32)
-        self.eng_bits = np.zeros((T, n, 2, 16), np.float32)
-        self.actions = np.zeros((T, n, 2), np.int64)
-        self.logp = np.zeros((T, n, 2), np.float32)
-        self.value = np.zeros((T, n, 2), np.float32)
-        self.team_reward = np.zeros((T, n), np.float32)
-        self.done = np.zeros((T, n), bool)
+        t_len, n = horizon, n_pairs
+        self.obs = np.zeros((t_len, n, 2, 64, 64, 3), np.uint8)
+        self.summary = np.zeros((t_len, n, 2, 2), np.float32)
+        self.eng_bits = np.zeros((t_len, n, 2, 16), np.float32)
+        self.actions = np.zeros((t_len, n, 2), np.int64)
+        self.logp = np.zeros((t_len, n, 2), np.float32)
+        self.value = np.zeros((t_len, n, 2), np.float32)
+        self.team_reward = np.zeros((t_len, n), np.float32)
+        self.done = np.zeros((t_len, n), bool)
         self.noise_dim = noise_dim
-        self.noise = np.zeros((T, n, 2, noise_dim), np.float32)
+        self.noise = np.zeros((t_len, n, 2, noise_dim), np.float32)
         self.advantages: np.ndarray | None = None
         self.returns: np.ndarray | None = None
         self.t = 0
@@ -97,26 +98,26 @@ class RolloutBuffer:
         self.advantages = self.returns = None
 
     def minibatches(self, rng: np.random.Generator,
-                    size_pairs: int = 1024) -> Iterator[dict[str, "mx.array"]]:
+                    size_pairs: int = 1024) -> Iterator[dict[str, mx.array]]:
         """One pass: each flattened (T*n) pair-step exactly once, shuffled."""
         if self.advantages is None or self.t != self.horizon:
             raise RuntimeError("call finish() on a full buffer first")
         import mlx.core as mx  # noqa: F811  (lazy, after lifecycle check)
 
-        N = self.horizon * self.n_pairs
+        n_total = self.horizon * self.n_pairs
         flat = {
-            "obs": self.obs.reshape(N, 2, 64, 64, 3),
-            "summary": self.summary.reshape(N, 2, 2),
-            "eng_bits": self.eng_bits.reshape(N, 2, 16),
-            "actions": self.actions.reshape(N, 2),
-            "logp": self.logp.reshape(N, 2),
-            "value": self.value.reshape(N, 2),
-            "advantages": self.advantages.reshape(N, 2),
-            "returns": self.returns.reshape(N, 2),
-            "noise": self.noise.reshape(N, 2, self.noise_dim),
+            "obs": self.obs.reshape(n_total, 2, 64, 64, 3),
+            "summary": self.summary.reshape(n_total, 2, 2),
+            "eng_bits": self.eng_bits.reshape(n_total, 2, 16),
+            "actions": self.actions.reshape(n_total, 2),
+            "logp": self.logp.reshape(n_total, 2),
+            "value": self.value.reshape(n_total, 2),
+            "advantages": self.advantages.reshape(n_total, 2),
+            "returns": self.returns.reshape(n_total, 2),
+            "noise": self.noise.reshape(n_total, 2, self.noise_dim),
         }
-        perm = rng.permutation(N)
-        for s in range(0, N, size_pairs):
+        perm = rng.permutation(n_total)
+        for s in range(0, n_total, size_pairs):
             idx = perm[s:s + size_pairs]
             mb = {k: mx.array(v[idx]) for k, v in flat.items()}
             mb["index"] = mx.array(idx)

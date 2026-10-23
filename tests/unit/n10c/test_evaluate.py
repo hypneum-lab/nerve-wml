@@ -110,9 +110,9 @@ def test_shuffle_delivers_donor_messages_end_to_end():
     n_intact = sum(lens)
     assert all(c[0] is None for c in calls[:n_intact])
     intact, off = [], 0
-    for L in lens:
-        intact.append(np.stack([c[1][0] for c in calls[off:off + L]]))
-        off += L
+    for length in lens:
+        intact.append(np.stack([c[1][0] for c in calls[off:off + length]]))
+        off += length
     pi = derangement(n, np.random.default_rng(20261023))
     k = n_intact
     for j in range(n):
@@ -125,7 +125,7 @@ def test_shuffle_delivers_donor_messages_end_to_end():
     assert rec.S == rec.R_intact - rec.R_shuffled
 
 
-def test_nocomm_S_is_zero():
+def test_nocomm_s_is_zero():
     f = _factory([0, 2, 5, 1])
     rec = evaluate_policy(_model("nocomm"), "nocomm", "registered", range(4),
                           env_factory=f)

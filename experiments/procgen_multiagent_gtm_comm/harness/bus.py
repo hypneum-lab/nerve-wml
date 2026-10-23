@@ -15,7 +15,7 @@ from .codes import ARM_CODES
 N_BITS = 16
 
 
-class MessageBusViolation(RuntimeError):
+class MessageBusViolation(RuntimeError):  # noqa: N818 (public name)
     pass
 
 

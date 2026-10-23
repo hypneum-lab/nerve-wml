@@ -215,7 +215,7 @@ def _ni(results):
             if not have:
                 cell[arm] = {"estimate": None, "low": None, "high": None}
                 continue
-            r = lambda a: _metric(results, a, cond, "R")  # noqa: E731
+            r = lambda a, cond=cond: _metric(results, a, cond, "R")  # noqa: E731
             den = r("eng").mean() - r("nocomm").mean()
             est = float((r(arm).mean() - r("nocomm").mean()) / den) if den != 0 else None
             ci = fieller_ci(r(arm), r("nocomm"), r("eng"), 0.95)

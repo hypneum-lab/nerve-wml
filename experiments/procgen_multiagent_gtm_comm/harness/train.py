@@ -20,10 +20,11 @@ import argparse
 import json
 import time
 from collections import deque
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import mlx.core as mx
 import mlx.nn as nn
@@ -283,9 +284,9 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
     update = 0
     while env_steps < total_env_steps and not rec.training_failure:
         update += 1
-        T = min(horizon, total_env_steps - env_steps)
-        buf = RolloutBuffer(n_pairs, T, noise_dim=nd)
-        for _ in range(T):
+        t_len = min(horizon, total_env_steps - env_steps)
+        buf = RolloutBuffer(n_pairs, t_len, noise_dim=nd)
+        for _ in range(t_len):
             k_pol, k_act, k_noise = _key(key_rng), _key(key_rng), _key(key_rng)
             noise = model.sample_noise(n_pairs, k_noise)
             out = model(
@@ -369,7 +370,7 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
             )
             break
         rec.losses.append(float(np.mean(losses)))
-        prev = step - T * n_pairs
+        prev = step - t_len * n_pairs
         if step // ckpt_every > prev // ckpt_every:
             rec.last_checkpoint = _save_ckpt(model, out_dir, step)
         if fault_hook is not None:

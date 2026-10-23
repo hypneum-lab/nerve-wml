@@ -10,8 +10,8 @@ from experiments.procgen_multiagent_gtm_comm.harness.comm import (  # noqa: E402
     bits_to_indices,
     eng_bits_from_window,
     make_comm,
-    plasticity_scale,
     onehot_from_bits,
+    plasticity_scale,
 )
 from experiments.procgen_multiagent_gtm_comm.harness.gtm_mlx import (  # noqa: E402
     GammaThetaMultiplexerMLX,
@@ -172,5 +172,5 @@ def test_plasticity_scale_endpoints_and_monotone():
     assert plasticity_scale(1000, 1000) == pytest.approx(0.1)
     assert plasticity_scale(5000, 1000) == pytest.approx(0.1)
     vals = [plasticity_scale(u, 1000) for u in range(0, 1001, 50)]
-    assert all(a >= b for a, b in zip(vals, vals[1:]))
+    assert all(a >= b for a, b in zip(vals, vals[1:], strict=False))
     assert plasticity_scale(500, 1000) == pytest.approx(0.55)

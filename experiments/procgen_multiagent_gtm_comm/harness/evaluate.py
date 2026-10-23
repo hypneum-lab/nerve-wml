@@ -183,7 +183,7 @@ def evaluate_policy(model, arm: str, condition: str, levels: range, *,
     r_s = [r for r, _, _ in shuffled]
     l_i = [n for _, n, _ in intact]
     l_s = [n for _, n, _ in shuffled]
-    succ = [n for r, n in zip(r_i, l_i) if r > 0.5]
+    succ = [n for r, n in zip(r_i, l_i, strict=False) if r > 0.5]
     r_int, r_shu = float(np.mean(r_i)), float(np.mean(r_s))
     return EvalRecord(
         arm=arm, condition=condition, seed=seed, ckpt=ckpt, untrained=untrained,

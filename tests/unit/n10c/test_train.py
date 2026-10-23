@@ -6,6 +6,9 @@ import pytest
 
 mx = pytest.importorskip("mlx.core")
 
+from experiments.procgen_multiagent_gtm_comm.harness.codes import (  # noqa: E402
+    run_seed_sequence,
+)
 from experiments.procgen_multiagent_gtm_comm.harness.train import (  # noqa: E402
     EngCounters,
     _assert_not_stub,
@@ -13,9 +16,6 @@ from experiments.procgen_multiagent_gtm_comm.harness.train import (  # noqa: E40
 )
 from experiments.procgen_multiagent_gtm_comm.harness.vec_env import (  # noqa: E402
     VecCoopEnv,
-)
-from experiments.procgen_multiagent_gtm_comm.harness.codes import (  # noqa: E402
-    run_seed_sequence,
 )
 
 NP, H = 2, 4
