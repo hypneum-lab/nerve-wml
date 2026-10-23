@@ -85,13 +85,13 @@ def test_fieller_hand_computed():
     # df = 5 for both (zero-variance NOCOMM), t^2 = 2.5705818356^2
     # qa = 1 - t^2 v_eng ; qc = .25 - t^2 v_arm ; roots = (.5 -+ sqrt(.25 - qa qc)) / qa
     t2 = 2.5705818356**2
-    A = 1 - t2 * 0.056 / 6
-    C = 0.25 - t2 * 0.014 / 6
-    r = np.sqrt(0.25 - A * C)
+    qa = 1 - t2 * 0.056 / 6
+    qc = 0.25 - t2 * 0.014 / 6
+    r = np.sqrt(0.25 - qa * qc)
     rho, lo, hi = fieller_ci(arm, nocomm, eng)
     assert rho == pytest.approx(0.5)
-    assert lo == pytest.approx((0.5 - r) / A, abs=1e-9)
-    assert hi == pytest.approx((0.5 + r) / A, abs=1e-9)
+    assert lo == pytest.approx((0.5 - r) / qa, abs=1e-9)
+    assert hi == pytest.approx((0.5 + r) / qa, abs=1e-9)
     # checked against scipy t(0.975, 5) in a separate evaluation
     assert lo == pytest.approx(0.34863, abs=1e-4)
     assert hi == pytest.approx(0.71710, abs=1e-4)
