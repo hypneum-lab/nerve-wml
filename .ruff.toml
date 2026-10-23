@@ -1,5 +1,7 @@
 line-length = 100
 target-version = "py312"
+# Archived verbatim as evidence (their SHA-256 is recorded in the manifest).
+extend-exclude = ["experiments/procgen_multiagent_gtm_comm/bench/procgen-builds/*.py"]
 
 [lint]
 select = ["E", "F", "I", "UP", "B", "N"]

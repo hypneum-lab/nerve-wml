@@ -112,6 +112,17 @@ RULINGS = [
 ]
 
 
+PROCGEN_EVIDENCE_DIR = "experiments/procgen_multiagent_gtm_comm/bench/procgen-builds"
+
+
+def _procgen_evidence() -> dict[str, str]:
+    d = REPO / PROCGEN_EVIDENCE_DIR
+    files = sorted(p for p in d.iterdir() if p.is_file())
+    if not files:
+        raise FileNotFoundError(f"no archived Procgen build evidence in {d}")
+    return {p.name: sha256(p) for p in files}
+
+
 def _run(cmd: list[str]) -> str:
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
@@ -477,8 +488,13 @@ def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
           "bit-identical**: on 20 of 20 CoinRun levels tested the frame / reward "
           "streams differ between macM1 (arm64) and KXKM-AI (x86-64), although "
           "each machine is deterministic across reruns; frames agree early in an "
-          "episode on some levels and diverge late (reports/bench-m3-kxkm-es.md "
-          "and its frames files). macM1-trained models are therefore evaluated "
+          "episode on some levels and diverge late. Evidence, procedure and "
+          "result archived in "
+          f"`{PROCGEN_EVIDENCE_DIR}/README.md`; SHA-256 of the archived "
+          "files:", "",
+          "| file | SHA-256 |", "|---|---|"]
+    lines += [f"| `{k}` | `{v}` |" for k, v in _procgen_evidence().items()]
+    lines += ["", "macM1-trained models are therefore evaluated "
           "on the x86 rendering.", "",
           "### Reproducibility (nondeterminism)", "",
           "On both Metal and CUDA, MLX 0.31.1 convolution backward in the IMPALA "

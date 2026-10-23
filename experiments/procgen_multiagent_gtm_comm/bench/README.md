@@ -16,8 +16,9 @@ Python 3.10 (`requirements-procgen-py310.lock`). Build-only changes:
 - `-Werror` removed (`procgen-0.10.7-arm64-build.patch`): clang 21
   flags two unused variables in `chaser.cpp` and `starpilot.cpp`.
 
-Game logic is unchanged. Equivalence with x86-64 builds was not
-checked.
+Game logic is unchanged. Equivalence with the x86-64 build was checked
+and fails at the bit level (0 of 20 CoinRun levels identical, see
+`procgen-builds/README.md`).
 
 CoinRun, random policy: 30,118 steps/s (1 env), 116,614 steps/s
 (64 envs).

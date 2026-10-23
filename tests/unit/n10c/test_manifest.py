@@ -224,3 +224,12 @@ def test_frozen_status_line_and_no_draft_word(tmp_path):
     assert "DRAFT" not in text
     with pytest.raises(ValueError):
         _manifest(tmp_path, freeze_tag="bad tag")
+
+
+def test_manifest_references_procgen_build_evidence(tmp_path):
+    text = _manifest(tmp_path)
+    d = "experiments/procgen_multiagent_gtm_comm/bench/procgen-builds"
+    assert f"{d}/README.md" in text
+    for f in ("frames.py", "frames2.py", "frames_kxkm.json", "frames_macm1.json",
+              "h_kxkm.txt", "h_macm1.txt"):
+        assert re.search(rf"\| `{re.escape(f)}` \| `[0-9a-f]{{64}}` \|", text), f
