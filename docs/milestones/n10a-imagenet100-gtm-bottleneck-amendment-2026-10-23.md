@@ -1,6 +1,6 @@
 # N10-A — Pre-registration amendment 2026-10-23: estimation reframing and oscillator-family comparator
 
-**Status:** DRAFT — not yet filed on OSF (to be filed by the PI)
+**Status:** DRAFT — not yet filed on OSF (to be filed by the PI in two stages, see Filing)
 **Amends:** `docs/milestones/n10a-imagenet100-gtm-bottleneck-2026-05-11.md` (pre-registered 2026-05-11, commit `1640c5c` ; in-file amendment 2026-05-11, commit `c74f6be`)
 **Date drafted:** 2026-10-23
 **OSF registration:** no N10-A-specific OSF identifier is recorded in this repository. The programme-level OSF pre-registration is [10.17605/OSF.IO/Q6JYN](https://doi.org/10.17605/OSF.IO/Q6JYN) (dreamOfkiki, locked 2026-04-19).
@@ -73,7 +73,7 @@ Any superiority claim requires a separate, future confirmatory pre-registration 
 
 ### Third registered baseline
 
-The original methodology lists **linear projection** (`nn.Linear(2048, code_dim)` + `nn.LayerNorm`) as the third baseline. The 2026-05-11 in-file amendment lists "dense autoencoder" in that place while stating that the baseline count is unchanged. This amendment registers **linear projection**, the only third baseline with a specified architecture, and treats "dense autoencoder" as a drafting inconsistency. *(PI confirmation item 1.)*
+The original methodology lists **linear projection** (`nn.Linear(2048, code_dim)` + `nn.LayerNorm`) as the third baseline. The 2026-05-11 in-file amendment lists "dense autoencoder" in that place while stating that the baseline count is unchanged. This amendment registers **linear projection**, the only third baseline with a specified architecture, and treats "dense autoencoder" as a drafting inconsistency. *(Decided by the PI on 2026-10-23.)*
 
 ### New arm: oscillator bottleneck (KoPE-style, primary)
 
@@ -98,7 +98,7 @@ This is a KoPE-*style adaptation* to a feature bottleneck on frozen ResNet50 fea
 
 ### Claim restriction for the oscillator set
 
-Beating one adapted oscillator bottleneck cannot separate phase–amplitude coupling from capacity, optimisation or other architectural differences. Whatever the oscillator-set estimates are, N10-A makes **no statement that an advantage is specific to PAC multiplexing** rather than to a generic phase bias. PAC specificity is reported as **not addressed** by this design. Oscillator-set results are described only as GTM versus this particular adapted comparator. A matched PAC-disabled GTM ablation would be needed to address PAC specificity. It is not added here *(PI confirmation item 2)*.
+Beating one adapted oscillator bottleneck cannot separate phase–amplitude coupling from capacity, optimisation or other architectural differences. Whatever the oscillator-set estimates are, N10-A makes **no statement that an advantage is specific to PAC multiplexing** rather than to a generic phase bias. PAC specificity is reported as **not addressed** by this design. Oscillator-set results are described only as GTM versus this particular adapted comparator. A matched PAC-disabled GTM ablation would be needed to address PAC specificity. It is not added here *(decided by the PI on 2026-10-23)*.
 
 ### Unchanged
 
@@ -128,13 +128,21 @@ These close choices that the locked file left open:
 - No run is excluded or replaced on the basis of its metric values. Restarts and training failures are reported per arm.
 - If a bug that affects an arm's registered configuration is found after runs have started, all runs of every affected arm are repeated with the fixed code, and this is reported as a deviation.
 
-## Configuration manifest (required, immutable, part of this registration)
+## Filing (two stages, PI decision 2026-10-23)
+
+- **Stage 1, filed now:** this amendment text, that is the research hypothesis, the estimands, the analysis, failure and exclusion rules and the superseded provisions.
+- **Stage 2, filed as a second locked stage before any ImageNet-100 sweep run:** the configuration manifest below, which fixes the implementation details that stage 1 leaves open (architectures, adapters and objectives, including the GTM symbol count and adapter and the baselines' encoder/decoder and loss weighting).
+
+Stage 2 cannot change any stage-1 provision. If the manifest cannot be written within the stage-1 rules, stage 1 is amended and re-filed before any run.
+
+## Configuration manifest (stage 2, required, immutable, part of this registration)
 
 Before the first ImageNet-100 sweep run, the PI files a dated manifest on OSF as an update to this registration. It may contain only:
 
 1. the commit of the training / evaluation harness used for every run, and the integer arm codes ;
-2. the ImageNet-100 class list (the CMC 100-class subset) and the SHA-256 of the cached feature files ;
-3. the smoke outcome (pass/fail and the three smoke quantities) and the resulting oscillator choice (KoPE-style, WONN-style or none).
+2. the architecture, adapter and objective of every arm as implemented at that commit, within the settings frozen above: the GTM symbol count and encode/decode adapter, the encoder/decoder and loss weighting of the VQ-VAE and β-VAE baselines, and the parameter count of every arm ;
+3. the ImageNet-100 class list (the CMC 100-class subset) and the SHA-256 of the cached feature files ;
+4. the smoke outcome (pass/fail and the three smoke quantities) and the resulting oscillator choice (KoPE-style, WONN-style or none).
 
 Development that informs the manifest may use only the CIFAR-10 stand-in, the smoke procedure above, and unit tests. It never uses the ImageNet-100 val split. The manifest cannot be changed after filing. Runs started before it is filed are excluded from all analyses and reported.
 
@@ -146,14 +154,14 @@ The research hypothesis (GTM top-1 at code_dim = 32 exceeds VQ-VAE by ≥ 1.5 pp
 
 Oscillator arm: 3 code_dims × 5 seeds = **15 runs** on cached features, plus at most 2 smoke runs and one OOD evaluation. Oscillator integration makes each run slower than a linear bottleneck. The estimate is about 5–8 h on the RTX 4090, against the registered total of about 22 h. The reframing itself adds no compute.
 
-## PI confirmation items (to settle before filing)
+## PI decisions (2026-10-23)
 
 1. Third baseline = linear projection (not dense autoencoder).
 2. No PAC-disabled GTM ablation. PAC specificity is reported as not addressed.
-3. The estimation reframing as worded above (PI decision 2026-10-23).
-4. Filing stage: this amendment leaves implementation details (architectures, adapters, objectives, including the GTM symbol count and adapter and the baselines' encoder/decoder and loss weighting) to the configuration manifest. The PI either files it now as a **first-stage registration**, with the manifest as a second, locked stage filed before any run, or completes those details here before filing.
+3. The estimation reframing as worded above.
+4. Two-stage filing: this text now (stage 1), the configuration manifest as a second locked stage before any run (stage 2), as described under Filing.
 
-If the PI changes any item, the text above is edited before filing, never after data are seen.
+No PI confirmation item remains open for N10-A. If the PI changes any of these decisions, the text above is edited before filing, never after data are seen.
 
 ## Cross-cutting reporting rule (PAC diagnostics)
 

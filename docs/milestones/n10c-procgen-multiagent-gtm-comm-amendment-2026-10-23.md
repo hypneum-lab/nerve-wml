@@ -1,6 +1,6 @@
 # N10-C — Pre-registration amendment 2026-10-23: estimation reframing, engineered reference sender and side-channel control
 
-**Status:** DRAFT — not yet filed on OSF (to be filed by the PI)
+**Status:** DRAFT — not yet filed on OSF (to be filed by the PI in two stages, see Filing)
 **Amends:** `docs/milestones/n10c-procgen-multiagent-gtm-comm-2026-05-11.md` (pre-registered 2026-05-11, commit `1640c5c`)
 **Date drafted:** 2026-10-23
 **OSF registration:** no N10-C-specific OSF identifier is recorded in this repository. The programme-level OSF pre-registration is [10.17605/OSF.IO/Q6JYN](https://doi.org/10.17605/OSF.IO/Q6JYN) (dreamOfkiki, locked 2026-04-19).
@@ -15,6 +15,7 @@ The locked pre-registration file is not modified. This amendment is append-only 
 3. Add an **engineered reference sender** arm and a **no-communication** arm, and report each arm's **normalized improvement** over no-communication.
 4. Add a **side-channel control**: a side-channel-closed training condition and an evaluation-time message-shuffle probe. Its result is reported only as message-disruption sensitivity.
 5. Give an executable specification of the CoinRun-coop environment, the 16-bit message for every arm, the engineered sender's inputs, the evaluation protocol, randomness, and failure / exclusion / replacement rules. Correct the compute figures.
+6. **Scope option D (PI decision 2026-10-23):** CoinRun-coop only, all arms, both conditions, 50 runs, on macM1 (Apple M1 Max) with MLX. Caveflyer-coop and Maze-coop are not run, and the registered "on at least 2 of 3 tasks" target is withdrawn.
 
 ## Rationale
 
@@ -44,16 +45,16 @@ Implemented by `ProcgenCoopEnv` (`experiments/procgen_multiagent_gtm_comm/coop_e
 - **Stub.** The procgen stub is rejected unless `allow_stub=True`, which is used only by the smoke test. Every scientific run must report `using_stub == False`. A run on the stub is an infrastructure failure.
 - Unit tests: `tests/unit/test_procgen_coop_team_summary.py`.
 
-### Caveflyer-coop and Maze-coop
+### Caveflyer-coop and Maze-coop (not run under scope option D)
 
-The registered definitions ("keep distance ≤ X", "visit all 4 quadrants") need agent positions, which procgen does not expose without privileged internal state. Their definitions are therefore part of the required configuration manifest, under these constraints:
+The registered definitions ("keep distance ≤ X", "visit all 4 quadrants") need agent positions, which procgen does not expose without privileged internal state. Under scope option D (PI decision 2026-10-23, see Compute), Caveflyer-coop and Maze-coop are **not run** under this registration. They are removed from every analysis and condition by this amendment, before any run. n_env denotes the number of environments retained: **n_env = 1** (CoinRun-coop).
+
+If they are run later, that requires a separate amendment, filed before any of their runs, whose definitions satisfy at least these constraints:
 
 - the reward rule uses only signals exposed by procgen's public gym3 interface (rewards, episode ends, images) ;
 - the episode team return is bounded, with a stated theoretical range, and successful completion scores above every failure ;
 - the side-channel inventory and the engineered sender are specified to the same level of detail as for CoinRun-coop ;
-- an implementation with unit tests exists at the manifest commit.
-
-An environment for which no such definition is filed before the first N10-C run is **dropped from every analysis and condition before any run**. This is reported as a deviation. n_env denotes the number of environments retained.
+- an implementation with unit tests exists at the commit named in that amendment.
 
 ## Message specification (all arms)
 
@@ -65,7 +66,7 @@ Every arm transmits, per agent and per step, a vector m ∈ {0, 1}¹⁶ (16 bits
 - **DIAL:** 16 DRU units. In training, the DIAL discretise/regularise unit of Foerster et al. (2016), σ(m + 𝒩(0, σ_n²)) with σ_n = 2 fixed here. At evaluation, a hard threshold at 0. DIAL is the only arm whose training-time messages are not hard bits. This is disclosed.
 - **Engineered reference sender:** see below.
 - **No-communication:** constant all-zero message in training and evaluation (0 bits of information).
-- **Enforcement:** the message bus asserts shape (16,) and values in {0, 1} for every delivered message (at evaluation for all arms ; in training for all arms except DIAL) and logs bits per step. A violation is an implementation error, handled as an infrastructure failure (fix, then rerun from scratch), never as an outcome-based exclusion. *(PI confirmation item 4 for K and A.)*
+- **Enforcement:** the message bus asserts shape (16,) and values in {0, 1} for every delivered message (at evaluation for all arms ; in training for all arms except DIAL) and logs bits per step. A violation is an implementation error, handled as an infrastructure failure (fix, then rerun from scratch), never as an outcome-based exclusion. *(Open PI confirmation item 2 for K and A.)*
 
 ## New arms
 
@@ -127,18 +128,18 @@ For each model, S = R_intact − R_shuffled, with R its mean team return over th
 - If an interval cannot be computed (both arms have zero seed variance, or a required df is undefined), it is reported as **unavailable** with the point estimate only. Identical seed outcomes, for example five runs capped at 50M, are not read as certainty about the population.
 - All intervals assume approximately normal seed-level values, so stated simultaneous coverage is approximate. With 5 seeds this assumption cannot be checked well, and intervals are read as pilot estimates. No bootstrap is used.
 
-### Primary estimand (registered condition, per environment e)
+### Primary estimand (registered condition, CoinRun-coop)
 
-The research hypothesis is "GTM team reward exceeds the best baseline by ≥ 10 % of dynamic range". With success-only rewards, team reward is a success rate with theoretical range [0, 1], so the **dynamic range is 1** (for Caveflyer-coop and Maze-coop: the theoretical range stated in the manifest). GTM exceeds the best baseline by at least a given amount if and only if it exceeds every baseline by that amount. The primary estimands are therefore the **three simultaneous contrasts**
+The research hypothesis is "GTM team reward exceeds the best baseline by ≥ 10 % of dynamic range". With success-only rewards, team reward is a success rate with theoretical range [0, 1], so the **dynamic range is 1**. GTM exceeds the best baseline by at least a given amount if and only if it exceeds every baseline by that amount. The primary estimands are therefore the **three simultaneous contrasts**
 
 θ_e,b = (R̄_GTM,e − R̄_b,e) / range_e, for b ∈ {broadcast MLP, ATOC-style, DIAL},
 
-each with a Welch CI at level 1 − 0.05/3 (98.33 %) within the environment. range_e is a known constant, not an estimate. No selection of a "best" baseline from the data is involved.
+each with a Welch CI at level 1 − 0.05/3 (98.33 %). Here e = CoinRun-coop and range_e = 1 is a known constant, not an estimate. No selection of a "best" baseline from the data is involved.
 
 - **Changes flagged:** the registered text used the median across seeds and did not define "dynamic range" or "best baseline". The mean is used because the Welch interval is defined for means.
 - **Reference value (SESOI):** Δ = 0.10, the registered "10 % of dynamic range". It was set by the PI on 2026-05-11 as the smallest coordination gain worth a Paper 2 section. It was not derived from a power analysis.
 
-### Pilot category per environment (mutually exclusive, exhaustive, applied in this order)
+### Pilot category (mutually exclusive, exhaustive, applied in this order)
 
 Using the three 98.33 % intervals [L_b, U_b]:
 
@@ -147,14 +148,14 @@ Using the three 98.33 % intervals [L_b, U_b]:
 2. **pilot-positive** if L_b ≥ Δ for all three baselines. Wording: "the pilot estimates are consistent only with gains of at least Δ over every baseline ; superiority is not established, because this is not a confirmatory test."
 3. **pilot-inconclusive** otherwise.
 
-If L_b ≥ Δ for all b, then U_b ≥ Δ for all b, so 1 and 2 cannot both hold. None of the categories is a superiority, equivalence or "matches" verdict. The registered "on at least 2 of 3 tasks" aggregate is reported only as the number of environments in each category. "Pilot-positive on ≥ 2 environments" is still not a superiority claim. If an environment is dropped, the registered "≥ 2 of 3 tasks" target is **withdrawn**, and only per-environment categories are reported.
+If L_b ≥ Δ for all b, then U_b ≥ Δ for all b, so 1 and 2 cannot both hold. None of the categories is a superiority, equivalence or "matches" verdict. Because only CoinRun-coop is run (option D), the registered "on at least 2 of 3 tasks" target is **withdrawn**: no cross-environment aggregate is formed, and only the CoinRun-coop category is reported. It is never described as evidence about the other two tasks.
 
 ### Secondary contrasts (descriptive)
 
-- **Registered set:** GTM vs {broadcast MLP, ATOC-style, DIAL} × 3 metrics × n_env environments (27 when n_env = 3), registered condition. Each contrast is a difference in seed means with a Welch CI at level 1 − 0.05/k (k = 27 → 99.815 %).
+- **Registered set:** GTM vs {broadcast MLP, ATOC-style, DIAL} × 3 metrics × n_env environments, registered condition. With n_env = 1 this is k = 9 contrasts (27 in the locked three-environment design). Each contrast is a difference in seed means with a Welch CI at level 1 − 0.05/9 (99.444 %).
 - **Directions.** Team reward: positive (GTM − comparator) favours GTM. Sample efficiency: defined as comparator − GTM, so positive favours GTM. For bandwidth utilisation no favourable direction was registered: it is reported signed and never counted as favouring either arm.
 - **Metric definitions completed here:**
-  - *Sample efficiency* is a **capped time-to-threshold endpoint**, not a censored-survival analysis. Training team success rate is measured every 1M steps as the mean over the last 100 completed training episodes. The endpoint is the first evaluation step at which it reaches 0.5 (50 % of the theoretical maximum of 1 ; for other environments, 50 % of the stated range above its minimum). A run that never reaches it within 50M steps is assigned the cap, 50M. The report counts separately runs that reach the threshold at the final 50M evaluation and runs that never reach it.
+  - *Sample efficiency* is a **capped time-to-threshold endpoint**, not a censored-survival analysis. Training team success rate is measured every 1M steps as the mean over the last 100 completed training episodes. The endpoint is the first evaluation step at which it reaches 0.5 (50 % of the theoretical maximum of 1). A run that never reaches it within 50M steps is assigned the cap, 50M. The report counts separately runs that reach the threshold at the final 50M evaluation and runs that never reach it.
   - *Bandwidth utilisation* = plug-in entropy, in bits (≤ 16), of the 16-bit message distribution over all held-out evaluation steps.
 - For each set, the number of intervals entirely above 0, entirely below 0 and including 0 is reported **without a label**. An interval including 0 is never described as a tie or "matches".
 
@@ -168,9 +169,9 @@ NI_arm,e = (R̄_arm,e − R̄_NOCOMM,e) / (R̄_ENG,e − R̄_NOCOMM,e), for ever
 
 ### Message-disruption sensitivity (descriptive)
 
-- For each arm × condition × environment, the mean of the 5 seed-level S values is reported with a one-sample t CI at level 1 − 0.05/n_env (98.33 % for n_env = 3).
+- For each arm × condition, the mean of the 5 seed-level S values is reported with a one-sample t CI at level 1 − 0.05/n_env, that is 95 % with n_env = 1.
 - **Wording.** S is reported only as the arm's **sensitivity to message disruption** ("the arm's team reward drops when partner messages are replaced by messages from another level"). It is not an estimate of the reward that flows through the channel. No difference between arms, including GTM's difference from any baseline, is attributed to communication on the basis of S.
-- **Positive control.** If the engineered reference's side-channel-closed interval for S does not lie entirely above 0, the probe is reported as **insensitive** on that environment, and no arm's S on it is interpreted.
+- **Positive control.** If the engineered reference's side-channel-closed interval for S does not lie entirely above 0, the probe is reported as **insensitive**, and no arm's S is interpreted.
 - For the no-communication arm the probe is a no-op, and S = 0 is checked as a sanity test.
 
 ## Failure, exclusion and replacement
@@ -187,56 +188,76 @@ NI_arm,e = (R̄_arm,e − R̄_NOCOMM,e) / (R̄_ENG,e − R̄_NOCOMM,e), for ever
 - **"Seeds 0, 17, 42, 73, 101" as shared random streams:** they are labels of arm-specific streams, as above.
 - **Risk-factor provision "pre-allocate compute budget for 10-seed re-run if 5-seed shows wide IQR":** withdrawn. The seed set is fixed at 5. Additional seeds belong only to a separate, future confirmatory registration, whose test does not reuse the pilot data.
 - **Compute-budget statement "4 parallel runs … ~9 days":** withdrawn (see Compute).
+- **Caveflyer-coop and Maze-coop, and the "on ≥ 2 of 3 tasks" target:** not run and withdrawn under scope option D (see Compute).
 - **"Bandwidth measurement … document the measurement method per arch":** replaced by the message specification above.
 
 ## Confirmatory follow-up
 
 Any superiority claim requires a separate, future confirmatory pre-registration with a powered N. Its sample size is computed from the pilot's seed-level variance (the upper one-sided 80 % confidence limit of the pooled SD). The pilot data are not reused in its confirmatory test.
 
-## Configuration manifest (required, immutable, part of this registration)
+## Filing (two stages, PI decision 2026-10-23)
 
-Before the first N10-C run on any registered environment, the PI files a dated manifest on OSF as an update to this registration. It may contain only:
+- **Stage 1, filed now:** this amendment text, that is the research hypothesis, the environment, message and side-channel specifications, the estimands, the analysis, failure and exclusion rules, the superseded provisions and the adopted scope.
+- **Stage 2, filed as a second locked stage before any N10-C run:** the configuration manifest below, which fixes the implementation details that stage 1 leaves open (architectures, adapters and objectives, including the GTM symbol adapter, and the MLX PPO harness).
 
-1. the commit of `coop_env.py`, the PPO-MA harness and the message bus used for every run, and the integer codes for arms and conditions ;
-2. the per-agent network, PPO and encoder/decoder sizes of every arm, as implemented at that commit ;
-3. the Caveflyer-coop and Maze-coop definitions (reward rule and range, side-channel inventory, engineered sender, tests), or a statement that an environment is dropped ;
-4. the measured training throughput (steps/s, one job and concurrent jobs) on the target hardware, the resulting compute estimate including evaluation, and the scope adopted under PI confirmation item 1.
+Stage 2 cannot change any stage-1 provision. If the manifest cannot be written within the stage-1 rules, stage 1 is amended and re-filed before any run. Stage 1 cannot be filed while the open PI confirmation items below are unresolved.
 
-Development that informs items 1–3 may use only the stub, smoke runs of at most 1M steps (at most 3 per arm and environment, all disclosed in the manifest with their outcomes), and unit tests. It never uses held-out levels 1000–1199 or results of a full-length run. The manifest cannot be changed after filing. Runs started before it is filed are excluded from all analyses and reported.
+## Configuration manifest (stage 2, required, immutable, part of this registration)
+
+Before the first N10-C run, the PI files a dated manifest on OSF as an update to this registration. It may contain only:
+
+1. the commit of `coop_env.py`, the MLX PPO-MA harness and the message bus used for every run, and the integer codes for arms and conditions ;
+2. the per-agent network, PPO and encoder/decoder sizes of every arm, and the GTM symbol adapter, as implemented at that commit ;
+3. the statement that Caveflyer-coop and Maze-coop are not run under this registration (scope option D) ;
+4. the measured training throughput on macM1 (samples/s with the GTM and message-bus overhead included, one job and, if used, concurrent jobs), the resulting compute estimate including evaluation, and the Procgen arm64 build record (the local build patch or its SHA-256, and the toolchain versions, see Compute).
+
+Development that informs items 1–2 and 4 may use only the stub, smoke runs of at most 1M steps (at most 3 per arm, all disclosed in the manifest with their outcomes), throughput measurements on random or untrained policies, and unit tests. It never uses held-out levels 1000–1199 or results of a full-length run. The manifest cannot be changed after filing. Runs started before it is filed are excluded from all analyses and reported.
 
 ## Effect on hypotheses
 
-The research hypothesis (GTM team reward exceeds the best baseline by ≥ 10 % of dynamic range at 16 bits/step on ≥ 2 of 3 tasks) is kept as the **primary estimand and its reference value**. "Dynamic range" and "best baseline" are now defined, the seed summary is the mean instead of the median, and the reward has no step penalty. It is no longer tested for a superiority verdict at 5 seeds. **Flag for the PI:** this changes how every N10-C outcome may be interpreted and worded in Paper 2 §9, and must be filed as a change of interpretation.
+The research hypothesis (GTM team reward exceeds the best baseline by ≥ 10 % of dynamic range at 16 bits/step on ≥ 2 of 3 tasks) is kept as the **primary estimand and its reference value on CoinRun-coop only**. The "on ≥ 2 of 3 tasks" part is **withdrawn** (scope option D): N10-C makes no statement about Caveflyer-coop or Maze-coop. "Dynamic range" and "best baseline" are now defined, the seed summary is the mean instead of the median, and the reward has no step penalty. It is no longer tested for a superiority verdict at 5 seeds. **Flag for the PI:** this changes how every N10-C outcome may be interpreted and worded in Paper 2 §9, and must be filed as a change of interpretation.
 
 ## Compute
 
-The registered sweep is 60 runs × about 14 h = **840 GPU-h** (35 days on one GPU). This amendment adds:
+**Registered design.** 60 runs × about 14 h = **840 GPU-h** (35 days on one RTX 4090). The 14 h per run (50M steps at about 1 ms/step) is the registered estimate and was never measured. The registered "4 parallel runs, ~9 days" assumed four-fold throughput on one GPU and is withdrawn.
 
-- registered condition: engineered reference + no-communication, 2 arms × 3 envs × 5 seeds = 30 runs ;
-- side-channel-closed condition: 4 arms × 3 envs × 5 seeds = 60 runs ;
-- evaluation: intact and shuffled passes over 200 levels for 150 trained models.
+**Full amended design (not adopted).** The amendment adds the engineered reference and no-communication arms in the registered condition (2 arms × 3 envs × 5 seeds = 30 runs) and the side-channel-closed condition (4 arms × 3 envs × 5 seeds = 60 runs), plus intact and shuffled evaluation passes for every trained model: 150 runs in total.
 
-That is **90 additional runs = 1,260 GPU-h, 1.5× the registered training compute**. The **total is 150 runs = 2,100 GPU-h, 2.5× the registered compute, about 87.5 days sequential** on one RTX 4090, before evaluation overhead. The registered "4 parallel runs, ~9 days" assumes four-fold throughput on one GPU. That has not been measured: concurrent jobs share one GPU, so the real speed-up is unknown until the throughput measurement in the manifest is made. The 14 h per run is itself the registered estimate (50M steps at about 1 ms/step) and is unverified.
+**Scope options.** Reductions are whole arms, conditions or environments only:
 
-**Scope options (PI confirmation item 1).** Reductions are whole arms, conditions or environments only, decided before filing:
+| Option | Runs | At the registered 14 h/run (RTX 4090) | At about 16 h/run on macM1 (continuous) |
+|---|---:|---:|---:|
+| A. Full design as above | 150 | 2,100 h | about 2,400 h ≈ 100 days |
+| B. Drop DIAL from the side-channel-closed condition | 135 | 1,890 h | about 2,160 h ≈ 90 days |
+| C. Side-channel-closed condition on CoinRun-coop only | 110 | 1,540 h | about 1,760 h ≈ 73 days |
+| D. CoinRun-coop only, all arms and both conditions (n_env = 1) | 50 | 700 h | about 800 h ≈ 33 days |
 
-| Option | Runs | Training GPU-h |
-|---|---:|---:|
-| A. Full design as above | 150 | 2,100 |
-| B. Drop DIAL from the side-channel-closed condition | 135 | 1,890 |
-| C. Side-channel-closed condition on CoinRun-coop only | 110 | 1,540 |
-| D. CoinRun-coop only, all arms and both conditions (n_env = 1) | 50 | 700 |
+**Adopted: option D (PI decision 2026-10-23).** CoinRun-coop only: 6 arms × 5 seeds in the registered condition and 4 arms × 5 seeds in the side-channel-closed condition, 50 runs, plus intact and shuffled evaluation passes for the 50 trained models. The registered "on at least 2 of 3 tasks" target is withdrawn (see Effect on hypotheses).
 
-This draft registers **option A**. If it cannot be funded, the PI selects another option and edits this section before filing.
+**Hardware and framework (PI decision 2026-10-23).** The runs use **macM1 (Apple M1 Max, 32 GB) with MLX**, not the RTX 4090. MLX is the lab's framework on macOS. The MLX PPO harness is part of the stage-2 manifest. The registered PPO hyperparameters are unchanged.
 
-## PI confirmation items (to settle before filing)
+**Throughput measured on macM1 on 2026-10-23.**
 
-1. Compute scope (option A as drafted, or B / C / D).
-2. Primary estimand on seed means (was median), with dynamic range = the theoretical range of the team return.
-3. The estimation reframing as worded above (PI decision 2026-10-23).
-4. GTM message format K = 4 symbols × A = 16 (16 bits).
-5. Success-only team reward (no step penalty).
-6. Filing stage: this amendment leaves implementation details (architectures, adapters, objectives, and the Caveflyer-coop and Maze-coop definitions) to the configuration manifest. The PI either files it now as a **first-stage registration**, with the manifest as a second, locked stage filed before any run, or completes those details here before filing. The funded compute scope is locked only after the throughput measurement in the manifest.
+- Environment: CoinRun with a random policy, 30k steps/s with 1 environment and 117k steps/s with 64 environments.
+- PPO with an IMPALA-CNN in MLX 0.31.1 with `mx.compile`: one update takes 8.2 s per 16,384 samples (3 epochs, minibatch 2048), and inference 3.4 ms per 64 observations. That is about 1,800 samples/s, so one run (2 agents × 50M steps = 10⁸ samples) takes about **15.4 h** for the neural-network work alone.
+- Not yet measured: the GTM and message-bus overhead, the evaluation cost and concurrent jobs. The planning figure is about 16 h per run, so option D takes about 50 × 16 h ≈ 800 h ≈ **33 days of continuous compute**. The measured figures, including GTM overhead and evaluation, go in the stage-2 manifest.
+
+**Risk: GPU contention.** macM1 is shared with the second-brain services, which also use its GPU. Contention can make runs slower than the estimate. A slower run changes no registered quantity (step budgets, seeds, evaluation protocol). A run killed or corrupted by contention is an infrastructure failure under the rules above.
+
+**Reproducibility note: Procgen on arm64.** Procgen 0.10.7 was built from source for arm64 on macM1, with a local build patch: the Xcode 26.5 SDK forced through `SDKROOT` / `DEVELOPER_DIR` ; Qt 5.15.19 found through `PROCGEN_CMAKE_PREFIX_PATH` ; and `-Werror` removed from `procgen/CMakeLists.txt`, because clang 21 flags two unused variables in `chaser.cpp` and `starpilot.cpp`. The patch changes the build configuration only, not game code. It is kept on macM1 as `~/scratch/procgen-arm64/procgen-arm64-local.patch`, and the stage-2 manifest records it (content or SHA-256) with the toolchain versions. Equivalence with the official x86-64 builds has not been checked. All N10-C runs use this single build.
+
+## PI decisions (2026-10-23)
+
+1. The estimation reframing as worded above.
+2. Implement the declared team summary on purpose and close it in the side-channel-closed condition (see Rationale).
+3. Compute scope: option D on macM1 with MLX, as described under Compute. The "≥ 2 of 3 tasks" target is withdrawn.
+4. Two-stage filing: this text now (stage 1), the configuration manifest as a second locked stage before any run (stage 2), as described under Filing.
+
+## PI confirmation items (open, to settle before filing stage 1)
+
+1. Primary estimand on seed means (was median), with dynamic range = the theoretical range of the team return.
+2. GTM message format K = 4 symbols × A = 16 (16 bits).
+3. Success-only team reward (no step penalty).
 
 If the PI changes any item, the text above is edited before filing, never after data are seen.
 

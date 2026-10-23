@@ -1,6 +1,6 @@
 # N11-A — Pre-registration amendment 2026-10-23: estimation reframing and frozen design options
 
-**Status:** DRAFT — not yet filed on OSF (to be filed by the PI)
+**Status:** DRAFT — not yet filed on OSF (to be filed by the PI in two stages, see Filing)
 **Amends:** `docs/milestones/n11a-ijepa-gtm-predictor-2026-05-11.md` (pre-registered 2026-05-11, commit `3340440`)
 **Date drafted:** 2026-10-23
 **OSF registration:** no N11-A-specific OSF identifier is recorded in this repository. The programme-level OSF pre-registration is [10.17605/OSF.IO/Q6JYN](https://doi.org/10.17605/OSF.IO/Q6JYN) (dreamOfkiki, locked 2026-04-19).
@@ -32,7 +32,7 @@ The locked pre-registration file is not modified. This amendment is append-only 
 - **Representation evaluated:** the average-pooled final-layer output of the target encoder, frozen.
 - **Linear probe (ImageNet-100):** a linear classifier on the frozen representation, AdamW, lr 1e-3, weight decay 0, batch 1024, 50 epochs, cosine schedule, no augmentation beyond center crop ; top-1 on the val split.
 - **k-NN:** k = 20, cosine similarity, training set as the memory bank, top-1 on the val split.
-- **CIFAR-100 transfer:** a linear probe with the same recipe on the frozen representation of CIFAR-100 images resized to 224. The registered text said "fine-tune" without a recipe. *(PI confirmation item 2.)*
+- **CIFAR-100 transfer:** a linear probe with the same recipe on the frozen representation of CIFAR-100 images resized to 224. The registered text said "fine-tune" without a recipe. *(Decided by the PI on 2026-10-23.)*
 - **MI(z_predicted, label):** predictor outputs, average-pooled over target positions, on a fixed held-out set of 10,000 ImageNet-100 training images (selected with `numpy.random.default_rng(20261023)` and excluded from pretraining). They are discretised by k-means with k = 64 clusters (fit on a disjoint 10,000-image subset, seed 20261023). MI is the plug-in estimate, in bits, between cluster index and label.
 - **Cross-attention predictor:** V-JEPA-2-style cross-attention predictor, at the same depth and width as the I-JEPA default predictor.
 - **MLP predictor:** 2-layer MLP whose parameter count is within ±5 % of the GTM predictor's (adapters included). The locked file calls this arm the "vanilla MLP predictor", but the I-JEPA reference predictor is a narrow transformer. The MLP arm is therefore a control architecture, not the I-JEPA default.
@@ -89,7 +89,14 @@ The registered seeds {0, 17, 42, 73, 101} are seed labels. Run (arm a, seed s) d
 
 Any superiority claim requires a separate, future confirmatory pre-registration with a powered N. Its sample size is computed from the pilot's seed-level variance (the upper one-sided 80 % confidence limit of the pooled SD). The pilot data are not reused in its confirmatory test.
 
-## Configuration manifest (required, immutable, part of this registration)
+## Filing (two stages, PI decision 2026-10-23)
+
+- **Stage 1, filed now:** this amendment text, that is the research hypothesis, the estimands, the options fixed above, the analysis, failure and exclusion rules and the superseded provisions.
+- **Stage 2, filed as a second locked stage before any ImageNet-100 pretraining run:** the configuration manifest below, which fixes the implementation details that stage 1 leaves open (architectures, adapters and objectives, including the GTM predictor's adapters).
+
+Stage 2 cannot change any stage-1 provision. If the manifest cannot be written within the stage-1 rules, stage 1 is amended and re-filed before any run.
+
+## Configuration manifest (stage 2, required, immutable, part of this registration)
 
 Before the first ImageNet-100 pretraining run, the PI files a dated manifest on OSF as an update to this registration. It may contain only:
 
@@ -108,14 +115,14 @@ The research hypothesis (GTM-predictor I-JEPA exceeds MLP-predictor I-JEPA linea
 
 Unchanged: 15 runs × about 12 h ≈ **180 GPU-h** on ImageNet-100. The optional 2-scale variant is not run.
 
-## PI confirmation items (to settle before filing)
+## PI decisions (2026-10-23)
 
-1. The estimation reframing as worded above (PI decision 2026-10-23).
+1. The estimation reframing as worded above.
 2. CIFAR-100 transfer by linear probe (registered text said "fine-tune").
 3. Deferral of the H-JEPA sub-study to a separate amendment.
-4. Filing stage: this amendment leaves implementation details (architectures, adapters, objectives, including the GTM predictor adapters) to the configuration manifest. The PI either files it now as a **first-stage registration**, with the manifest as a second, locked stage filed before any run, or completes those details here before filing.
+4. Two-stage filing: this text now (stage 1), the configuration manifest as a second locked stage before any run (stage 2), as described under Filing.
 
-If the PI changes any item, the text above is edited before filing, never after data are seen.
+No PI confirmation item remains open for N11-A. If the PI changes any of these decisions, the text above is edited before filing, never after data are seen.
 
 ## Deferred: hierarchical JEPA sub-study (not registered here)
 
