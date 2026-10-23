@@ -44,7 +44,7 @@ The locked pre-registration file is not modified. This amendment is append-only 
 
 - **Interface:** the research hypothesis concerns replacing the RSSM transition predictor `(h_t) → ẑ_{t+1}`. Dreamer 4 does not use the RSSM transition-predictor MLP that it targets, so the registered intervention has no direct counterpart there.
 - **Benchmark fit:** Atari-100k is a standard sample-efficiency benchmark for DreamerV3, with published reference scores. The control arm is therefore anchored to an established baseline.
-- **Compute and tooling:** the registered budget is a single RTX 4090 with an open PyTorch port (`dreamerv3-torch`, per the dev kickoff). Dreamer 4 is designed for a much larger compute scale. The target hardware for N11-C is under review (see Compute) ; this does not change the choice of DreamerV3.
+- **Compute and tooling:** the registered budget is a single RTX 4090 with an open PyTorch port (`dreamerv3-torch`, per the dev kickoff). Dreamer 4 is designed for a much larger compute scale. The N11-C hardware is now macM1 with MLX (PI decision 2026-10-23, see Compute) ; this does not change the choice of DreamerV3.
 - **Consequence for claims:** any N11-C result is a statement about RSSM-based world models (DreamerV3 class). It must not be extrapolated to transformer world models such as Dreamer 4 or ITC beyond what the full-agent comparison itself shows.
 
 ### Common Atari-100k protocol (all arms, frozen)
@@ -111,7 +111,7 @@ Any superiority claim requires a separate, future confirmatory pre-registration 
 - **Stage 1, filed now:** this amendment text, that is the research hypothesis, the estimands, the common protocol, the analysis, failure and exclusion rules and the superseded provisions.
 - **Stage 2, filed as a second locked stage before any Atari-100k run:** the configuration manifest below, which fixes the implementation details that stage 1 leaves open (architectures, adapters and objectives, including the GTM–RSSM interface).
 
-Stage 2 cannot change any stage-1 provision. If the manifest cannot be written within the stage-1 rules, stage 1 is amended and re-filed before any run. Stage 1 cannot be filed while the open compute item below is unresolved.
+Stage 2 cannot change any stage-1 provision. If the manifest cannot be written within the stage-1 rules, stage 1 is amended and re-filed before any run. The compute option, the only open item below, is fixed in the stage-2 manifest, with the throughput measurement it rests on, before any run.
 
 ## Configuration manifest (stage 2, required, immutable, part of this registration)
 
@@ -133,13 +133,16 @@ The research hypothesis (GTM-dynamics DreamerV3 exceeds baseline DreamerV3 mean 
 ## Compute
 
 - **Registered design:** 3 arms × 6 games × 5 seeds = **90 runs**. At the registered estimate of about 24 h per run, this is **2,160 GPU-h, about 90 days sequential** on one RTX 4090. The locked file's "4 parallel runs, ~22 days" assumes four-fold throughput on one GPU, which has not been measured. The ITC full agent's per-run cost may differ from DreamerV3's and is measured for the manifest.
-- **Feasibility (open PI confirmation item).** The registered design does not fit a single RTX 4090 in a reasonable time. Options, by whole arms only:
+- **Feasibility (open PI confirmation item).** The registered design does not fit a single GPU or a single Apple-silicon machine in a reasonable time. Options, by whole arms only:
   - A. Fund the full 90 runs: about 2,160 GPU-h at the registered estimate, plus the comparator's cost difference.
   - B. Drop the comparator arm: 60 runs, about 1,440 GPU-h. The primary estimand is unaffected, and the 6 comparator contrasts are not reported.
   - C. Postpone N11-C until A is fundable.
 
   Reducing games or seeds is not an option, because it would change the primary estimand.
-- **Status: pending (PI decision 2026-10-23).** Before choosing A, B or C, the PI requires a throughput measurement on the MacStudio (Apple M3 Ultra, 512 GB). Installing the N11-C dependencies on the MacStudio is not yet approved, so this measurement has not been made. **Option A is kept drafted but is pending, not approved.** The option is chosen, and this section is edited accordingly, before stage 1 is filed.
+- **Hardware (PI decision 2026-10-23):** **macM1 (Apple M1 Max, 32 GB) with MLX**, as for N10-C. The registered RTX 4090 is not used.
+- **Status: pending (PI decision 2026-10-23).** The compute option (A, B or C) is chosen after a DreamerV3 throughput measurement on macM1 with MLX. That measurement, and the option adopted, are recorded in the stage-2 manifest before any run. **Option A is kept drafted but is pending, not approved.**
+- **Scheduling:** macM1 is first occupied by N10-C option D (about 33 days of continuous compute). N11-C runs after it, sequentially, never concurrently.
+- **Feasibility at macM1 speed:** the full option A (90 runs) may be impractical on macM1. Options B and C remain open.
 
 ## PI decisions (2026-10-23)
 
@@ -147,11 +150,12 @@ The research hypothesis (GTM-dynamics DreamerV3 exceeds baseline DreamerV3 mean 
 - Two-stage filing: this text now (stage 1), the configuration manifest as a second locked stage before any run (stage 2), as described under Filing.
 - "≥ 10 %" is read as a relative gain on the aggregate (not 10 human-normalised points).
 - Comparator = the published ITC agent (Simulus+ITC) as a full-agent comparator, with the official IRIS agent only as the availability fallback.
-- Compute: no option is chosen yet. The choice waits for a throughput measurement on the MacStudio (M3 Ultra, 512 GB), whose dependency installs are not yet approved (item below).
+- Hardware: macM1 (Apple M1 Max, 32 GB) with MLX, after N10-C option D on the same machine.
+- Compute: no option is chosen yet. The choice waits for a DreamerV3 throughput measurement on macM1 with MLX, recorded in the stage-2 manifest before any run (item below).
 
-## PI confirmation item (open, to settle before filing stage 1)
+## PI confirmation item (open, settled in the stage-2 manifest before any run)
 
-- Compute option (A drafted and pending, or B / C), after the MacStudio throughput measurement.
+- Compute option (A drafted and pending, or B / C), after the DreamerV3 throughput measurement on macM1 with MLX.
 
 If the PI changes any item, the text above is edited before filing, never after data are seen.
 
