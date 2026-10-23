@@ -104,6 +104,7 @@ The same agents with the all-zero message, as above.
 
 - **Independent arm streams.** The registered seeds {0, 17, 42, 73, 101} are seed labels. Run (arm a, seed s, condition c) draws all of its training randomness (initialisation, PPO sampling, training level seeds) from `numpy.random.SeedSequence([s, a, c])`, with fixed integer codes for arms and conditions listed in the manifest. Training randomness is therefore independent across arms, and trained arms are analysed as **independent groups**.
 - **Fixed evaluation set.** Every model is evaluated on the same 200 held-out levels. Action sampling at evaluation on level j uses `numpy.random.default_rng([20261023, j])`, identical for every model and pass. All estimands are defined **conditional on this fixed evaluation set**. The only random unit in the analysis is the trained model (seed).
+- **Deterministic evaluation of discrete messages:** at evaluation GTM-comm transmits argmax symbols (no Gumbel noise), and every other arm its hard-thresholded bits.
 - **Metric 1, team reward** = the model's mean episode team return over the 200 levels = its team success rate.
 - **Completion time** (reported separately, descriptive) = the mean number of steps to team success over successful episodes.
 
@@ -123,7 +124,8 @@ For each model, S = R_intact − R_shuffled, with R its mean team return over th
 - **Difference of two arms:** Welch CI, difference in seed means ± t(1 − a/2, ν) · √(s₁²/5 + s₂²/5), with ν the Welch–Satterthwaite df and a the stated per-interval error rate.
 - **One arm (S):** one-sample t CI over the 5 seed values, mean ± t(1 − a/2, 4) · s/√5.
 - **Ratios (normalized improvement):** Fieller interval (below).
-- All intervals assume approximately normal seed-level values. With 5 seeds this assumption cannot be checked well, and intervals are read as pilot estimates. No bootstrap is used.
+- If an interval cannot be computed (both arms have zero seed variance, or a required df is undefined), it is reported as **unavailable** with the point estimate only. Identical seed outcomes, for example five runs capped at 50M, are not read as certainty about the population.
+- All intervals assume approximately normal seed-level values, so stated simultaneous coverage is approximate. With 5 seeds this assumption cannot be checked well, and intervals are read as pilot estimates. No bootstrap is used.
 
 ### Primary estimand (registered condition, per environment e)
 
@@ -140,11 +142,12 @@ each with a Welch CI at level 1 − 0.05/3 (98.33 %) within the environment. ran
 
 Using the three 98.33 % intervals [L_b, U_b]:
 
+0. **pilot-interval-unavailable** if any of the three intervals cannot be computed (both arms have zero seed variance, for example all-zero success rates, or a required df is undefined). The point estimates are reported, and nothing beyond them is stated.
 1. **pilot-excludes-SESOI** if U_b < Δ for at least one baseline b. Wording: "a gain of Δ or more over every baseline is not supported by this pilot."
 2. **pilot-positive** if L_b ≥ Δ for all three baselines. Wording: "the pilot estimates are consistent only with gains of at least Δ over every baseline ; superiority is not established, because this is not a confirmatory test."
 3. **pilot-inconclusive** otherwise.
 
-If L_b ≥ Δ for all b, then U_b ≥ Δ for all b, so 1 and 2 cannot both hold. None of the categories is a superiority, equivalence or "matches" verdict. The registered "on at least 2 of 3 tasks" aggregate is reported only as the number of environments in each category. "Pilot-positive on ≥ 2 environments" is still not a superiority claim.
+If L_b ≥ Δ for all b, then U_b ≥ Δ for all b, so 1 and 2 cannot both hold. None of the categories is a superiority, equivalence or "matches" verdict. The registered "on at least 2 of 3 tasks" aggregate is reported only as the number of environments in each category. "Pilot-positive on ≥ 2 environments" is still not a superiority claim. If an environment is dropped, the registered "≥ 2 of 3 tasks" target is **withdrawn**, and only per-environment categories are reported.
 
 ### Secondary contrasts (descriptive)
 
@@ -160,7 +163,7 @@ If L_b ≥ Δ for all b, then U_b ≥ Δ for all b, so 1 and 2 cannot both hold.
 NI_arm,e = (R̄_arm,e − R̄_NOCOMM,e) / (R̄_ENG,e − R̄_NOCOMM,e), for every arm other than ENG and NOCOMM. By definition NI = 1 for ENG and 0 for NOCOMM ; these are not estimated.
 
 - **Interval:** 95 % Fieller interval. With numerator a, denominator b, v_X = s_X²/5 for each arm X, Var(a) = v_arm + v_NOCOMM, Var(b) = v_ENG + v_NOCOMM and Cov(a, b) = v_NOCOMM (the shared NOCOMM mean), the interval is the set of ρ with (a − ρb)² ≤ t² · (Var(a) − 2ρ Cov(a, b) + ρ² Var(b)). t is the 97.5 % quantile at the smaller Welch–Satterthwaite df of the numerator and denominator differences.
-- **Denominator rule:** NI is **undefined** if b² ≤ t² · Var(b) (the Fieller set is then unbounded) or if b = 0.
+- **Interpretability rule:** NI is reported only if the denominator's interval b ± t · √Var(b) lies entirely above 0 (this also guarantees a bounded Fieller set). Otherwise the interval is reported as **unavailable**: this is a property of the data, not a statement that the population NI is undefined.
 - NI may exceed 1 or be negative, because the engineered arm is not an upper bound. It carries no wording rule.
 
 ### Message-disruption sensitivity (descriptive)
@@ -199,7 +202,7 @@ Before the first N10-C run on any registered environment, the PI files a dated m
 3. the Caveflyer-coop and Maze-coop definitions (reward rule and range, side-channel inventory, engineered sender, tests), or a statement that an environment is dropped ;
 4. the measured training throughput (steps/s, one job and concurrent jobs) on the target hardware, the resulting compute estimate including evaluation, and the scope adopted under PI confirmation item 1.
 
-Development that informs items 1–3 may use only the stub, smoke runs of at most 1M steps, and unit tests. It never uses held-out levels 1000–1199 or results of a full-length run. The manifest cannot be changed after filing. Runs started before it is filed are excluded from all analyses and reported.
+Development that informs items 1–3 may use only the stub, smoke runs of at most 1M steps (at most 3 per arm and environment, all disclosed in the manifest with their outcomes), and unit tests. It never uses held-out levels 1000–1199 or results of a full-length run. The manifest cannot be changed after filing. Runs started before it is filed are excluded from all analyses and reported.
 
 ## Effect on hypotheses
 
@@ -233,6 +236,7 @@ This draft registers **option A**. If it cannot be funded, the PI selects anothe
 3. The estimation reframing as worded above (PI decision 2026-10-23).
 4. GTM message format K = 4 symbols × A = 16 (16 bits).
 5. Success-only team reward (no step penalty).
+6. Filing stage: this amendment leaves implementation details (architectures, adapters, objectives, and the Caveflyer-coop and Maze-coop definitions) to the configuration manifest. The PI either files it now as a **first-stage registration**, with the manifest as a second, locked stage filed before any run, or completes those details here before filing. The funded compute scope is locked only after the throughput measurement in the manifest.
 
 If the PI changes any item, the text above is edited before filing, never after data are seen.
 

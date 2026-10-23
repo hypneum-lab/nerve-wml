@@ -44,6 +44,7 @@ The locked pre-registration file is not modified. This amendment is append-only 
 
 For an interval [L, U] and reference Δ > 0:
 
+0. **pilot-interval-unavailable** if the interval cannot be computed: both arms have zero seed variance, or a required df is undefined. The point estimate is reported, and nothing beyond it is stated. Identical seed outcomes are not read as certainty about the population.
 1. **pilot-excludes-SESOI** if U < Δ: no value in the interval reaches the SESOI. Wording: "a gain of Δ or more is not supported by this pilot."
 2. **pilot-positive** if L ≥ Δ: every value in the interval is at least Δ. Wording: "the pilot estimate is consistent only with gains of at least Δ ; superiority is not established, because this is not a confirmatory test."
 3. **pilot-inconclusive** otherwise (L < Δ ≤ U). Wording: "the pilot cannot distinguish gains below Δ from gains of at least Δ."
@@ -54,7 +55,7 @@ Because L ≤ U, categories 1 and 2 cannot both hold. None of the three is a sup
 
 - **Registered headline set:** GTM vs {VQ-VAE, linear projection, β-VAE β = 1.0} × 5 metrics × 3 code_dims = 45 contrasts.
 - **Oscillator set (new):** GTM vs oscillator bottleneck × 5 metrics × 3 code_dims = 15 contrasts.
-- Each contrast is reported as the difference in means (GTM − comparator) with a two-sided Welch CI at level 1 − 0.05/k, where k is the size of its set (k = 45 → 99.889 % ; k = 15 → 99.667 %). These Bonferroni-adjusted intervals have simultaneous coverage of at least 95 % within each set.
+- Each contrast is reported as the difference in means (GTM − comparator) with a two-sided Welch CI at level 1 − 0.05/k, where k is the size of its set (k = 45 → 99.889 % ; k = 15 → 99.667 %). These Bonferroni-adjusted intervals have approximate simultaneous coverage of at least 95 % under the normal seed-level model within each set.
 - **Direction:** for top-1, top-5, MI(code, label) and OOD top-1, a positive difference favours GTM. For bandwidth efficiency (effective rank) no favourable direction was registered. It is reported as a signed difference and never counted as favouring either arm.
 - For each set, the number of intervals entirely above 0, entirely below 0 and including 0 is reported. These counts carry **no label**. An interval that includes 0 is never described as a tie, equivalence or "matches".
 
@@ -111,6 +112,8 @@ The registered seeds {0, 17, 42, 73, 101} are seed labels. Run (arm a, code_dim 
 
 These close choices that the locked file left open:
 
+- **Evaluation codes:** every metric is computed in a single deterministic evaluation pass. GTM uses argmax symbols (no Gumbel noise), VQ-VAE the nearest codebook vector, β-VAE the posterior mean, the oscillator arm its deterministic integration. These codes feed classification, MI clustering, OOD and bandwidth metrics.
+
 - **VQ-VAE:** one codebook of 512 vectors of dimension code_dim, commitment weight 0.25, EMA codebook update with decay 0.99 (van den Oord et al. 2017 defaults).
 - **β-VAE:** Gaussian code of dimension code_dim, β = 1.0, the classifier reads the posterior mean at evaluation.
 - **GTM:** `GTMBridge` with alphabet_size = 64 and the code_dim of the sweep, as in N8 T13.
@@ -148,6 +151,7 @@ Oscillator arm: 3 code_dims × 5 seeds = **15 runs** on cached features, plus at
 1. Third baseline = linear projection (not dense autoencoder).
 2. No PAC-disabled GTM ablation. PAC specificity is reported as not addressed.
 3. The estimation reframing as worded above (PI decision 2026-10-23).
+4. Filing stage: this amendment leaves implementation details (architectures, adapters, objectives, including the GTM symbol count and adapter and the baselines' encoder/decoder and loss weighting) to the configuration manifest. The PI either files it now as a **first-stage registration**, with the manifest as a second, locked stage filed before any run, or completes those details here before filing.
 
 If the PI changes any item, the text above is edited before filing, never after data are seen.
 

@@ -35,7 +35,8 @@ The locked pre-registration file is not modified. This amendment is append-only 
 - **CIFAR-100 transfer:** a linear probe with the same recipe on the frozen representation of CIFAR-100 images resized to 224. The registered text said "fine-tune" without a recipe. *(PI confirmation item 2.)*
 - **MI(z_predicted, label):** predictor outputs, average-pooled over target positions, on a fixed held-out set of 10,000 ImageNet-100 training images (selected with `numpy.random.default_rng(20261023)` and excluded from pretraining). They are discretised by k-means with k = 64 clusters (fit on a disjoint 10,000-image subset, seed 20261023). MI is the plug-in estimate, in bits, between cluster index and label.
 - **Cross-attention predictor:** V-JEPA-2-style cross-attention predictor, at the same depth and width as the I-JEPA default predictor.
-- **MLP predictor:** 2-layer MLP whose parameter count is within ±5 % of the GTM predictor's (adapters included).
+- **MLP predictor:** 2-layer MLP whose parameter count is within ±5 % of the GTM predictor's (adapters included). The locked file calls this arm the "vanilla MLP predictor", but the I-JEPA reference predictor is a narrow transformer. The MLP arm is therefore a control architecture, not the I-JEPA default.
+- **Evaluation codes and masks:** all metrics use one deterministic evaluation pass. The GTM predictor uses argmax symbols (no Gumbel noise). For MI, context and target masks for each image are drawn once with `numpy.random.default_rng([20261023, image_index])` and shared by all arms.
 
 ## Estimation plan (replaces the registered statistical analysis and decision criteria)
 
@@ -54,6 +55,7 @@ Each contrast is a difference in seed means (GTM − comparator). Its two-sided 
 
 For an interval [L, U] and reference Δ > 0:
 
+0. **pilot-interval-unavailable** if the interval cannot be computed: both arms have zero seed variance, or a required df is undefined. The point estimate is reported, and nothing beyond it is stated. Identical seed outcomes are not read as certainty about the population.
 1. **pilot-excludes-SESOI** if U < Δ. Wording: "a gain of Δ or more is not supported by this pilot."
 2. **pilot-positive** if L ≥ Δ. Wording: "the pilot estimate is consistent only with gains of at least Δ ; superiority is not established, because this is not a confirmatory test."
 3. **pilot-inconclusive** otherwise (L < Δ ≤ U).
@@ -111,6 +113,7 @@ Unchanged: 15 runs × about 12 h ≈ **180 GPU-h** on ImageNet-100. The optional
 1. The estimation reframing as worded above (PI decision 2026-10-23).
 2. CIFAR-100 transfer by linear probe (registered text said "fine-tune").
 3. Deferral of the H-JEPA sub-study to a separate amendment.
+4. Filing stage: this amendment leaves implementation details (architectures, adapters, objectives, including the GTM predictor adapters) to the configuration manifest. The PI either files it now as a **first-stage registration**, with the manifest as a second, locked stage filed before any run, or completes those details here before filing.
 
 If the PI changes any item, the text above is edited before filing, never after data are seen.
 

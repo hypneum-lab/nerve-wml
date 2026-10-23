@@ -52,7 +52,7 @@ The locked pre-registration file is not modified. This amendment is append-only 
 - **Budget:** 100k agent steps = 400k emulator frames (frame skip 4), counted from the first environment interaction, including random warm-up steps.
 - **Emulator:** ALE v5 games, minimal action set, `repeat_action_probability = 0` (no sticky actions), maximum 108,000 frames per episode, up to 30 no-op starts. Observation preprocessing (resolution, colour) is part of each agent and follows its published configuration.
 - **Training:** life loss is not a terminal signal for the agent's returns.
-- **Evaluation:** after the full budget, 100 evaluation episodes with the final checkpoint, without exploration noise beyond the agent's own evaluation mode. The score is the mean undiscounted episode return. Human-normalised score = (agent − random) / (human − random) × 100, with the per-game random and human reference scores used by the DreamerV3 Atari-100k evaluation, listed in the manifest.
+- **Evaluation:** after the full budget, 100 evaluation episodes with the final checkpoint. Episode k uses environment seed `numpy.random.SeedSequence([20261023, g, k])` (g the game code), identical for every arm and seed. Actions are chosen by each agent's published evaluation mode (DreamerV3: the mode of the policy distribution). The score is the mean undiscounted episode return. Human-normalised score = (agent − random) / (human − random) × 100, with the per-game random and human reference scores used by the DreamerV3 Atari-100k evaluation, listed in the manifest.
 
 ### Unchanged
 
@@ -65,14 +65,14 @@ Control arm (standard DreamerV3 MLP transition), 6 games (Pong, Breakout, Asteri
 Per arm, A_arm = (1/6) Σ_g HNS̄_g,arm, where HNS̄_g,arm is the mean over 5 seeds of the human-normalised score on game g. The estimand is the relative gain θ = A_GTM / A_MLP − 1. This is the aggregate named in the registered research hypothesis.
 
 - **Interval:** 95 % Fieller interval for the ratio ρ = A_GTM / A_MLP, then θ = ρ − 1. With a = A_GTM and b = A_MLP, v_a = (1/36) Σ_g s²_g,GTM / 5 and v_b likewise (s²_g,arm is the seed variance on game g), arms independent, the interval is the set of ρ with (a − ρb)² ≤ t² · (v_a + ρ² v_b). t is the 97.5 % quantile at df = min(ν_a, ν_b), where ν_a = v_a² / Σ_g [(s²_g,GTM / 180)² / 4] is the Satterthwaite df of v_a, and ν_b likewise. The interval assumes approximately normal seed-level scores. With 5 seeds per game this cannot be checked well, and it is read as a pilot estimate. No bootstrap is used.
-- **Denominator rule:** θ is undefined (category *pilot-undefined*) if b² ≤ t² · v_b (the Fieller set is then unbounded) or if b = 0. The absolute difference A_GTM − A_MLP is always reported, with interval (a − b) ± t · √(v_a + v_b) at the same t.
+- **Interpretability rule:** human-normalised scores can be negative, and a ratio of two negative aggregates reverses meaning. θ is interpreted only if the baseline's interval b ± t · √v_b lies entirely above 0, which also guarantees a bounded Fieller set. Otherwise the category is *pilot-interval-unavailable*. This is a property of the data, not a statement that the population estimand is undefined. The absolute difference A_GTM − A_MLP is always reported, with interval (a − b) ± t · √(v_a + v_b) at the same t.
 - **Reference value (SESOI):** Δ = 0.10. The registered research hypothesis says "exceeds baseline … score by ≥ 10 %". It is read here as a relative gain of 10 % of the baseline's aggregate score. *(PI confirmation item 2.)* The value was set on 2026-05-11 as the smallest sample-efficiency gain worth a Paper 2 section. It was not derived from a power analysis.
 
 ### Pilot categories (mutually exclusive, exhaustive, applied in this order)
 
 For an interval [L, U] and reference Δ > 0:
 
-0. **pilot-undefined** if the estimand is undefined under its denominator rule.
+0. **pilot-interval-unavailable** if the relative-gain interval is not reported under the interpretability rule, or an interval cannot be computed (zero seed variance in both arms, or an undefined df). The absolute difference is then the reported result, and nothing about relative gain is stated.
 1. **pilot-excludes-SESOI** if U < Δ. Wording: "a gain of Δ or more is not supported by this pilot."
 2. **pilot-positive** if L ≥ Δ. Wording: "the pilot estimate is consistent only with gains of at least Δ ; superiority is not established, because this is not a confirmatory test."
 3. **pilot-inconclusive** otherwise (L < Δ ≤ U).
@@ -81,7 +81,7 @@ Categories 1 and 2 cannot both hold because L ≤ U. None is a superiority, equi
 
 ### Secondary contrasts (descriptive)
 
-- The 12 per-game contrasts (6 games × {MLP, full-agent comparator}) are each reported as a difference in mean human-normalised score (GTM − comparator; positive favours GTM). Each has a two-sided Welch CI at level 1 − 0.05/12 (99.583 %).
+- The 12 per-game contrasts (6 games × {MLP, full-agent comparator}) are each reported as a difference in mean human-normalised score (GTM − comparator; positive favours GTM). Each has a two-sided Welch CI at level 1 − 0.05/12 (99.583 %). A contrast whose interval cannot be computed (zero seed variance in both arms) is reported as unavailable with its point estimate.
 - The number of intervals entirely above 0, entirely below 0 and including 0 is reported **without a label**. An interval including 0 is never described as a tie or "matches".
 - If the IRIS fallback is used, the comparator is named as IRIS in every table.
 
@@ -139,6 +139,7 @@ The research hypothesis (GTM-dynamics DreamerV3 exceeds baseline DreamerV3 mean 
 2. "≥ 10 %" read as a relative gain on the aggregate (not 10 human-normalised points).
 3. Comparator = published ITC agent (Simulus+ITC) as a full-agent comparator, with IRIS as the availability fallback.
 4. The estimation reframing as worded above (PI decision 2026-10-23).
+5. Filing stage: this amendment leaves implementation details (architectures, adapters, objectives, including the GTM–RSSM interface) to the configuration manifest. The PI either files it now as a **first-stage registration**, with the manifest as a second, locked stage filed before any run, or completes those details here before filing. The funded compute scope is locked only after the throughput measurement in the manifest.
 
 If the PI changes any item, the text above is edited before filing, never after data are seen.
 
