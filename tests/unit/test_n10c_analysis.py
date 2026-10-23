@@ -5,6 +5,7 @@ import pytest
 from scipy import stats
 
 from experiments.procgen_multiagent_gtm_comm.analysis import (
+    cross_play_report,
     fieller_ci,
     one_sample_ci,
     pilot_category,
@@ -320,3 +321,32 @@ def test_reached_threshold_length_rejected():
     res[("gtm", "registered")]["reached_threshold"] = np.ones(4, bool)
     with pytest.raises(ValueError):
         primary_report(res)
+
+
+def test_cross_play_report_is_descriptive_only():
+    r_int = [0.9, 0.8, 0.7, 0.85, 0.95, 0.75]
+    r_cross = [0.2, 0.3, 0.1, 0.25, 0.15, 0.2]
+    out = cross_play_report({
+        ("gtm", "registered"): {"R_intact": r_int, "R_cross": r_cross},
+        ("nocomm", "closed"): {"R_intact": r_int, "R_cross": r_int},
+    })
+    g = out[("gtm", "registered")]
+    assert g["R_cross"] == r_cross
+    assert g["mean_cross"] == pytest.approx(np.mean(r_cross))
+    assert g["mean_intact"] == pytest.approx(np.mean(r_int))
+    assert g["gap"] == pytest.approx(np.mean(r_int) - np.mean(r_cross))
+    # no interval, p-value, label or comparison of any kind
+    assert set(g) == {"R_cross", "mean_cross", "mean_intact", "gap"}
+    assert out[("nocomm", "closed")]["gap"] == pytest.approx(0.0)
+
+
+def test_cross_play_report_validates_input():
+    ok = {"R_intact": [0.5, 0.6], "R_cross": [0.1, 0.2]}
+    with pytest.raises(ValueError):
+        cross_play_report({("gtm", "registered"): {"R_intact": [0.5, 0.6]}})
+    with pytest.raises(ValueError):
+        cross_play_report({("gtm", "registered"): {**ok, "R_cross": [0.1]}})
+    with pytest.raises(ValueError):
+        cross_play_report({("gtm", "registered"): {**ok, "R_cross": [0.1, np.nan]}})
+    with pytest.raises(ValueError):
+        cross_play_report({("gtm", "registered"): {"R_intact": [0.5], "R_cross": [0.1]}})

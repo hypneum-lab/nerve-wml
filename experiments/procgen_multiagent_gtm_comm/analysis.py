@@ -314,3 +314,35 @@ def primary_report(results):
         "S": _s_report(results),
         "threshold_counts": _threshold_counts(results),
     }
+
+
+def cross_play_report(results):
+    """Descriptive cross-seed cross-play summary (amendment 2026-10-23).
+
+    ``results[(arm, condition)]`` holds ``"R_intact"`` and ``"R_cross"``,
+    one value per seed in the fixed seed order (same length, at least 2,
+    finite). Per cell: the cross values, their mean, the mean intact
+    value and the gap ``mean_intact - mean_cross``. No interval, p-value,
+    category or between-arm comparison is computed, and a gap is not a
+    loss of communication.
+    """
+    out = {}
+    for key, cell in results.items():
+        arrs = {}
+        for m in ("R_intact", "R_cross"):
+            if m not in cell:
+                raise ValueError(f"cell {key}: missing metric {m!r}")
+            a = np.asarray(cell[m], float)
+            if a.ndim != 1 or len(a) < 2 or not np.all(np.isfinite(a)):
+                raise ValueError(f"cell {key}, {m}: need >= 2 finite values")
+            arrs[m] = a
+        if len(arrs["R_intact"]) != len(arrs["R_cross"]):
+            raise ValueError(f"cell {key}: R_intact and R_cross lengths differ")
+        mi, mc = float(arrs["R_intact"].mean()), float(arrs["R_cross"].mean())
+        out[key] = {
+            "R_cross": [float(x) for x in arrs["R_cross"]],
+            "mean_cross": mc,
+            "mean_intact": mi,
+            "gap": mi - mc,
+        }
+    return out
