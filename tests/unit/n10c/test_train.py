@@ -310,32 +310,34 @@ def test_nonfinite_micro_stops_before_apply(tmp_path):
     assert rec.last_checkpoint is None
 
 
-def _first_update_params(tmp_path, arm, micro, name, *, total=PER_UPDATE,
-                         mbp=4):
-    snap = {}
+def _run_params(tmp_path, arm, micro, name, *, total=PER_UPDATE, mbp=4):
+    """(params after update 1, params after the last update, RunRecord)."""
+    snaps = {}
 
     def hook(update, model):
-        if update == 1:
-            snap.update({k: np.array(v) for k, v in
-                         tree_flatten(model.parameters())})
+        snaps[update] = {k: np.array(v) for k, v in
+                         tree_flatten(model.parameters())}
 
-    train_run(
+    rec = train_run(
         arm, 5, "registered", total, tmp_path / name, env_factory=_factory(),
         n_pairs=NP, horizon=H, log_every_pair_steps=PER_UPDATE,
         ckpt_every_pair_steps=PER_UPDATE, minibatch_pairs=mbp,
         micro_batch_pairs=micro, _fault_hook=hook,
     )
-    return snap
+    return snaps[1], snaps[max(snaps)], rec
 
 
 @pytest.mark.parametrize("arm", ["gtm", "dial", "mlp", "nocomm"])
 def test_accumulation_matches_full_batch(tmp_path, arm):
-    ref = _first_update_params(tmp_path, arm, None, "ref")
-    acc = _first_update_params(tmp_path, arm, 2, "acc")
+    ref, _, _ = _run_params(tmp_path, arm, None, "ref")
+    acc, _, _ = _run_params(tmp_path, arm, 2, "acc")
     assert ref.keys() == acc.keys()
-    # Equivalence up to float summation order (grad ~1e-7 relative, as in
-    # test_same_seed_same_first_update); Adam maps that to <= 2*lr per
-    # step on near-zero-gradient entries only.  3 epochs x 2 minibatches.
+    # Relaxed on purpose: the strict (rel 1e-5) equivalence is asserted on
+    # the gradients in test_accumulated_grad_matches_full_batch_all_arms.
+    # Adam's step is ~lr*sign(g), so a ~1e-7 gradient difference (float
+    # summation order) flips near-zero-gradient entries by up to 2*lr per
+    # step; params can therefore only be compared up to that bound.
+    # 3 epochs x 2 minibatches = 6 optimizer steps.
     worst_abs, close, size = 0.0, 0, 0
     for k in ref:
         d = np.abs(ref[k] - acc[k])
@@ -343,31 +345,55 @@ def test_accumulation_matches_full_batch(tmp_path, arm):
         close += int((d <= 1e-5 * (np.abs(ref[k]) + 1e-3)).sum())
         size += d.size
     assert worst_abs <= 6 * 2 * 5e-4 + 1e-6
-    assert close / size > 0.95
+    # run-to-run (non-bit-exact Metal) the fraction within 1e-5 varied
+    # 0.69-0.999: only a sanity check that most entries agree.
+    assert close / size > 0.5
 
 
 @pytest.mark.parametrize("arm", ["gtm", "dial", "mlp", "nocomm"])
 def test_accumulated_grad_matches_full_batch_all_arms(arm):
     # The acceptance quantity itself, before Adam's sign-like step:
-    # accumulated vs full-batch gradient agree to float summation order.
+    # accumulated vs full-batch gradient agree to float summation order,
+    # with replayed NONZERO per-sample message noise (gumbel for GTM,
+    # gaussian for DIAL), after plasticity scaling and after clipping.
     model = PairPolicy(arm, mx.random.key(1))
     mx.eval(model.parameters())
     opt = optim.Adam(learning_rate=5e-4)
     opt.init(model.trainable_parameters())
-    gs = _make_steps(model, opt, False, plastic=False)[0]
-    mb = _rand_mb(8, seed=7)
-    mb["noise"] = mx.zeros((8, 2, model.noise_dim))
+    plastic = arm == "gtm"
+    gs = _make_steps(model, opt, False, plastic=plastic)[0]
+    mb = _rand_mb(8, seed=7, ret_scale=10.0)
+    nz = model.sample_noise(8, mx.random.key(11))
+    if model.noise_dim:
+        assert nz is not None and float(mx.abs(nz).min().item()) > 0.0
+        mb["noise"] = nz
+    else:
+        mb["noise"] = mx.zeros((8, 2, 0))
     k = mx.random.key(0)
-    _, g_full, _ = accumulate_minibatch(gs, mb, None, k)
-    _, g_mic, _ = accumulate_minibatch(gs, mb, 3, k)  # 3 + 3 + 2
+    l_full, g_full, ok1 = accumulate_minibatch(gs, mb, None, k)
+    l_mic, g_mic, ok2 = accumulate_minibatch(gs, mb, 3, k)  # 3 + 3 + 2
+    assert ok1 and ok2 and np.isfinite(l_full) and np.isfinite(l_mic)
+    assert l_mic == pytest.approx(l_full, rel=1e-5)
+    assert np.isfinite(_gnorm(g_full)) and np.isfinite(_gnorm(g_mic))
     assert _max_rel(g_mic, g_full) < 1e-5
+    scale = mx.array(0.37, dtype=mx.float32)
+    c_full, n_full = finalize_grads(g_full, scale, plastic)
+    c_mic, n_mic = finalize_grads(g_mic, scale, plastic)
+    assert float(n_full.item()) > MAX_GRAD_NORM  # clipping is active
+    assert float(n_mic.item()) == pytest.approx(float(n_full.item()), rel=1e-5)
+    assert _max_rel(c_mic, c_full) < 1e-5
 
 
 def test_uneven_last_minibatch_end_to_end(tmp_path):
-    # exact-budget final rollout: 20 pair-steps = 2 full updates + 4 pairs
-    # left over -> last minibatch 3 + 1 pairs with micro 2.
+    # exact-budget final rollout: 20 pair-steps = 2 full updates (8 pairs,
+    # minibatches 3+3+2) + a truncated 3rd rollout (2 env steps = 4 pairs,
+    # minibatches 3+1 with micro 2).
     kw = dict(total=20, mbp=3)
-    ref = _first_update_params(tmp_path, "mlp", None, "u_ref", **kw)
-    acc = _first_update_params(tmp_path, "mlp", 2, "u_acc", **kw)
+    _, ref, r_ref = _run_params(tmp_path, "mlp", None, "u_ref", **kw)
+    _, acc, r_acc = _run_params(tmp_path, "mlp", 2, "u_acc", **kw)
+    for r in (r_ref, r_acc):
+        assert r.pair_steps_done == 20 and r.n_updates == 3
+        assert r.training_failure is False
+        assert r.optimizer_steps == 24  # 2 * (3 mb * 3 ep) + 2 mb * 3 ep
     for k in ref:
-        assert np.abs(ref[k] - acc[k]).max() <= 6 * 2 * 5e-4 + 1e-6
+        assert np.abs(ref[k] - acc[k]).max() <= 24 * 2 * 5e-4 + 1e-6

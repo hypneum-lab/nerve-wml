@@ -272,7 +272,7 @@ def train_run(
     ``micro_batch_pairs`` (None = off) splits each registered minibatch into
     gradient-accumulated micro-batches: same update, lower peak memory; it
     is an implementation setting, not a registered quantity.
-    ``clear_cache`` calls ``mx.clear_cache()`` after each update.
+    ``clear_cache`` calls ``mx.clear_cache()`` once per rollout update.
     """
     if micro_batch_pairs is not None and micro_batch_pairs < 1:
         raise ValueError("micro_batch_pairs must be >= 1")
@@ -330,6 +330,7 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
     total_updates = max(1, -(-total_env_steps // horizon))
     zeros_eng = np.zeros((n_pairs, 2, 16), np.float32)
 
+    mx.reset_peak_memory()  # peak_memory_bytes covers this run only
     po = vec.reset()
     obs, summ = po.obs, po.summary
     win = vec.window()
@@ -479,7 +480,8 @@ def main() -> None:
                    help="gradient-accumulation micro-batch (pair-steps); "
                         "implementation setting, default off")
     p.add_argument("--clear-cache", action="store_true",
-                   help="mx.clear_cache() after each update")
+                   help="mx.clear_cache() once per rollout update (after its "
+                        "optimizer steps), not per minibatch")
     a = p.parse_args()
     rec = train_run(
         a.arm, a.seed, a.condition, a.steps, a.out, n_pairs=a.n_pairs,
