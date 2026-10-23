@@ -182,6 +182,22 @@
 - [ ] **Step 5:** On macM1 (and macM3 for comparison), measure end-to-end throughput for n_workers in {1, 4, 8} (gtm arm, training levels only), pick the fastest as the registered setting, regenerate `throughput.json` and the manifest draft (worker count recorded as an implementation setting).
 - [ ] **Step 6:** Commit `perf(n10c): step coop envs in worker processes`.
 
+### Task 11: Gradient accumulation
+
+**Files:**
+- Modify: `harness/train.py` (PPO update path only)
+- Test: `tests/unit/n10c/test_train.py`
+
+**Why:** on KXKM-AI (RTX 4090, MLX CUDA) the registered minibatch (1024 pair-steps = 2048 agent samples) runs out of memory in `train.py` (peak 23.1 GB of 24.5 GB). Registered PPO settings are unchanged; the micro-batch size is an implementation setting, never a registered quantity.
+
+**Interfaces:**
+- Produces: `train_run(..., micro_batch_pairs: int | None = None, clear_cache: bool = False)` and CLI flags `--micro-batch-pairs`, `--clear-cache`. `None` = no accumulation (the reference path). Each registered minibatch is split into micro-batches of at most `micro_batch_pairs` pair-steps; gradients are accumulated with per-micro weights `micro_size / minibatch_size` (the mean loss over the full minibatch, so the uneven last minibatch of the exact-budget final rollout is handled); ONE optimizer update per registered minibatch. Advantage normalisation is computed over the FULL minibatch before splitting. Gradient-norm clipping (0.5) is applied to the ACCUMULATED gradient. Every micro loss/gradient and the accumulated gradient are checked for finiteness BEFORE the update is applied (Task 6 semantics: stop at the last finite checkpoint, nothing applied). Message-noise replay per sample is unchanged. `mx.compile` stays on the micro grad step (fixed shapes; a smaller last micro may recompile once, which is acceptable). `clear_cache=True` calls `mx.clear_cache()` after each update. `RunRecord` gains `peak_memory_bytes`, `micro_batch_pairs`, `clear_cache`.
+
+- [ ] **Step 1: failing tests:** `test_accumulation_matches_full_batch` (same seed, params after the first update with micro-batches vs None, for gtm, dial, mlp, nocomm); `test_adv_norm_over_full_minibatch`; `test_clip_applied_to_accumulated_grad`; `test_nonfinite_micro_stops_before_apply`; `test_uneven_last_minibatch_weights`.
+- [ ] **Step 2:** Run, FAIL. **Step 3:** Implement. **Step 4:** Run, PASS.
+- [ ] **Step 5:** On KXKM-AI (GPU services stopped, PI-approved, `/ai/saisail` only), measure end-to-end throughput (gtm, 8 updates, training levels only) and peak VRAM with the registered minibatch and `micro_batch_pairs` in {256, 512}, with and without `clear_cache`.
+- [ ] **Step 6:** Commit `feat(n10c): accumulate gradients over micro-batches`.
+
 ---
 
 ## Execution note
