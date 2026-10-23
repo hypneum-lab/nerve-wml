@@ -31,3 +31,24 @@ running; its peak value is not traceable and is therefore not cited. The
 case for accumulation is the margin (6.7 GB tracked / 13.8 GB reserved
 vs 12.0 GB / 23.3 GB), not a reproduced OOM at 2 updates. A longer
 no-accumulation run was not made.
+
+## Same-seed repeat control on CUDA (added)
+
+`repeat_control.py` (2 runs per config, separate processes, real procgen,
+8 updates = 65536 pair-steps, gtm and mlp, no accumulation and micro 512)
+and `grad_repeat.py` (fixed minibatch gradient repeats). Outputs under
+`repeat/` (`*.info.json`, `*.params.npz`, `analysis.txt`,
+`grad_localisation.txt`).
+
+Result: init, forward and the FIRST rollout (obs/actions/logp/value/
+returns hashes) are bit-identical across repeats in all 4 configs. Params
+after update 1 (24 Adam steps) and after update 8 are NOT identical in
+any of them (every tensor differs; max |d| 3.9e-2 to 5.2e-2 after update
+1, 1.1e-1 to 1.9e-1 after update 8); the update-8 rollout then differs
+too, so trajectories diverge. Localisation on a fixed minibatch: forward
+bit-identical; the only non-identical gradients are conv weight/bias in
+`trunk.blocks.*` (all 22 conv tensors), max relative diff 1.4e-5 to
+4.5e-5 (CUDA/cuDNN; ~1e-7 on Metal), same with and without
+accumulation, mlp and gtm alike. The head, fc and GTM tensors are
+bit-identical. Divergence beyond the single-step Adam bound comes from
+the 24 sequential steps amplifying the conv-gradient noise.

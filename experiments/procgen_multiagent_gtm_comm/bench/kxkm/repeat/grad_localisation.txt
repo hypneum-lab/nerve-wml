@@ -1,0 +1,6 @@
+mlp forward bit-identical: True
+mlp micro None non-identical tensor-pairs: 88 max rel diff by group: {'trunk.blocks': '2.1e-05'}
+mlp micro 128 non-identical tensor-pairs: 88 max rel diff by group: {'trunk.blocks': '1.4e-05'}
+gtm forward bit-identical: True
+gtm micro None non-identical tensor-pairs: 88 max rel diff by group: {'trunk.blocks': '4.5e-05'}
+gtm micro 128 non-identical tensor-pairs: 88 max rel diff by group: {'trunk.blocks': '2.1e-05'}
