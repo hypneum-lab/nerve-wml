@@ -523,13 +523,16 @@ def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
           "used.", "",
           "## Artefact archiving (PI decision 2026-10-23)", "",
           "After each run and each evaluation, the run directory (`run.json`, "
-          "checkpoints, EvalRecord JSON) is copied to electron-server (Tailscale "
-          "100.78.191.52) for storage. The copy is post-hoc storage only and "
-          "changes no registered quantity. macM1 checkpoints are additionally copied to "
-          "KXKM-AI for evaluation (campaign `sync` step). Destination path: "
-          "**to be filled by "
-          "the PI before the freeze**: `<PATH>`. (This item is outside items 1-4 of the "
-          "amendment's manifest list; flagged for the PI.)", "",
+          "checkpoints, EvalRecord JSON, cross-play records) is stored on electron-server "
+          "(Tailscale 100.78.191.52) at `electron@100.78.191.52:/home/electron/archives/n10c/`. "
+          "KXKM-AI cannot reach electron-server, so electron-server PULLS the completed "
+          "runs from KXKM-AI (`campaign/pull_archive.sh`, rsync over ssh to "
+          "`electron@10.2.0.237:/ai/saisail/n10c-run/campaign`, completed runs only, "
+          "idempotent, logged); macM1 can push with `--archive-to`. The copy is post-hoc "
+          "storage only and changes no registered quantity. macM1 checkpoints are "
+          "additionally copied to KXKM-AI for evaluation (campaign `sync` step), and "
+          "are archived from that KXKM copy. (This item is outside items 1-4 of the "
+          "amendment's manifest list.)", "",
           "## Implementation rulings disclosed", ""]
     lines += [f"- {r}" for r in RULINGS]
     lines += [""]

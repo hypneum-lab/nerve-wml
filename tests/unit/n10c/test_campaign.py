@@ -971,3 +971,66 @@ def test_cross_probe_untrained_checkpoint_passed_as_none(tmp_path):
     assert by[(73, 101)][1] is None
     rec = json.loads((kx.dir / "cross" / "closed-dial-s101-s131.json").read_text())
     assert rec["untrained"] is True
+
+
+# ---- archive: macM1 pushes, KXKM is pulled by electron-server ----------
+
+def test_kxkm_without_push_target_marks_archive_via_pull(tmp_path):
+    got = []
+    c, _ = _campaign(tmp_path, lambda n, kw: _rec(), host="kxkm",
+                     archive=lambda *a: got.append(a))
+    assert c.run() == rc.EXIT_OK
+    assert got == []  # nothing pushed from KXKM
+    for s in KX:
+        st = c.store.load(s)
+        assert st["archive_via"] == "pull" and st["archived"] is False
+        assert not q.needs_archive(st)  # a missing push is not a failure
+
+
+def test_macm1_never_archives_before_kxkm_evaluation(tmp_path):
+    # macM1 runs are evaluated (hence archived) from the KXKM copy, which the
+    # electron-server pull covers; macM1 itself has nothing to push.
+    got = []
+    c, _ = _campaign(tmp_path, lambda n, kw: _rec(), host="macm1",
+                     archive=lambda *a: got.append(a), archive_to="u@h:/p")
+    assert c.run() == rc.EXIT_OK
+    assert got == []
+    assert "archive_via" not in c.store.load(q.runs_for_host("macm1")[0])
+
+
+def _pull_fixture(tmp_path):
+    src, dest = tmp_path / "src", tmp_path / "dest"
+    (src / "status").mkdir(parents=True)
+    for rid, done in (("registered-gtm-s73", True), ("registered-mlp-s73", False)):
+        (src / "runs" / rid).mkdir(parents=True)
+        (src / "runs" / rid / "run.json").write_text("{}")
+        (src / "runs" / rid / "eval.json").write_text("{}")
+        (src / "runs" / rid / "ckpt_64.safetensors").write_text("x")
+        (src / "runs" / rid / "ckpt_32.safetensors").write_text("y")
+        (src / "status" / f"{rid}.json").write_text(json.dumps(
+            {"run_id": rid, "eval_done": done, "last_checkpoint": "ckpt_64.safetensors"}))
+    (src / "cross").mkdir()
+    (src / "cross" / "registered-gtm-s73-s101.json").write_text("{}")
+    return src, dest
+
+
+def _pull(src, dest):
+    import os
+    import pathlib
+    script = pathlib.Path(rc.__file__).parent / "pull_archive.sh"
+    env = dict(os.environ, KXKM_SRC=str(src), DEST=str(dest), LOG=str(dest / "pull.log"))
+    return subprocess.run(["bash", str(script)], env=env, capture_output=True, text=True)
+
+
+def test_pull_archive_copies_completed_runs_only_and_is_idempotent(tmp_path):
+    src, dest = _pull_fixture(tmp_path)
+    r = _pull(src, dest)
+    assert r.returncode == 0, r.stderr
+    d = dest / "registered-gtm-s73"
+    assert (d / "run.json").exists() and (d / "eval.json").exists()
+    assert (d / "ckpt_64.safetensors").exists()
+    assert not (d / "ckpt_32.safetensors").exists()  # last checkpoint only
+    assert not (dest / "registered-mlp-s73").exists()  # not evaluated yet
+    assert (dest / "cross" / "registered-gtm-s73-s101.json").exists()
+    assert (dest / "pull.log").read_text().strip()
+    assert _pull(src, dest).returncode == 0  # idempotent

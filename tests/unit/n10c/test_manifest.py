@@ -239,3 +239,10 @@ def test_manifest_records_n_workers_per_host(tmp_path):
     text = _manifest(tmp_path)
     assert re.search(r"macM1: .*n_workers = 1 ", text)
     assert re.search(r"KXKM-AI: .*n_workers = 8 ", text)
+
+
+def test_manifest_records_archive_target_and_pull(tmp_path):
+    text = _manifest(tmp_path)
+    assert "<PATH>" not in text
+    assert "electron@100.78.191.52:/home/electron/archives/n10c/" in text
+    assert "pull_archive.sh" in text and "10.2.0.237" in text

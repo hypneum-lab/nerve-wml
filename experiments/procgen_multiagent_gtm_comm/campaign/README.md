@@ -45,8 +45,13 @@ and guards), `kxkm/deploy.sh`, `kxkm/start.sh`.
       pauses other processes.
 - [ ] Disk space: check `df -h /ai/saisail` (checkpoints every 1M
       pair-steps, about 50 per run kept; size one with a smoke run).
-- [ ] Archive target exists on electron-server and the key works
-      (`--archive-to user@host:/path`, rsync over ssh, BatchMode).
+- [ ] Archive target `electron@100.78.191.52:/home/electron/archives/n10c/`
+      exists. KXKM cannot reach electron-server: do NOT pass `--archive-to`
+      on KXKM (its runs get `archive_via: "pull"`, a missing push is not a
+      failure). Instead run `campaign/pull_archive.sh` ON electron-server
+      (by hand or cron; pulls completed runs from
+      `electron@10.2.0.237:/ai/saisail/n10c-run/campaign`, idempotent, log in
+      `$DEST/pull.log`). macM1 may still push with `--archive-to`.
 - [ ] `--dry-run` shows all guards passing and the expected duration.
 - [ ] Both hosts ready (KXKM: micro_batch_pairs 512 + clear_cache from PR #53 merged).
 
@@ -77,7 +82,7 @@ Start (detached, tmux session `n10c` or nohup; pre-checks guards first):
 
     BASE=/ai/saisail/n10c-run bash kxkm/start.sh --manifest ... \
       --manifest-sha256 SHA --manifest-doi DOI --expect-commit COMMIT \
-      --archive-to user@electron-server:/path --min-free-gb 8
+      --min-free-gb 8   # no --archive-to on KXKM (pulled by electron-server)
 
 - Stop gracefully: `touch <campaign-dir>/STOP`; the runner exits
   between runs (exit 4). Remove the file to resume.

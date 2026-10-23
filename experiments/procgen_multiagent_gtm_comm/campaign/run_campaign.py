@@ -343,6 +343,9 @@ class Campaign:
 
     def archive(self, spec: q.RunSpec, st: dict) -> None:
         if not self.o.archive_to:
+            if self.o.host == "kxkm":  # KXKM cannot reach electron-server:
+                st["archive_via"] = "pull"  # pull_archive.sh runs there
+                self.store.save(st)
             return
         rd = self.run_dir(spec)
         files = archive_files(rd, st["last_checkpoint"])

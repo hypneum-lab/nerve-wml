@@ -144,7 +144,8 @@ def infra_exhausted(state: dict) -> bool:
 
 
 def needs_archive(state: dict) -> bool:
-    return state["eval_done"] and not state["archived"]
+    return (state["eval_done"] and not state["archived"]
+            and not state.get("archive_via"))
 
 
 def summarize(states: list[dict]) -> dict[str, int]:
