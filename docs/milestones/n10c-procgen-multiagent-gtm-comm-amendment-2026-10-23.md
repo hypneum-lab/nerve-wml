@@ -107,7 +107,7 @@ The same agents with the all-zero message, as above.
 - **Fixed evaluation set.** Every model is evaluated on the same 200 held-out levels. Action sampling at evaluation on level j uses `numpy.random.default_rng([20261023, j])`, identical for every model and pass. All estimands are defined **conditional on this fixed evaluation set**. The only random unit in the analysis is the trained model (seed).
 - **Deterministic evaluation of discrete messages:** at evaluation GTM-comm transmits argmax symbols (no Gumbel noise), and every other arm its hard-thresholded bits.
 - **Metric 1, team reward** = the model's mean episode team return over the 200 levels = its team success rate.
-- **Completion time** (reported separately, descriptive) = the mean number of steps to team success over successful episodes.
+- **Completion time** (reported separately, descriptive) = the mean number of steps to team success over successful episodes. If a model has no successful evaluation episode, its completion time is reported as unavailable.
 
 ### Message-shuffle probe (evaluation only)
 
@@ -125,7 +125,7 @@ For each model, S = R_intact − R_shuffled, with R its mean team return over th
 - **Difference of two arms:** Welch CI, difference in seed means ± t(1 − a/2, ν) · √(s₁²/5 + s₂²/5), with ν the Welch–Satterthwaite df and a the stated per-interval error rate.
 - **One arm (S):** one-sample t CI over the 5 seed values, mean ± t(1 − a/2, 4) · s/√5.
 - **Ratios (normalized improvement):** Fieller interval (below).
-- If an interval cannot be computed (both arms have zero seed variance, or a required df is undefined), it is reported as **unavailable** with the point estimate only. Identical seed outcomes, for example five runs capped at 50M, are not read as certainty about the population.
+- If an interval cannot be computed (both arms have zero seed variance ; for a one-arm interval, the 5 seed values have zero variance ; or a required df is undefined), it is reported as **unavailable** with the point estimate only. A zero-width interval is never reported. Identical seed outcomes, for example five runs capped at 50M, are not read as certainty about the population.
 - All intervals assume approximately normal seed-level values, so stated simultaneous coverage is approximate. With 5 seeds this assumption cannot be checked well, and intervals are read as pilot estimates. No bootstrap is used.
 
 ### Primary estimand (registered condition, CoinRun-coop)
@@ -171,8 +171,8 @@ NI_arm,e = (R̄_arm,e − R̄_NOCOMM,e) / (R̄_ENG,e − R̄_NOCOMM,e), for ever
 
 - For each arm × condition, the mean of the 5 seed-level S values is reported with a one-sample t CI at level 1 − 0.05/n_env, that is 95 % with n_env = 1.
 - **Wording.** S is reported only as the arm's **sensitivity to message disruption** ("the arm's team reward drops when partner messages are replaced by messages from another level"). It is not an estimate of the reward that flows through the channel. No difference between arms, including GTM's difference from any baseline, is attributed to communication on the basis of S.
-- **Positive control.** If the engineered reference's side-channel-closed interval for S does not lie entirely above 0, the probe is reported as **insensitive**, and no arm's S is interpreted.
-- For the no-communication arm the probe is a no-op, and S = 0 is checked as a sanity test.
+- **Positive control.** If the engineered reference's side-channel-closed interval for S does not lie entirely above 0, the probe is reported as **insensitive**, and no arm's S is interpreted. If that interval is unavailable (for example, five identical S values), the positive control is reported as **uninterpretable**, and no arm's S is interpreted either.
+- For the no-communication arm the probe is a no-op, and S = 0 is checked for every seed as a deterministic sanity test. No interval is computed for it.
 
 ## Failure, exclusion and replacement
 
@@ -240,7 +240,7 @@ The research hypothesis (GTM team reward exceeds the best baseline by ≥ 10 % o
 
 - Environment: CoinRun with a random policy, 30k steps/s with 1 environment and 117k steps/s with 64 environments.
 - PPO with an IMPALA-CNN in MLX 0.31.1 with `mx.compile`: one update takes 8.2 s per 16,384 samples (3 epochs, minibatch 2048), and inference 3.4 ms per 64 observations. That is about 1,800 samples/s, so one run (2 agents × 50M steps = 10⁸ samples) takes about **15.4 h** for the neural-network work alone.
-- Not yet measured: the GTM and message-bus overhead, the evaluation cost and concurrent jobs. The planning figure is about 16 h per run, so option D takes about 50 × 16 h ≈ 800 h ≈ **33 days of continuous compute**. The measured figures, including GTM overhead and evaluation, go in the stage-2 manifest.
+- For the neural-network work alone, option D therefore needs about 50 × 15.4 h ≈ 770 h ≈ 32 days. Not yet measured: environment stepping inside the training loop, the GTM and message-bus overhead, the evaluation cost and concurrent jobs. The planning figure is about 16 h per run, so option D takes about 50 × 16 h ≈ 800 h ≈ **33 days of continuous compute**. This leaves only a small allowance for the unmeasured costs, and the real figure may be higher. The end-to-end measurement, including GTM overhead and evaluation, goes in the stage-2 manifest.
 
 **Risk: GPU contention.** macM1 is shared with the second-brain services, which also use its GPU. Contention can make runs slower than the estimate. A slower run changes no registered quantity (step budgets, seeds, evaluation protocol). A run killed or corrupted by contention is an infrastructure failure under the rules above.
 
