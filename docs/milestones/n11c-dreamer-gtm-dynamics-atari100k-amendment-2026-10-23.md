@@ -66,7 +66,7 @@ Per arm, A_arm = (1/6) Σ_g HNS̄_g,arm, where HNS̄_g,arm is the mean over 5 se
 
 - **Interval:** 95 % Fieller interval for the ratio ρ = A_GTM / A_MLP, then θ = ρ − 1. With a = A_GTM and b = A_MLP, v_a = (1/36) Σ_g s²_g,GTM / 5 and v_b likewise (s²_g,arm is the seed variance on game g), arms independent, the interval is the set of ρ with (a − ρb)² ≤ t² · (v_a + ρ² v_b). t is the 97.5 % quantile at df = min(ν_a, ν_b), where ν_a = v_a² / Σ_g [(s²_g,GTM / 180)² / 4] is the Satterthwaite df of v_a, and ν_b likewise. If exactly one of v_a and v_b is 0, t uses the df of the other. If both are 0, neither the relative-gain interval nor the absolute-difference interval below is computed: both are reported as unavailable, with their point estimates only. The interval assumes approximately normal seed-level scores. With 5 seeds per game this cannot be checked well, and it is read as a pilot estimate. No bootstrap is used.
 - **Interpretability rule:** human-normalised scores can be negative, and a ratio of two negative aggregates reverses meaning. θ is interpreted only if the baseline's interval b ± t · √v_b lies entirely above 0, which also guarantees a bounded Fieller set. Otherwise the category is *pilot-interval-unavailable*. This is a property of the data, not a statement that the population estimand is undefined. The absolute difference A_GTM − A_MLP is always reported, with interval (a − b) ± t · √(v_a + v_b) at the same t when that interval can be computed. An unavailable relative-gain interval and an unavailable absolute-difference interval are reported separately.
-- **Reference value (SESOI):** Δ = 0.10. The registered research hypothesis says "exceeds baseline … score by ≥ 10 %". It is read here as a relative gain of 10 % of the baseline's aggregate score. *(Open PI confirmation item 2.)* The value was set on 2026-05-11 as the smallest sample-efficiency gain worth a Paper 2 section. It was not derived from a power analysis.
+- **Reference value (SESOI):** Δ = 0.10. The registered research hypothesis says "exceeds baseline … score by ≥ 10 %". It is read here as a relative gain of 10 % of the baseline's aggregate score. *(Decided by the PI on 2026-10-23.)* The value was set on 2026-05-11 as the smallest sample-efficiency gain worth a Paper 2 section. It was not derived from a power analysis.
 
 ### Pilot categories (mutually exclusive, exhaustive, applied in this order)
 
@@ -111,7 +111,7 @@ Any superiority claim requires a separate, future confirmatory pre-registration 
 - **Stage 1, filed now:** this amendment text, that is the research hypothesis, the estimands, the common protocol, the analysis, failure and exclusion rules and the superseded provisions.
 - **Stage 2, filed as a second locked stage before any Atari-100k run:** the configuration manifest below, which fixes the implementation details that stage 1 leaves open (architectures, adapters and objectives, including the GTM–RSSM interface).
 
-Stage 2 cannot change any stage-1 provision. If the manifest cannot be written within the stage-1 rules, stage 1 is amended and re-filed before any run. Stage 1 cannot be filed while open PI confirmation items 1–3 below are unresolved.
+Stage 2 cannot change any stage-1 provision. If the manifest cannot be written within the stage-1 rules, stage 1 is amended and re-filed before any run. Stage 1 cannot be filed while the open compute item below is unresolved.
 
 ## Configuration manifest (stage 2, required, immutable, part of this registration)
 
@@ -120,7 +120,7 @@ Before the first Atari-100k run, the PI files a dated manifest on OSF as an upda
 1. the commit of the DreamerV3 port with the GTM transition predictor and of the MLP control, including the GTM–RSSM interface (how (z_t, h_t, a_t) is projected to the GTM code and decoded to ẑ_{t+1}, and how the discrete stochastic state is handled) and the integer codes for arms and games ;
 2. the comparator outcome under the fallback rule (ITC or IRIS), its repository URL and commit, and whether the common protocol can be applied to it ;
 3. the per-game random and human reference scores ;
-4. the measured per-run cost of each arm on the target hardware, and the compute option adopted under PI confirmation item 1.
+4. the measured per-run cost of each arm on the target hardware, and the compute option adopted under the open PI confirmation item.
 
 Development that informs the manifest may use only the CartPole dev kickoff, the 10k-step Pong smoke of the comparator, and unit tests. It never uses full-budget runs on the 6 registered games. The manifest cannot be changed after filing. Runs started before it is filed are excluded from all analyses and reported.
 
@@ -133,7 +133,7 @@ The research hypothesis (GTM-dynamics DreamerV3 exceeds baseline DreamerV3 mean 
 ## Compute
 
 - **Registered design:** 3 arms × 6 games × 5 seeds = **90 runs**. At the registered estimate of about 24 h per run, this is **2,160 GPU-h, about 90 days sequential** on one RTX 4090. The locked file's "4 parallel runs, ~22 days" assumes four-fold throughput on one GPU, which has not been measured. The ITC full agent's per-run cost may differ from DreamerV3's and is measured for the manifest.
-- **Feasibility (open PI confirmation item 1).** The registered design does not fit a single RTX 4090 in a reasonable time. Options, by whole arms only:
+- **Feasibility (open PI confirmation item).** The registered design does not fit a single RTX 4090 in a reasonable time. Options, by whole arms only:
   - A. Fund the full 90 runs: about 2,160 GPU-h at the registered estimate, plus the comparator's cost difference.
   - B. Drop the comparator arm: 60 runs, about 1,440 GPU-h. The primary estimand is unaffected, and the 6 comparator contrasts are not reported.
   - C. Postpone N11-C until A is fundable.
@@ -145,13 +145,13 @@ The research hypothesis (GTM-dynamics DreamerV3 exceeds baseline DreamerV3 mean 
 
 - The estimation reframing as worded above.
 - Two-stage filing: this text now (stage 1), the configuration manifest as a second locked stage before any run (stage 2), as described under Filing.
-- Compute: no option is chosen yet. The choice waits for a throughput measurement on the MacStudio (M3 Ultra, 512 GB), whose dependency installs are not yet approved (item 1 below).
+- "≥ 10 %" is read as a relative gain on the aggregate (not 10 human-normalised points).
+- Comparator = the published ITC agent (Simulus+ITC) as a full-agent comparator, with the official IRIS agent only as the availability fallback.
+- Compute: no option is chosen yet. The choice waits for a throughput measurement on the MacStudio (M3 Ultra, 512 GB), whose dependency installs are not yet approved (item below).
 
-## PI confirmation items (open, to settle before filing stage 1)
+## PI confirmation item (open, to settle before filing stage 1)
 
-1. Compute option (A drafted and pending, or B / C), after the MacStudio throughput measurement.
-2. "≥ 10 %" read as a relative gain on the aggregate (not 10 human-normalised points).
-3. Comparator = published ITC agent (Simulus+ITC) as a full-agent comparator, with IRIS as the availability fallback.
+- Compute option (A drafted and pending, or B / C), after the MacStudio throughput measurement.
 
 If the PI changes any item, the text above is edited before filing, never after data are seen.
 

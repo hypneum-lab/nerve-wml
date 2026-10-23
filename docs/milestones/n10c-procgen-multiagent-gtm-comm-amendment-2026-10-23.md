@@ -66,7 +66,7 @@ Every arm transmits, per agent and per step, a vector m ∈ {0, 1}¹⁶ (16 bits
 - **DIAL:** 16 DRU units. In training, the DIAL discretise/regularise unit of Foerster et al. (2016), σ(m + 𝒩(0, σ_n²)) with σ_n = 2 fixed here. At evaluation, a hard threshold at 0. DIAL is the only arm whose training-time messages are not hard bits. This is disclosed.
 - **Engineered reference sender:** see below.
 - **No-communication:** constant all-zero message in training and evaluation (0 bits of information).
-- **Enforcement:** the message bus asserts shape (16,) and values in {0, 1} for every delivered message (at evaluation for all arms ; in training for all arms except DIAL) and logs bits per step. A violation is an implementation error, handled as an infrastructure failure (fix, then rerun from scratch), never as an outcome-based exclusion. *(Open PI confirmation item 2 for K and A.)*
+- **Enforcement:** the message bus asserts shape (16,) and values in {0, 1} for every delivered message (at evaluation for all arms ; in training for all arms except DIAL) and logs bits per step. A violation is an implementation error, handled as an infrastructure failure (fix, then rerun from scratch), never as an outcome-based exclusion. *(K and A decided by the PI on 2026-10-23.)*
 
 ## New arms
 
@@ -200,7 +200,7 @@ Any superiority claim requires a separate, future confirmatory pre-registration 
 - **Stage 1, filed now:** this amendment text, that is the research hypothesis, the environment, message and side-channel specifications, the estimands, the analysis, failure and exclusion rules, the superseded provisions and the adopted scope.
 - **Stage 2, filed as a second locked stage before any N10-C run:** the configuration manifest below, which fixes the implementation details that stage 1 leaves open (architectures, adapters and objectives, including the GTM symbol adapter, and the MLX PPO harness).
 
-Stage 2 cannot change any stage-1 provision. If the manifest cannot be written within the stage-1 rules, stage 1 is amended and re-filed before any run. Stage 1 cannot be filed while the open PI confirmation items below are unresolved.
+Stage 2 cannot change any stage-1 provision. If the manifest cannot be written within the stage-1 rules, stage 1 is amended and re-filed before any run. No PI confirmation item remains open for N10-C.
 
 ## Configuration manifest (stage 2, required, immutable, part of this registration)
 
@@ -240,11 +240,12 @@ The research hypothesis (GTM team reward exceeds the best baseline by ≥ 10 % o
 
 - Environment: CoinRun with a random policy, 30k steps/s with 1 environment and 117k steps/s with 64 environments.
 - PPO with an IMPALA-CNN in MLX 0.31.1 with `mx.compile`: one update takes 8.2 s per 16,384 samples (3 epochs, minibatch 2048), and inference 3.4 ms per 64 observations. That is about 1,800 samples/s, so one run (2 agents × 50M steps = 10⁸ samples) takes about **15.4 h** for the neural-network work alone.
+- The measurement is archived in `experiments/procgen_multiagent_gtm_comm/bench/README.md`, with the benchmark script (`bench_ppo_mlx.py`), the lock files and two repetitions (1,807 and 1,789 samples/s, 15.4 h and 15.5 h per run).
 - For the neural-network work alone, option D therefore needs about 50 × 15.4 h ≈ 770 h ≈ 32 days. Not yet measured: environment stepping inside the training loop, the GTM and message-bus overhead, the evaluation cost and concurrent jobs. The planning figure is about 16 h per run, so option D takes about 50 × 16 h ≈ 800 h ≈ **33 days of continuous compute**. This leaves only a small allowance for the unmeasured costs, and the real figure may be higher. The end-to-end measurement, including GTM overhead and evaluation, goes in the stage-2 manifest.
 
 **Risk: GPU contention.** macM1 is shared with the second-brain services, which also use its GPU. Contention can make runs slower than the estimate. A slower run changes no registered quantity (step budgets, seeds, evaluation protocol). A run killed or corrupted by contention is an infrastructure failure under the rules above.
 
-**Reproducibility note: Procgen on arm64.** Procgen 0.10.7 was built from source for arm64 on macM1, with a local build patch: the Xcode 26.5 SDK forced through `SDKROOT` / `DEVELOPER_DIR` ; Qt 5.15.19 found through `PROCGEN_CMAKE_PREFIX_PATH` ; and `-Werror` removed from `procgen/CMakeLists.txt`, because clang 21 flags two unused variables in `chaser.cpp` and `starpilot.cpp`. The patch changes the build configuration only, not game code. It is kept on macM1 as `~/scratch/procgen-arm64/procgen-arm64-local.patch`, and the stage-2 manifest records it (content or SHA-256) with the toolchain versions. Equivalence with the official x86-64 builds has not been checked. All N10-C runs use this single build.
+**Reproducibility note: Procgen on arm64.** Procgen 0.10.7 was built from source for arm64 on macM1, with a local build patch: the Xcode 26.5 SDK forced through `SDKROOT` / `DEVELOPER_DIR` ; Qt 5.15.19 found through `PROCGEN_CMAKE_PREFIX_PATH` ; and `-Werror` removed from `procgen/CMakeLists.txt`, because clang 21 flags two unused variables in `chaser.cpp` and `starpilot.cpp`. The patch changes the build configuration only, not game code. It is archived as `experiments/procgen_multiagent_gtm_comm/bench/procgen-0.10.7-arm64-build.patch` (build details in `bench/README.md`), and the stage-2 manifest records its SHA-256 with the toolchain versions. Equivalence with the official x86-64 builds has not been checked. All N10-C runs use this single build.
 
 ## PI decisions (2026-10-23)
 
@@ -252,14 +253,11 @@ The research hypothesis (GTM team reward exceeds the best baseline by ≥ 10 % o
 2. Implement the declared team summary on purpose and close it in the side-channel-closed condition (see Rationale).
 3. Compute scope: option D on macM1 with MLX, as described under Compute. The "≥ 2 of 3 tasks" target is withdrawn.
 4. Two-stage filing: this text now (stage 1), the configuration manifest as a second locked stage before any run (stage 2), as described under Filing.
+5. Primary estimand on seed means (was median), with dynamic range = the theoretical range of the team return.
+6. GTM message format K = 4 symbols × A = 16 (16 bits/step).
+7. Success-only team reward (no step penalty).
 
-## PI confirmation items (open, to settle before filing stage 1)
-
-1. Primary estimand on seed means (was median), with dynamic range = the theoretical range of the team return.
-2. GTM message format K = 4 symbols × A = 16 (16 bits).
-3. Success-only team reward (no step penalty).
-
-If the PI changes any item, the text above is edited before filing, never after data are seen.
+No PI confirmation item remains open for N10-C. If the PI changes any item, the text above is edited before filing, never after data are seen.
 
 ## Optional modern baselines (not added)
 
