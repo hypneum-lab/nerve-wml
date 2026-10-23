@@ -21,7 +21,7 @@ from pathlib import Path
 import mlx.core as mx
 
 from . import comm, train
-from .codes import ARM_CODES, CONDITION_CODES, SEED_HOST, SEEDS
+from .codes import ARM_CODES, CONDITION_CODES, HOST_SETTINGS, SEED_HOST, SEEDS
 from .gtm_mlx import GTMConfigMLX
 from .policy import PairPolicy, param_count
 
@@ -51,12 +51,16 @@ KXKM_VERSIONS = {  # venv310 on KXKM-AI, recorded 2026-10-23; re-verify at deplo
     "python": "3.10.18", "mlx": "0.31.1", "mlx-cuda-12": "0.31.1",
     "numpy": "1.26.4", "gym3": "0.3.3", "gym": "0.26.2", "procgen": "0.10.7",
 }
-HOST_TRAIN_SETTINGS = {
-    "macm1": {"micro_batch_pairs": "none (full minibatch)", "clear_cache": "off",
-              "n_workers": "1"},
-    # n_workers 8: +8 % end to end vs 1 (bench/kxkm/README.md, nworkers/)
-    "kxkm": {"micro_batch_pairs": "512", "clear_cache": "on", "n_workers": "8"},
-}
+def _fmt_settings(st: dict) -> dict[str, str]:
+    mb = st["micro_batch_pairs"]
+    return {"micro_batch_pairs": "none (full minibatch)" if mb is None else str(mb),
+            "clear_cache": "on" if st["clear_cache"] else "off",
+            "n_workers": str(st["n_workers"])}
+
+
+# Display form of codes.HOST_SETTINGS (single source of truth).
+# n_workers 8 on KXKM: +8 % end to end vs 1 (bench/kxkm/README.md, nworkers/)
+HOST_TRAIN_SETTINGS = {h: _fmt_settings(s) for h, s in HOST_SETTINGS.items()}
 # Commitment rule (amendment 2026-10-23, item 13): the manifest is committed
 # by an annotated git tag pushed to GitHub, OSF is filed afterwards. DRAFT
 # until then; the frozen text never contains the word DRAFT (campaign guard).
@@ -473,9 +477,11 @@ def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
             "- " + label + ": seeds {" + ", ".join(map(str, sd)) + "} (" + hw
             + "); micro_batch_pairs = " + st["micro_batch_pairs"]
             + ", clear_cache = " + st["clear_cache"] + ", n_workers = "
-            + st["n_workers"] + " (planned launch value; confirm at launch"
-            + ("; measured +8 % end to end vs 1, bench/kxkm/README.md)."
-               if host == "kxkm" else "; no measurement, default 1)."))
+            + st["n_workers"] + " (registered per-host implementation setting, "
+            "`harness/codes.py` HOST_SETTINGS, applied by run_campaign to every run of "
+            "this host and recorded in each run.json"
+            + ("; n_workers 8 measured +8 % end to end vs 1, bench/kxkm/README.md)."
+               if host == "kxkm" else "; n_workers 1 is the default, not measured)."))
     kv = KXKM_VERSIONS
     lines += [
           "- KXKM-AI software (venv310, recorded 2026-10-23, re-verify at deploy): "

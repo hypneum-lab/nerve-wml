@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from collections import deque
 from collections.abc import Callable
@@ -33,7 +34,14 @@ import numpy as np
 from mlx.utils import tree_flatten, tree_map
 
 from .bus import MessageBus
-from .codes import ARM_CODES, CONDITION_CODES, init_key_int, run_seed_sequence
+from .codes import (
+    ARM_CODES,
+    CONDITION_CODES,
+    HOST_SETTINGS,
+    HOSTS,
+    init_key_int,
+    run_seed_sequence,
+)
 from .comm import eng_bits_from_window, plasticity_scale
 from .policy import PairPolicy
 from .rollout import RolloutBuffer
@@ -81,6 +89,7 @@ class RunRecord:
     # implementation settings (never registered quantities)
     micro_batch_pairs: int | None = None
     clear_cache: bool = False
+    n_workers: int = 1
     peak_memory_bytes: int | None = None
 
 
@@ -297,6 +306,7 @@ def train_run(
             horizon, log_every_pair_steps, ckpt_every_pair_steps,
             minibatch_pairs, restarts, init_ss, shuf_rng, key_rng,
             _fault_hook, _rollout_hook, micro_batch_pairs, clear_cache,
+            n_workers,
         )
     finally:
         vec.close()
@@ -305,12 +315,13 @@ def train_run(
 def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
            log_every, ckpt_every, minibatch_pairs, restarts, init_ss,
            shuf_rng, key_rng, fault_hook, rollout_hook, micro_pairs=None,
-           clear_cache=False) -> RunRecord:
+           clear_cache=False, n_workers=1) -> RunRecord:
     rec = RunRecord(
         arm=arm, seed=seed, condition=condition,
         codes={"arm": ARM_CODES[arm], "condition": CONDITION_CODES[condition]},
         total_pair_steps=total, restarts=restarts, using_stub=False,
         micro_batch_pairs=micro_pairs, clear_cache=clear_cache,
+        n_workers=n_workers,
     )
     model = PairPolicy(arm, mx.random.key(init_key_int(seed, arm, condition)))
     mx.eval(model.parameters())
@@ -483,19 +494,33 @@ def main() -> None:
     p.add_argument("--clear-cache", action="store_true",
                    help="mx.clear_cache() once per rollout update (after its "
                         "optimizer steps), not per minibatch")
-    p.add_argument("--n-workers", type=int, default=1)
+    p.add_argument("--n-workers", type=int, default=None)
+    p.add_argument("--host", choices=list(HOSTS),
+                   help="registered-budget runs: the host whose registered "
+                        "settings (codes.HOST_SETTINGS) apply")
     from experiments.procgen_multiagent_gtm_comm.campaign import guards
 
     guards.add_guard_args(p)
     a = p.parse_args()
     guards.enforce_cli(a, registered=a.steps >= guards.REGISTERED_BUDGET,
                        what="registered-budget training")
+    settings = {"micro_batch_pairs": a.micro_batch_pairs,
+                "clear_cache": a.clear_cache, "n_workers": a.n_workers or 1}
+    if a.steps >= guards.REGISTERED_BUDGET:
+        given = [f for f, v in (("--micro-batch-pairs", a.micro_batch_pairs),
+                                ("--clear-cache", a.clear_cache or None),
+                                ("--n-workers", a.n_workers)) if v is not None]
+        if given:
+            sys.exit("registered-budget run refuses setting overrides "
+                     f"{given}: settings come from codes.HOST_SETTINGS")
+        if not a.host:
+            sys.exit("registered-budget run needs --host to select the "
+                     "registered per-host settings")
+        settings = dict(HOST_SETTINGS[a.host])
     rec = train_run(
         a.arm, a.seed, a.condition, a.steps, a.out, n_pairs=a.n_pairs,
         horizon=a.horizon, log_every_pair_steps=a.log_every,
-        ckpt_every_pair_steps=a.ckpt_every,
-        micro_batch_pairs=a.micro_batch_pairs, clear_cache=a.clear_cache,
-        n_workers=a.n_workers,
+        ckpt_every_pair_steps=a.ckpt_every, **settings,
     )
     print(json.dumps({k: v for k, v in asdict(rec).items() if k != "losses"}))
 

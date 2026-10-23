@@ -32,5 +32,13 @@ def init_key_int(seed: int, arm: str, condition: str) -> int:
 # both conditions of a seed train on that seed's host.
 SEEDS: tuple[int, ...] = (0, 17, 42, 73, 101, 131)
 HOSTS: tuple[str, ...] = ("macm1", "kxkm")
+# Registered per-host implementation settings (amendment 2026-10-23): the
+# single source of truth for run_campaign (every run of that host), the
+# stage-2 manifest and run.json. They are implementation settings, not
+# registered quantities of the estimand; registered runs cannot override them.
+HOST_SETTINGS: dict[str, dict] = {
+    "kxkm": {"micro_batch_pairs": 512, "clear_cache": True, "n_workers": 8},
+    "macm1": {"micro_batch_pairs": None, "clear_cache": False, "n_workers": 1},
+}
 SEED_HOST: dict[int, str] = {0: "macm1", 17: "macm1", 42: "macm1",
                              73: "kxkm", 101: "kxkm", 131: "kxkm"}

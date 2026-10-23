@@ -775,3 +775,71 @@ def test_main_freeze_mode_pins_tag_commit_and_swhid(tmp_path, monkeypatch):
     assert meta["freeze_tag"] == tag and meta["swhid"] == swh
     assert meta["freeze_commit"] == g("rev-parse", "HEAD") and meta["host"] == "macm1"
     assert rc.main(argv[:-1] + ["not-a-swhid"]) == rc.EXIT_GUARD
+
+
+# ---- per-host registered implementation settings (single source) ------
+
+def test_host_settings_are_the_registered_values():
+    from experiments.procgen_multiagent_gtm_comm.harness import codes
+
+    assert codes.HOST_SETTINGS == {
+        "kxkm": {"micro_batch_pairs": 512, "clear_cache": True, "n_workers": 8},
+        "macm1": {"micro_batch_pairs": None, "clear_cache": False, "n_workers": 1},
+    }
+    assert set(codes.HOST_SETTINGS) == set(codes.HOSTS)
+
+
+@pytest.mark.parametrize("host", ["kxkm", "macm1"])
+def test_train_run_receives_exactly_the_host_settings(tmp_path, host):
+    from experiments.procgen_multiagent_gtm_comm.harness import codes
+
+    seen = []
+
+    def train(n, kw):
+        seen.append({k: kw[k] for k in ("micro_batch_pairs", "clear_cache", "n_workers")})
+        assert not ({"micro_batch_pairs", "clear_cache", "n_workers"} - set(kw))
+        return _rec()
+
+    c, calls = _campaign(tmp_path, train, host=host)
+    assert c.run() == rc.EXIT_OK
+    assert len(seen) == 30
+    assert all(s == codes.HOST_SETTINGS[host] for s in seen)
+
+
+def test_host_settings_recorded_in_status_file(tmp_path):
+    from experiments.procgen_multiagent_gtm_comm.harness import codes
+
+    c, _ = _campaign(tmp_path, lambda n, kw: _rec(), host="kxkm")
+    assert c.run() == rc.EXIT_OK
+    for s in KX:
+        assert c.store.load(s)["train_settings"] == codes.HOST_SETTINGS["kxkm"]
+
+
+@pytest.mark.parametrize("key", ["micro_batch_pairs", "clear_cache", "n_workers"])
+def test_registered_run_refuses_setting_override(tmp_path, key):
+    called = []
+    with pytest.raises(rc.GuardError, match=key):
+        c, _ = _campaign(tmp_path, lambda n, kw: called.append(1) or _rec(),
+                         train_kwargs={key: 3})
+        c.run()
+    assert called == []
+
+
+def test_trial_run_may_override_settings(tmp_path):
+    seen = []
+    c, _ = _campaign(tmp_path, lambda n, kw: seen.append(kw["n_workers"]) or _rec(),
+                     trial=True, train_kwargs={"n_workers": 2})
+    c.run()
+    assert set(seen) == {2}
+
+
+def test_campaign_and_manifest_agree_on_host_settings():
+    from experiments.procgen_multiagent_gtm_comm.harness import codes, manifest
+
+    assert set(manifest.HOST_TRAIN_SETTINGS) == set(codes.HOST_SETTINGS)
+    for host, st in codes.HOST_SETTINGS.items():
+        m = manifest.HOST_TRAIN_SETTINGS[host]
+        assert m["n_workers"] == str(st["n_workers"])
+        assert m["clear_cache"] == ("on" if st["clear_cache"] else "off")
+        mb = st["micro_batch_pairs"]
+        assert m["micro_batch_pairs"] == ("none (full minibatch)" if mb is None else str(mb))

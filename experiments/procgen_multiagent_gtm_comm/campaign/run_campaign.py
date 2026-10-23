@@ -44,6 +44,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from ..harness.codes import HOST_SETTINGS
 from . import queue as q
 from .guards import (  # noqa: F401 - re-exported for callers and tests
     HEX40,
@@ -132,6 +133,12 @@ class Campaign:
                  gpu_fn=None, archive_fn=None, log=print) -> None:
         if opts.host not in q.HOSTS:
             raise GuardError(f"unknown host {opts.host!r}; expected one of {q.HOSTS}")
+        if not opts.trial:
+            over = sorted(set(opts.train_kwargs or {}) & set(HOST_SETTINGS[opts.host]))
+            if over:
+                raise GuardError(
+                    f"registered runs refuse overrides of the per-host "
+                    f"implementation settings {over} (codes.HOST_SETTINGS)")
         self.o = opts
         self.dir = Path(opts.campaign_dir)
         self.store = q.StatusStore(self.dir / "status")
@@ -195,7 +202,11 @@ class Campaign:
         st.update(status=q.RUNNING, started_at=_now())
         self.store.save(st)
         self.event(run=spec.run_id, attempt=attempt, phase="train", state="start")
-        kw = dict(self.o.train_kwargs or {})
+        # registered per-host implementation settings (single source:
+        # codes.HOST_SETTINGS); only a non-registered trial may override them
+        settings = dict(HOST_SETTINGS[self.o.host])
+        kw = {**settings, **(self.o.train_kwargs or {})}
+        st["train_settings"] = {k: kw[k] for k in settings}
         if self.o.env_factory is not None:
             kw["env_factory"] = self.o.env_factory
         try:

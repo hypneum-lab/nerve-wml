@@ -520,3 +520,17 @@ def test_train_run_identical_first_rollout_across_worker_counts(tmp_path):
         d = np.abs(np.array(params[1][k]) - np.array(params[2][k]))
         assert d.max() <= 3 * 2 * 5e-4 + 1e-6
         assert (d <= 1e-5).mean() > 0.95
+
+
+def test_run_json_records_n_workers_and_settings(tmp_path):
+    from tests.unit.n10c.scripted_env import rand_factory
+
+    rec = train_run(
+        "gtm", 3, "registered", PER_UPDATE, tmp_path / "r",
+        env_factory=rand_factory, n_pairs=NP, horizon=H,
+        log_every_pair_steps=PER_UPDATE, ckpt_every_pair_steps=PER_UPDATE,
+        micro_batch_pairs=4, clear_cache=True, n_workers=2,
+    )
+    saved = json.loads((tmp_path / "r" / "run.json").read_text())
+    assert rec.n_workers == 2
+    assert (saved["micro_batch_pairs"], saved["clear_cache"], saved["n_workers"]) == (4, True, 2)

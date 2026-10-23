@@ -73,3 +73,43 @@ def test_cli_with_bad_credentials_still_refused(monkeypatch):
     with pytest.raises(SystemExit):
         ev.main()
     assert called == []
+
+
+@pytest.mark.parametrize("flag", [["--micro-batch-pairs", "256"], ["--clear-cache"],
+                                  ["--n-workers", "2"]])
+def test_train_cli_registered_budget_refuses_setting_overrides(monkeypatch, flag):
+    called = []
+    monkeypatch.setattr(tr, "train_run", lambda *a, **k: called.append(1))
+    from experiments.procgen_multiagent_gtm_comm.campaign import guards
+    monkeypatch.setattr(guards, "enforce_cli", lambda *a, **k: None)
+    monkeypatch.setattr(sys, "argv", _train_argv(50_000_000) + ["--host", "kxkm"] + flag)
+    with pytest.raises(SystemExit) as e:
+        tr.main()
+    assert "registered" in str(e.value.code) and called == []
+
+
+def test_train_cli_registered_budget_uses_host_settings(monkeypatch):
+    from experiments.procgen_multiagent_gtm_comm.campaign import guards
+    from experiments.procgen_multiagent_gtm_comm.harness import codes
+
+    got = []
+    monkeypatch.setattr(guards, "enforce_cli", lambda *a, **k: None)
+    monkeypatch.setattr(
+        tr, "train_run",
+        lambda *a, **k: got.append(k) or tr.RunRecord(
+            arm="gtm", seed=0, condition="registered", codes={}, total_pair_steps=64))
+    for host in ("kxkm", "macm1"):
+        monkeypatch.setattr(sys, "argv", _train_argv(50_000_000) + ["--host", host])
+        tr.main()
+        assert {k: got[-1][k] for k in codes.HOST_SETTINGS[host]} == codes.HOST_SETTINGS[host]
+
+
+def test_train_cli_registered_budget_requires_host(monkeypatch):
+    from experiments.procgen_multiagent_gtm_comm.campaign import guards
+
+    monkeypatch.setattr(guards, "enforce_cli", lambda *a, **k: None)
+    monkeypatch.setattr(tr, "train_run", lambda *a, **k: None)
+    monkeypatch.setattr(sys, "argv", _train_argv(50_000_000))
+    with pytest.raises(SystemExit) as e:
+        tr.main()
+    assert "--host" in str(e.value.code)
