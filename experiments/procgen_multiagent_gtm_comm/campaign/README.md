@@ -17,11 +17,14 @@ and guards), `kxkm/deploy.sh`, `kxkm/start.sh`.
 
 - [ ] Stage-2 manifest filed on OSF; DOI recorded. Runs started before
       filing are excluded by the registration.
-- [ ] Manifest file committed in the repo (under `docs/`); its SHA-256
-      noted (`shasum -a 256 <file>`).
+- [ ] Manifest file committed under
+      `experiments/procgen_multiagent_gtm_comm/manifest/`, with a
+      `Status: FILED` line (no `DRAFT` anywhere), the exact OSF DOI
+      (`10.17605/OSF.IO/<ID>`, placeholders refused) and the pinned
+      commit in its text; its SHA-256 noted (`shasum -a 256 <file>`).
 - [ ] Code commit pinned: the commit named in the manifest. HEAD of the
-      deployed clone must equal it, or descend from it touching only
-      `docs/` (the manifest cannot name its own commit). Pass it as
+      deployed clone must equal it, or descend from it with every intervening commit
+      touching only `docs/` or the manifest folder (the manifest cannot name its own commit). Pass it as
       `--expect-commit` (40 hex).
 - [ ] Frame-equality: the procgen/MLX build used on the target host
       renders and steps identically to the build recorded in the
@@ -60,7 +63,7 @@ Dry run (nothing trained; prints plan, guards, estimate):
 
     python -m experiments.procgen_multiagent_gtm_comm.campaign.run_campaign \
       --campaign-dir /ai/saisail/n10c-run/campaign --dry-run \
-      --throughput-json throughput.json --manifest docs/.../manifest.md \
+      --throughput-json throughput.json --manifest experiments/procgen_multiagent_gtm_comm/manifest/<file>.md \
       --manifest-sha256 SHA --manifest-doi 10.17605/OSF.IO/XXXXX \
       --expect-commit COMMIT
 
@@ -75,6 +78,12 @@ Start (detached, tmux session `n10c` or nohup; pre-checks guards first):
 - Hard stop (Ctrl-C, kill, reboot): the interrupted run is found
   `running` at resume and is restarted FROM SCRATCH; that counts as one
   infrastructure restart.
+- The same guards protect the harness CLIs: `harness.train` refuses
+  `--steps >= 50M` and `harness.evaluate` refuses levels >= 1000 unless
+  the four guard flags are valid (dev budgets and training levels stay
+  open). The campaign pins budget and trial flag in `campaign.json`;
+  resuming with another budget or mixing trial and registered runs is
+  refused.
 - Resume: run the same `start.sh` command. The campaign is pinned to the
   manifest SHA, DOI and commit in `campaign.json`; different inputs are
   refused. Done runs are skipped; a trained run whose evaluation failed
@@ -90,7 +99,7 @@ Start (detached, tmux session `n10c` or nohup; pre-checks guards first):
 
 | Failure | What the runner does | What you do |
 |---|---|---|
-| Crash, OOM, stub procgen, disk error, power loss (infrastructure) | Moves the partial aside, restarts from scratch; at most 2 restarts (3 attempts); every attempt in `attempts.jsonl` | Fix the cause between runs if you can; after 3 failures the run is `infra_failed` and left; report to the PI, do not re-run silently |
+| Crash, OOM, stub procgen, disk error, power loss (infrastructure) | Moves the partial aside, restarts from scratch; at most 2 restarts (3 attempts); every attempt in `attempts.jsonl` | Fix the cause between runs if you can. After 3 failures the run becomes a `training_failure` (flag `infra_exhausted`), evaluated at its last finite checkpoint (searched across the `.failed-<n>` dirs) or at initialisation, never replaced; report it per arm |
 | Non-finite loss or parameter (`training_failure`) | Never retried or replaced; last finite checkpoint evaluated (untrained init if none) | Nothing; it is reported as a failure per the registration |
 | Evaluation crash | Retried up to 3 times, no retraining | If still failing, debug and rerun evaluate by hand with the CLI |
 | GPU guard (free memory below the minimum) | Stops before the run, state unchanged (exit 3) | Agree the GPU with the PI, then resume; `--gpu-wait-s` can wait |

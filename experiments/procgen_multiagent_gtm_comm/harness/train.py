@@ -400,7 +400,12 @@ def main() -> None:
     p.add_argument("--horizon", type=int, default=128)
     p.add_argument("--log-every", type=int, default=1_000_000)
     p.add_argument("--ckpt-every", type=int, default=1_000_000)
+    from experiments.procgen_multiagent_gtm_comm.campaign import guards
+
+    guards.add_guard_args(p)
     a = p.parse_args()
+    guards.enforce_cli(a, registered=a.steps >= guards.REGISTERED_BUDGET,
+                       what="registered-budget training")
     rec = train_run(
         a.arm, a.seed, a.condition, a.steps, a.out, n_pairs=a.n_pairs,
         horizon=a.horizon, log_every_pair_steps=a.log_every,

@@ -52,13 +52,15 @@ class _Eval:
         return json.dumps({"S": self.S})
 
 
-def _campaign(tmp_path, train, eval_fn=None, gpu=None, archive=None, **o):
+def _campaign(tmp_path, train, eval_fn=None, gpu=None, archive=None,
+              ckpts=True, **o):
     calls = {"train": [], "eval": []}
 
     def t(**kw):
         calls["train"].append(kw["arm"] + "/" + kw["condition"] + f"/{kw['seed']}")
         kw["out_dir"].mkdir(parents=True, exist_ok=True)
-        (kw["out_dir"] / f"ckpt_{TOTAL}.safetensors").write_text("x")
+        if ckpts:
+            (kw["out_dir"] / f"ckpt_{TOTAL}.safetensors").write_text("x")
         return train(len(calls["train"]), kw)
 
     def e(ckpt, arm, cond, seed, env_factory=None):
@@ -86,6 +88,7 @@ def test_full_campaign_runs_all_and_resume_skips_done(tmp_path):
 def test_resume_after_interruption_restarts_running_from_scratch(tmp_path):
     first = q.build_queue()[0]
     c, calls = _campaign(tmp_path, lambda n, kw: _rec())
+    c.pin({})
     st = c.store.load(first)
     st["status"] = q.RUNNING
     c.store.save(st)
@@ -97,23 +100,54 @@ def test_resume_after_interruption_restarts_running_from_scratch(tmp_path):
     assert (c.dir / "runs" / f"{first.run_id}.failed-1" / "partial").exists()
 
 
-def test_infra_restart_capped_at_two(tmp_path):
-    def boom(n, kw):
-        if kw["arm"] == "gtm" and kw["seed"] == 0 and kw["condition"] == "registered":
-            raise OSError("disk")
-        return _rec()
-    c, calls = _campaign(tmp_path, boom)
+def _boom_first(n, kw):
+    if kw["arm"] == "gtm" and kw["seed"] == 0 and kw["condition"] == "registered":
+        raise OSError("disk")
+    return _rec()
+
+
+def test_infra_restart_capped_at_two_then_training_failure(tmp_path):
+    c, calls = _campaign(tmp_path, _boom_first)
     code = c.run()
     first = q.build_queue()[0]
-    assert first.arm == "gtm" and first.condition == "registered"
     assert calls["train"].count("gtm/registered/0") == 3  # 1 + 2 restarts
     s = c.store.load(first)
-    assert s["status"] == q.INFRA_FAILED and s["infra_failures"] == 3
-    assert q.infra_exhausted(s) and not q.needs_training(s)
-    assert code == rc.EXIT_PROBLEMS
-    c2, calls2 = _campaign(tmp_path, boom)
+    assert s["status"] == q.TRAINING_FAILURE and s["infra_failures"] == 3
+    assert s["infra_exhausted"] and s["eval_done"]
+    assert not q.needs_training(s)
+    # evaluated at the last finite checkpoint kept from the failed attempts
+    ckpt = calls["eval"][0][0]
+    assert ckpt is not None and ckpt.resolve().exists()
+    assert code == rc.EXIT_OK
+    c2, calls2 = _campaign(tmp_path, _boom_first)
     c2.run()
-    assert calls2["train"] == []  # never retried again
+    assert calls2["train"] == [] and calls2["eval"] == []
+
+
+def test_infra_exhausted_without_checkpoint_evaluates_init(tmp_path):
+    c, calls = _campaign(tmp_path, _boom_first, ckpts=False)
+    c.run()
+    assert calls["eval"][0][0] is None
+    s = c.store.load(q.build_queue()[0])
+    assert s["status"] == q.TRAINING_FAILURE and s["eval_done"]
+
+
+def test_exhausted_checkpoint_found_in_earlier_failed_dir(tmp_path):
+    made = {"n": 0}
+
+    def t(n, kw):
+        made["n"] += 1
+        if kw["arm"] == "gtm" and kw["seed"] == 0 and kw["condition"] == "registered":
+            if made["n"] > 1:  # later attempts leave no checkpoint
+                for f in kw["out_dir"].glob("ckpt_*"):
+                    f.unlink()
+            raise OSError("disk")
+        return _rec()
+    c, calls = _campaign(tmp_path, t)
+    c.run()
+    ckpt = calls["eval"][0][0]
+    assert ckpt is not None and ckpt.resolve().exists()
+    assert ".failed-1" in str(ckpt.resolve())
 
 
 def test_infra_failure_then_success(tmp_path):
@@ -209,18 +243,24 @@ def _git_repo(tmp_path):
     g("add", ".")
     g("commit", "-q", "-m", "code")
     code = g("rev-parse", "HEAD")
-    (repo / "docs").mkdir()
-    (repo / "docs" / "manifest.md").write_text(f"harness commit {code}\n")
+    md = repo / "experiments" / "procgen_multiagent_gtm_comm" / "manifest"
+    md.mkdir(parents=True)
+    (md / "stage2-manifest.md").write_text(MANIFEST_TMPL.format(code=code))
     g("add", ".")
     g("commit", "-q", "-m", "manifest")
     return repo, code, g
 
 
+MANIFEST_TMPL = ("# Stage 2 manifest\n**Status: FILED on OSF**\n"
+                 "DOI 10.17605/OSF.IO/A1B2C\nharness commit {code}\n")
+DOI = "10.17605/OSF.IO/A1B2C"
+
+
 def _ok(repo, code):
-    m = repo / "docs" / "manifest.md"
+    m = repo / "experiments" / "procgen_multiagent_gtm_comm" / "manifest" / "stage2-manifest.md"
     return dict(repo=repo, manifest=m,
                 manifest_sha256=hashlib.sha256(m.read_bytes()).hexdigest(),
-                manifest_doi="10.17605/OSF.IO/ABCDE", expect_commit=code)
+                manifest_doi=DOI, expect_commit=code)
 
 
 def test_guards_pass_when_only_docs_changed_since_commit(tmp_path):
@@ -249,18 +289,120 @@ def test_guard_refusals(tmp_path):
     # dirty tree -> refused
     (repo / "dirty.txt").write_text("d")
     assert any("dirty" in p for p in rc.guard_problems(**kw))
-    assert rc.normalize_doi("https://doi.org/10.17605/OSF.IO/ABCDE") == \
-        "10.17605/OSF.IO/ABCDE"
+    assert rc.normalize_doi("https://doi.org/" + DOI) == DOI
 
 
 def test_guard_untracked_manifest_refused(tmp_path):
     repo, code, g = _git_repo(tmp_path)
-    m = repo / "docs" / "other.md"
-    m.write_text(f"commit {code}\n")
+    m = repo / "experiments" / "procgen_multiagent_gtm_comm" / "manifest" / "o.md"
+    m.write_text(MANIFEST_TMPL.format(code=code))
     kw = {**_ok(repo, code), "manifest": m,
           "manifest_sha256": hashlib.sha256(m.read_bytes()).hexdigest()}
     probs = rc.guard_problems(**kw)
     assert any("not tracked" in p for p in probs)
+
+
+@pytest.mark.parametrize("doi", [
+    "10.17605/OSF.IO/XXXXX", "10.17605/OSF.IO/AAAAA", "10.1234/abcde",
+    "10.17605/OSF.IO/AB", "not-a-doi", "10.17605/osf.io/a1b2c", ""])
+def test_placeholder_dois_rejected(tmp_path, doi):
+    repo, code, _ = _git_repo(tmp_path)
+    assert rc.normalize_doi(doi) is None
+    assert any("DOI" in p for p in rc.guard_problems(
+        **{**_ok(repo, code), "manifest_doi": doi}))
+
+
+def _rewrite_manifest(repo, g, text, code):
+    m = repo / "experiments" / "procgen_multiagent_gtm_comm" / "manifest" / "stage2-manifest.md"
+    m.write_text(text.format(code=code))
+    g("commit", "-q", "-am", "edit manifest")
+    return m
+
+
+@pytest.mark.parametrize("text,needle", [
+    ("# M\n**Status: DRAFT**\nDOI 10.17605/OSF.IO/A1B2C\n{code}\n", "DRAFT"),
+    ("# M\nDOI 10.17605/OSF.IO/A1B2C\n{code}\n", "FILED"),
+    ("# M\nStatus: FILED\nDOI 10.17605/OSF.IO/Z9Z9Z\n{code}\n", "DOI"),
+    ("# M\nStatus: FILED\nDOI 10.17605/OSF.IO/A1B2C\n", "expect-commit"),
+    ("# M\nStatus: FILED draft later\nDRAFT\n10.17605/OSF.IO/A1B2C {code}\n",
+     "DRAFT"),
+])
+def test_manifest_content_binding(tmp_path, text, needle):
+    repo, code, g = _git_repo(tmp_path)
+    m = _rewrite_manifest(repo, g, text, code)
+    kw = {**_ok(repo, code), "manifest": m,
+          "manifest_sha256": hashlib.sha256(m.read_bytes()).hexdigest()}
+    assert any(needle in p for p in rc.guard_problems(**kw))
+
+
+def test_manifest_outside_manifest_dir_refused(tmp_path):
+    repo, code, g = _git_repo(tmp_path)
+    m = repo / "docs" / "m.md"
+    m.parent.mkdir()
+    m.write_text(MANIFEST_TMPL.format(code=code))
+    g("add", ".")
+    g("commit", "-q", "-m", "docs manifest")
+    kw = {**_ok(repo, code), "manifest": m,
+          "manifest_sha256": hashlib.sha256(m.read_bytes()).hexdigest()}
+    assert any("must be under" in p for p in rc.guard_problems(**kw))
+
+
+def test_intervening_code_commit_reverted_is_still_refused(tmp_path):
+    repo, code, g = _git_repo(tmp_path)
+    (repo / "code.py").write_text("x = 2\n")
+    g("commit", "-q", "-am", "change")
+    (repo / "code.py").write_text("x = 1\n")
+    g("commit", "-q", "-am", "revert")  # net diff empty, history not
+    assert any("code changed" in p for p in rc.guard_problems(**_ok(repo, code)))
+
+
+@pytest.mark.parametrize("extra", [
+    ["--manifest-doi", "10.17605/OSF.IO/XXXXX"],
+    ["--manifest-sha256", "0" * 64],
+    [],
+])
+def test_main_negative_guards_call_nothing(tmp_path, monkeypatch, extra):
+    repo, code, _ = _git_repo(tmp_path)
+    called = []
+    monkeypatch.setattr(rc, "REPO", repo)
+    monkeypatch.setattr(rc, "_default_train", lambda **kw: called.append("t"))
+    monkeypatch.setattr(rc, "_default_eval", lambda *a, **k: called.append("e"))
+    m = _ok(repo, code)
+    argv = ["--campaign-dir", str(tmp_path / "c"), "--manifest", str(m["manifest"]),
+            "--manifest-sha256", m["manifest_sha256"], "--manifest-doi", DOI,
+            "--expect-commit", code]
+    for i in range(0, len(extra), 2):
+        argv[argv.index(extra[i]) + 1] = extra[i + 1]
+    if not extra:
+        argv += ["--total-pair-steps", "64"]  # trial flag missing
+    assert rc.main(argv) == rc.EXIT_GUARD
+    assert called == [] and not (tmp_path / "c").exists()
+
+
+def test_pin_budget_and_trial_status(tmp_path):
+    c, _ = _campaign(tmp_path, lambda n, kw: _rec(), trial=True)
+    c.pin({"manifest_sha256": "a"})
+    c2, _ = _campaign(tmp_path, lambda n, kw: _rec(), trial=False)
+    with pytest.raises(rc.GuardError, match="trial"):
+        c2.pin({"manifest_sha256": "a"})
+    c3, _ = _campaign(tmp_path, lambda n, kw: _rec(), trial=True)
+    c3.o.total_pair_steps = TOTAL * 2
+    with pytest.raises(rc.GuardError, match="total_pair_steps"):
+        c3.pin({"manifest_sha256": "a"})
+
+
+def test_unpinned_existing_state_refused(tmp_path):
+    c, _ = _campaign(tmp_path, lambda n, kw: _rec())
+    c.store.save(c.store.load(q.build_queue()[0]))
+    with pytest.raises(rc.GuardError, match="unpinned"):
+        c.pin({})
+
+
+def test_run_pins_budget_automatically(tmp_path):
+    c, _ = _campaign(tmp_path, lambda n, kw: _rec())
+    c.run()
+    meta = json.loads((c.dir / "campaign.json").read_text())
+    assert meta["total_pair_steps"] == TOTAL and meta["trial"] is False
 
 
 def test_main_refuses_without_doi_and_trains_nothing(tmp_path, monkeypatch):

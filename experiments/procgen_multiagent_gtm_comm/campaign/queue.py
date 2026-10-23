@@ -68,6 +68,7 @@ def new_state(spec: RunSpec) -> dict:
         "infra_failures": 0, "eval_failures": 0, "eval_done": False,
         "archived": False, "attempts": [], "last_checkpoint": None,
         "failure_reason": None, "started_at": None, "finished_at": None,
+        "infra_exhausted": False,
     }
 
 
@@ -137,7 +138,7 @@ def summarize(states: list[dict]) -> dict[str, int]:
     out: dict[str, int] = {}
     for s in states:
         key = s["status"]
-        if infra_exhausted(s):
-            key = "infra_exhausted"
+        if s.get("infra_exhausted"):
+            key = "training_failure(infra_exhausted)"
         out[key] = out.get(key, 0) + 1
     return out

@@ -6,20 +6,24 @@
         --manifest-doi 10.17605/OSF.IO/XXXXX --expect-commit <40-hex> \
         [--archive-to user@host:/path] [--dry-run --throughput-json t.json]
 
-Hard guards (all must pass, else exit 2 before any training): OSF DOI
-given, manifest file tracked in git and matching ``--manifest-sha256``,
-git tree clean, HEAD == ``--expect-commit`` and that commit is recorded
-in the manifest. Before every run on Linux: nvidia-smi free memory
->= ``--min-free-gb``. Other processes are never signalled or killed.
+Hard guards (campaign/guards.py, shared with the harness CLIs; all must
+pass, else exit 2 before any training): real-looking OSF DOI, FILED
+(not DRAFT) manifest under the manifest/ folder containing that DOI and
+the expected commit, tracked in git, matching ``--manifest-sha256``; git
+tree clean; HEAD == ``--expect-commit`` or a descendant whose every
+intervening commit only touched docs/ or the manifest folder. The budget
+and trial flag are pinned in campaign.json at first start. Before every
+run on Linux: nvidia-smi free memory >= ``--min-free-gb``. Other
+processes are never signalled or killed. After 3 infrastructure
+failures a run becomes a training failure (amendment: evaluated at the
+last finite checkpoint, else at initialisation; never replaced).
 """
 from __future__ import annotations
 
 import argparse
 import fcntl
-import hashlib
 import json
 import platform
-import re
 import shutil
 import subprocess
 import sys
@@ -30,87 +34,15 @@ from pathlib import Path
 from typing import Any
 
 from . import queue as q
+from .guards import (  # noqa: F401 - re-exported for callers and tests
+    HEX40,
+    REPO,
+    GuardError,
+    guard_problems,
+    normalize_doi,
+)
 
-REPO = Path(__file__).resolve().parents[3]
-DOI_RE = re.compile(r"^10\.\d{4,9}/\S+$")
-HEX40 = re.compile(r"^[0-9a-f]{40}$")
 EXIT_OK, EXIT_ERROR, EXIT_GUARD, EXIT_GPU, EXIT_STOP, EXIT_PROBLEMS = 0, 1, 2, 3, 4, 5
-
-
-class GuardError(RuntimeError):
-    """A hard guard refused the campaign start."""
-
-
-def _git(repo: Path, *args: str) -> str:
-    r = subprocess.run(["git", "-C", str(repo), *args], capture_output=True,
-                       text=True, timeout=60)
-    if r.returncode != 0:
-        raise GuardError(f"git {' '.join(args)} failed: {r.stderr.strip()}")
-    return r.stdout.strip()
-
-
-def normalize_doi(doi: str | None) -> str | None:
-    if not doi:
-        return None
-    d = doi.strip()
-    d = re.sub(r"^(https?://)?(dx\.)?doi\.org/", "", d)
-    return d if DOI_RE.match(d) else None
-
-
-def guard_problems(*, repo: Path, manifest: Path | None, manifest_sha256: str | None,
-                   manifest_doi: str | None, expect_commit: str | None) -> list[str]:
-    """All reasons the campaign must refuse to start (empty list = go)."""
-    bad: list[str] = []
-    if normalize_doi(manifest_doi) is None:
-        bad.append("--manifest-doi missing or not a DOI (10.xxxx/...): the "
-                   "stage-2 manifest must be filed on OSF first")
-    if manifest is None or not Path(manifest).is_file():
-        bad.append("--manifest missing or not a file")
-        manifest = None
-    if not manifest_sha256:
-        bad.append("--manifest-sha256 missing")
-    if manifest is not None and manifest_sha256:
-        actual = hashlib.sha256(Path(manifest).read_bytes()).hexdigest()
-        if actual != manifest_sha256.strip().lower():
-            bad.append(f"manifest SHA-256 mismatch (file {actual})")
-    if not expect_commit or not HEX40.match(expect_commit.strip().lower()):
-        bad.append("--expect-commit missing or not a full 40-hex commit")
-        expect_commit = None
-    try:
-        if _git(repo, "status", "--porcelain"):
-            bad.append("git tree is dirty (uncommitted or untracked files)")
-        head = _git(repo, "rev-parse", "HEAD")
-        if expect_commit and head != expect_commit.strip().lower():
-            bad.extend(_head_vs_commit(repo, head, expect_commit.strip().lower()))
-        if manifest is not None:
-            r = subprocess.run(
-                ["git", "-C", str(repo), "ls-files", "--error-unmatch",
-                 str(Path(manifest).resolve())],
-                capture_output=True, text=True)
-            if r.returncode != 0:
-                bad.append("manifest file is not tracked in git (must be committed)")
-    except GuardError as exc:
-        bad.append(str(exc))
-    if manifest is not None and expect_commit:
-        if expect_commit.strip().lower() not in Path(manifest).read_text().lower():
-            bad.append("--expect-commit is not recorded in the manifest text")
-    return bad
-
-
-def _head_vs_commit(repo: Path, head: str, expect: str) -> list[str]:
-    """HEAD may differ from the recorded code commit only by later commits
-    that touch nothing outside docs/ (the manifest itself is committed after
-    the code it records, so it cannot name its own commit)."""
-    anc = subprocess.run(["git", "-C", str(repo), "merge-base", "--is-ancestor",
-                          expect, head], capture_output=True)
-    if anc.returncode != 0:
-        return [f"HEAD {head} != --expect-commit {expect} (not a descendant)"]
-    changed = _git(repo, "diff", "--name-only", f"{expect}..{head}").splitlines()
-    outside = [c for c in changed if not c.startswith("docs/")]
-    if outside:
-        return [f"HEAD {head} != --expect-commit {expect} and code changed "
-                f"since: {outside[:5]}"]
-    return []
 
 
 def gpu_free_gb(runner: Callable[..., Any] = subprocess.run) -> float | None:
@@ -157,6 +89,7 @@ class Options:
     gpu_wait_s: float = 0.0
     archive_to: str | None = None
     max_concurrent: int = 1
+    trial: bool = False  # non-registered budget; never the real campaign
     train_kwargs: dict | None = None  # test / smoke overrides (n_pairs, ...)
     env_factory: Callable[[int], Any] | None = None
 
@@ -190,6 +123,7 @@ class Campaign:
         self.gpu_fn = gpu_fn or gpu_free_gb
         self.archive_fn = archive_fn or rsync_archive
         self.log = log
+        self._pinned = False
 
     # -- logging ----------------------------------------------------
     def event(self, **kw) -> None:
@@ -200,18 +134,23 @@ class Campaign:
 
     # -- pinning ----------------------------------------------------
     def pin(self, pins: dict) -> None:
-        """Record the guard inputs; refuse to resume under different ones."""
+        """Record guard inputs, budget and trial flag; refuse other inputs."""
+        pins = {**pins, "total_pair_steps": self.o.total_pair_steps,
+                "trial": self.o.trial}
         self.dir.mkdir(parents=True, exist_ok=True)
         p = self.dir / "campaign.json"
         if p.exists():
             old = json.loads(p.read_text())
             diff = {k: (old.get(k), v) for k, v in pins.items() if old.get(k) != v}
             if diff:
-                raise GuardError(f"campaign pinned to other inputs: {diff}")
+                raise GuardError(
+                    f"campaign pinned to other inputs (trial/registered "
+                    f"cannot be mixed, nor budget changed): {diff}")
         else:
-            p.write_text(json.dumps({**pins, "created": _now(),
-                                     "total_pair_steps": self.o.total_pair_steps},
-                                    indent=2))
+            if any((self.dir / "status").glob("*.json")):
+                raise GuardError("unpinned campaign dir already holds run state")
+            p.write_text(json.dumps({**pins, "created": _now()}, indent=2))
+        self._pinned = True
 
     # -- gpu --------------------------------------------------------
     def gpu_ok(self) -> tuple[bool, float | None]:
@@ -308,17 +247,49 @@ class Campaign:
         self.store.save(st)
         self.event(run=spec.run_id, phase="archive", state="done")
 
+    def find_last_checkpoint(self, spec: q.RunSpec) -> str | None:
+        """Newest finite checkpoint of the latest attempt that wrote one,
+        as a path relative to the run directory (current dir, then the
+        ``.failed-<n>`` dirs from the most recent attempt back)."""
+        rd = self.run_dir(spec)
+        fails = sorted(rd.parent.glob(f"{spec.run_id}.failed-*"),
+                       key=lambda d: int(d.name.rsplit("-", 1)[1]), reverse=True)
+        for d in [rd, *fails]:
+            cks = sorted(d.glob("ckpt_*.safetensors"),
+                         key=lambda f: int(f.stem.split("_")[1].split(".")[0]))
+            if cks:
+                return cks[-1].name if d == rd else f"../{d.name}/{cks[-1].name}"
+        return None
+
+    def finalize_exhausted(self, spec: q.RunSpec, st: dict) -> None:
+        """3 infra failures = training failure (amendment): keep the run,
+        evaluate its last finite checkpoint, else the initialisation."""
+        if not q.infra_exhausted(st):
+            return
+        st.update(
+            status=q.TRAINING_FAILURE, infra_exhausted=True,
+            last_checkpoint=self.find_last_checkpoint(spec),
+            failure_reason=("still failing after 2 restarts: "
+                            + str(st["failure_reason"])),
+            finished_at=_now())
+        self.store.save(st)
+        self.event(run=spec.run_id, phase="train", state="exhausted_to_training_"
+                   "failure", ckpt=st["last_checkpoint"])
+
     # -- the loop ---------------------------------------------------
     def stop_requested(self) -> bool:
         return (self.dir / "STOP").exists()
 
     def run(self) -> int:
         queue = q.build_queue()
+        if not self._pinned:
+            self.pin({})
         for spec in queue:
             if self.stop_requested():
                 self.event(phase="campaign", state="stopped_by_STOP_file")
                 return EXIT_STOP
             st = self.store.recover_stale(spec)
+            self.finalize_exhausted(spec, st)
             if q.needs_training(st):
                 ok, free = self.gpu_ok()
                 if not ok:
@@ -334,15 +305,15 @@ class Campaign:
                             self.event(phase="campaign", state="gpu_guard_refused",
                                        free_gb=free, next_run=spec.run_id)
                             return EXIT_GPU
+                self.finalize_exhausted(spec, st)
             while q.needs_eval(st):
                 self.evaluate(spec, st)
             if q.needs_archive(st):
                 self.archive(spec, st)
         states = [self.store.load(s) for s in queue]
         self.event(phase="campaign", state="finished", summary=q.summarize(states))
-        problems = [s for s in states if q.infra_exhausted(s)
-                    or (s["status"] in (q.TRAINED, q.TRAINING_FAILURE)
-                        and not s["eval_done"])]
+        problems = [s for s in states if s["status"] in (q.TRAINED, q.TRAINING_FAILURE)
+                    and not s["eval_done"]]
         return EXIT_PROBLEMS if problems else EXIT_OK
 
 
@@ -399,6 +370,8 @@ def main(argv: list[str] | None = None) -> int:
         problems.append(str(exc))
     if a.total_pair_steps != q.TOTAL_PAIR_STEPS and not a.non_registered_trial:
         problems.append("--total-pair-steps differs from the registered 50M")
+    if a.non_registered_trial and a.total_pair_steps == q.TOTAL_PAIR_STEPS:
+        problems.append("--non-registered-trial with the registered 50M budget")
     if a.dry_run:
         return _dry_run(a, problems)
     if problems:
@@ -406,7 +379,8 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_GUARD
     opts = Options(campaign_dir=a.campaign_dir, total_pair_steps=a.total_pair_steps,
                    min_free_gb=a.min_free_gb, gpu_wait_s=a.gpu_wait_s,
-                   archive_to=a.archive_to, max_concurrent=a.max_concurrent)
+                   archive_to=a.archive_to, max_concurrent=a.max_concurrent,
+                   trial=a.non_registered_trial)
     camp = Campaign(opts)
     camp.dir.mkdir(parents=True, exist_ok=True)
     with open(camp.dir / "campaign.lock", "w") as lock:
