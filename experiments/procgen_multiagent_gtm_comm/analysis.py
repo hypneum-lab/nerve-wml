@@ -13,7 +13,7 @@ Input format of :func:`primary_report`
 * ``arm`` in ``{"gtm", "mlp", "atoc", "dial", "eng", "nocomm"}``,
 * ``condition`` in ``{"registered", "closed"}`` (the closed condition
   has gtm, dial, eng, nocomm),
-* the inner dict holding one length-5 array per seed (same seed order
+* the inner dict holding one length-6 array per seed (same seed order
   in every cell) for the metrics
 
   - ``"R"``: held-out team reward (success rate, range 1),
@@ -27,7 +27,7 @@ Input format of :func:`primary_report`
   disambiguates runs reaching it at the final 50M evaluation (also
   time 50M) from runs never reaching it (time 50M, flag False).
 
-Every array must be 1-D, of exactly 5 finite values; malformed cells
+Every array must be 1-D, of exactly 6 finite values; malformed cells
 raise ``ValueError``.
 
 Output of :func:`primary_report` (all intervals are
@@ -52,7 +52,7 @@ N_SECONDARY = 9
 N_ENV = 1
 
 
-N_SEEDS = 5
+N_SEEDS = 6  # amendment 2026-10-23 (second round): seeds 0,17,42,73,101,131
 
 
 def _var(x):
