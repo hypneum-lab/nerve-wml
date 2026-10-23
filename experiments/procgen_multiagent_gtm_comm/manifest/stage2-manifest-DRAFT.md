@@ -1,29 +1,29 @@
 # N10-C stage-2 configuration manifest
 
-**Status: DRAFT — to be filed on OSF by the PI as stage 2 before any run.**
+**Status: DRAFT — not frozen (see freeze rule: committed by a frozen git tag before any run).**
 
-Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). Immutable once filed. Runs started before filing are excluded from all analyses and reported.
+Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). Immutable once frozen. Runs started before the freeze tag are excluded from all analyses and reported.
 
 ## 1. Commit, integer codes and bus
 
-- Harness commit at manifest time: `032aad27ee0cc4e7532002ace98582fef3333f66` (source: N10C_COMMIT env). **The final filing commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
+- Harness commit at manifest time: `c37a2955609e782ff725ae085ee403a0e49caeab` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
 - Code identity independent of git (SHA-256 of each file at manifest time):
 
 | file | SHA-256 |
 |---|---|
-| `experiments/procgen_multiagent_gtm_comm/coop_env.py` | `177aab24c74328cef071e29d21ef02769490b19d35787ddaf8c51958f8d71a16` |
+| `experiments/procgen_multiagent_gtm_comm/coop_env.py` | `9fcf95ea0736f7e7821e4872d587ce1c98f1114506095f1eaa11639bba253873` |
 | `experiments/procgen_multiagent_gtm_comm/harness/__init__.py` | `82d6bfc42ee49ac2c985f1463ca97a7cc7f36cb74218ce296702f05be4701e56` |
 | `experiments/procgen_multiagent_gtm_comm/harness/bus.py` | `1bb3bc23aec588da8bfb73864215e00ee5a4510324ff3d1045bb0b9af21703c2` |
 | `experiments/procgen_multiagent_gtm_comm/harness/codes.py` | `84244b17f076bf0154054e615f2df51d9b4d16fae69cf630c0a83089124c1098` |
 | `experiments/procgen_multiagent_gtm_comm/harness/comm.py` | `88bc176ab933cde3dfb2849c66b08c8b8dc5244566758a84f6255c3e7904a98d` |
-| `experiments/procgen_multiagent_gtm_comm/harness/evaluate.py` | `9af0ce2eaecbf572f458af098cb507f5260e1edf9fd428d8ac497e576f687b0d` |
+| `experiments/procgen_multiagent_gtm_comm/harness/evaluate.py` | `44a407f539ac212fda7cdb6adfc72a505b9c2a281329322bbbb517de1080b82f` |
 | `experiments/procgen_multiagent_gtm_comm/harness/gtm_mlx.py` | `daba415dcf627927c9545501f4c8592448b8e1f4667dc50b0de0459385f92faf` |
-| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `8c4ea0ef7fc94f90d20182827225999681b496c3dca6b8d4371207e5e479c0a5` |
+| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `6d4e63522b5f77b9c596a7e8a550913933a3a54882cf0ebc3c523e61dfe5194e` |
 | `experiments/procgen_multiagent_gtm_comm/harness/policy.py` | `b1fc49bcb2b0648ba74aaef2b8d2d6aec1e6a6935ff19651a97251bc756b9826` |
 | `experiments/procgen_multiagent_gtm_comm/harness/rollout.py` | `5f291b8c99eed91e1bd62320b842ed2b51af349297da7340b11901e962aa65a5` |
-| `experiments/procgen_multiagent_gtm_comm/harness/throughput.py` | `c4ac580781b180e53b144aef82986d8e1cab3de0f232b611cea7b76a054d4ba9` |
-| `experiments/procgen_multiagent_gtm_comm/harness/train.py` | `5f0e5894ccd212eeceead6c6bc606e470bfdd15bd8ce48f27a2380fd215e32cf` |
-| `experiments/procgen_multiagent_gtm_comm/harness/vec_env.py` | `efc07d11ea01452029e24468c7551b531c4ba533e984a46b8ca6984e0a61a7b7` |
+| `experiments/procgen_multiagent_gtm_comm/harness/throughput.py` | `f0c03a4eb62184a114b83c3ba6a839b6542dc067a5728a64580477f234de616f` |
+| `experiments/procgen_multiagent_gtm_comm/harness/train.py` | `2e0bca0ddcba78230d02a5eedeec7e51a9bda447fcaac12f7ad8e04a9f2d0a16` |
+| `experiments/procgen_multiagent_gtm_comm/harness/vec_env.py` | `81b8b8446916bd7eb5015be472fae5b1bc55aea3c01cfd2f4ac1b6d8a69e2d2a` |
 | `experiments/procgen_multiagent_gtm_comm/harness/requirements.lock` | `8609ef54bb4d5879bcd4159fa45624048da05b4e077e15ca2bee748fa09724e8` |
 
 - Files covered: `coop_env.py` (environment), the MLX PPO-MA harness (`harness/`: vec_env, comm, policy, rollout, train, evaluate) and the message bus (`harness/bus.py`).
@@ -115,11 +115,25 @@ The measured macM1 estimate is within the amendment's planning figure.
 
 Host is a block factor fixed per seed; all arms and both conditions of a seed run on that seed's host.
 
-- macM1: seeds {0, 17, 42} (Apple M1 Max, 32 GB, MLX Metal); micro_batch_pairs = none (full minibatch), clear_cache = off, n_workers = 1 (planned launch value; confirm at launch).
-- KXKM-AI: seeds {73, 101, 131} (RTX 4090 24 GB, MLX CUDA 12); micro_batch_pairs = 512, clear_cache = on, n_workers = 1 (planned launch value; confirm at launch).
+- macM1: seeds {0, 17, 42} (Apple M1 Max, 32 GB, MLX Metal); micro_batch_pairs = none (full minibatch), clear_cache = off, n_workers = 1 (planned launch value; confirm at launch; no measurement, default 1).
+- KXKM-AI: seeds {73, 101, 131} (RTX 4090 24 GB, MLX CUDA 12); micro_batch_pairs = 512, clear_cache = on, n_workers = 8 (planned launch value; confirm at launch; measured +8 % end to end vs 1, bench/kxkm/README.md).
 - KXKM-AI software (venv310, recorded 2026-10-23, re-verify at deploy): python 3.10.18, mlx 0.31.1, mlx-cuda-12 0.31.1, numpy 1.26.4, gym3 0.3.3, gym 0.26.2, procgen 0.10.7; `CUDA_HOME` must point at the CUDA headers for the JIT kernels. Version pins: mlx 0.31.1 and mlx-cuda-12 0.31.1 on KXKM-AI; MLX 0.31.1 (Metal) on macM1.
 - KXKM-AI Procgen build: the official Procgen 0.10.7 x86-64 wheel `procgen-0.10.7-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl`, PyPI SHA-256 `4b594d14e42f0f2166e59a9e294477b906eb99c90c3343b570b7124cbc865f53`.
-- ALL evaluations (200 held-out levels, intact and shuffled passes, cross-seed probe) run on KXKM-AI with the x86-64 build; macM1 checkpoints are copied there. **The two Procgen builds are NOT bit-identical**: on 20 of 20 CoinRun levels tested the frame / reward streams differ between macM1 (arm64) and KXKM-AI (x86-64), although each machine is deterministic across reruns; frames agree early in an episode on some levels and diverge late (reports/bench-m3-kxkm-es.md and its frames files). macM1-trained models are therefore evaluated on the x86 rendering.
+- ALL evaluations (200 held-out levels, intact and shuffled passes, cross-seed probe) run on KXKM-AI with the x86-64 build; macM1 checkpoints are copied there. **The two Procgen builds are NOT bit-identical**: on 20 of 20 CoinRun levels tested the frame / reward streams differ between macM1 (arm64) and KXKM-AI (x86-64), although each machine is deterministic across reruns; frames agree early in an episode on some levels and diverge late. Evidence, procedure and result archived in `experiments/procgen_multiagent_gtm_comm/bench/procgen-builds/README.md`; SHA-256 of the archived files:
+
+| file | SHA-256 |
+|---|---|
+| `README.md` | `15d5eff766f0417b9e8db81b6efb893e70dab6a80aec21714725149de642235c` |
+| `frames.py` | `38e945bff44bd1df9474c7a6f77aa5a0a27c241526c483feea7ff0059bb7088d` |
+| `frames2.py` | `492e717831ed45b57fe2e707b8e2933120604d8ba96a81dfa47e2e0f1a100370` |
+| `frames_kxkm.json` | `2534fcc0df757b2eba397aecb6a1195d6898db195fc7e89cc176d21c80e30df2` |
+| `frames_kxkmb.json` | `2534fcc0df757b2eba397aecb6a1195d6898db195fc7e89cc176d21c80e30df2` |
+| `frames_macm1.json` | `d3c4bd15db59ac8f049b2b8c10b2c8881fbd60c1a3751a894da3c19206445493` |
+| `frames_macm1b.json` | `d3c4bd15db59ac8f049b2b8c10b2c8881fbd60c1a3751a894da3c19206445493` |
+| `h_kxkm.txt` | `b038143f2b80649ac856e4eedafc8f78439a6c37c835c7fbc0ea0ac96e501a3b` |
+| `h_macm1.txt` | `cc41042fa1e1eb27b62f66ea3a6c73a95a1ea9bd53dbf0384f634c31f488d5a0` |
+
+macM1-trained models are therefore evaluated on the x86 rendering.
 
 ### Reproducibility (nondeterminism)
 
@@ -143,7 +157,7 @@ Development used only the stub (unit tests with scripted environments), these sm
 
 ## Artefact archiving (PI decision 2026-10-23)
 
-After each run and each evaluation, the run directory (`run.json`, checkpoints, EvalRecord JSON) is copied to electron-server (Tailscale 100.78.191.52) for storage. The copy is post-hoc storage only and changes no registered quantity. macM1 checkpoints are additionally copied to KXKM-AI for evaluation (campaign `sync` step). Destination path: **to be filled by the PI before filing**: `<PATH>`. (This item is outside items 1-4 of the amendment's manifest list; flagged for the PI.)
+After each run and each evaluation, the run directory (`run.json`, checkpoints, EvalRecord JSON) is copied to electron-server (Tailscale 100.78.191.52) for storage. The copy is post-hoc storage only and changes no registered quantity. macM1 checkpoints are additionally copied to KXKM-AI for evaluation (campaign `sync` step). Destination path: **to be filled by the PI before the freeze**: `<PATH>`. (This item is outside items 1-4 of the amendment's manifest list; flagged for the PI.)
 
 ## Implementation rulings disclosed
 
@@ -157,5 +171,5 @@ After each run and each evaluation, the run directory (`run.json`, checkpoints, 
 - Task 6: the engineered right-minus-left counter counts only actions the environment applies (an agent that already finished is frozen; its actions are ignored).
 - Task 6: GTM and DIAL message noise is stored per pair-step in the rollout and replayed in the PPO update (so the PPO ratio is 1 for an unchanged policy).
 - Task 7: evaluation action sampling = one uniform per agent per step (agent 0 then agent 1) from default_rng([20261023, j]), inverse CDF on the float64 softmax; identical across passes and models. Evaluation episodes are capped at 5,000 steps (an error, not an outcome). Evaluation messages are deterministic (GTM argmax symbols).
-- R4: gradient accumulation (micro_batch_pairs, clear_cache; PR #53) and n_workers (PR #54) are separate branches; both must be merged before the filing commit is recorded. The KXKM-AI settings above refer to them.
-- Task 9: smoke runs = 1 per arm in the registered condition plus gtm in the closed condition, 200,000 pair-steps each (7 runs), training levels only. The amendment allows up to 3 per arm of up to 1M steps; more may be added before filing within that cap.
+- R4: gradient accumulation (micro_batch_pairs, clear_cache; PR #53) and n_workers (PR #54) are merged into the harness branch; the freeze commit must contain both. The KXKM-AI settings above refer to them.
+- Task 9: smoke runs = 1 per arm in the registered condition plus gtm in the closed condition, 200,000 pair-steps each (7 runs), training levels only. The amendment allows up to 3 per arm of up to 1M steps; more may be added before the freeze within that cap.
