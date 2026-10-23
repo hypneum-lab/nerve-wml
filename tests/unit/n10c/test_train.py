@@ -498,3 +498,25 @@ def test_uneven_last_minibatch_end_to_end(tmp_path):
         assert r.optimizer_steps == 24  # 2 * (3 mb * 3 ep) + 2 mb * 3 ep
     for k in ref:
         assert np.abs(ref[k] - acc[k]).max() <= 24 * 2 * 5e-4 + 1e-6
+
+
+def test_train_run_identical_first_rollout_across_worker_counts(tmp_path):
+    from tests.unit.n10c.scripted_env import rand_factory
+
+    acts, params = {}, {}
+    for nw in (1, 2):
+        def grab(u, buf, nw=nw):
+            acts.setdefault(nw, buf.actions.copy())
+
+        train_run(
+            "gtm", 3, "registered", PER_UPDATE, tmp_path / f"w{nw}",
+            env_factory=rand_factory, n_pairs=NP, horizon=H,
+            log_every_pair_steps=PER_UPDATE, ckpt_every_pair_steps=PER_UPDATE,
+            n_workers=nw, _rollout_hook=grab,
+        )
+        params[nw] = mx.load(str(tmp_path / f"w{nw}" / "ckpt_8.safetensors"))
+    assert np.array_equal(acts[1], acts[2])
+    for k in ("pi.weight", "v.weight", "fuse.bias"):
+        d = np.abs(np.array(params[1][k]) - np.array(params[2][k]))
+        assert d.max() <= 3 * 2 * 5e-4 + 1e-6
+        assert (d <= 1e-5).mean() > 0.95

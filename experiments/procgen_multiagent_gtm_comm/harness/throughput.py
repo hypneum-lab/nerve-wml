@@ -77,7 +77,7 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
                        env_factory: Callable[[int], Any] | None = None,
                        n_pairs: int = 64, horizon: int = 128,
                        eval_levels: range = TRAIN_LEVELS,
-                       skip: int = STEADY_SKIP) -> dict:
+                       skip: int = STEADY_SKIP, n_workers: int = 1) -> dict:
     """Measure end-to-end training throughput of ``arm`` (untrained start).
 
     One job, real env (unless ``env_factory`` is given for tests), policy,
@@ -99,6 +99,7 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
             Path(td), env_factory=env_factory, n_pairs=n_pairs,
             horizon=horizon, log_every_pair_steps=n_pairs * horizon,
             ckpt_every_pair_steps=10**12, _rollout_hook=hook,
+            n_workers=n_workers,
         )
         wall = time.time() - t0
     deltas = np.diff(stamps)  # cycle u = update u + rollout u+1
@@ -109,6 +110,7 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
         "arm": arm,
         "n_updates": n_updates,
         "n_pairs": n_pairs,
+        "n_workers": n_workers,  # implementation setting, not registered
         "horizon": horizon,
         "pair_steps": rec.pair_steps_done,
         "wall_s_incl_warmup": wall,
@@ -182,6 +184,7 @@ def main() -> None:
     t = sub.add_parser("throughput")
     t.add_argument("--arms", nargs="+", default=["gtm", "nocomm"])
     t.add_argument("--n-updates", type=int, default=20)
+    t.add_argument("--n-workers", type=int, default=1)
     t.add_argument("--out", type=Path, required=True)
     s = sub.add_parser("smoke")
     s.add_argument("--runs-dir", type=Path, required=True)
@@ -193,7 +196,8 @@ def main() -> None:
                "results": {}}
         a.out.parent.mkdir(parents=True, exist_ok=True)
         for arm in a.arms:
-            res["results"][arm] = measure_throughput(arm, a.n_updates)
+            res["results"][arm] = measure_throughput(
+                arm, a.n_updates, n_workers=a.n_workers)
             a.out.write_text(json.dumps(res, indent=2))  # incremental
             print(json.dumps({arm: res["results"][arm]}), flush=True)
     else:

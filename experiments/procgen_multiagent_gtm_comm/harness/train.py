@@ -122,7 +122,7 @@ class EngCounters:
 
 
 def _assert_not_stub(vec: VecCoopEnv) -> None:
-    if any(getattr(e, "using_stub", False) for e in vec.envs):
+    if vec.using_stub():
         raise RuntimeError(
             "procgen stub in use: a scientific run must use real procgen "
             "(infrastructure failure, run not started)"
@@ -257,6 +257,7 @@ def train_run(
     micro_batch_pairs: int | None = None,
     clear_cache: bool = False,
     restarts: int = 0,
+    n_workers: int = 1,
     _fault_hook: Callable[[int, PairPolicy], None] | None = None,
     _rollout_hook: Callable[[int, RolloutBuffer], None] | None = None,
 ) -> RunRecord:
@@ -287,7 +288,7 @@ def train_run(
 
     vec = VecCoopEnv(
         n_pairs, env_ss, team_summary=(condition == "registered"),
-        env_factory=env_factory,
+        env_factory=env_factory, n_workers=n_workers,
     )
     try:
         _assert_not_stub(vec)  # raises before any training
@@ -482,12 +483,14 @@ def main() -> None:
     p.add_argument("--clear-cache", action="store_true",
                    help="mx.clear_cache() once per rollout update (after its "
                         "optimizer steps), not per minibatch")
+    p.add_argument("--n-workers", type=int, default=1)
     a = p.parse_args()
     rec = train_run(
         a.arm, a.seed, a.condition, a.steps, a.out, n_pairs=a.n_pairs,
         horizon=a.horizon, log_every_pair_steps=a.log_every,
         ckpt_every_pair_steps=a.ckpt_every,
         micro_batch_pairs=a.micro_batch_pairs, clear_cache=a.clear_cache,
+        n_workers=a.n_workers,
     )
     print(json.dumps({k: v for k, v in asdict(rec).items() if k != "losses"}))
 
