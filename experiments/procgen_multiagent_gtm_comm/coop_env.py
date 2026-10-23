@@ -271,6 +271,22 @@ class ProcgenCoopEnv:
             out.append(vec)
         return out
 
+    def window_view(self, i: int) -> tuple[bool, int]:
+        """Agent ``i``'s own coin timing inside the open DELTA_T window.
+
+        Returns ``(reached, remaining)``: whether agent ``i`` reached
+        its coin inside the currently open window, and the number of
+        later steps (0..DELTA_T) on which its partner's coin still
+        earns the team reward. This is exactly what the partner's
+        team summary carries, computed whether or not ``team_summary``
+        is open. It is never delivered as an observation (the
+        engineered reference sender reads it, see the amendment).
+        """
+        elapsed = self._steps_since_first_coin
+        if self._first_coin_agent != i or elapsed is None:
+            return False, 0
+        return True, self.delta_t - elapsed + 1
+
     @staticmethod
     def _to_image(obs: Any) -> np.ndarray:
         # Real procgen gym3 envs return {"rgb": [1, H, W, 3]} ; the

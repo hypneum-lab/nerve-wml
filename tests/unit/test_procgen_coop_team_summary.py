@@ -204,3 +204,30 @@ def test_stub_is_rejected_unless_allowed(monkeypatch) -> None:
         ProcgenCoopEnv(seed=0)
     env = ProcgenCoopEnv(seed=0, allow_stub=True)
     assert env.using_stub
+
+
+def test_window_view_matches_summary() -> None:
+    env, _ = _env(True, ({0}, set()))
+    assert env.window_view(0) == (False, 0)
+    for _ in range(DELTA_T):
+        env.step([0, 0])
+        summary = env.team_summaries()[1]
+        assert env.window_view(0) == (
+            bool(summary[0] == 1.0),
+            round(float(summary[1]) * DELTA_T),
+        )
+        assert env.window_view(0)[0]
+        assert env.window_view(1) == (False, 0)
+    assert env.window_view(0) == (True, 1)
+    env.step([0, 0])  # window expires
+    assert env.window_view(0) == (False, 0)
+
+
+def test_window_view_available_when_closed() -> None:
+    env, _ = _env(False, ({0}, set()))
+    assert env.team_summaries() is None
+    env.step([0, 0])
+    assert env.window_view(0) == (True, DELTA_T)
+    assert env.window_view(1) == (False, 0)
+    env.reset()
+    assert env.window_view(0) == (False, 0)
