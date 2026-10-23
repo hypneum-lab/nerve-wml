@@ -133,5 +133,83 @@ def test_manifest_flags_estimate_above_planning_figure(tmp_path):
     est = manifest.compute_estimate(
         {"gtm": {"pair_steps_per_s": 500.0, "eval_proxy": {"seconds_per_model_2x200": 100.0}},
          "nocomm": {"pair_steps_per_s": 1000.0, "eval_proxy": {"seconds_per_model_2x200": 50.0}}})
-    assert est["hours_per_run_gtm"] == pytest.approx(50e6 / 500 / 3600 + 100 / 3600)
+    assert est["hours_per_run_gtm"] == pytest.approx(50e6 / 500 / 3600)  # eval runs on KXKM
     assert est["total_hours"] > 0
+
+
+def test_seed_host_mapping_is_frozen():
+    from experiments.procgen_multiagent_gtm_comm.harness import codes
+
+    assert codes.SEEDS == (0, 17, 42, 73, 101, 131)
+    assert codes.SEED_HOST == {0: "macm1", 17: "macm1", 42: "macm1",
+                               73: "kxkm", 101: "kxkm", 131: "kxkm"}
+    assert set(codes.SEED_HOST) == set(codes.SEEDS)
+    # three seeds per host
+    assert sorted(codes.SEED_HOST.values()) == ["kxkm"] * 3 + ["macm1"] * 3
+
+
+def test_manifest_records_both_hosts_and_builds(tmp_path):
+    text = _manifest(tmp_path)
+    for needle in (
+            "seeds {0, 17, 42, 73, 101, 131}",
+            "macM1: seeds {0, 17, 42}", "KXKM-AI: seeds {73, 101, 131}",
+            # both Procgen builds, patch SHA and wheel hash
+            "df9bbfa1d454ee51cbea1b8af47fbb1966a79f4a075357ba2a4c95acca834e7f",
+            "4b594d14e42f0f2166e59a9e294477b906eb99c90c3343b570b7124cbc865f53",
+            "procgen-0.10.7-cp310-cp310-manylinux_2_17_x86_64",
+            "NOT bit-identical",
+            # versions and KXKM settings
+            "mlx-cuda-12", "0.31.1", "micro_batch_pairs = 512", "clear_cache = on",
+            "n_workers",
+            # nondeterminism statement
+            "nondeterministic", "statistically, not bitwise",
+            "will not retrace", "bench/kxkm/repeat",
+            # evaluation host
+            "ALL evaluations", "x86-64"):
+        assert needle in text, needle
+    assert "single build" not in text
+    assert "has not been checked" not in text
+    assert "seeds {0, 17, 42, 73, 101}." not in text
+
+
+def test_manifest_counts_60_runs_and_two_hosts(tmp_path):
+    text = _manifest(tmp_path)
+    assert "60 runs" in text and "50 runs" not in text
+    d = tmp_path / "m"
+    d.mkdir()
+    (d / "throughput.json").write_text(json.dumps({"measured_on": "t", "results": {
+        "gtm": {"pair_steps_per_s": 775.8, "agent_samples_per_s": 1551.6,
+                "steady_s_per_update_cycle": 10.5,
+                "pair_steps_per_s_incl_warmup": 774.0,
+                "uptime_before": "up", "uptime_after": "up",
+                "eval_proxy": {"levels": [0, 16], "seconds_per_model_2x200": 402.0,
+                               "label": "PROXY"}},
+        "nocomm": {"pair_steps_per_s": 805.6, "agent_samples_per_s": 1611.2,
+                   "steady_s_per_update_cycle": 10.1,
+                   "pair_steps_per_s_incl_warmup": 800.0,
+                   "uptime_before": "up", "uptime_after": "up",
+                   "eval_proxy": {"levels": [0, 16], "seconds_per_model_2x200": 219.0,
+                                  "label": "PROXY"}}}}))
+    manifest.write_manifest(d / "out.md")
+    out = (d / "out.md").read_text()
+    assert "macM1" in out and "bottleneck" in out
+    assert "324 h" in out or "323 h" in out  # 30 x 10.77 h on KXKM
+
+
+def test_compute_estimate_splits_hosts():
+    res = {"gtm": {"pair_steps_per_s": 775.8,
+                   "eval_proxy": {"seconds_per_model_2x200": 402.0}},
+           "nocomm": {"pair_steps_per_s": 805.6,
+                      "eval_proxy": {"seconds_per_model_2x200": 219.0}}}
+    e = manifest.compute_estimate(res)
+    # macM1: 30 runs (6 gtm + 24 others), training only
+    mac = 6 * 50e6 / 775.8 / 3600 + 24 * 50e6 / 805.6 / 3600
+    assert e["macm1_hours"] == pytest.approx(mac)
+    assert e["kxkm_train_hours"] == pytest.approx(30 * 50e6 / 1290 / 3600)
+    # evaluation of all 60 models on KXKM
+    assert e["kxkm_eval_hours"] == pytest.approx(60 * 402.0 / 3600)
+    assert e["wall_hours"] == pytest.approx(
+        max(e["macm1_hours"], e["kxkm_train_hours"] + e["kxkm_eval_hours"]))
+    assert e["bottleneck_host"] == "macm1"
+    assert e["total_hours"] == pytest.approx(
+        e["macm1_hours"] + e["kxkm_train_hours"] + e["kxkm_eval_hours"])

@@ -1,0 +1,65 @@
+{
+  "measured_on": "2026-10-23 20:33:35 CEST",
+  "results": {
+    "gtm": {
+      "arm": "gtm",
+      "n_updates": 20,
+      "n_pairs": 64,
+      "horizon": 128,
+      "pair_steps": 163840,
+      "wall_s_incl_warmup": 211.60813403129578,
+      "pair_steps_per_s_incl_warmup": 774.2613522397437,
+      "steady_cycles": 17,
+      "steady_s_per_update_cycle": 10.559183289023007,
+      "steady_s_per_update_cycle_std": 1.1997504580802572,
+      "pair_steps_per_s": 775.8175775314123,
+      "agent_samples_per_s": 1551.6351550628247,
+      "training_failure": false,
+      "uptime_before": "20:33  up 6 days, 1 min, 3 users, load averages: 3,36 3,47 5,10",
+      "uptime_after": "20:37  up 6 days, 5 mins, 3 users, load averages: 10,86 7,61 6,48",
+      "scope": "one job; real procgen env + policy + bus + PPO update; training levels only; untrained start",
+      "eval_proxy": {
+        "label": "PROXY: untrained policy on training levels 0-15, not the held-out levels",
+        "levels": [
+          0,
+          16
+        ],
+        "episodes": 32,
+        "seconds_total": 32.19195795059204,
+        "seconds_per_episode": 1.0059986859560013,
+        "mean_episode_length": 588.8125,
+        "seconds_per_model_2x200": 402.3994743824005
+      }
+    },
+    "nocomm": {
+      "arm": "nocomm",
+      "n_updates": 20,
+      "n_pairs": 64,
+      "horizon": 128,
+      "pair_steps": 163840,
+      "wall_s_incl_warmup": 204.58929824829102,
+      "pair_steps_per_s_incl_warmup": 800.8239013614614,
+      "steady_cycles": 17,
+      "steady_s_per_update_cycle": 10.168189189013313,
+      "steady_s_per_update_cycle_std": 0.11350640840016654,
+      "pair_steps_per_s": 805.6498406669521,
+      "agent_samples_per_s": 1611.2996813339041,
+      "training_failure": false,
+      "uptime_before": "20:37  up 6 days, 5 mins, 3 users, load averages: 11,68 8,16 6,72",
+      "uptime_after": "20:41  up 6 days, 9 mins, 3 users, load averages: 3,34 6,12 6,20",
+      "scope": "one job; real procgen env + policy + bus + PPO update; training levels only; untrained start",
+      "eval_proxy": {
+        "label": "PROXY: untrained policy on training levels 0-15, not the held-out levels",
+        "levels": [
+          0,
+          16
+        ],
+        "episodes": 32,
+        "seconds_total": 17.54900097846985,
+        "seconds_per_episode": 0.5484062805771828,
+        "mean_episode_length": 408.4375,
+        "seconds_per_model_2x200": 219.3625122308731
+      }
+    }
+  }
+}
