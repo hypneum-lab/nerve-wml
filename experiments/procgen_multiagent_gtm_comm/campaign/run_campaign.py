@@ -2,7 +2,8 @@
 
     python -m experiments.procgen_multiagent_gtm_comm.campaign.run_campaign \
         --campaign-dir /ai/saisail/n10c-run/campaign \
-        --manifest docs/.../stage2-manifest.md --manifest-sha256 <sha256> \
+        --manifest experiments/procgen_multiagent_gtm_comm/manifest/<file>.md \
+        --manifest-sha256 <sha256> \
         --manifest-doi 10.17605/OSF.IO/XXXXX --expect-commit <40-hex> \
         [--archive-to user@host:/path] [--dry-run --throughput-json t.json]
 
@@ -24,6 +25,7 @@ import argparse
 import fcntl
 import json
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -217,6 +219,7 @@ class Campaign:
         try:  # held-out levels are touched only here, after training
             rec = self.eval_fn(ckpt, spec.arm, spec.condition, spec.seed,
                                env_factory=self.o.env_factory)
+            rd.mkdir(parents=True, exist_ok=True)
             (rd / "eval.json").write_text(rec.to_json())
         except Exception as exc:  # noqa: BLE001
             st["eval_failures"] += 1
@@ -255,8 +258,7 @@ class Campaign:
         fails = sorted(rd.parent.glob(f"{spec.run_id}.failed-*"),
                        key=lambda d: int(d.name.rsplit("-", 1)[1]), reverse=True)
         for d in [rd, *fails]:
-            cks = sorted(d.glob("ckpt_*.safetensors"),
-                         key=lambda f: int(f.stem.split("_")[1].split(".")[0]))
+            cks = completed_ckpts(d)
             if cks:
                 return cks[-1].name if d == rd else f"../{d.name}/{cks[-1].name}"
         return None
@@ -317,10 +319,20 @@ class Campaign:
         return EXIT_PROBLEMS if problems else EXIT_OK
 
 
+CKPT_RE = re.compile(r"^ckpt_(\d+)\.safetensors$")
+
+
+def completed_ckpts(d: Path) -> list[Path]:
+    """Finished checkpoints only (never ``ckpt_<n>.tmp.safetensors``),
+    ascending by step."""
+    found = [(int(m.group(1)), f) for f in d.glob("ckpt_*.safetensors")
+             if (m := CKPT_RE.match(f.name))]
+    return [f for _, f in sorted(found)]
+
+
 def archive_files(run_dir: Path, last_ckpt: str | None) -> list[Path]:
     files = [run_dir / "run.json", run_dir / "eval.json"]
-    ckpts = sorted(run_dir.glob("ckpt_*.safetensors"),
-                   key=lambda p: int(p.stem.split("_")[1].split(".")[0]))
+    ckpts = completed_ckpts(run_dir)
     keep = {c for c in ckpts[-1:]}
     if last_ckpt:
         keep.add(run_dir / last_ckpt)

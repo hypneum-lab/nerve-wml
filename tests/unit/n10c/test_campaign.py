@@ -53,12 +53,13 @@ class _Eval:
 
 
 def _campaign(tmp_path, train, eval_fn=None, gpu=None, archive=None,
-              ckpts=True, **o):
+              ckpts=True, mkdir=True, **o):
     calls = {"train": [], "eval": []}
 
     def t(**kw):
         calls["train"].append(kw["arm"] + "/" + kw["condition"] + f"/{kw['seed']}")
-        kw["out_dir"].mkdir(parents=True, exist_ok=True)
+        if mkdir:
+            kw["out_dir"].mkdir(parents=True, exist_ok=True)
         if ckpts:
             (kw["out_dir"] / f"ckpt_{TOTAL}.safetensors").write_text("x")
         return train(len(calls["train"]), kw)
@@ -130,6 +131,29 @@ def test_infra_exhausted_without_checkpoint_evaluates_init(tmp_path):
     assert calls["eval"][0][0] is None
     s = c.store.load(q.build_queue()[0])
     assert s["status"] == q.TRAINING_FAILURE and s["eval_done"]
+
+
+def test_tmp_checkpoint_never_picked(tmp_path):
+    def t(n, kw):
+        for name in ("ckpt_100.safetensors", "ckpt_200.tmp.safetensors"):
+            (kw["out_dir"] / name).write_text("x")
+        if kw["arm"] == "gtm" and kw["seed"] == 0 and kw["condition"] == "registered":
+            raise OSError("disk")
+        return _rec()
+    c, calls = _campaign(tmp_path, t, ckpts=False)
+    c.run()
+    assert calls["eval"][0][0].name == "ckpt_100.safetensors"
+    files = rc.archive_files(c.run_dir(q.build_queue()[0]), None)
+    assert not any("tmp" in f.name for f in files)
+
+
+def test_exhausted_before_run_dir_created_still_evaluates(tmp_path):
+    c, calls = _campaign(tmp_path, _boom_first, ckpts=False, mkdir=False)
+    assert c.run() == rc.EXIT_OK
+    s = c.store.load(q.build_queue()[0])
+    assert s["eval_done"] and s["eval_failures"] == 0
+    assert calls["eval"][0][0] is None
+    assert (c.run_dir(q.build_queue()[0]) / "eval.json").exists()
 
 
 def test_exhausted_checkpoint_found_in_earlier_failed_dir(tmp_path):
