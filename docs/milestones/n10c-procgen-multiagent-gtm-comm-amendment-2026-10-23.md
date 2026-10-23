@@ -1,6 +1,6 @@
 # N10-C — Pre-registration amendment 2026-10-23: estimation reframing, engineered reference sender and side-channel control
 
-**Status:** DRAFT — not yet filed on OSF (to be filed by the PI in two stages, see Filing)
+**Status:** DRAFT — not yet frozen or registered (committed by a frozen git tag, then registered on OSF referencing the tag ; see Filing)
 **Amends:** `docs/milestones/n10c-procgen-multiagent-gtm-comm-2026-05-11.md` (pre-registered 2026-05-11, commit `1640c5c`)
 **Date drafted:** 2026-10-23 (revised the same day for the second round of PI decisions: items 7-10 of the summary; draft edits only, nothing filed)
 **OSF registration:** no N10-C-specific OSF identifier is recorded in this repository. The programme-level OSF pre-registration is [10.17605/OSF.IO/Q6JYN](https://doi.org/10.17605/OSF.IO/Q6JYN) (dreamOfkiki, locked 2026-04-19).
@@ -251,23 +251,32 @@ Evidence : `experiments/procgen_multiagent_gtm_comm/bench/kxkm/repeat/` (`analys
 
 Any superiority claim requires a separate, future confirmatory pre-registration with a powered N. Its sample size is computed from the pilot's seed-level variance (the upper one-sided 80 % confidence limit of the pooled SD). The pilot data are not reused in its confirmatory test.
 
-## Filing (two stages, PI decision 2026-10-23)
+## Filing (two stages, commitment by frozen git tag; PI decisions 2026-10-23)
 
-- **Stage 1, filed now:** this amendment text, that is the research hypothesis, the environment, message and side-channel specifications, the estimands, the analysis, failure and exclusion rules, the superseded provisions and the adopted scope.
-- **Stage 2, filed as a second locked stage before any N10-C run:** the configuration manifest below, which fixes the implementation details that stage 1 leaves open (architectures, adapters and objectives, including the GTM symbol adapter, and the MLX PPO harness).
+- **Stage 1** : this amendment text, that is the research hypothesis, the environment, message and side-channel specifications, the estimands, the analysis, failure and exclusion rules, the superseded provisions and the adopted scope.
+- **Stage 2** : the configuration manifest below, which fixes the implementation details that stage 1 leaves open (architectures, adapters and objectives, including the GTM symbol adapter, and the MLX PPO harness).
 
-Stage 2 cannot change any stage-1 provision. If the manifest cannot be written within the stage-1 rules, stage 1 is amended and re-filed before any run. No PI confirmation item remains open for N10-C.
+**Commitment point (PI decision 2026-10-23, 22:17, CHANGE ; replaces "the manifest is filed on OSF before any run").** Runs may start **before** the OSF filing. The commitment point is a **frozen annotated git tag** (name of the form `n10c-freeze-<date>`) :
 
-## Configuration manifest (stage 2, required, immutable, part of this registration)
+1. The tag points at the exact commit whose tree contains **both** the stage-1 text (this amendment, final) **and** the stage-2 manifest, together with the code. Its message contains the manifest path and the manifest's SHA-256 (`manifest: <path>` and `manifest-sha256: <hex>`).
+2. The tag is pushed to GitHub (`hypneum-lab/nerve-wml`) and mirrored to Gitea.
+3. The repository state at the tag is submitted to Software Heritage ("Save Code Now"), which gives an independent third-party archival timestamp and a SWHID.
+4. The OSF registration is filed **afterwards** and must reference the tag name, the commit and the SWHID.
+5. **Evidentiary timestamps** : the GitHub server-recorded push time of the tag and the Software Heritage archival time. Git author and committer dates are **not** evidence of time (they are set by the client).
+6. **Runs started before the tag's push time (as recorded by GitHub) are excluded from all analyses and reported.** The campaign launcher refuses to start unless the tag exists on origin, is annotated, points at HEAD (or at an ancestor with only `docs/` and manifest-folder changes since), the tree is clean, and the SHA-256 in the tag message equals the committed manifest's. The manifest status line then reads `Status: FROZEN (tag <tag>)`.
 
-Before the first N10-C run, the PI files a dated manifest on OSF as an update to this registration. It may contain only:
+The two-stage logic is kept : stage 1 and stage 2 are both in the tagged tree, and stage 2 cannot change any stage-1 provision. If the manifest cannot be written within the stage-1 rules, stage 1 is amended and a new tag is created before any run. No PI confirmation item remains open for N10-C.
+
+## Configuration manifest (stage 2, required, immutable once tagged, part of this registration)
+
+Before the first N10-C run, the PI commits a dated manifest and freezes it with the tag above ; the OSF registration then references that tag. It may contain only:
 
 1. the commit of `coop_env.py`, the MLX PPO-MA harness, the message bus and the evaluation code (including the shuffle and cross-seed probes) used for every run, and the integer codes for arms and conditions ;
 2. the per-agent network, PPO and encoder/decoder sizes of every arm, and the GTM symbol adapter, as implemented at that commit ;
 3. the statement that Caveflyer-coop and Maze-coop are not run under this registration (scope option D) ;
 4. the host record : the seed-to-host mapping ; for each host the measured training throughput (pair-steps/s with the GTM and message-bus overhead included), `n_workers` and the resulting compute estimate including evaluation ; the Procgen build of each host (macM1 : the arm64 build patch SHA-256 and the toolchain versions ; KXKM-AI : the official x86-64 wheel and its hash) ; the MLX and mlx-cuda versions ; `micro_batch_pairs` and `clear_cache` for KXKM ; and the nondeterminism statement of the Reproducibility section.
 
-Development that informs items 1–2 and 4 may use only the stub, smoke runs of at most 1M steps (at most 3 per arm, all disclosed in the manifest with their outcomes), throughput measurements on random or untrained policies, and unit tests. It never uses held-out levels 1000–1199 or results of a full-length run. The manifest cannot be changed after filing. Runs started before it is filed are excluded from all analyses and reported.
+Development that informs items 1–2 and 4 may use only the stub, smoke runs of at most 1M steps (at most 3 per arm, all disclosed in the manifest with their outcomes), throughput measurements on random or untrained policies, and unit tests. It never uses held-out levels 1000–1199 or results of a full-length run. The manifest cannot be changed after the tag is pushed. Runs started before the tag's GitHub push time are excluded from all analyses and reported.
 
 ## Effect on hypotheses
 
@@ -313,7 +322,7 @@ The research hypothesis (GTM team reward exceeds the best baseline by ≥ 10 % o
 1. The estimation reframing as worded above.
 2. Implement the declared team summary on purpose and close it in the side-channel-closed condition (see Rationale).
 3. Compute scope: option D (CoinRun-coop only, all arms, both conditions) with MLX, as described under Compute ; **changed in the second round : 60 runs on two hosts (item 9 below), not 50 runs on macM1 alone.** The "≥ 2 of 3 tasks" target is withdrawn.
-4. Two-stage filing: this text now (stage 1), the configuration manifest as a second locked stage before any run (stage 2), as described under Filing.
+4. Two-stage filing: this text now (stage 1), the configuration manifest as a second locked stage before any run (stage 2),  **Changed 22:17 : commitment by frozen annotated tag (GitHub push time + Software Heritage), OSF registration afterwards ; runs may start before the OSF filing.** **Changed 22:17 : commitment by frozen annotated tag (GitHub push time + Software Heritage), OSF registration afterwards ; runs may start before the OSF filing (see Filing).**
 5. Primary estimand on seed means (was median), with dynamic range = the theoretical range of the team return.
 6. GTM message format K = 4 symbols × A = 16 (16 bits/step).
 7. Success-only team reward (no step penalty).
@@ -325,6 +334,7 @@ The research hypothesis (GTM team reward exceeds the best baseline by ≥ 10 % o
 10. **Reproducibility statement** : statistically, not bitwise, reproducible ; an infrastructure restart does not retrace the failed trajectory.
 11. **Compute** : KXKM 30 runs × about 10.8 h ≈ 324 h ; macM1 30 runs × about 17.6 h ≈ 528 h ≈ 22 days (bottleneck) ; evaluation about 6.7 min per model on KXKM ; `gpu-worker` and `whisper-dex` stopped on KXKM for the campaign. Option D kept.
 12. **Cross-seed cross-play probe** (evaluation only, descriptive), from the literature check.
+13. **Commitment by frozen git tag (22:17, CHANGE)** : runs may start before the OSF filing ; commitment point = annotated tag `n10c-freeze-<date>` on the tree holding stage 1 and the stage-2 manifest, pushed to GitHub (mirrored to Gitea), archived at Software Heritage, OSF filed afterwards referencing tag, commit and SWHID ; GitHub push time and SWH time are the evidence, git dates are not ; earlier runs are excluded.
 
 No PI confirmation item remains open for N10-C. If the PI changes any item, the text above is edited before filing, never after data are seen.
 
