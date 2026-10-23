@@ -5,6 +5,7 @@ import multiprocessing as mp
 import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
+from multiprocessing import shared_memory
 from typing import Any
 
 import numpy as np
@@ -49,6 +50,7 @@ class _Block:
         num_levels: int,
         start_level: int,
         env_factory: Callable[[int], Any] | None,
+        obs_buf: np.ndarray | None = None,
     ) -> None:
         self.n = len(seeds)
         self.team_summary = team_summary
@@ -62,7 +64,16 @@ class _Block:
             )
             for seed in seeds
         ]
-        self.obs = np.stack([np.stack(e._last_obs) for e in self.envs])
+        self._shared = obs_buf is not None
+        self.obs = obs_buf if self._shared else np.empty(
+            (self.n, 2, 64, 64, 3), dtype=np.uint8
+        )
+        for k, e in enumerate(self.envs):
+            self.obs[k] = np.stack(e._last_obs)
+
+    def _ret_obs(self) -> np.ndarray | None:
+        # Shared-memory blocks publish obs through the buffer, not the pipe.
+        return None if self._shared else self.obs.copy()
 
     def summary(self) -> np.ndarray:
         out = np.zeros((self.n, 2, TEAM_SUMMARY_DIM), dtype=np.float32)
@@ -80,8 +91,9 @@ class _Block:
         return flag, rem
 
     def reset(self) -> tuple:
-        self.obs = np.stack([np.stack(e.reset()) for e in self.envs])
-        return (self.obs.copy(), self.summary(), *self.window())
+        for k, e in enumerate(self.envs):
+            self.obs[k] = np.stack(e.reset())
+        return (self._ret_obs(), self.summary(), *self.window())
 
     def step(self, actions: np.ndarray) -> tuple:
         team = np.zeros(self.n, dtype=np.float32)
@@ -96,7 +108,7 @@ class _Block:
                 self.obs[k] = np.stack(env.reset())
             else:
                 self.obs[k] = np.stack(res.obs_per_agent)
-        return (self.obs.copy(), self.summary(), team, done, finished,
+        return (self._ret_obs(), self.summary(), team, done, finished,
                 *self.window())
 
     def using_stub(self) -> bool:
@@ -110,8 +122,13 @@ class _Block:
 def _worker_main(conn, args) -> None:
     """Worker process: own one block, serve commands over ``conn``."""
     block = None
+    shm = None
+    buf = None
     try:
-        block = _Block(*args)
+        *block_args, shm_name, shape, sl = args
+        shm = shared_memory.SharedMemory(name=shm_name)
+        buf = np.ndarray(shape, dtype=np.uint8, buffer=shm.buf)[sl]
+        block = _Block(*block_args, obs_buf=buf)
         conn.send(("ok", block.using_stub()))
         while True:
             cmd, payload = conn.recv()
@@ -135,6 +152,9 @@ def _worker_main(conn, args) -> None:
             except Exception:
                 pass
         conn.close()
+        buf = None
+        if shm is not None:
+            shm.close()
 
 
 class VecCoopEnv:
@@ -169,6 +189,8 @@ class VecCoopEnv:
         self._procs: list[Any] = []
         self._conns: list[Any] = []
         self._stub = False
+        self._shm = None
+        self._shm_obs: np.ndarray | None = None
         # contiguous blocks, sizes differ by at most one
         edges = np.linspace(0, n_pairs, n_workers + 1).astype(int)
         self._slices = [
@@ -182,19 +204,24 @@ class VecCoopEnv:
             self._win = self._block.window()
             return
         self.envs = []
+        shape = (n_pairs, 2, 64, 64, 3)
+        self._shm = shared_memory.SharedMemory(
+            create=True, size=int(np.prod(shape))
+        )
+        self._shm_obs = np.ndarray(shape, dtype=np.uint8, buffer=self._shm.buf)
         ctx = mp.get_context("spawn")
         try:
             for sl in self._slices:
                 parent, child = ctx.Pipe()
                 args = (seeds[sl], team_summary, num_levels, start_level,
-                        env_factory)
+                        env_factory, self._shm.name, shape, sl)
                 p = ctx.Process(target=_worker_main, args=(child, args),
                                 daemon=True)
                 p.start()
                 child.close()
                 self._procs.append(p)
                 self._conns.append(parent)
-            self._stub = any(self._recv(c) for c in self._conns)
+            self._stub = any([self._recv(c) for c in self._conns])
             self._win = (np.zeros((n_pairs, 2), dtype=bool),
                          np.zeros((n_pairs, 2), dtype=np.int32))
         except BaseException:
@@ -218,7 +245,12 @@ class VecCoopEnv:
         except BaseException:
             self.close()
             raise
-        return [np.concatenate(f) for f in zip(*parts, strict=True)]
+        out = [
+            None if f[0] is None else np.concatenate(f)
+            for f in zip(*parts, strict=True)
+        ]
+        out[0] = self._shm_obs.copy()
+        return out
 
     def using_stub(self) -> bool:
         if self._block is not None:
@@ -271,3 +303,8 @@ class VecCoopEnv:
                 pass
         self._procs = []
         self._conns = []
+        if self._shm is not None:
+            self._shm_obs = None
+            self._shm.close()
+            self._shm.unlink()
+            self._shm = None
