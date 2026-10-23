@@ -166,6 +166,22 @@
 - [ ] **Step 5:** On macM1 (outside second-brain peak hours), run `measure_throughput` for `gtm` and `nocomm`, then at most 3 smoke runs per arm of ≤ 1M pair-steps each (training levels only), recording outcomes in `smoke_runs.json`; then `write_manifest`.
 - [ ] **Step 6:** Commit `chore(n10c): add throughput, smoke runs, manifest`.
 
+### Task 10: Parallel environment stepping (multi-process VecCoopEnv)
+
+**Files:**
+- Modify: `harness/vec_env.py`, `harness/train.py`, `harness/throughput.py`
+- Regenerate: `manifest/throughput.json`, `manifest/stage2-manifest-DRAFT.md`
+- Test: `tests/unit/n10c/test_vec_env.py`, `tests/unit/n10c/test_train.py`
+
+**Interfaces:**
+- Consumes: `VecCoopEnv` (Task 2), `train_run` (Task 6), `measure_throughput`, `write_manifest` (Task 9).
+- Produces: `VecCoopEnv(..., n_workers: int = 1)`: pairs split into `n_workers` contiguous blocks, each stepped in its own `multiprocessing` process (spawn context) over pipes; `n_workers=1` keeps the current in-process path. Pair k's seed stream, level seeds, auto-reset and returned arrays are identical for every `n_workers` (the worker count is an implementation detail, never a registered quantity). `train_run(..., n_workers: int = 1)` and the CLI flag `--n-workers`. Workers are closed on `close()` and on exceptions.
+
+- [ ] **Step 1: failing tests:** `test_vec_env_identical_across_worker_counts` (scripted, picklable module-level env factory; 50 random steps; every PairStep field equal for n_workers in {1, 2, 4}); `test_vec_env_workers_closed_on_error`; `test_train_run_identical_first_rollout_across_worker_counts` (same seed, same rollout actions and first-update params within the Task 6 tolerance).
+- [ ] **Step 2:** Run, FAIL. **Step 3:** Implement. **Step 4:** Run, PASS.
+- [ ] **Step 5:** On macM1 (and macM3 for comparison), measure end-to-end throughput for n_workers in {1, 4, 8} (gtm arm, training levels only), pick the fastest as the registered setting, regenerate `throughput.json` and the manifest draft (worker count recorded as an implementation setting).
+- [ ] **Step 6:** Commit `perf(n10c): step coop envs in worker processes`.
+
 ---
 
 ## Execution note
