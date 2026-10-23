@@ -132,8 +132,12 @@ Paper 1's §Related Work grew from 5 to 6 threads (new "Adjacent abstraction
 layers" thread, NIR at model-graph IR + AER at transport — orthogonal
 abstraction layers, not competitors), §Information Transmission Test (6)
 added a "Global vs Local alignment" paragraph addressing the two 2026 PRH
-critiques, and the GTM rationale was re-grounded on Bastos 2020 / Friston
-2025 / Ruffini 2025. In parallel, a 4th conformant substrate plan
+critiques, and the GTM rationale was re-grounded on Bastos 2020 / Gabhart
+et al. 2025 / Ruffini 2025 (an initially cited "Friston 2025" entry was
+removed on 2026-05-20 as unverifiable and replaced by Gabhart et al.).
+These passages were accidentally dropped from `main.tex` by the
+2026-06-04 merge of PR #53 and restored on 2026-10-23. In parallel, a 4th
+conformant substrate plan
 (`BioFieldWML`) was versioned for the first time, sitting alongside the
 existing `MlpWML` / `LifWML` / `TransformerWML` substrates under the WML
 Protocol.
@@ -142,7 +146,7 @@ Protocol.
 |---|---|---|
 | §Related Work extended (5 → 6 threads) | `papers/paper1/main.tex` | New "Adjacent abstraction layers" thread positions nerve-wml against NIR (model IR) and AER (transport) — orthogonal abstraction layers |
 | §Information Tx Test (6) PRH refinement | `papers/paper1/main.tex` | New "Global vs Local alignment" paragraph engages `platoscave2026` + `aristotelianprh2026`; nerve-wml's mutual-kNN measurement claimed as *local* (null-calibrated 18.8× random), not global |
-| GTM re-grounding | `papers/paper1/main.tex` | Replaces sole reliance on Bastos & Friston 2012 with Bastos 2020 predictive routing + Friston 2025 + Ruffini 2025 laminar Comparator |
+| GTM re-grounding | `papers/paper1/main.tex` | Replaces sole reliance on Bastos & Friston 2012 with Bastos 2020 predictive routing + Gabhart et al. 2025 + Ruffini 2025 laminar Comparator |
 | HNN positioning (closes #13) | `papers/paper1/main.tex` "Surrogate-gradient SNN" thread | Cites Liu et al. 2024 (NSR) and positions nerve-wml in the *weak-coupling* corner of the HNN taxonomy |
 | BioFieldWML plan versioned | `docs/superpowers/plans/2026-05-19-bio-substrate-wml.md` | Plan for a 4th conformant substrate alongside MLP / LIF / Transformer; 5 (b)-classified mechanisms encapsulated inside `step()` (Tomé STDP, Pignatelli IE, Lee et al. 2024 SNN-PC, Bellitto WSCL, Tucker-Friston E/I); cross-refs dream-of-kiki `biophysical-stratification` spec |
 
@@ -158,8 +162,9 @@ sub-theory (`dream-of-kiki/docs/specs/2026-05-20-biophysical-stratification.md`)
 The two documents are linked but independent: nerve-wml's bio-substrate plan
 does not depend on the stratification theory being finalised, and vice versa.
 
-**Open follow-up:** `nerve-wml#16` — complete `friston2025pivot` bibliographic
-metadata (volume/pages/DOI) before final paper submission.
+**Follow-up closed:** `nerve-wml#16` (complete `friston2025pivot` metadata) is
+superseded — the entry was removed as unverifiable on 2026-05-20 and is not
+cited.
 
 ---
 

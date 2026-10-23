@@ -60,16 +60,21 @@ pdflatex main.tex
 
 Local result: 12 pages, 515,695 bytes, zero `Citation undefined`.
 
-## Cited references (24, alphabetical)
+## Cited references (34, alphabetical)
 
 aer2025biohybrid, aristotelianprh2026, bastos2012canonical,
-bastos2020routing, gabhart2025predictive, hinton2015distilling,
-huh2024platonic, kornblith2019similarity, liu2021dvnc,
-liu2024hybrid, morcos2018insights, moschella2022relative,
-neftci2019surrogate, pedersen2024nir, peng2025gridlikevq,
-platoscave2026, rao1999predictive, royvetterli2007erank,
-ruffini2025comparator, saxe2024universality, vandenoord2017neural,
-wei2024differank, zeghidour2022soundstream, zhao2025channelawarevq.
+bastos2020routing, dai2026wonn, gabhart2025predictive,
+hinton2015distilling, huh2024platonic, karlsson2026diffpc,
+keshavarzi2026mipolarity, kim2026crossfreqbursts,
+kornblith2019similarity, liu2021dvnc, liu2024hybrid,
+morcos2018insights, moschella2022relative, ndri2026pclplus,
+neftci2019surrogate, nunley2026kuramotoattn, pedersen2024nir,
+peng2025gridlikevq, platoscave2026, rao1999predictive,
+royvetterli2007erank, ruffini2025comparator,
+saxe2024universality, shang2026displacement,
+vandenoord2017neural, vock2026adaptivesoc, wei2024differank,
+xiao2026kope, you2026structure, zeghidour2022soundstream,
+zhao2025channelawarevq.
 
 Zero orphan refs in `refs.bib`.
 
