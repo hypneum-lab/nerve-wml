@@ -1,0 +1,391 @@
+{
+  "smoke_seed": 9001,
+  "pair_steps_each": 200000,
+  "runs": [
+    {
+      "arm": "gtm",
+      "condition": "registered",
+      "seed": 9001,
+      "codes": {
+        "arm": 0,
+        "condition": 0
+      },
+      "pair_steps_requested": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "outcome": "completed",
+      "failure_reason": null,
+      "pair_steps_done": 200000,
+      "n_updates": 25,
+      "wall_time_s": 402.81937170028687,
+      "pair_steps_per_s_incl_warmup": 496.5004516932907,
+      "using_stub": false,
+      "all_losses_finite": true,
+      "loss_first": -0.026043437110881012,
+      "loss_last": -0.029183585041513044,
+      "completed_episodes": 329,
+      "final_success_rate_last100": 0.02,
+      "success_curve": [
+        [
+          25600,
+          0.0
+        ],
+        [
+          51200,
+          0.0
+        ],
+        [
+          76800,
+          0.0
+        ],
+        [
+          102400,
+          0.0
+        ],
+        [
+          128000,
+          0.02
+        ],
+        [
+          153600,
+          0.03
+        ],
+        [
+          179200,
+          0.02
+        ]
+      ],
+      "bits_logged": 6400000,
+      "max_first_minibatch_ratio_dev": 7.152557373046875e-07
+    },
+    {
+      "arm": "mlp",
+      "condition": "registered",
+      "seed": 9001,
+      "codes": {
+        "arm": 1,
+        "condition": 0
+      },
+      "pair_steps_requested": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "outcome": "completed",
+      "failure_reason": null,
+      "pair_steps_done": 200000,
+      "n_updates": 25,
+      "wall_time_s": 247.5010290145874,
+      "pair_steps_per_s_incl_warmup": 808.0774483899711,
+      "using_stub": false,
+      "all_losses_finite": true,
+      "loss_first": -0.013385518686845899,
+      "loss_last": -0.027088078670203686,
+      "completed_episodes": 214,
+      "final_success_rate_last100": 0.0,
+      "success_curve": [
+        [
+          25600,
+          0.0
+        ],
+        [
+          51200,
+          0.0
+        ],
+        [
+          76800,
+          0.0
+        ],
+        [
+          102400,
+          0.0
+        ],
+        [
+          128000,
+          0.0
+        ],
+        [
+          153600,
+          0.0
+        ],
+        [
+          179200,
+          0.0
+        ]
+      ],
+      "bits_logged": 6400000,
+      "max_first_minibatch_ratio_dev": 4.76837158203125e-07
+    },
+    {
+      "arm": "atoc",
+      "condition": "registered",
+      "seed": 9001,
+      "codes": {
+        "arm": 2,
+        "condition": 0
+      },
+      "pair_steps_requested": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "outcome": "completed",
+      "failure_reason": null,
+      "pair_steps_done": 200000,
+      "n_updates": 25,
+      "wall_time_s": 249.9338538646698,
+      "pair_steps_per_s_incl_warmup": 800.2117236518619,
+      "using_stub": false,
+      "all_losses_finite": true,
+      "loss_first": -0.02753978470961253,
+      "loss_last": -0.02852431358769536,
+      "completed_episodes": 266,
+      "final_success_rate_last100": 0.0,
+      "success_curve": [
+        [
+          25600,
+          0.0
+        ],
+        [
+          51200,
+          0.0
+        ],
+        [
+          76800,
+          0.0
+        ],
+        [
+          102400,
+          0.0
+        ],
+        [
+          128000,
+          0.0
+        ],
+        [
+          153600,
+          0.0
+        ],
+        [
+          179200,
+          0.0
+        ]
+      ],
+      "bits_logged": 6400000,
+      "max_first_minibatch_ratio_dev": 7.152557373046875e-07
+    },
+    {
+      "arm": "dial",
+      "condition": "registered",
+      "seed": 9001,
+      "codes": {
+        "arm": 3,
+        "condition": 0
+      },
+      "pair_steps_requested": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "outcome": "completed",
+      "failure_reason": null,
+      "pair_steps_done": 200000,
+      "n_updates": 25,
+      "wall_time_s": 248.00816202163696,
+      "pair_steps_per_s_incl_warmup": 806.4250723431893,
+      "using_stub": false,
+      "all_losses_finite": true,
+      "loss_first": -0.0288141273194924,
+      "loss_last": -0.028713451387981575,
+      "completed_episodes": 244,
+      "final_success_rate_last100": 0.0,
+      "success_curve": [
+        [
+          25600,
+          0.0
+        ],
+        [
+          51200,
+          0.0
+        ],
+        [
+          76800,
+          0.0
+        ],
+        [
+          102400,
+          0.0
+        ],
+        [
+          128000,
+          0.0
+        ],
+        [
+          153600,
+          0.0
+        ],
+        [
+          179200,
+          0.0
+        ]
+      ],
+      "bits_logged": 6400000,
+      "max_first_minibatch_ratio_dev": 7.152557373046875e-07
+    },
+    {
+      "arm": "eng",
+      "condition": "registered",
+      "seed": 9001,
+      "codes": {
+        "arm": 4,
+        "condition": 0
+      },
+      "pair_steps_requested": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "outcome": "completed",
+      "failure_reason": null,
+      "pair_steps_done": 200000,
+      "n_updates": 25,
+      "wall_time_s": 248.68649792671204,
+      "pair_steps_per_s_incl_warmup": 804.2254069577193,
+      "using_stub": false,
+      "all_losses_finite": true,
+      "loss_first": -0.02774474665056914,
+      "loss_last": -0.029568476291994255,
+      "completed_episodes": 466,
+      "final_success_rate_last100": 0.0,
+      "success_curve": [
+        [
+          25600,
+          0.017543859649122806
+        ],
+        [
+          51200,
+          0.03
+        ],
+        [
+          76800,
+          0.01
+        ],
+        [
+          102400,
+          0.0
+        ],
+        [
+          128000,
+          0.01
+        ],
+        [
+          153600,
+          0.0
+        ],
+        [
+          179200,
+          0.0
+        ]
+      ],
+      "bits_logged": 6400000,
+      "max_first_minibatch_ratio_dev": 9.5367431640625e-07
+    },
+    {
+      "arm": "nocomm",
+      "condition": "registered",
+      "seed": 9001,
+      "codes": {
+        "arm": 5,
+        "condition": 0
+      },
+      "pair_steps_requested": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "outcome": "completed",
+      "failure_reason": null,
+      "pair_steps_done": 200000,
+      "n_updates": 25,
+      "wall_time_s": 255.8835859298706,
+      "pair_steps_per_s_incl_warmup": 781.605429176741,
+      "using_stub": false,
+      "all_losses_finite": true,
+      "loss_first": -0.027770103110621374,
+      "loss_last": -0.02625355776399374,
+      "completed_episodes": 217,
+      "final_success_rate_last100": 0.0,
+      "success_curve": [
+        [
+          25600,
+          0.0
+        ],
+        [
+          51200,
+          0.0
+        ],
+        [
+          76800,
+          0.0
+        ],
+        [
+          102400,
+          0.0
+        ],
+        [
+          128000,
+          0.0
+        ],
+        [
+          153600,
+          0.0
+        ],
+        [
+          179200,
+          0.0
+        ]
+      ],
+      "bits_logged": 6400000,
+      "max_first_minibatch_ratio_dev": 7.152557373046875e-07
+    },
+    {
+      "arm": "gtm",
+      "condition": "closed",
+      "seed": 9001,
+      "codes": {
+        "arm": 0,
+        "condition": 1
+      },
+      "pair_steps_requested": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "outcome": "completed",
+      "failure_reason": null,
+      "pair_steps_done": 200000,
+      "n_updates": 25,
+      "wall_time_s": 255.11319208145142,
+      "pair_steps_per_s_incl_warmup": 783.9657305379366,
+      "using_stub": false,
+      "all_losses_finite": true,
+      "loss_first": -0.03149876332220932,
+      "loss_last": -0.019034164569651086,
+      "completed_episodes": 1304,
+      "final_success_rate_last100": 0.13,
+      "success_curve": [
+        [
+          25600,
+          0.029411764705882353
+        ],
+        [
+          51200,
+          0.033707865168539325
+        ],
+        [
+          76800,
+          0.04
+        ],
+        [
+          102400,
+          0.05
+        ],
+        [
+          128000,
+          0.14
+        ],
+        [
+          153600,
+          0.12
+        ],
+        [
+          179200,
+          0.13
+        ]
+      ],
+      "bits_logged": 6400000,
+      "max_first_minibatch_ratio_dev": 1.430511474609375e-06
+    }
+  ]
+}
