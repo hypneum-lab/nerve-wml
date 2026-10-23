@@ -6,7 +6,7 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 
 ## 1. Commit, integer codes and bus
 
-- Harness commit at manifest time: `2fb622c234f767b5ea5d8ca38438be867093d86c` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
+- Harness commit at manifest time: `70a104a981da5145bb018b8ada7b801a2c4df2e8` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
 - Code identity independent of git (SHA-256 of each file at manifest time):
 
 | file | SHA-256 |
@@ -18,7 +18,7 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 | `experiments/procgen_multiagent_gtm_comm/harness/comm.py` | `88bc176ab933cde3dfb2849c66b08c8b8dc5244566758a84f6255c3e7904a98d` |
 | `experiments/procgen_multiagent_gtm_comm/harness/evaluate.py` | `44a407f539ac212fda7cdb6adfc72a505b9c2a281329322bbbb517de1080b82f` |
 | `experiments/procgen_multiagent_gtm_comm/harness/gtm_mlx.py` | `daba415dcf627927c9545501f4c8592448b8e1f4667dc50b0de0459385f92faf` |
-| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `675e8af1bbf344e77ddfd8c29e36afa09f9798ca425b24095a558048df3caa36` |
+| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `dee82e9398966566e27f72b2a29eb400f9b96233aedf77eb7cfb14ad3a7ba388` |
 | `experiments/procgen_multiagent_gtm_comm/harness/policy.py` | `b1fc49bcb2b0648ba74aaef2b8d2d6aec1e6a6935ff19651a97251bc756b9826` |
 | `experiments/procgen_multiagent_gtm_comm/harness/rollout.py` | `5f291b8c99eed91e1bd62320b842ed2b51af349297da7340b11901e962aa65a5` |
 | `experiments/procgen_multiagent_gtm_comm/harness/throughput.py` | `f0c03a4eb62184a114b83c3ba6a839b6542dc067a5728a64580477f234de616f` |
@@ -157,7 +157,7 @@ Development used only the stub (unit tests with scripted environments), these sm
 
 ## Artefact archiving (PI decision 2026-10-23)
 
-After each run and each evaluation, the run directory (`run.json`, checkpoints, EvalRecord JSON) is copied to electron-server (Tailscale 100.78.191.52) for storage. The copy is post-hoc storage only and changes no registered quantity. macM1 checkpoints are additionally copied to KXKM-AI for evaluation (campaign `sync` step). Destination path: **to be filled by the PI before the freeze**: `<PATH>`. (This item is outside items 1-4 of the amendment's manifest list; flagged for the PI.)
+After each run and each evaluation, the run directory (`run.json`, checkpoints, EvalRecord JSON, cross-play records) is stored on electron-server (Tailscale 100.78.191.52) at `electron@100.78.191.52:/home/electron/archives/n10c/`. KXKM-AI cannot reach electron-server, so electron-server PULLS the completed runs from KXKM-AI (`campaign/pull_archive.sh`, rsync over ssh to `electron@10.2.0.237:/ai/saisail/n10c-run/campaign`, completed runs only, idempotent, logged); macM1 can push with `--archive-to`. The copy is post-hoc storage only and changes no registered quantity. macM1 checkpoints are additionally copied to KXKM-AI for evaluation (campaign `sync` step), and are archived from that KXKM copy. (This item is outside items 1-4 of the amendment's manifest list.)
 
 ## Implementation rulings disclosed
 
