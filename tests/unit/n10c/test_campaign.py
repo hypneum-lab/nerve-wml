@@ -12,18 +12,42 @@ from experiments.procgen_multiagent_gtm_comm.campaign import run_campaign as rc
 TOTAL = 64
 
 
-def test_queue_is_the_frozen_50():
+SEEDS6 = (0, 17, 42, 73, 101, 131)
+HOST_OF = {0: "macm1", 17: "macm1", 42: "macm1", 73: "kxkm", 101: "kxkm", 131: "kxkm"}
+
+
+def test_queue_is_the_frozen_60_unique_runs():
     runs = q.build_queue()
-    assert len(runs) == 50 and len({r.run_id for r in runs}) == 50
+    assert len(runs) == 60 and len({r.run_id for r in runs}) == 60
     reg = [r for r in runs if r.condition == "registered"]
     closed = [r for r in runs if r.condition == "closed"]
-    assert len(reg) == 30 and len(closed) == 20
+    assert len(reg) == 36 and len(closed) == 24
     assert {(r.arm, r.seed) for r in reg} == {
         (a, s) for a in ("gtm", "mlp", "atoc", "dial", "eng", "nocomm")
-        for s in (0, 17, 42, 73, 101)}
+        for s in SEEDS6}
     assert {(r.arm, r.seed) for r in closed} == {
-        (a, s) for a in ("gtm", "dial", "eng", "nocomm")
-        for s in (0, 17, 42, 73, 101)}
+        (a, s) for a in ("gtm", "dial", "eng", "nocomm") for s in SEEDS6}
+    assert q.SEEDS == SEEDS6 and q.N_RUNS == 60
+
+
+def test_seed_to_host_mapping_exact_and_per_run_host_field():
+    assert q.SEED_HOST == HOST_OF
+    for r in q.build_queue():
+        assert r.host == HOST_OF[r.seed]
+        assert q.new_state(r)["host"] == HOST_OF[r.seed]
+    # all arms and both conditions of a seed share its host
+    for s in SEEDS6:
+        assert len({r.host for r in q.build_queue() if r.seed == s}) == 1
+
+
+def test_host_filtering_partitions_the_queue():
+    mac, kx = q.runs_for_host("macm1"), q.runs_for_host("kxkm")
+    assert len(mac) == 30 and len(kx) == 30
+    assert {r.seed for r in mac} == {0, 17, 42}
+    assert {r.seed for r in kx} == {73, 101, 131}
+    assert set(mac) | set(kx) == set(q.build_queue()) and not set(mac) & set(kx)
+    with pytest.raises(ValueError):
+        q.runs_for_host("grosmac")
 
 
 def test_queue_order_deterministic_and_balanced():
@@ -33,8 +57,18 @@ def test_queue_order_deterministic_and_balanced():
     assert {r.seed for r in first10} == {0}
     assert sum(r.condition == "closed" for r in first10) == 4
     # arm rotation: the first run is not the same arm for every seed
-    firsts = [runs[i * 10].arm for i in range(5)]
+    firsts = [runs[i * 10].arm for i in range(6)]
     assert len(set(firsts)) > 1
+
+
+KX = q.runs_for_host("kxkm")
+FIRST, SECOND = KX[0], KX[1]
+FIRST_TAG = f"{FIRST.arm}/{FIRST.condition}/{FIRST.seed}"
+
+
+def _is_first(kw):
+    return (kw["arm"], kw["seed"], kw["condition"]) == (
+        FIRST.arm, FIRST.seed, FIRST.condition)
 
 
 def _rec(**kw):
@@ -53,7 +87,7 @@ class _Eval:
 
 
 def _campaign(tmp_path, train, eval_fn=None, gpu=None, archive=None,
-              ckpts=True, mkdir=True, **o):
+              ckpts=True, mkdir=True, host="kxkm", **o):
     calls = {"train": [], "eval": []}
 
     def t(**kw):
@@ -68,7 +102,7 @@ def _campaign(tmp_path, train, eval_fn=None, gpu=None, archive=None,
         calls["eval"].append((ckpt, arm))
         return (eval_fn or (lambda *a: _Eval()))(ckpt, arm, cond, seed)
 
-    c = rc.Campaign(rc.Options(campaign_dir=tmp_path / "c", total_pair_steps=TOTAL,
+    c = rc.Campaign(rc.Options(campaign_dir=tmp_path / "c", host=host, total_pair_steps=TOTAL,
                                min_free_gb=8, **o),
                     train_fn=t, eval_fn=e, gpu_fn=gpu or (lambda: None),
                     archive_fn=archive, log=lambda *_: None)
@@ -79,15 +113,15 @@ def _campaign(tmp_path, train, eval_fn=None, gpu=None, archive=None,
 def test_full_campaign_runs_all_and_resume_skips_done(tmp_path):
     c, calls = _campaign(tmp_path, lambda n, kw: _rec())
     assert c.run() == rc.EXIT_OK
-    assert len(calls["train"]) == 50 and len(calls["eval"]) == 50
-    assert all(c.store.load(s)["status"] == q.DONE for s in q.build_queue())
+    assert len(calls["train"]) == 30 and len(calls["eval"]) == 30
+    assert all(c.store.load(s)["status"] == q.DONE for s in KX)
     c2, calls2 = _campaign(tmp_path, lambda n, kw: _rec())
     assert c2.run() == rc.EXIT_OK
     assert calls2["train"] == [] and calls2["eval"] == []
 
 
 def test_resume_after_interruption_restarts_running_from_scratch(tmp_path):
-    first = q.build_queue()[0]
+    first = FIRST
     c, calls = _campaign(tmp_path, lambda n, kw: _rec())
     c.pin({})
     st = c.store.load(first)
@@ -102,7 +136,7 @@ def test_resume_after_interruption_restarts_running_from_scratch(tmp_path):
 
 
 def _boom_first(n, kw):
-    if kw["arm"] == "gtm" and kw["seed"] == 0 and kw["condition"] == "registered":
+    if _is_first(kw):
         raise OSError("disk")
     return _rec()
 
@@ -110,8 +144,8 @@ def _boom_first(n, kw):
 def test_infra_restart_capped_at_two_then_training_failure(tmp_path):
     c, calls = _campaign(tmp_path, _boom_first)
     code = c.run()
-    first = q.build_queue()[0]
-    assert calls["train"].count("gtm/registered/0") == 3  # 1 + 2 restarts
+    first = FIRST
+    assert calls["train"].count(FIRST_TAG) == 3  # 1 + 2 restarts
     s = c.store.load(first)
     assert s["status"] == q.TRAINING_FAILURE and s["infra_failures"] == 3
     assert s["infra_exhausted"] and s["eval_done"]
@@ -129,7 +163,7 @@ def test_infra_exhausted_without_checkpoint_evaluates_init(tmp_path):
     c, calls = _campaign(tmp_path, _boom_first, ckpts=False)
     c.run()
     assert calls["eval"][0][0] is None
-    s = c.store.load(q.build_queue()[0])
+    s = c.store.load(FIRST)
     assert s["status"] == q.TRAINING_FAILURE and s["eval_done"]
 
 
@@ -137,23 +171,23 @@ def test_tmp_checkpoint_never_picked(tmp_path):
     def t(n, kw):
         for name in ("ckpt_100.safetensors", "ckpt_200.tmp.safetensors"):
             (kw["out_dir"] / name).write_text("x")
-        if kw["arm"] == "gtm" and kw["seed"] == 0 and kw["condition"] == "registered":
+        if _is_first(kw):
             raise OSError("disk")
         return _rec()
     c, calls = _campaign(tmp_path, t, ckpts=False)
     c.run()
     assert calls["eval"][0][0].name == "ckpt_100.safetensors"
-    files = rc.archive_files(c.run_dir(q.build_queue()[0]), None)
+    files = rc.archive_files(c.run_dir(FIRST), None)
     assert not any("tmp" in f.name for f in files)
 
 
 def test_exhausted_before_run_dir_created_still_evaluates(tmp_path):
     c, calls = _campaign(tmp_path, _boom_first, ckpts=False, mkdir=False)
     assert c.run() == rc.EXIT_OK
-    s = c.store.load(q.build_queue()[0])
+    s = c.store.load(FIRST)
     assert s["eval_done"] and s["eval_failures"] == 0
     assert calls["eval"][0][0] is None
-    assert (c.run_dir(q.build_queue()[0]) / "eval.json").exists()
+    assert (c.run_dir(FIRST) / "eval.json").exists()
 
 
 def test_exhausted_checkpoint_found_in_earlier_failed_dir(tmp_path):
@@ -161,7 +195,7 @@ def test_exhausted_checkpoint_found_in_earlier_failed_dir(tmp_path):
 
     def t(n, kw):
         made["n"] += 1
-        if kw["arm"] == "gtm" and kw["seed"] == 0 and kw["condition"] == "registered":
+        if _is_first(kw):
             if made["n"] > 1:  # later attempts leave no checkpoint
                 for f in kw["out_dir"].glob("ckpt_*"):
                     f.unlink()
@@ -182,7 +216,7 @@ def test_infra_failure_then_success(tmp_path):
     c, calls = _campaign(tmp_path, flaky)
     assert c.run() == rc.EXIT_OK
     assert calls["train"][0] == calls["train"][1]
-    assert c.store.load(q.build_queue()[0])["infra_failures"] == 1
+    assert c.store.load(FIRST)["infra_failures"] == 1
 
 
 def test_training_failure_not_retried_and_evaluated_untrained(tmp_path):
@@ -193,10 +227,10 @@ def test_training_failure_not_retried_and_evaluated_untrained(tmp_path):
         return _rec()
     c, calls = _campaign(tmp_path, tf)
     assert c.run() == rc.EXIT_OK
-    first = q.build_queue()[0]
+    first = FIRST
     s = c.store.load(first)
     assert s["status"] == q.TRAINING_FAILURE and s["eval_done"]
-    assert calls["train"].count("gtm/registered/0") == 1
+    assert calls["train"].count(FIRST_TAG) == 1
     assert calls["eval"][0][0] is None  # untrained init evaluated
 
 
@@ -210,15 +244,15 @@ def test_eval_only_after_training_and_eval_retry_does_not_retrain(tmp_path):
         return _Eval()
     c, calls = _campaign(tmp_path, lambda n, kw: _rec(), eval_fn=ev)
     assert c.run() == rc.EXIT_OK
-    assert calls["train"].count("gtm/registered/0") == 1
-    assert c.store.load(q.build_queue()[0])["eval_failures"] == 1
+    assert calls["train"].count(FIRST_TAG) == 1
+    assert c.store.load(FIRST)["eval_failures"] == 1
 
 
 def test_gpu_guard_stops_without_state_change(tmp_path):
     c, calls = _campaign(tmp_path, lambda n, kw: _rec(), gpu=lambda: 2.0)
     assert c.run() == rc.EXIT_GPU
     assert calls["train"] == []
-    assert c.store.load(q.build_queue()[0])["status"] == q.PENDING
+    assert c.store.load(FIRST)["status"] == q.PENDING
 
 
 def test_stop_file(tmp_path):
@@ -237,9 +271,9 @@ def test_archive_called_and_failure_nonfatal(tmp_path):
     c, _ = _campaign(tmp_path, lambda n, kw: _rec(), archive=arch,
                      archive_to="u@h:/p")
     assert c.run() == rc.EXIT_OK
-    assert len(got) == 50
-    assert not c.store.load(q.build_queue()[0])["archived"]
-    assert c.store.load(q.build_queue()[1])["archived"]
+    assert len(got) == 30
+    assert not c.store.load(FIRST)["archived"]
+    assert c.store.load(SECOND)["archived"]
     assert f"ckpt_{TOTAL}.safetensors" in got[1][1]
 
 
@@ -417,7 +451,7 @@ def test_pin_budget_and_trial_status(tmp_path):
 
 def test_unpinned_existing_state_refused(tmp_path):
     c, _ = _campaign(tmp_path, lambda n, kw: _rec())
-    c.store.save(c.store.load(q.build_queue()[0]))
+    c.store.save(c.store.load(FIRST))
     with pytest.raises(rc.GuardError, match="unpinned"):
         c.pin({})
 
@@ -450,13 +484,13 @@ def test_dry_run_trains_nothing_and_estimates(tmp_path, monkeypatch, capsys):
                     "--throughput-json", str(thr)])
     out = capsys.readouterr().out
     assert code == 0 and called == []
-    assert "50 runs" in out and "WOULD REFUSE" in out and "Estimated duration" in out
+    assert "60 runs" in out and "WOULD REFUSE" in out and "Estimated duration" in out
     assert not (tmp_path / "c").exists()
     e = rc.estimate(json.loads(thr.read_text()))
-    # 10 gtm runs at 50M/1000/3600+600/3600 h, 40 others at nocomm rate
+    # 12 gtm runs at 50M/1000/3600+600/3600 h, 48 others at nocomm rate
     gtm_h = 50e6 / 1000 / 3600 + 600 / 3600
     oth_h = 50e6 / 2000 / 3600 + 300 / 3600
-    assert e["total_hours"] == pytest.approx(10 * gtm_h + 40 * oth_h)
+    assert e["total_hours"] == pytest.approx(12 * gtm_h + 48 * oth_h)
 
 
 def test_gpu_free_parsing_and_missing_smi(monkeypatch):
@@ -472,3 +506,272 @@ def test_gpu_free_parsing_and_missing_smi(monkeypatch):
         rc.gpu_free_gb(missing)
     monkeypatch.setattr(rc.platform, "system", lambda: "Darwin")
     assert rc.gpu_free_gb(missing) is None
+
+
+# ---- hosts (seed -> host block factor, 2026-10-23) --------------------
+
+def test_kxkm_campaign_touches_only_its_own_runs(tmp_path):
+    c, calls = _campaign(tmp_path, lambda n, kw: _rec(), host="kxkm")
+    assert c.run() == rc.EXIT_OK
+    assert len(calls["train"]) == 30 and len(calls["eval"]) == 30
+    assert {int(t.rsplit("/", 1)[1]) for t in calls["train"]} == {73, 101, 131}
+    # the other host's runs were never touched (no status file written)
+    assert not any(c.store.path(s).exists() for s in q.runs_for_host("macm1"))
+
+
+def test_macm1_trains_its_runs_and_never_evaluates(tmp_path):
+    c, calls = _campaign(tmp_path, lambda n, kw: _rec(), host="macm1")
+    assert c.run() == rc.EXIT_OK
+    assert len(calls["train"]) == 30 and calls["eval"] == []
+    assert {int(t.rsplit("/", 1)[1]) for t in calls["train"]} == {0, 17, 42}
+    for s in q.runs_for_host("macm1"):
+        st = c.store.load(s)
+        assert st["status"] == q.TRAINED and not st["eval_done"]
+        assert st["host"] == "macm1"
+    assert not any(c.store.path(s).exists() for s in q.runs_for_host("kxkm"))
+
+
+def test_evaluation_refused_on_macm1(tmp_path):
+    c, calls = _campaign(tmp_path, lambda n, kw: _rec(), host="macm1")
+    spec = q.runs_for_host("macm1")[0]
+    st = c.store.load(spec)
+    st.update(status=q.TRAINED, last_checkpoint=None)
+    with pytest.raises(rc.GuardError, match="kxkm"):
+        c.evaluate(spec, st)
+    assert calls["eval"] == []
+
+
+def test_options_reject_unknown_host(tmp_path):
+    with pytest.raises(rc.GuardError):
+        rc.Campaign(rc.Options(campaign_dir=tmp_path / "c", host="grosmac"))
+
+
+def test_pin_records_host_and_refuses_other_host(tmp_path):
+    c, _ = _campaign(tmp_path, lambda n, kw: _rec(), host="kxkm")
+    c.pin({})
+    assert json.loads((c.dir / "campaign.json").read_text())["host"] == "kxkm"
+    c2, _ = _campaign(tmp_path, lambda n, kw: _rec(), host="macm1")
+    with pytest.raises(rc.GuardError, match="host"):
+        c2.pin({})
+
+
+def _sync_fixture(tmp_path):
+    """macM1 campaign dir with its 30 runs trained (fake checkpoints)."""
+    c, _ = _campaign(tmp_path / "mac", lambda n, kw: _rec(), host="macm1")
+    assert c.run() == rc.EXIT_OK
+    return c
+
+
+def test_sync_stages_trained_macm1_runs_for_kxkm(tmp_path):
+    mac = _sync_fixture(tmp_path)
+    sent = []
+
+    def fake_rsync(src, target, jump):
+        sent.append((sorted(p.name for p in src.rglob("*") if p.is_file()),
+                     target, jump))
+
+    done = rc.sync_runs(mac.dir, "u@kxkm:/camp", jump="electron@es",
+                        rsync_fn=fake_rsync)
+    assert len(done) == 30 and all(r.host == "macm1" for r in done)
+    assert all(mac.store.load(s)["synced"] for s in q.runs_for_host("macm1"))
+    # per run: the run dir (checkpoint) first, then the status file
+    assert any(f"ckpt_{TOTAL}.safetensors" in names for names, _, _ in sent)
+    assert all(j == "electron@es" for _, _, j in sent)
+    # idempotent: nothing left to send
+    assert rc.sync_runs(mac.dir, "u@kxkm:/camp", jump="j", rsync_fn=fake_rsync) == []
+
+
+def test_sync_skips_untrained_and_failed_rsync_stays_unsynced(tmp_path):
+    c, _ = _campaign(tmp_path / "mac", lambda n, kw: _rec(), host="macm1")
+    c.pin({})
+    first = q.runs_for_host("macm1")[0]
+    st = c.store.load(first)
+    st["status"] = q.RUNNING
+    c.store.save(st)
+
+    def boom(src, target, jump):
+        raise RuntimeError("ssh down")
+
+    assert rc.sync_runs(c.dir, "u@h:/p", jump="j", rsync_fn=boom) == []
+    assert not c.store.load(first)["synced"]
+
+
+def test_kxkm_evaluates_synced_macm1_runs_but_never_trains_them(tmp_path):
+    mac = _sync_fixture(tmp_path)
+    kx, calls = _campaign(tmp_path / "kx", lambda n, kw: _rec(), host="kxkm")
+    # simulate the sync landing on KXKM: status files + checkpoints
+    for s in q.runs_for_host("macm1")[:3]:
+        st = mac.store.load(s)
+        rd = kx.run_dir(s)
+        rd.mkdir(parents=True)
+        (rd / st["last_checkpoint"]).write_text("x")
+        kx.store.save(dict(st, synced_from="macm1", synced=False))
+    assert kx.run() == rc.EXIT_OK
+    trained = {int(t.rsplit("/", 1)[1]) for t in calls["train"]}
+    assert trained == {73, 101, 131}  # never trains macM1 seeds
+    assert len(calls["eval"]) == 30 + 3
+    evaluated = [s for s in q.runs_for_host("macm1") if kx.store.load(s)["eval_done"]]
+    assert len(evaluated) == 3  # the other 27 await sync
+
+
+def test_entry_points_are_guarded_by_main_check():
+    import pathlib
+    import re
+
+    root = pathlib.Path(rc.__file__).resolve().parents[1]
+    bad = []
+    for f in root.rglob("*.py"):
+        src = f.read_text()
+        if re.search(r"^def main\(", src, re.M) and \
+                not re.search(r'^if __name__ == "__main__":', src, re.M):
+            bad.append(str(f.relative_to(root)))
+    assert bad == []
+
+
+def test_main_requires_host_and_sync_needs_args(tmp_path, monkeypatch):
+    called = []
+    monkeypatch.setattr(rc, "_default_train", lambda **kw: called.append(kw))
+    assert rc.main(["--campaign-dir", str(tmp_path / "c")]) == rc.EXIT_GUARD
+    assert called == []
+    with pytest.raises(SystemExit):
+        rc.main(["sync"])  # missing required args
+
+
+def test_dry_run_with_host_lists_only_that_host(tmp_path, capsys):
+    code = rc.main(["--campaign-dir", str(tmp_path / "c"), "--dry-run",
+                    "--host", "macm1"])
+    out = capsys.readouterr().out
+    assert code == 0 and "30 runs" in out and "s73" not in out and "s0" in out
+
+
+# ---- freeze-tag guard mode (2026-10-23 22:17) -------------------------
+
+def _frozen_repo(tmp_path, *, status=None, annotated=True, msg_sha=None, tag="n10c-freeze-t"):
+    """Repo with origin (bare), code commit, manifest commit, freeze tag."""
+    origin = tmp_path / "origin.git"
+    subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
+    repo = tmp_path / "frepo"
+    repo.mkdir()
+
+    def g(*a, check=True):
+        return subprocess.run(["git", "-C", str(repo), *a], check=check,
+                              capture_output=True, text=True).stdout.strip()
+    g("init", "-q")
+    g("config", "user.email", "t@t")
+    g("config", "user.name", "t")
+    g("remote", "add", "origin", str(origin))
+    (repo / "code.py").write_text("x = 1\n")
+    g("add", ".")
+    g("commit", "-q", "-m", "code")
+    md = repo / "experiments" / "procgen_multiagent_gtm_comm" / "manifest"
+    md.mkdir(parents=True)
+    m = md / "stage2-manifest.md"
+    m.write_text(f"# Manifest\n**{status or f'Status: FROZEN (tag {tag})'}**\n")
+    g("add", ".")
+    g("commit", "-q", "-m", "manifest")
+    sha = hashlib.sha256(m.read_bytes()).hexdigest()
+    rel = "experiments/procgen_multiagent_gtm_comm/manifest/stage2-manifest.md"
+    if annotated:
+        g("tag", "-a", tag, "-m", f"freeze\n\nmanifest: {rel}\n"
+          f"manifest-sha256: {msg_sha or sha}")
+    else:
+        g("tag", tag)
+    g("push", "-q", "origin", "HEAD:refs/heads/main", f"refs/tags/{tag}")
+    return repo, m, sha, tag, g
+
+
+def _fkw(repo, m, sha, tag):
+    return dict(repo=repo, manifest=m, manifest_sha256=sha, manifest_doi=None,
+                expect_commit=None, freeze_tag=tag)
+
+
+def test_freeze_tag_mode_passes(tmp_path):
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path)
+    assert rc.guard_problems(**_fkw(repo, m, sha, tag)) == []
+
+
+def test_freeze_tag_passes_with_docs_only_descendant(tmp_path):
+    repo, m, sha, tag, g = _frozen_repo(tmp_path)
+    (repo / "docs").mkdir()
+    (repo / "docs" / "n.md").write_text("n")
+    g("add", ".")
+    g("commit", "-q", "-m", "docs")
+    assert rc.guard_problems(**_fkw(repo, m, sha, tag)) == []
+    (repo / "code.py").write_text("x = 2\n")
+    g("commit", "-q", "-am", "code2")
+    assert any("code changed" in p for p in rc.guard_problems(**_fkw(repo, m, sha, tag)))
+
+
+def test_freeze_tag_negatives(tmp_path):
+    repo, m, sha, tag, g = _frozen_repo(tmp_path)
+    kw = _fkw(repo, m, sha, tag)
+    assert any("does not exist" in p for p in rc.guard_problems(
+        **{**kw, "freeze_tag": "nope"}))
+    assert any("both" in p for p in rc.guard_problems(**{**kw, "manifest_doi": DOI}))
+    assert any("SHA-256 mismatch" in p for p in rc.guard_problems(
+        **{**kw, "manifest_sha256": "0" * 64}))
+    (repo / "dirty.txt").write_text("d")
+    assert any("dirty" in p for p in rc.guard_problems(**kw))
+
+
+def test_freeze_lightweight_tag_refused(tmp_path):
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path, annotated=False)
+    assert any("lightweight" in p for p in rc.guard_problems(**_fkw(repo, m, sha, tag)))
+
+
+def test_freeze_tag_message_sha_mismatch_refused(tmp_path):
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path, msg_sha="a" * 64)
+    assert any("tag message" in p for p in rc.guard_problems(**_fkw(repo, m, sha, tag)))
+
+
+def test_freeze_tag_at_wrong_commit_refused(tmp_path):
+    repo, m, sha, tag, g = _frozen_repo(tmp_path)
+    g("reset", "-q", "--hard", "HEAD~1")  # HEAD no longer descends from the tag
+    probs = rc.guard_problems(**_fkw(repo, m if m.exists() else m, sha, tag))
+    assert probs and any("manifest" in p or "descendant" in p for p in probs)
+
+
+def test_freeze_manifest_status_must_name_the_tag(tmp_path):
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path, status="Status: FROZEN (tag other)")
+    assert any("FROZEN" in p for p in rc.guard_problems(**_fkw(repo, m, sha, tag)))
+    repo2, m2, sha2, tag2, _ = _frozen_repo(tmp_path / "d", status="Status: DRAFT")
+    assert any("DRAFT" in p for p in rc.guard_problems(**_fkw(repo2, m2, sha2, tag2)))
+
+
+def test_filed_doi_mode_still_works_alongside(tmp_path):
+    repo, code, _ = _git_repo(tmp_path)
+    assert rc.guard_problems(**_ok(repo, code)) == []
+
+
+@pytest.mark.parametrize("variant", ["missing", "lightweight", "sha", "dirty"])
+def test_main_freeze_negatives_call_nothing(tmp_path, monkeypatch, variant):
+    kw = {"annotated": variant != "lightweight",
+          "msg_sha": "b" * 64 if variant == "sha" else None}
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path, **kw)
+    if variant == "dirty":
+        (repo / "x.txt").write_text("x")
+    called = []
+    monkeypatch.setattr(rc, "REPO", repo)
+    monkeypatch.setattr(rc, "_default_train", lambda **k: called.append("t"))
+    monkeypatch.setattr(rc, "_default_eval", lambda *a, **k: called.append("e"))
+    argv = ["--campaign-dir", str(tmp_path / "c"), "--host", "kxkm",
+            "--manifest", str(m), "--manifest-sha256", sha,
+            "--freeze-tag", "ghost" if variant == "missing" else tag]
+    assert rc.main(argv) == rc.EXIT_GUARD
+    assert called == [] and not (tmp_path / "c").exists()
+
+
+def test_main_freeze_mode_pins_tag_commit_and_swhid(tmp_path, monkeypatch):
+    repo, m, sha, tag, g = _frozen_repo(tmp_path)
+    called = []
+    monkeypatch.setattr(rc, "REPO", repo)
+    monkeypatch.setattr(rc.Campaign, "run", lambda self: called.append(1) or 0)
+    swh = "swh:1:rev:" + g("rev-parse", "HEAD")
+    argv = ["--campaign-dir", str(tmp_path / "c"), "--host", "macm1",
+            "--manifest", str(m), "--manifest-sha256", sha,
+            "--freeze-tag", tag, "--swhid", swh]
+    assert rc.main(argv) == 0 and called == [1]
+    meta = json.loads((tmp_path / "c" / "campaign.json").read_text())
+    assert meta["freeze_tag"] == tag and meta["swhid"] == swh
+    assert meta["freeze_commit"] == g("rev-parse", "HEAD") and meta["host"] == "macm1"
+    assert rc.main(argv[:-1] + ["not-a-swhid"]) == rc.EXIT_GUARD

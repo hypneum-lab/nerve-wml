@@ -11,7 +11,7 @@ PY="$BASE/.venv/bin/python"
 CAMP="$BASE/campaign"
 mkdir -p "$CAMP"
 CMD=(env PYTHONPATH=. "$PY" -m experiments.procgen_multiagent_gtm_comm.campaign.run_campaign
-     --campaign-dir "$CAMP" "$@")
+     --campaign-dir "$CAMP" --host kxkm "$@")
 # Pre-check synchronously so a refusal is visible (guards re-run at start).
 PRE="$("${CMD[@]}" --dry-run)"; echo "$PRE"
 if grep -q "WOULD REFUSE" <<<"$PRE"; then echo "guards would refuse: not starting" >&2; exit 2; fi

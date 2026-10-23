@@ -1,7 +1,9 @@
-"""Frozen N10-C run queue and per-run status files (option D, 50 runs).
+"""Frozen N10-C run queue and per-run status files (option D, 60 runs).
 
-Registered condition: 6 arms x 5 seeds = 30 runs. Closed condition:
-gtm, dial, eng, nocomm x 5 seeds = 20 runs. The order is a pure function
+Registered condition: 6 arms x 6 seeds = 36 runs. Closed condition:
+gtm, dial, eng, nocomm x 6 seeds = 24 runs. Every run has a ``host`` (seed
+block factor, ``harness.codes.SEED_HOST``): macM1 trains seeds 0, 17, 42;
+KXKM trains 73, 101, 131. The order is a pure function
 of the frozen lists below: seed-major (so a partial campaign always
 holds complete seed blocks, plus a prefix of the next one) with the arm
 order rotated by the seed index (so no arm is systematically last), and
@@ -20,14 +22,15 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-SEEDS: tuple[int, ...] = (0, 17, 42, 73, 101)
+from ..harness.codes import HOSTS, SEED_HOST, SEEDS  # noqa: F401 - re-exported
+
 ARMS_REGISTERED: tuple[str, ...] = ("gtm", "mlp", "atoc", "dial", "eng", "nocomm")
 ARMS_CLOSED: tuple[str, ...] = ("gtm", "dial", "eng", "nocomm")
 ARM_ORDER: tuple[str, ...] = ("gtm", "nocomm", "dial", "eng", "mlp", "atoc")
 TOTAL_PAIR_STEPS = 50_000_000
 MAX_INFRA_RESTARTS = 2
 MAX_EVAL_ATTEMPTS = 3
-N_RUNS = 50
+N_RUNS = 60
 
 PENDING = "pending"
 RUNNING = "running"
@@ -47,9 +50,13 @@ class RunSpec:
     def run_id(self) -> str:
         return f"{self.condition}-{self.arm}-s{self.seed}"
 
+    @property
+    def host(self) -> str:
+        return SEED_HOST[self.seed]
+
 
 def build_queue() -> list[RunSpec]:
-    """The frozen 50-run list, deterministic order."""
+    """The frozen 60-run list, deterministic order."""
     out: list[RunSpec] = []
     for i, seed in enumerate(SEEDS):
         k = i % len(ARM_ORDER)
@@ -61,14 +68,20 @@ def build_queue() -> list[RunSpec]:
     return out
 
 
+def runs_for_host(host: str) -> list[RunSpec]:
+    if host not in HOSTS:
+        raise ValueError(f"unknown host {host!r}, expected one of {HOSTS}")
+    return [r for r in build_queue() if r.host == host]
+
+
 def new_state(spec: RunSpec) -> dict:
     return {
         "run_id": spec.run_id, "arm": spec.arm, "seed": spec.seed,
-        "condition": spec.condition, "status": PENDING,
+        "condition": spec.condition, "host": spec.host, "status": PENDING,
         "infra_failures": 0, "eval_failures": 0, "eval_done": False,
         "archived": False, "attempts": [], "last_checkpoint": None,
         "failure_reason": None, "started_at": None, "finished_at": None,
-        "infra_exhausted": False,
+        "infra_exhausted": False, "synced": False,
     }
 
 

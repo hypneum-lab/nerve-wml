@@ -72,10 +72,110 @@ def _head_vs_commit(repo: Path, head: str, expect: str) -> list[str]:
     return []
 
 
+SWHID_RE = re.compile(r"^swh:1:(rev|rel|snp|dir|cnt):[0-9a-f]{40}$")
+TAG_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,100}$")
+ORIGIN = "origin"
+
+
+def freeze_tag_info(repo: Path, tag: str) -> tuple[str | None, list[str]]:
+    """Resolve a freeze tag: (peeled commit or None, problems).
+
+    The tag must exist on ``origin`` (git ls-remote), be an *annotated* tag
+    (a peeled ``^{}`` entry exists), and exist locally as the same tag
+    object (so its message can be read).
+    """
+    bad: list[str] = []
+    if not TAG_NAME_RE.match(tag or ""):
+        return None, [f"--freeze-tag {tag!r} is not a valid tag name"]
+    r = subprocess.run(
+        ["git", "-C", str(repo), "ls-remote", "--tags", ORIGIN,
+         f"refs/tags/{tag}", f"refs/tags/{tag}^{{}}"],
+        capture_output=True, text=True, timeout=120)
+    if r.returncode != 0:
+        return None, [f"git ls-remote {ORIGIN} failed: {r.stderr.strip()}"]
+    refs = {ln.split("\t")[1]: ln.split("\t")[0]
+            for ln in r.stdout.splitlines() if "\t" in ln}
+    obj, peeled = refs.get(f"refs/tags/{tag}"), refs.get(f"refs/tags/{tag}^{{}}")
+    if obj is None:
+        return None, [f"tag {tag} does not exist on {ORIGIN}"]
+    if peeled is None:
+        return None, [f"tag {tag} is a lightweight tag: an annotated tag is required"]
+    try:
+        local = _git(repo, "rev-parse", "--verify", f"refs/tags/{tag}")
+    except GuardError:
+        return None, [f"tag {tag} not fetched locally (git fetch {ORIGIN} tag {tag})"]
+    if local != obj:
+        bad.append(f"local tag {tag} differs from {ORIGIN}'s tag object")
+    return (peeled if not bad else None), bad
+
+
+def _freeze_problems(*, repo: Path, manifest: Path | None,
+                     manifest_sha256: str | None, manifest_doi: str | None,
+                     freeze_tag: str) -> list[str]:
+    bad: list[str] = []
+    if manifest_doi:
+        bad.append("use either --freeze-tag or --manifest-doi, not both")
+    commit, probs = freeze_tag_info(repo, freeze_tag)
+    bad += probs
+    if manifest is None or not Path(manifest).is_file():
+        return bad + ["--manifest missing or not a file"]
+    mp = Path(manifest).resolve()
+    if not mp.is_relative_to((Path(repo) / MANIFEST_DIR).resolve()):
+        bad.append(f"manifest must be under {MANIFEST_DIR}/")
+    data = mp.read_bytes()
+    digest = hashlib.sha256(data).hexdigest()
+    if manifest_sha256 and digest != manifest_sha256.strip().lower():
+        bad.append("manifest SHA-256 mismatch (--manifest-sha256)")
+    text = data.decode("utf-8", "replace")
+    if "DRAFT" in text or "DRAFT" in mp.name:
+        bad.append("manifest is a DRAFT")
+    frozen = re.compile(r"^\W*Status:\s*FROZEN \(tag " + re.escape(freeze_tag) + r"\)",
+                        re.MULTILINE)
+    if not (STATUS_FILED_RE.search(text) or frozen.search(text)):
+        bad.append(f"manifest has no 'Status: FROZEN (tag {freeze_tag})' "
+                   "(or 'Status: FILED') line")
+    if commit is not None:
+        try:
+            msg = _git(repo, "tag", "-l", "--format=%(contents)", freeze_tag)
+            m = re.search(r"manifest-sha256:\s*([0-9a-fA-F]{64})", msg)
+            p = re.search(r"^manifest:\s*(\S+)", msg, re.MULTILINE)
+            rel = mp.relative_to(Path(repo).resolve()).as_posix() \
+                if mp.is_relative_to(Path(repo).resolve()) else None
+            if not m:
+                bad.append("tag message has no 'manifest-sha256: <64 hex>' line")
+            elif m.group(1).lower() != digest:
+                bad.append("manifest SHA-256 differs from the one in the tag message")
+            if not p:
+                bad.append("tag message has no 'manifest: <path>' line")
+            elif rel and p.group(1) != rel:
+                bad.append(f"tag message manifest path {p.group(1)} != {rel}")
+        except GuardError as exc:
+            bad.append(str(exc))
+    try:
+        if _git(repo, "status", "--porcelain"):
+            bad.append("git tree is dirty (uncommitted or untracked files)")
+        head = _git(repo, "rev-parse", "HEAD")
+        if commit and head != commit:
+            bad.extend(_head_vs_commit(repo, head, commit))
+        r = subprocess.run(
+            ["git", "-C", str(repo), "ls-files", "--error-unmatch", str(mp)],
+            capture_output=True, text=True)
+        if r.returncode != 0:
+            bad.append("manifest file is not tracked in git (must be committed)")
+    except GuardError as exc:
+        bad.append(str(exc))
+    return bad
+
+
 def guard_problems(*, repo: Path, manifest: Path | None,
                    manifest_sha256: str | None, manifest_doi: str | None,
-                   expect_commit: str | None) -> list[str]:
+                   expect_commit: str | None = None,
+                   freeze_tag: str | None = None) -> list[str]:
     """All reasons the registered start must be refused (empty list = go)."""
+    if freeze_tag:
+        return _freeze_problems(
+            repo=repo, manifest=manifest, manifest_sha256=manifest_sha256,
+            manifest_doi=manifest_doi, freeze_tag=freeze_tag)
     bad: list[str] = []
     doi = normalize_doi(manifest_doi)
     if doi is None:
@@ -130,13 +230,16 @@ def add_guard_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--manifest-sha256")
     p.add_argument("--manifest-doi")
     p.add_argument("--expect-commit")
+    p.add_argument("--freeze-tag", help="annotated freeze tag on origin "
+                   "(alternative to --manifest-doi)")
 
 
 def require_guards(args: argparse.Namespace, repo: Path = REPO) -> None:
     """Raise GuardError unless every guard passes for the parsed CLI args."""
     bad = guard_problems(
         repo=repo, manifest=args.manifest, manifest_sha256=args.manifest_sha256,
-        manifest_doi=args.manifest_doi, expect_commit=args.expect_commit)
+        manifest_doi=args.manifest_doi, expect_commit=args.expect_commit,
+        freeze_tag=getattr(args, "freeze_tag", None))
     if bad:
         raise GuardError("REFUSED:\n- " + "\n- ".join(bad))
 

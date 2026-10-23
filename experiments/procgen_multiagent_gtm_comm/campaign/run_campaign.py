@@ -1,4 +1,4 @@
-"""Sequential N10-C campaign runner (option D, 50 runs, one at a time).
+"""Sequential N10-C campaign runner (option D, 60 runs, one at a time per host).
 
     python -m experiments.procgen_multiagent_gtm_comm.campaign.run_campaign \
         --campaign-dir /ai/saisail/n10c-run/campaign \
@@ -6,6 +6,14 @@
         --manifest-sha256 <sha256> \
         --manifest-doi 10.17605/OSF.IO/XXXXX --expect-commit <40-hex> \
         [--archive-to user@host:/path] [--dry-run --throughput-json t.json]
+
+    ... --host {macm1,kxkm}      only that host's runs (seed block factor)
+    ... --freeze-tag TAG [--swhid SWHID]   instead of --manifest-doi
+    python -m ...run_campaign sync --campaign-dir D --to user@kxkm:CAMPAIGN_DIR
+
+Hosts: macM1 trains seeds 0, 17, 42; KXKM trains 73, 101, 131. Evaluation
+runs ONLY with --host kxkm (x86 Procgen build); macM1 runs end at status
+"trained" and are evaluated on KXKM after `sync` copied their checkpoints.
 
 Hard guards (campaign/guards.py, shared with the harness CLIs; all must
 pass, else exit 2 before any training): real-looking OSF DOI, FILED
@@ -23,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import hashlib
 import json
 import platform
 import re
@@ -39,7 +48,9 @@ from . import queue as q
 from .guards import (  # noqa: F401 - re-exported for callers and tests
     HEX40,
     REPO,
+    SWHID_RE,
     GuardError,
+    freeze_tag_info,
     guard_problems,
     normalize_doi,
 )
@@ -68,7 +79,8 @@ def gpu_free_gb(runner: Callable[..., Any] = subprocess.run) -> float | None:
     return vals[0] / 1024.0  # MiB -> GiB (GPU 0)
 
 
-def estimate(throughput: dict, total: int = q.TOTAL_PAIR_STEPS) -> dict:
+def estimate(throughput: dict, total: int = q.TOTAL_PAIR_STEPS,
+             host: str | None = None) -> dict:
     """Duration estimate: gtm runs use the gtm rate, others the nocomm proxy
     (same convention as the manifest estimate); one 2x200 evaluation each."""
     res = throughput["results"]
@@ -78,7 +90,7 @@ def estimate(throughput: dict, total: int = q.TOTAL_PAIR_STEPS) -> dict:
         return (total / r["pair_steps_per_s"]
                 + r["eval_proxy"]["seconds_per_model_2x200"]) / 3600
 
-    per_run = {s.run_id: hours(s.arm) for s in q.build_queue()}
+    per_run = {s.run_id: hours(s.arm) for s in (q.runs_for_host(host) if host else q.build_queue())}
     tot = sum(per_run.values())
     return {"per_run_hours": per_run, "total_hours": tot, "total_days": tot / 24}
 
@@ -86,6 +98,7 @@ def estimate(throughput: dict, total: int = q.TOTAL_PAIR_STEPS) -> dict:
 @dataclass
 class Options:
     campaign_dir: Path
+    host: str
     total_pair_steps: int = q.TOTAL_PAIR_STEPS
     min_free_gb: float = 8.0
     gpu_wait_s: float = 0.0
@@ -117,6 +130,8 @@ def _now() -> str:
 class Campaign:
     def __init__(self, opts: Options, *, train_fn=None, eval_fn=None,
                  gpu_fn=None, archive_fn=None, log=print) -> None:
+        if opts.host not in q.HOSTS:
+            raise GuardError(f"unknown host {opts.host!r}; expected one of {q.HOSTS}")
         self.o = opts
         self.dir = Path(opts.campaign_dir)
         self.store = q.StatusStore(self.dir / "status")
@@ -138,7 +153,7 @@ class Campaign:
     def pin(self, pins: dict) -> None:
         """Record guard inputs, budget and trial flag; refuse other inputs."""
         pins = {**pins, "total_pair_steps": self.o.total_pair_steps,
-                "trial": self.o.trial}
+                "trial": self.o.trial, "host": self.o.host}
         self.dir.mkdir(parents=True, exist_ok=True)
         p = self.dir / "campaign.json"
         if p.exists():
@@ -149,7 +164,9 @@ class Campaign:
                     f"campaign pinned to other inputs (trial/registered "
                     f"cannot be mixed, nor budget changed): {diff}")
         else:
-            if any((self.dir / "status").glob("*.json")):
+            own = [f for f in (self.dir / "status").glob("*.json")
+                   if "synced_from" not in json.loads(f.read_text())]
+            if own:  # status files synced in from macM1 are not own state
                 raise GuardError("unpinned campaign dir already holds run state")
             p.write_text(json.dumps({**pins, "created": _now()}, indent=2))
         self._pinned = True
@@ -212,6 +229,9 @@ class Campaign:
                    wall_time_s=rec.wall_time_s)
 
     def evaluate(self, spec: q.RunSpec, st: dict) -> None:
+        if self.o.host != "kxkm":
+            raise GuardError("evaluation runs only with --host kxkm "
+                             "(x86 Procgen build); copy checkpoints with `sync`")
         rd = self.run_dir(spec)
         ckpt = rd / st["last_checkpoint"] if st["last_checkpoint"] else None
         self.event(run=spec.run_id, phase="eval", state="start",
@@ -283,13 +303,23 @@ class Campaign:
         return (self.dir / "STOP").exists()
 
     def run(self) -> int:
-        queue = q.build_queue()
+        queue = q.runs_for_host(self.o.host)
         if not self._pinned:
             self.pin({})
-        for spec in queue:
+        can_eval = self.o.host == "kxkm"
+        for spec in q.build_queue():
             if self.stop_requested():
                 self.event(phase="campaign", state="stopped_by_STOP_file")
                 return EXIT_STOP
+            if spec.host != self.o.host:
+                # KXKM evaluates (never trains) macM1 runs once synced here
+                if can_eval and self.store.path(spec).exists():
+                    st = self.store.load(spec)
+                    while q.needs_eval(st):
+                        self.evaluate(spec, st)
+                    if q.needs_archive(st):
+                        self.archive(spec, st)
+                continue
             st = self.store.recover_stale(spec)
             self.finalize_exhausted(spec, st)
             if q.needs_training(st):
@@ -308,13 +338,17 @@ class Campaign:
                                        free_gb=free, next_run=spec.run_id)
                             return EXIT_GPU
                 self.finalize_exhausted(spec, st)
-            while q.needs_eval(st):
+            while can_eval and q.needs_eval(st):
                 self.evaluate(spec, st)
             if q.needs_archive(st):
                 self.archive(spec, st)
         states = [self.store.load(s) for s in queue]
-        self.event(phase="campaign", state="finished", summary=q.summarize(states))
-        problems = [s for s in states if s["status"] in (q.TRAINED, q.TRAINING_FAILURE)
+        awaiting = [s for s in q.runs_for_host("macm1")
+                    if can_eval and not self.store.path(s).exists()]
+        self.event(phase="campaign", state="finished", host=self.o.host,
+                   summary=q.summarize(states), awaiting_sync=len(awaiting))
+        problems = [s for s in states if can_eval
+                    and s["status"] in (q.TRAINED, q.TRAINING_FAILURE)
                     and not s["eval_done"]]
         return EXIT_PROBLEMS if problems else EXIT_OK
 
@@ -349,13 +383,98 @@ def rsync_archive(run_dir: Path, files: list[Path], target: str, run_id: str) ->
         raise RuntimeError(f"rsync failed: {r.stderr.strip()}")
 
 
+DEFAULT_JUMP = "electron@100.78.191.52"  # electron-server
+
+
+def rsync_stage(src: Path, target: str, jump: str) -> None:
+    """rsync a staged directory (symlinks followed) to ``user@host:path``;
+    never overwrites what already exists at the target."""
+    e = f"ssh -o BatchMode=yes -o ControlPath=none -J {jump}"
+    cmd = ["rsync", "-aL", "--partial", "--ignore-existing", "-e", e,
+           f"{src}/", f"{target.rstrip('/')}/"]
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=7200)
+    if r.returncode != 0:
+        raise RuntimeError(f"rsync failed: {r.stderr.strip()}")
+
+
+def sync_runs(campaign_dir: Path, target: str, *, jump: str = DEFAULT_JUMP,
+              rsync_fn: Callable[[Path, str, str], None] = rsync_stage) -> list[q.RunSpec]:
+    """Copy trained macM1 runs to the KXKM campaign dir for evaluation.
+
+    Per run, in two steps (so a status file never precedes its
+    checkpoint): ``runs/<id>/`` (run.json + the last checkpoint, renamed to
+    its basename), then ``status/<id>.json`` (marked ``synced_from``).
+    Marks the local status ``synced`` only after both succeeded.
+    """
+    store = q.StatusStore(Path(campaign_dir) / "status")
+    stage_root = Path(campaign_dir) / "sync-stage"
+    done: list[q.RunSpec] = []
+    for spec in q.runs_for_host("macm1"):
+        if not store.path(spec).exists():
+            continue
+        st = store.load(spec)
+        if st["status"] not in (q.TRAINED, q.TRAINING_FAILURE) or st.get("synced"):
+            continue
+        rd = Path(campaign_dir) / "runs" / spec.run_id
+        st_runs = stage_root / f"{spec.run_id}.runs"
+        st_stat = stage_root / f"{spec.run_id}.status"
+        for d in (st_runs, st_stat):
+            if d.exists():
+                shutil.rmtree(d)
+        out = st_runs / "runs" / spec.run_id
+        out.mkdir(parents=True)
+        (st_stat / "status").mkdir(parents=True)
+        if (rd / "run.json").exists():
+            (out / "run.json").symlink_to((rd / "run.json").resolve())
+        ck = st["last_checkpoint"]
+        remote = dict(st, synced_from="macm1", synced=False, eval_done=False,
+                      eval_failures=0, archived=False)
+        if ck:
+            src = (rd / ck).resolve()
+            (out / src.name).symlink_to(src)
+            remote["last_checkpoint"] = src.name
+        (st_stat / "status" / f"{spec.run_id}.json").write_text(
+            json.dumps(remote, indent=2))
+        try:  # checkpoint first, status file second
+            rsync_fn(st_runs, target, jump)
+            rsync_fn(st_stat, target, jump)
+        except Exception as exc:  # noqa: BLE001 - retried at the next sync
+            print(f"sync failed for {spec.run_id}: {exc.__class__.__name__}: {exc}",
+                  file=sys.stderr)
+            continue
+        st["synced"] = True
+        store.save(st)
+        done.append(spec)
+    return done
+
+
+def sync_main(argv: list[str]) -> int:
+    p = argparse.ArgumentParser(
+        prog="run_campaign sync",
+        description="Copy trained macM1 runs to the KXKM campaign directory "
+                    "(via the electron-server jump) so KXKM can evaluate them.")
+    p.add_argument("--campaign-dir", type=Path, required=True)
+    p.add_argument("--to", required=True,
+                   help="user@kxkm:/path/to/KXKM/campaign-dir")
+    p.add_argument("--jump", default=DEFAULT_JUMP)
+    a = p.parse_args(argv)
+    done = sync_runs(a.campaign_dir, a.to, jump=a.jump)
+    print(f"synced {len(done)} run(s)")
+    return EXIT_OK
+
+
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("--campaign-dir", type=Path, required=True,
                    help="state + run outputs; must be OUTSIDE the git repo")
+    p.add_argument("--host", choices=list(q.HOSTS),
+                   help="run only this host's runs (required to train)")
     p.add_argument("--manifest", type=Path)
     p.add_argument("--manifest-sha256")
     p.add_argument("--manifest-doi")
+    p.add_argument("--freeze-tag", help="annotated freeze tag on origin "
+                   "(alternative to --manifest-doi)")
+    p.add_argument("--swhid", help="Software Heritage id recorded in campaign.json")
     p.add_argument("--expect-commit")
     p.add_argument("--min-free-gb", type=float, default=8.0)
     p.add_argument("--gpu-wait-s", type=float, default=0.0)
@@ -370,10 +489,18 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "sync":
+        return sync_main(argv[1:])
     a = _parser().parse_args(argv)
     problems = guard_problems(
         repo=REPO, manifest=a.manifest, manifest_sha256=a.manifest_sha256,
-        manifest_doi=a.manifest_doi, expect_commit=a.expect_commit)
+        manifest_doi=a.manifest_doi, expect_commit=a.expect_commit,
+        freeze_tag=a.freeze_tag)
+    if not a.host and not a.dry_run:
+        problems.append("--host {macm1,kxkm} is required")
+    if a.swhid and not SWHID_RE.match(a.swhid):
+        problems.append("--swhid is not a valid swh:1:<type>:<40 hex> identifier")
     try:
         cdir = a.campaign_dir.resolve()
         if REPO in (cdir, *cdir.parents):
@@ -389,7 +516,8 @@ def main(argv: list[str] | None = None) -> int:
     if problems:
         print("REFUSED:\n- " + "\n- ".join(problems), file=sys.stderr)
         return EXIT_GUARD
-    opts = Options(campaign_dir=a.campaign_dir, total_pair_steps=a.total_pair_steps,
+    opts = Options(campaign_dir=a.campaign_dir, host=a.host,
+                   total_pair_steps=a.total_pair_steps,
                    min_free_gb=a.min_free_gb, gpu_wait_s=a.gpu_wait_s,
                    archive_to=a.archive_to, max_concurrent=a.max_concurrent,
                    trial=a.non_registered_trial)
@@ -402,9 +530,17 @@ def main(argv: list[str] | None = None) -> int:
             print("REFUSED: another campaign process holds the lock", file=sys.stderr)
             return EXIT_GUARD
         try:
-            camp.pin({"manifest_sha256": a.manifest_sha256.lower(),
-                      "manifest_doi": normalize_doi(a.manifest_doi),
-                      "commit": a.expect_commit.lower()})
+            if a.freeze_tag:
+                commit, _ = freeze_tag_info(REPO, a.freeze_tag)
+                pins = {"freeze_tag": a.freeze_tag, "freeze_commit": commit,
+                        "swhid": a.swhid,
+                        "manifest_sha256": hashlib.sha256(
+                            a.manifest.read_bytes()).hexdigest()}
+            else:
+                pins = {"manifest_sha256": a.manifest_sha256.lower(),
+                        "manifest_doi": normalize_doi(a.manifest_doi),
+                        "commit": a.expect_commit.lower()}
+            camp.pin(pins)
             return camp.run()
         except GuardError as exc:
             print(f"REFUSED: {exc}", file=sys.stderr)
@@ -412,13 +548,14 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _dry_run(a, problems: list[str]) -> int:
-    queue = q.build_queue()
+    queue = q.runs_for_host(a.host) if a.host else q.build_queue()
     store = q.StatusStore(a.campaign_dir / "status") if a.campaign_dir.exists() else None
     print(f"DRY RUN: nothing is trained. {len(queue)} runs, "
-          f"{a.total_pair_steps:,} pair-steps each, max-concurrent 1.")
+          f"{a.total_pair_steps:,} pair-steps each, max-concurrent 1"
+          + (f", host {a.host}." if a.host else ", all hosts."))
     for i, s in enumerate(queue, 1):
         st = store.load(s)["status"] if store else q.PENDING
-        print(f"{i:2d}. {s.run_id:28s} {st}")
+        print(f"{i:2d}. {s.run_id:28s} {s.host:6s} {st}")
     print("GUARDS: " + ("all pass (start would be allowed)" if not problems
                         else "WOULD REFUSE:"))
     for pr in problems:
@@ -431,7 +568,8 @@ def _dry_run(a, problems: list[str]) -> int:
     except GuardError as exc:
         print(f"GPU guard: WOULD REFUSE ({exc})")
     if a.throughput_json:
-        e = estimate(json.loads(a.throughput_json.read_text()), a.total_pair_steps)
+        e = estimate(json.loads(a.throughput_json.read_text()), a.total_pair_steps,
+                     a.host)
         print(f"Estimated duration: {e['total_hours']:.0f} h "
               f"({e['total_days']:.1f} days), nocomm rate used for non-gtm arms.")
     else:

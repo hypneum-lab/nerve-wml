@@ -1,14 +1,18 @@
-# N10-C training campaign runbook (option D, 50 runs)
+# N10-C training campaign runbook (option D, 60 runs, two hosts)
 
 **Starting the campaign requires the PI's explicit go. Nothing in this
 directory has been run against real hardware; `deploy.sh` and `start.sh`
 must not be executed without that go.**
 
-Scope (amendment 2026-10-23, option D, CoinRun-coop only): registered
+Scope (amendment 2026-10-23, option D, CoinRun-coop only, six seeds): registered
 condition 6 arms {gtm, mlp, atoc, dial, eng, nocomm} x seeds
-{0, 17, 42, 73, 101} = 30 runs; closed condition {gtm, dial, eng, nocomm}
-x 5 seeds = 20 runs. 50 runs of 50M pair-steps. Evaluation on held-out
-levels 1000-1199 (intact + shuffled), only after training.
+{0, 17, 42, 73, 101, 131} = 36 runs; closed condition {gtm, dial, eng,
+nocomm} x 6 seeds = 24 runs. 60 runs of 50M pair-steps. Each run has a
+`host` (seed block factor): **macM1 trains seeds 0, 17, 42; KXKM trains
+73, 101, 131**. Evaluation on held-out levels 1000-1199 (intact + shuffled)
+only after training and **only on KXKM** (x86 Procgen build); `--host
+macm1` never evaluates (it raises). Each host has its own campaign dir and
+campaign.json (host pinned).
 
 Files: `queue.py` (frozen list, status files), `run_campaign.py` (runner
 and guards), `kxkm/deploy.sh`, `kxkm/start.sh`.
@@ -26,23 +30,19 @@ and guards), `kxkm/deploy.sh`, `kxkm/start.sh`.
       deployed clone must equal it, or descend from it with every intervening commit
       touching only `docs/` or the manifest folder (the manifest cannot name its own commit). Pass it as
       `--expect-commit` (40 hex).
-- [ ] Frame-equality: the procgen/MLX build used on the target host
-      renders and steps identically to the build recorded in the
-      manifest (same procgen 0.10.7 source commit and patch, same
-      mlx 0.31.1; the Linux wheel is NOT the macOS patched build).
-      Check with a fixed-seed frame hash comparison between the
-      recorded build and the target build, and write the result in the
-      lab log before starting. Do not start on a mismatch.
-- [ ] GPU reservation agreed with the PI (KXKM RTX 4090 is shared with
-      gpu-swap, whisper, ComfyUI): gpu-swap paused or its budget
-      reduced so that `--min-free-gb` (default 8) is free for the
-      whole campaign. The runner never kills or pauses other processes.
+- [ ] Procgen builds: the macM1 arm64 build and the KXKM x86-64 wheel are
+      known NOT to be bit-identical (disclosed in the amendment); nothing to
+      equalise, but record both builds in the manifest.
+- [ ] GPU reservation on KXKM: `gpu-worker` and `whisper-dex` stopped for
+      the campaign (restore: `/ai/saisail/n10c-run/restore-services.sh`).
+      `--min-free-gb` (default 8) must be free. The runner never kills or
+      pauses other processes.
 - [ ] Disk space: check `df -h /ai/saisail` (checkpoints every 1M
       pair-steps, about 50 per run kept; size one with a smoke run).
 - [ ] Archive target exists on electron-server and the key works
       (`--archive-to user@host:/path`, rsync over ssh, BatchMode).
 - [ ] `--dry-run` shows all guards passing and the expected duration.
-- [ ] Hardware choice (KXKM vs macM1) settled from the benchmark.
+- [ ] Both hosts ready (KXKM: micro_batch_pairs 512 + clear_cache from PR #53 merged).
 
 ## Deploy (KXKM, after go)
 
@@ -117,3 +117,36 @@ Start (detached, tmux session `n10c` or nohup; pre-checks guards first):
 
 `--dry-run --throughput-json` computes this with the manifest
 convention (gtm rate for gtm runs, nocomm rate for the rest).
+
+## Hosts, sync and freeze-tag mode (2026-10-23, second round)
+
+Run one process per host, each with its own `--campaign-dir`:
+
+    # macM1 (trains seeds 0, 17, 42; no evaluation)
+    ... run_campaign --host macm1 --campaign-dir ~/n10c/campaign ...
+    # KXKM (trains 73, 101, 131; evaluates its own runs and the synced macM1 runs)
+    ... run_campaign --host kxkm --campaign-dir /ai/saisail/n10c-run/campaign ...
+
+macM1 runs end at status `trained` and are evaluated on KXKM after their
+checkpoints are copied (through the electron-server jump):
+
+    python -m experiments.procgen_multiagent_gtm_comm.campaign.run_campaign sync \
+      --campaign-dir ~/n10c/campaign \
+      --to electron@10.2.0.237:/ai/saisail/n10c-run/campaign
+
+(`sync` copies `runs/<id>/{run.json,<last ckpt>}` first and
+`status/<id>.json` second, never overwrites, marks the run `synced` on
+macM1 only after both succeeded, and can be repeated. Equivalent manual
+step: `rsync -aL --ignore-existing -e "ssh -J electron@100.78.191.52" ...`.)
+Re-run the KXKM campaign command afterwards: it evaluates the newly
+synced runs and never trains them. The finished event reports
+`awaiting_sync`.
+
+**Commitment point (PI decision 2026-10-23 22:17).** Instead of
+`--manifest-doi`, start with `--freeze-tag <tag> [--swhid swh:1:rev:...]`:
+the tag must exist on origin (`git ls-remote`), be annotated, point at HEAD
+(or at an ancestor with only docs/ and manifest-folder commits since), the
+tree must be clean, and the tag message must contain `manifest: <path>` and
+`manifest-sha256: <hex>` equal to the committed manifest's SHA-256. The
+manifest says `Status: FROZEN (tag <tag>)`. Tag, commit and SWHID are pinned
+in `campaign.json`. The DOI mode is unchanged.
