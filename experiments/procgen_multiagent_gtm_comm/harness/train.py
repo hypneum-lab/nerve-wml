@@ -30,7 +30,7 @@ import mlx.core as mx
 import mlx.nn as nn
 import mlx.optimizers as optim
 import numpy as np
-from mlx.utils import tree_flatten
+from mlx.utils import tree_flatten, tree_map
 
 from .bus import MessageBus
 from .codes import ARM_CODES, CONDITION_CODES, init_key_int, run_seed_sequence
@@ -78,6 +78,10 @@ class RunRecord:
     losses: list[float] = field(default_factory=list)  # mean loss per update
     optimizer_steps: int = 0
     first_mb_ratio_dev: list[float] = field(default_factory=list)
+    # implementation settings (never registered quantities)
+    micro_batch_pairs: int | None = None
+    clear_cache: bool = False
+    peak_memory_bytes: int | None = None
 
 
 class EngCounters:
@@ -142,6 +146,50 @@ def _save_ckpt(model: nn.Module, out_dir: Path, step: int) -> str:
     return final.name
 
 
+def normalize_adv(adv: mx.array) -> mx.array:
+    """Advantage normalisation over the full minibatch (before splitting)."""
+    return (adv - adv.mean()) / (adv.std() + 1e-8)
+
+
+def micro_slices(n: int, micro: int | None) -> list[tuple[int, int, float]]:
+    """(start, stop, weight=size/n) micro-batches of a minibatch of n pairs."""
+    if micro is None or micro >= n:
+        return [(0, n, 1.0)]
+    return [(a, min(a + micro, n), (min(a + micro, n) - a) / n)
+            for a in range(0, n, micro)]
+
+
+def accumulate_minibatch(grad_step, mb: dict, micro: int | None, key):
+    """Weighted gradient of the mean loss over one registered minibatch.
+
+    Returns ``(loss, grads, finite)``; ``grads`` is None (and ``finite``
+    False) as soon as one micro loss or gradient is non-finite, so the
+    caller can stop before applying anything.
+    """
+    n = mb["actions"].shape[0]
+    adv = normalize_adv(mb["advantages"])  # full minibatch statistics
+    acc, total = None, 0.0
+    for a, b, w in micro_slices(n, micro):
+        loss, norm, g = grad_step(
+            mb["obs"][a:b], mb["summary"][a:b], mb["eng_bits"][a:b],
+            mb["actions"][a:b], mb["noise"][a:b], mb["logp"][a:b], adv[a:b],
+            mb["returns"][a:b], key, mx.array(w, dtype=mx.float32),
+        )
+        acc = g if acc is None else tree_map(lambda x, y: x + y, acc, g)
+        mx.eval(loss, norm, acc)
+        total += float(loss.item())
+        if not (np.isfinite(total) and np.isfinite(float(norm.item()))):
+            return float("nan"), None, False
+    return total, acc, True
+
+
+def finalize_grads(grads, scale, plastic: bool = False):
+    """Plasticity scale (GTM) then clip the ACCUMULATED gradient norm."""
+    if plastic:
+        grads["comm"]["constellation"] = grads["comm"]["constellation"] * scale
+    return optim.clip_grad_norm(grads, MAX_GRAD_NORM)
+
+
 def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
                 plastic: bool):
     def logp_value(model, obs, summary, eng, actions, noise, key):
@@ -156,7 +204,6 @@ def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
     def loss_fn(model, obs, summary, eng, actions, noise, old_logp, adv, ret, key):
         out, logp_all, logp = logp_value(model, obs, summary, eng, actions,
                                          noise, key)
-        adv = (adv - adv.mean()) / (adv.std() + 1e-8)
         ratio = mx.exp(logp - old_logp)
         pg = -mx.minimum(
             ratio * adv, mx.clip(ratio, 1.0 - CLIP, 1.0 + CLIP) * adv
@@ -168,15 +215,19 @@ def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
     grad_fn = nn.value_and_grad(model, loss_fn)
     state = [model.state, opt.state]
 
+    # Micro grad step: ``adv`` is already normalised over the FULL
+    # minibatch; ``weight`` = micro_size / minibatch_size. Returns the
+    # weighted loss and gradient (unclipped; plasticity scale and clipping
+    # act on the accumulated gradient in ``finalize_grads``). Shapes are
+    # fixed per micro size; a smaller last micro recompiles once.
     @partial(mx.compile, inputs=[model.state], outputs=[model.state])
     def grad_step(obs, summary, eng, actions, noise, old_logp, adv, ret, key,
-                  scale):
+                  weight):
         loss, grads = grad_fn(model, obs, summary, eng, actions, noise,
                               old_logp, adv, ret, key)
-        if plastic:  # GTM constellation plasticity schedule
-            grads["comm"]["constellation"] = grads["comm"]["constellation"] * scale
-        grads, norm = optim.clip_grad_norm(grads, MAX_GRAD_NORM)
-        return loss, norm, grads
+        grads = tree_map(lambda g: g * weight, grads)
+        sq = sum((g * g).sum() for _, g in tree_flatten(grads))
+        return loss * weight, mx.sqrt(sq), grads
 
     @partial(mx.compile, inputs=state, outputs=state)
     def apply_step(grads):
@@ -203,6 +254,8 @@ def train_run(
     log_every_pair_steps: int = 1_000_000,
     ckpt_every_pair_steps: int = 1_000_000,
     minibatch_pairs: int = MINIBATCH_PAIRS,
+    micro_batch_pairs: int | None = None,
+    clear_cache: bool = False,
     restarts: int = 0,
     _fault_hook: Callable[[int, PairPolicy], None] | None = None,
     _rollout_hook: Callable[[int, RolloutBuffer], None] | None = None,
@@ -215,7 +268,14 @@ def train_run(
     written after the first update ending at or after each
     ``ckpt_every_pair_steps`` boundary (labelled with the actual step) and
     once at the exact end. ``_fault_hook`` / ``_rollout_hook`` are test-only.
+
+    ``micro_batch_pairs`` (None = off) splits each registered minibatch into
+    gradient-accumulated micro-batches: same update, lower peak memory; it
+    is an implementation setting, not a registered quantity.
+    ``clear_cache`` calls ``mx.clear_cache()`` after each update.
     """
+    if micro_batch_pairs is not None and micro_batch_pairs < 1:
+        raise ValueError("micro_batch_pairs must be >= 1")
     if total_pair_steps % n_pairs or log_every_pair_steps % n_pairs:
         raise ValueError("total and log interval must be multiples of n_pairs")
     out_dir = Path(out_dir)
@@ -235,7 +295,7 @@ def train_run(
             vec, arm, seed, condition, total_pair_steps, out_dir, n_pairs,
             horizon, log_every_pair_steps, ckpt_every_pair_steps,
             minibatch_pairs, restarts, init_ss, shuf_rng, key_rng,
-            _fault_hook, _rollout_hook,
+            _fault_hook, _rollout_hook, micro_batch_pairs, clear_cache,
         )
     finally:
         vec.close()
@@ -243,11 +303,13 @@ def train_run(
 
 def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
            log_every, ckpt_every, minibatch_pairs, restarts, init_ss,
-           shuf_rng, key_rng, fault_hook, rollout_hook) -> RunRecord:
+           shuf_rng, key_rng, fault_hook, rollout_hook, micro_pairs=None,
+           clear_cache=False) -> RunRecord:
     rec = RunRecord(
         arm=arm, seed=seed, condition=condition,
         codes={"arm": ARM_CODES[arm], "condition": CONDITION_CODES[condition]},
         total_pair_steps=total, restarts=restarts, using_stub=False,
+        micro_batch_pairs=micro_pairs, clear_cache=clear_cache,
     )
     model = PairPolicy(arm, mx.random.key(init_key_int(seed, arm, condition)))
     mx.eval(model.parameters())
@@ -255,8 +317,9 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
     opt.init(model.trainable_parameters())
     mx.eval(opt.state)
     use_eng = arm == "eng"
+    plastic = arm == "gtm"
     grad_step, apply_step, ratio_dev = _make_steps(
-        model, opt, use_eng, plastic=(arm == "gtm")
+        model, opt, use_eng, plastic=plastic
     )
 
     bus = MessageBus(arm)
@@ -337,21 +400,30 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
         first_mb = True
         for _ in range(EPOCHS):
             for mb in buf.minibatches(shuf_rng, minibatch_pairs):
-                args = (mb["obs"], mb["summary"], mb["eng_bits"], mb["actions"],
-                        mb["noise"])
                 if first_mb:  # unchanged policy: ratio must be 1
-                    dev = ratio_dev(*args, mb["logp"], _key(key_rng))
-                    rec.first_mb_ratio_dev.append(float(dev.item()))
+                    n_mb = mb["actions"].shape[0]
+                    devs = []
+                    k_dev = _key(key_rng)
+                    for a, b, _ in micro_slices(n_mb, micro_pairs):
+                        d = ratio_dev(
+                            mb["obs"][a:b], mb["summary"][a:b],
+                            mb["eng_bits"][a:b], mb["actions"][a:b],
+                            mb["noise"][a:b], mb["logp"][a:b], k_dev,
+                        )
+                        devs.append(float(d.item()))
+                    rec.first_mb_ratio_dev.append(max(devs))
                     first_mb = False
-                loss, norm, grads = grad_step(
-                    *args, mb["logp"], mb["advantages"], mb["returns"],
-                    _key(key_rng), scale,
+                lv, acc, finite = accumulate_minibatch(
+                    grad_step, mb, micro_pairs, _key(key_rng)
                 )
-                mx.eval(loss, norm)
-                lv = float(loss.item())
-                if not (np.isfinite(lv) and np.isfinite(float(norm.item()))):
+                if not finite:
                     rec.training_failure = True
                     break  # detected before applying: no optimizer step
+                grads, norm = finalize_grads(acc, scale, plastic)
+                mx.eval(norm)
+                if not np.isfinite(float(norm.item())):
+                    rec.training_failure = True
+                    break
                 losses.append(lv)
                 apply_step(grads)
                 mx.eval(model.state, opt.state)
@@ -361,6 +433,8 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
                     break
             if rec.training_failure:
                 break
+        if clear_cache:
+            mx.clear_cache()
         rec.n_updates = update
         rec.pair_steps_done = step
         if rec.training_failure:
@@ -384,6 +458,7 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
         rec.pair_steps_per_s = rec.pair_steps_done / rec.wall_time_s
         rec.samples_per_s = 2 * rec.pair_steps_per_s
     rec.bits_logged = bus.bits_logged
+    rec.peak_memory_bytes = int(mx.get_peak_memory())
     (out_dir / "run.json").write_text(json.dumps(asdict(rec), indent=2))
     return rec
 
@@ -400,11 +475,17 @@ def main() -> None:
     p.add_argument("--horizon", type=int, default=128)
     p.add_argument("--log-every", type=int, default=1_000_000)
     p.add_argument("--ckpt-every", type=int, default=1_000_000)
+    p.add_argument("--micro-batch-pairs", type=int, default=None,
+                   help="gradient-accumulation micro-batch (pair-steps); "
+                        "implementation setting, default off")
+    p.add_argument("--clear-cache", action="store_true",
+                   help="mx.clear_cache() after each update")
     a = p.parse_args()
     rec = train_run(
         a.arm, a.seed, a.condition, a.steps, a.out, n_pairs=a.n_pairs,
         horizon=a.horizon, log_every_pair_steps=a.log_every,
         ckpt_every_pair_steps=a.ckpt_every,
+        micro_batch_pairs=a.micro_batch_pairs, clear_cache=a.clear_cache,
     )
     print(json.dumps({k: v for k, v in asdict(rec).items() if k != "losses"}))
 

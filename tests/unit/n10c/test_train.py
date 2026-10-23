@@ -6,12 +6,24 @@ import pytest
 
 mx = pytest.importorskip("mlx.core")
 
+import mlx.optimizers as optim  # noqa: E402
+from mlx.utils import tree_flatten, tree_map  # noqa: E402
+
 from experiments.procgen_multiagent_gtm_comm.harness.codes import (  # noqa: E402
     run_seed_sequence,
 )
+from experiments.procgen_multiagent_gtm_comm.harness.policy import (  # noqa: E402
+    PairPolicy,
+)
 from experiments.procgen_multiagent_gtm_comm.harness.train import (  # noqa: E402
+    MAX_GRAD_NORM,
     EngCounters,
     _assert_not_stub,
+    _make_steps,
+    accumulate_minibatch,
+    finalize_grads,
+    micro_slices,
+    normalize_adv,
     train_run,
 )
 from experiments.procgen_multiagent_gtm_comm.harness.vec_env import (  # noqa: E402
@@ -177,3 +189,185 @@ def test_stub_is_refused():
     vec.envs[0].using_stub = True
     with pytest.raises(RuntimeError, match="stub"):
         _assert_not_stub(vec)
+
+
+# ---- Task 11: gradient accumulation over micro-batches ----------------
+
+def _rand_mb(n, seed=0, adv_scale=1.0, ret_scale=1.0):
+    r = np.random.default_rng(seed)
+    return {
+        "obs": mx.array(r.integers(0, 256, (n, 2, 64, 64, 3), dtype=np.uint8)),
+        "summary": mx.array(r.normal(size=(n, 2, 2)).astype(np.float32)),
+        "eng_bits": mx.zeros((n, 2, 16)),
+        "actions": mx.array(r.integers(0, 15, (n, 2))),
+        "noise": mx.zeros((n, 2, 0)),
+        "logp": mx.array(-2.7 + 0.3 * r.normal(size=(n, 2)).astype(np.float32)),
+        "advantages": mx.array(
+            adv_scale * r.normal(size=(n, 2)).astype(np.float32)
+        ),
+        "returns": mx.array(ret_scale * r.normal(size=(n, 2)).astype(np.float32)),
+    }
+
+
+def _steps(arm="mlp"):
+    model = PairPolicy(arm, mx.random.key(1))
+    mx.eval(model.parameters())
+    opt = optim.Adam(learning_rate=5e-4)
+    opt.init(model.trainable_parameters())
+    return model, _make_steps(model, opt, False, plastic=False)[0]
+
+
+def _gnorm(grads):
+    return float(mx.sqrt(sum((g * g).sum() for _, g in tree_flatten(grads))).item())
+
+
+def _max_rel(a, b):
+    worst = 0.0
+    for (_, x), (_, y) in zip(tree_flatten(a), tree_flatten(b), strict=True):
+        x, y = np.array(x), np.array(y)
+        worst = max(worst, float(np.abs(x - y).max() / (np.abs(y).max() + 1e-12)))
+    return worst
+
+
+def test_uneven_last_minibatch_weights():
+    sl = micro_slices(10, 4)
+    assert [(a, b) for a, b, _ in sl] == [(0, 4), (4, 8), (8, 10)]
+    w = [x for _, _, x in sl]
+    assert w == pytest.approx([0.4, 0.4, 0.2]) and sum(w) == pytest.approx(1.0)
+    assert micro_slices(3, None) == [(0, 3, 1.0)]
+    assert micro_slices(3, 8) == [(0, 3, 1.0)]  # micro larger than minibatch
+    # accumulated gradient of an uneven minibatch == full-batch gradient
+    _, gs = _steps()
+    mb = _rand_mb(7)
+    k = mx.random.key(0)
+    _, g_full, ok1 = accumulate_minibatch(gs, mb, None, k)
+    _, g_mic, ok2 = accumulate_minibatch(gs, mb, 3, k)  # 3 + 3 + 1
+    assert ok1 and ok2
+    assert _max_rel(g_mic, g_full) < 1e-5
+
+
+def test_adv_norm_over_full_minibatch():
+    adv = mx.array(np.concatenate([np.full(4, 10.0), np.full(4, -10.0)])
+                   .reshape(4, 2).astype(np.float32) + np.arange(8).reshape(4, 2))
+    full = normalize_adv(adv)
+    assert float(full.mean().item()) == pytest.approx(0.0, abs=1e-5)
+    assert float(full.std().item()) == pytest.approx(1.0, abs=1e-3)
+    # micro-batches whose advantages sit at very different offsets: the
+    # accumulated gradient must still equal the full-batch one (per-micro
+    # normalisation would erase the offsets and differ).
+    _, gs = _steps()
+    mb = _rand_mb(8, seed=2)
+    off = np.repeat([0.0, 5.0, -5.0, 9.0], 2).reshape(8, 1)
+    mb["advantages"] = mb["advantages"] + mx.array(off.astype(np.float32))
+    k = mx.random.key(0)
+    _, g_full, _ = accumulate_minibatch(gs, mb, None, k)
+    _, g_mic, _ = accumulate_minibatch(gs, mb, 2, k)
+    assert _max_rel(g_mic, g_full) < 1e-5
+    parts = []
+    for a, b, w in micro_slices(8, 2):  # per-micro normalisation (wrong)
+        sub = {k: v[a:b] for k, v in mb.items()}
+        g = accumulate_minibatch(gs, sub, None, k)[1]
+        parts.append(tree_map(lambda x, w=w: x * w, g))
+    g_wrong = tree_map(lambda *x: sum(x), *parts)
+    assert _max_rel(g_wrong, g_full) > 1e-3  # the test is sensitive
+
+
+def test_clip_applied_to_accumulated_grad():
+    _, gs = _steps()
+    mb = _rand_mb(8, seed=3, ret_scale=30.0)
+    k = mx.random.key(0)
+    _, g_mic, ok = accumulate_minibatch(gs, mb, 2, k)
+    assert ok
+    raw = _gnorm(g_mic)
+    assert raw > MAX_GRAD_NORM  # accumulation itself must not clip
+    clipped, norm = finalize_grads(g_mic, scale=None)
+    assert float(norm.item()) == pytest.approx(raw, rel=1e-5)
+    assert _gnorm(clipped) == pytest.approx(MAX_GRAD_NORM, rel=1e-4)
+    _, g_full, _ = accumulate_minibatch(gs, mb, None, k)
+    assert _max_rel(clipped, finalize_grads(g_full, scale=None)[0]) < 1e-4
+
+
+def test_nonfinite_micro_stops_before_apply(tmp_path):
+    _, gs = _steps()
+    mb = _rand_mb(6, seed=4)
+    ret = np.array(mb["returns"])
+    ret[3, 0] = np.nan  # lands in the second micro of size 2
+    mb["returns"] = mx.array(ret)
+    loss, grads, ok = accumulate_minibatch(gs, mb, 2, mx.random.key(0))
+    assert ok is False and grads is None
+    # end to end: single minibatch per epoch -> failure before any update
+    def poison(update, buf):
+        buf.advantages[0, 0, 0] = np.nan
+
+    rec = train_run(
+        "mlp", 0, "registered", PER_UPDATE, tmp_path / "nf",
+        env_factory=_factory(), n_pairs=NP, horizon=H,
+        log_every_pair_steps=PER_UPDATE, ckpt_every_pair_steps=PER_UPDATE,
+        minibatch_pairs=PER_UPDATE, micro_batch_pairs=2, _rollout_hook=poison,
+    )
+    assert rec.training_failure is True
+    assert rec.optimizer_steps == 0
+    assert rec.last_checkpoint is None
+
+
+def _first_update_params(tmp_path, arm, micro, name, *, total=PER_UPDATE,
+                         mbp=4):
+    snap = {}
+
+    def hook(update, model):
+        if update == 1:
+            snap.update({k: np.array(v) for k, v in
+                         tree_flatten(model.parameters())})
+
+    train_run(
+        arm, 5, "registered", total, tmp_path / name, env_factory=_factory(),
+        n_pairs=NP, horizon=H, log_every_pair_steps=PER_UPDATE,
+        ckpt_every_pair_steps=PER_UPDATE, minibatch_pairs=mbp,
+        micro_batch_pairs=micro, _fault_hook=hook,
+    )
+    return snap
+
+
+@pytest.mark.parametrize("arm", ["gtm", "dial", "mlp", "nocomm"])
+def test_accumulation_matches_full_batch(tmp_path, arm):
+    ref = _first_update_params(tmp_path, arm, None, "ref")
+    acc = _first_update_params(tmp_path, arm, 2, "acc")
+    assert ref.keys() == acc.keys()
+    # Equivalence up to float summation order (grad ~1e-7 relative, as in
+    # test_same_seed_same_first_update); Adam maps that to <= 2*lr per
+    # step on near-zero-gradient entries only.  3 epochs x 2 minibatches.
+    worst_abs, close, size = 0.0, 0, 0
+    for k in ref:
+        d = np.abs(ref[k] - acc[k])
+        worst_abs = max(worst_abs, float(d.max()))
+        close += int((d <= 1e-5 * (np.abs(ref[k]) + 1e-3)).sum())
+        size += d.size
+    assert worst_abs <= 6 * 2 * 5e-4 + 1e-6
+    assert close / size > 0.95
+
+
+@pytest.mark.parametrize("arm", ["gtm", "dial", "mlp", "nocomm"])
+def test_accumulated_grad_matches_full_batch_all_arms(arm):
+    # The acceptance quantity itself, before Adam's sign-like step:
+    # accumulated vs full-batch gradient agree to float summation order.
+    model = PairPolicy(arm, mx.random.key(1))
+    mx.eval(model.parameters())
+    opt = optim.Adam(learning_rate=5e-4)
+    opt.init(model.trainable_parameters())
+    gs = _make_steps(model, opt, False, plastic=False)[0]
+    mb = _rand_mb(8, seed=7)
+    mb["noise"] = mx.zeros((8, 2, model.noise_dim))
+    k = mx.random.key(0)
+    _, g_full, _ = accumulate_minibatch(gs, mb, None, k)
+    _, g_mic, _ = accumulate_minibatch(gs, mb, 3, k)  # 3 + 3 + 2
+    assert _max_rel(g_mic, g_full) < 1e-5
+
+
+def test_uneven_last_minibatch_end_to_end(tmp_path):
+    # exact-budget final rollout: 20 pair-steps = 2 full updates + 4 pairs
+    # left over -> last minibatch 3 + 1 pairs with micro 2.
+    kw = dict(total=20, mbp=3)
+    ref = _first_update_params(tmp_path, "mlp", None, "u_ref", **kw)
+    acc = _first_update_params(tmp_path, "mlp", 2, "u_acc", **kw)
+    for k in ref:
+        assert np.abs(ref[k] - acc[k]).max() <= 6 * 2 * 5e-4 + 1e-6
