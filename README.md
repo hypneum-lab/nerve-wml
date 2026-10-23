@@ -94,8 +94,8 @@ Jonckheere wrong test, β-VAE confound, paper/JSON count mismatch).
 | **N9 Q1++** FlowProxyTask 4-class | **tied-stable-cross-task** (3W / 1L / 2T post-degenerate-exclusion) | confirms tie generalises beyond HardFlow |
 | **N8 Q2** 15 adversarial substrates (Cat A/B/C) | **`ge_3_FP_reformulate`** | Conformance Criterion C+ now requires C2 axiom property tests in addition to structural invariants |
 | **N9 Q2+** Cat D modular / E replay-loop / F asymmetric (10 more) | **25 / 25 cumulative FP** | structural layer alone insufficient at 6 categories |
-| **N10-A / N10-C** | **pre-reg locked, deferred** | ImageNet-100 + ResNet50 + GTM bottleneck (β-VAE β=1.0 fixed per critic) ; Procgen multi-agent GTM communication |
-| **N11-A / N11-C** | **pre-reg locked, deferred** | I-JEPA + GTM predictor on ImageNet self-supervised ; Dreamer V3 + GTM dynamics on Atari-100k |
+| **N10-A / N10-C** | **pre-reg locked, deferred** | ImageNet-100 + ResNet50 + GTM bottleneck (β-VAE β=1.0 fixed per critic) ; Procgen multi-agent GTM communication ; **DRAFT amendments 2026-10-23, not yet filed on OSF** : [N10-A](docs/milestones/n10a-imagenet100-gtm-bottleneck-amendment-2026-10-23.md) (oscillator-family baseline), [N10-C](docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-23.md) (optimal-sender reference + side-channel control) |
+| **N11-A / N11-C** | **pre-reg locked, deferred** | I-JEPA + GTM predictor on ImageNet self-supervised ; Dreamer V3 + GTM dynamics on Atari-100k ; **DRAFT amendments 2026-10-23, not yet filed on OSF** : [N11-A](docs/milestones/n11a-ijepa-gtm-predictor-amendment-2026-10-23.md) (H-JEPA sub-study + physical-state probe), [N11-C](docs/milestones/n11c-dreamer-gtm-dynamics-atari100k-amendment-2026-10-23.md) (ITC replaces IRIS ; DreamerV3 rationale) |
 | **N13 / N14** | **pre-reg locked, deferred** | OFAT GTM internals (5 hyperparams × 4-5 levels × 5 seeds) ; Latin Hypercube 7-dim coverage (50 points × 5 seeds) |
 
 Cumulative on master HEAD `60d433d` : **295+ commits**, **v1.9.0** tagged
