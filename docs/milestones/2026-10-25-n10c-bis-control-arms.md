@@ -1,0 +1,248 @@
+# N10-C-bis — Pre-registration addendum 2026-10-25: control arms (mismatched message, warm-started receiver, VQ baseline)
+
+**Status:** DRAFT — pre-filing. To be frozen by an annotated tag `n10c-bis-freeze-<YYYYMMDD>` (stage 1 + stage 2 manifest) before any N10-C-bis run ; OSF registration to follow the tag. Nothing is filed and no N10-C-bis code exists.
+**Addendum to:** `docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-23.md` (FROZEN by tag `n10c-freeze-20261024`, commit `2ce4214b9e587328c3c4eab64dce4650409edd7d`, SWHID `swh:1:rev:2ce4214b9e587328c3c4eab64dce4650409edd7d`, PR #58 harness, PR #59 freeze), which amends the locked pre-registration `docs/milestones/n10c-procgen-multiagent-gtm-comm-2026-05-11.md` (commit `1640c5c`).
+**Does not amend:** any N10-C provision. The N10-C frozen files, tag, manifest, runs and hosts are not modified (see What is not modified).
+**Date drafted:** 2026-10-25 (dated by the GitHub push time of its first commit ; git dates are not evidence of time).
+**Investigator:** Clément Saillant (Hypneum Lab, sole investigator).
+**OSF registration:** no N10-C-bis-specific OSF identifier exists. The programme-level OSF pre-registration is [10.17605/OSF.IO/Q6JYN](https://doi.org/10.17605/OSF.IO/Q6JYN) (dreamOfkiki, locked 2026-04-19).
+**Data status at drafting:** the N10-C campaign (60 runs, two hosts) has been running since 2026-10-24 (14:22 CEST, PI's record). No held-out evaluation result of any N10-C run has been read (see Blinding). No N10-C-bis run, smoke run or code exists. Every quantitative prediction below is made before any N10-C or N10-C-bis result.
+
+This addendum is append-only with respect to N10-C. It adds a second, separately frozen campaign, **N10-C-bis**, whose arms are compared with the N10-C arms, and a binding rule on how N10-C may be read before N10-C-bis is complete. The vocabulary (arms, conditions, estimands, pilot categories, failure rules, freeze procedure) is that of the N10-C amendment ; where a term is used without definition, the N10-C amendment's definition applies.
+
+## Summary of the addendum
+
+1. **Three control arms are missing from N10-C**, identified by the PI's review of 2026-10-24 : (1) a **mismatched-message** arm (the receiver gets a message emitted in another episode at the same step index, in training as at evaluation), which separates the effect of message **content** from the effect of message **presence** ; (2) a **warm-started receiver** arm (a GTM-comm run whose receive path and policy start from a receiver trained on known content), which separates an **optimisation** failure from a **representational** limit ; (3) a **modern VQ baseline** at the same 16 bits/step and the same K = 4 × A = 16 symbol structure, which tests whether the registered 2016–2018 baselines are the right comparison and whether any GTM advantage is due to the γ/θ receive path or only to the discrete symbol structure.
+2. **Decision of the PI (2026-10-25) : N10-C runs to completion untouched, and N10-C-bis is pre-registered now.** N10-C-bis is executed on KXKM-AI after the N10-C KXKM training runs (seeds 73, 101, 131) finish, about 13.5 days after the N10-C start.
+3. **Binding reading rule : no positive reading of N10-C before N10-C-bis.** N10-C's pilot category is computed and recorded as registered, but no statement that GTM-comm communicates, coordinates or outperforms is made in any paper, talk, README or changelog until the N10-C-bis analysis is complete and reported next to it (see Reading rule).
+4. N10-C-bis is an **estimation (pilot) study**, like N10-C : effect estimates with adjusted confidence intervals, pilot categories, no superiority verdict, 6 seeds per arm, Welch / independent groups, SESOI Δ = 0.10 of the dynamic range (1).
+5. Everything that N10-C-bis reuses from N10-C is **frozen** : the environment (CoinRun-coop), the 16-bit bus, the evaluation protocol (200 held-out levels, action generators, derangement, cross-seed pairing), the PPO hyperparameters, the budget of 50M pair-steps per run, the failure / exclusion rules, the development allowance and the freeze-by-tag procedure. N10-C-bis adds arms and contrasts, nothing else.
+
+## Rationale : what N10-C cannot conclude alone
+
+N10-C's registered research hypothesis is "GTM team reward exceeds the best baseline by ≥ 10 % of dynamic range at 16 bits/step". Even a **pilot-positive** N10-C category would leave four questions open, and a positive reading would therefore be uninterpretable as evidence of communication :
+
+1. **Content or presence.** N10-C has a zeroed channel (no-communication arm, trained from scratch) and an evaluation-time message-shuffle probe (S, a disruption sensitivity of a policy trained on intact messages). Neither tells what a policy achieves when trained under a channel that is **present, with the marginal statistics and step timing of a real message, but whose content is uncorrelated with the partner's state**. The N10-C amendment itself states that S "is not an estimate of the reward that flows through the channel". The causal audits of latent communication in multi-agent LLM systems make the point directly : Cheng, Das & Ramnath ([arXiv:2608.04893](https://arxiv.org/abs/2608.04893)) replace a relayed cache by a *deranged* (mismatched-example), a zeroed and a moment-matched random counterpart, and find that "a large cache effect need not be a pairing effect" (in one cell, zeroing costs 14.7 points and a mismatched cache 0.4) ; Zhang & Emu ([arXiv:2607.26773](https://arxiv.org/abs/2607.26773)) decompose an end-task effect into a component *retained by an other-example message* and a component *attributable to example-specific content*, and show the two can even have opposite signs ; Gazzaev, Gavrilov, Muravyov & Makarov ([arXiv:2610.28905](https://arxiv.org/abs/2610.28905)) use the same derangement test and report that *when* a message is transferred can matter more than how many times (one late transfer 87.8 %, exceeding four recurrent exchanges by +7.0 points). Without a trained-from-scratch mismatched-message arm, a GTM gain over no-communication cannot be attributed to content.
+2. **Optimisation or representation.** Chauhan & Bera, "Emergence, Not Bandwidth" ([arXiv:2609.34373](https://arxiv.org/abs/2609.34373), v2 2026-09-29, ICLR 2027 submission under review), already cited by the N10-C amendment for the engineered reference sender and the cross-play probe, report that at matched rate an engineered sender reaches an interquartile mean of 1.000 where the learned sender reaches 0.482, indistinguishable from silence, and that **warm-starting from an engineered receiver** localises the failure : the same channel reaches 0.857 warm-started against 0.562 cold-started (p < 0.001, 25 seeds). N10-C has the engineered reference but no warm-started arm, so a GTM shortfall against the engineered reference could not be attributed to protocol discovery (optimisation) rather than to the GTM receive path (representation).
+3. **Is the baseline set current.** The registered baselines (broadcast MLP, ATOC-style cross-attention, DIAL) are 2016–2018 designs. Since 2025 the rate-limited MARL communication literature has moved to information-bottleneck + vector-quantised channels with gating (Farooq & Iqbal, [arXiv:2602.02035](https://arxiv.org/abs/2602.02035), ICRA 2026), to learned bit-level precision (DDCL, Kapoor et al., [arXiv:2511.01554](https://arxiv.org/abs/2511.01554)) and to architectures that **decouple the communication pathway from the policy latent** (SLIM, Canesse et al., [arXiv:2605.21085](https://arxiv.org/abs/2605.21085)), whereas every N10-C arm computes its message from the policy latent (`to_msg(h)`). "Best baseline" in the research hypothesis is only as strong as the baseline set.
+4. **γ/θ receive path or symbol structure.** GTM-comm is the only N10-C arm with a K = 4 × A = 16 symbol structure ; every baseline is a 16-bit code. A GTM advantage could come from the discrete-symbol structure alone, not from the γ/θ multiplexing that is the object of the programme. No symbol-structure-matched baseline exists in N10-C.
+
+N10-C-bis adds one arm for each of 1–3 ; the VQ arm of 3 is built with GTM's symbol structure and therefore also answers 4.
+
+## What is not modified (binding)
+
+- The locked N10-C pre-registration (2026-05-11), the N10-C amendment (FROZEN), the frozen stage-2 manifest (`experiments/procgen_multiagent_gtm_comm/manifest/stage2-manifest.md`, SHA-256 `1bddf9cae6883543097fcc8491b8b75af623710355547d0a45422b742255b230`), the tag `n10c-freeze-20261024`, its commit and SWHID.
+- The 60 N10-C runs : none is stopped, restarted, re-run, re-evaluated or re-analysed because of this addendum. N10-C's estimation plan, pilot categories, secondary contrasts, S report, NI report, by-host summary and cross-play probe are computed exactly as registered.
+- The N10-C deployed clones and campaign directories on macM1 and KXKM-AI (`/ai/saisail/n10c-run/`), the electron-server archive pulls, the per-host settings (`HOST_SETTINGS`), and the hosts themselves during N10-C training. N10-C-bis is deployed into a **separate directory** (`/ai/saisail/n10c-bis-run/`, own venv, own campaign dir) from its own freeze tag. If an N10-C infrastructure restart ever needs a redeploy, it is made from `n10c-freeze-20261024`, never from master.
+- The six N10-C arm implementations. N10-C-bis code is added beside them ; the freeze of N10-C-bis requires a unit test that, for each of the six N10-C arms, the parameter count equals the N10-C manifest table and the initial parameters for a given key are bit-identical before and after the N10-C-bis changes (the `make_comm` seeding path is unchanged).
+- The evaluation protocol : `EVAL_SEED = 20261023`, held-out levels 1000–1199, per-level action generators, the fixed derangement π, the cross-seed pairing `CROSS_PAIRS`, the 5,000-step cap, the x86-64 Procgen wheel (SHA-256 `4b594d14e42f0f2166e59a9e294477b906eb99c90c3343b570b7124cbc865f53`), all evaluations on KXKM-AI. N10-C-bis models are therefore evaluated under exactly the conditions of the N10-C models they are compared with.
+
+## Blinding during N10-C (binding)
+
+Until the N10-C-bis freeze tag is pushed, no held-out evaluation result of any N10-C run (`eval.json`, R, S, bandwidth, cross-play records, `analysis.py` output) and no training-curve field (training success rate, time-to-threshold) is read by the PI or by any tool that summarises them. Campaign monitoring is restricted to run status (`pending` / `running` / `trained` / `done`), attempt counts, throughput and failure reasons. If this rule is broken, the breach is declared in this stage-1 text before the tag. The N10-C-bis hypotheses, arms, contrasts and reading rule are fixed by this document, before any result ; the N10-C-bis stage-2 manifest may add only implementation details (see Filing).
+
+## New arms (frozen design ; implementation specified, not coded)
+
+All new arms use the N10-C CoinRun-coop environment, the per-agent network (IMPALA trunk → 256-d h, `to_msg` Linear(256 → 64), fuse Linear(322 → 256), policy and value heads), the PPO settings, the 16-bit bus with its {0, 1} assertion, the budget of 50,000,000 pair-steps and the registered host settings of KXKM-AI (`micro_batch_pairs = 512`, `clear_cache = True`, `n_workers = 8`). Each arm is run in the **registered** condition (`team_summary=True`) and in the **side-channel-closed** condition (`team_summary=False`) under scope option bis-A (see Compute).
+
+### Arm 1 — `gtm_mis` : GTM-comm with mismatched messages (content control)
+
+- **Sender and receiver modules :** `GTMComm`, unchanged (K = 4 symbols from A = 16, Gumbel-softmax τ = 1.0 in training, argmax at evaluation, γ/θ carrier receive path, constellation with the cosine plasticity schedule).
+- **Delivery in training.** At each rollout step, the 64 coop pairs' hard messages are delivered **deranged across pairs** : agent i of pair e receives the message emitted at the same step by role 1 − i of pair σ(e), where σ is a derangement of the 64 pairs (no fixed point) drawn once per rollout (every 128 steps) from a fifth child stream of the run's `SeedSequence([s, a, c])` (`ss.spawn(5)`, which leaves the four existing children identical). The message is thus **present**, has the marginal statistics and the step index of a real GTM message, and is uncorrelated with the receiver's partner. The derangement over concurrent pairs is the training-time counterpart of the evaluation-time shuffle probe (another episode, matched step index).
+- **PPO update.** The delivered hard message of each pair-step is stored in the rollout buffer (`RolloutBuffer.recv_bits`, [T, n, 2, 16]) and replayed through the existing `recv_bits` argument of `PairPolicy.__call__` in the update, so the PPO ratio is 1 for an unchanged policy, as for every other arm. **Consequence, disclosed :** the sender head (`comm.encode_logits`) receives no gradient in this arm ; the delivered messages are those of the GTM sender at its seed-stream initialisation applied to the real observations of another pair. The receiver (constellation, `decode`), trunk, fuse and heads train normally. *Alternative (TBD by PI, default not adopted) :* gather the donor pair-step's observation and stored Gumbel noise in the minibatch and recompute the deranged message with its straight-through gradient ; this keeps a sender gradient at the cost of a second trunk forward / backward per row (throughput unmeasured, planning figure 1.5 × the GTM time).
+- **Evaluation.** Standard N10-C protocol (intact and shuffled passes, cross-play). For this arm the **shuffled pass is the in-distribution pass** : its mean team return is designated **R_MIS** and is the arm's team-reward outcome in every contrast below. R_intact and S = R_intact − R_shuffled are reported descriptively ; S is expected to include 0 (the policy never saw content-bearing messages), and a 95 % S interval excluding 0 is flagged as unexpected.
+- **Bus :** the deranged delivery goes through `MessageBus.deliver`, which keeps asserting shape (n, 2, 16) and values in {0, 1} ; `bits_logged` is unchanged (16 bits per agent per step).
+
+### Arm 2 — warm-started receiver, two stages
+
+**Stage 2a — `eng_gtmrx` : engineered content through the GTM receive path (receiver-capacity control, and warm-start source).**
+
+- **Sender :** the N10-C engineered reference sender, bit for bit (bit 0 in-window flag, bits 1–5 remaining scoring steps, bits 6–15 clipped right-minus-left count, `eng_bits_from_window`, `EngCounters`). No sender parameters.
+- **Receiver :** the GTM receive path of `GTMComm` (`onehot_from_bits` on the 16 delivered bits → 4 one-hot symbols → γ/θ carrier, adaptive pool to 64 samples, 8 IQ coordinates → `decode` Linear(72 → 64)), with the trainable constellation and the plasticity schedule. This is the path every GTM model uses at evaluation ; it is exact for hard bits.
+- **Disclosed :** the engineered field boundaries (1 + 5 + 10 bits) do not align with the four 4-bit symbols (nibble 0 = in-window flag + the three high bits of the remaining count ; nibble 1 = the two low bits of the remaining count + the two high bits of the count n ; nibbles 2–3 = the eight low bits of n), so each symbol mixes fields. The receiver must learn this layout. The arm is a reference with known content read through the GTM path ; its difference from the N10-C engineered arm (plain Linear(16 → 64) decoder) measures what the GTM receive path costs or adds on known content.
+- Implementation : class `EngGTMRxComm(GTMComm)` in `harness/comm.py`, `send` returning the engineered bits (as `EngComm.send`), `receive` inherited ; `train.py` sets `use_eng = arm in ("eng", "eng_gtmrx")` and `plastic = arm in ("gtm", "eng_gtmrx", "gtm_warm", "gtm_mis")`.
+
+**Stage 2b — `gtm_warm` : GTM-comm cold sender, warm receiver and policy.**
+
+- **Initialisation.** Every parameter of the final checkpoint of the `eng_gtmrx` run **of the same seed and condition** is loaded (trunk, fuse, policy and value heads, GTM constellation and `decode`), **except** the GTM sender head `comm.encode_logits` and `to_msg`, which keep the `gtm_warm` run's own seed-stream initialisation (`to_msg` is untrained in `eng_gtmrx`, whose sender ignores it). Adam state is fresh. Then training is the registered GTM-comm training, 50,000,000 pair-steps, unchanged.
+- This is the transposition of Chauhan & Bera's warm start : a receiver (and policy) that already reads a 4-symbol protocol with known content, and a sender that must discover, by PPO alone, a protocol the receiver can exploit.
+- **Plasticity schedule :** restarts at 1.0 for the warm run (the unchanged GTM code path). *TBD by PI :* keep the schedule at its floor 0.1 instead, so the warm constellation is not washed out ; default = restart, flagged.
+- **Dependency :** `gtm_warm`(s, c) runs only after `eng_gtmrx`(s, c) has finished. If that run is a training failure, `gtm_warm` starts from the last finite `eng_gtmrx` checkpoint ; if there is none, from initialisation, with the flag `warm_source_untrained` (reported, never dropped or replaced).
+- **Sample efficiency.** The time-to-threshold endpoint of `gtm_warm` counts stage-2b pair-steps only and is **not comparable** with a cold-started arm ; the cumulative budget (50M + 50M) is stated next to it.
+- Implementation : `train_run(..., warm_start_from: Path | None = None, warm_exclude=("comm.encode_logits", "to_msg"))` in `harness/train.py`, loading the safetensors checkpoint by parameter name after `PairPolicy` construction and before `opt.init` ; `run.json` records the source run id, checkpoint file and its SHA-256 ; `campaign/queue.py` `RunSpec.warm_from`.
+
+### Arm 3 — `vq` : IB-VQ discrete baseline with GTM's symbol structure
+
+- **Sender :** encoder Linear(64 → 4 · d_e) reshaped to [4, d_e], d_e = 8 (TBD by PI) ; each of the 4 slots is quantised to the nearest of 16 codebook vectors of dimension d_e (one codebook shared by the 4 slots, as GTM shares one alphabet). The 4 indices are mapped to the bus as 4-bit nibbles (ruling R2, `CODE_TABLE`), so the message is exactly 16 hard bits. Straight-through estimator ; VQ loss = codebook loss + β · commitment loss with β = 0.25 (van den Oord, Vinyals & Kavukcuoglu, 2017), weighted by λ_VQ = 1.0 (TBD by PI) and added to the PPO loss on the sender rows. Training messages are hard (the bus asserts {0, 1} in training, unlike DIAL).
+- **Receiver :** codebook lookup of the 4 received indices → [4, d_e] → Linear(4 · d_e → 64). This is GTM's `iq` path without the γ/θ carrier. **The arm is GTM-comm's symbol structure with VQ discretisation and no multiplexer**, so the GTM − VQ contrast isolates the γ/θ receive path plus the Gumbel-softmax sender from the discrete K = 4 × A = 16 structure.
+- **Information-bottleneck term (Farooq & Iqbal) :** *TBD by PI* from the paper's formulation ; if it cannot be reproduced from the paper before the freeze, the arm is plain VQ and the manifest says so.
+- **Gate (Farooq & Iqbal) : not implemented by default.** N10-C's bus is fixed-rate (16 bits every step for every arm) and the registered question is team reward at fixed bandwidth, not bandwidth saving ; a closed gate would need an all-zero code that collides with symbol index 0 in every slot. *TBD by PI :* a gated variant.
+- **Decoupled pathway (SLIM) :** not implemented ; the `vq` sender, like every N10-C arm, reads `to_msg(h)`. The SLIM mechanism is cited as motivation only ; a decoupled variant would be a separate arm and is not part of this addendum. **Learned precision (DDCL) :** not applicable at fixed 16 bits ; cited as motivation only.
+- **Bandwidth utilisation :** plug-in entropy of the 16-bit messages, as for every arm ; the codebook usage is reported in addition (descriptive).
+- Implementation : class `VQComm(Comm)` in `harness/comm.py` with `aux_loss()` ; `_make_steps` adds `model.comm.aux_loss()` to the loss when present ; parameter count and sizes recorded in the stage-2 manifest table.
+
+### Arms, conditions and cells (scope option bis-A)
+
+| Arm | Condition | Role | Comparators from N10-C (same condition) |
+|---|---|---|---|
+| `gtm_mis` | registered, closed | content control | `gtm` (R_intact), `nocomm` |
+| `eng_gtmrx` | registered, closed | receiver-capacity control, warm source | `eng` |
+| `gtm_warm` | registered, closed | optimisation control | `gtm` |
+| `vq` | registered, closed | modern baseline, symbol-structure control | `gtm`, `eng`, `nocomm` |
+
+8 cells × 6 seeds = **48 runs** of 50M pair-steps. Scope options with fewer cells are listed under Compute.
+
+### Integer codes and random streams
+
+`ARM_CODES` is extended by appending, never renumbering : `{'gtm_mis': 6, 'eng_gtmrx': 7, 'gtm_warm': 8, 'vq': 9}` ; `CONDITION_CODES` unchanged. Run (arm a, seed s, condition c) draws its randomness from `numpy.random.SeedSequence([s, a, c])` as in N10-C ; the new arm codes give streams independent of every N10-C stream. Seeds : {0, 17, 42, 73, 101, 131}, the N10-C seed set (labels). `gtm_mis` adds a fifth spawned child for the derangement ; the first four children are unchanged by construction of `SeedSequence.spawn`.
+
+### Harness and campaign changes (files and flags ; nothing is coded by this addendum)
+
+| Where | Change |
+|---|---|
+| `harness/codes.py` | four new `ARM_CODES` entries ; `SEED_HOST_BIS = {s: 'kxkm' for s in SEEDS}` |
+| `harness/comm.py` | `EngGTMRxComm`, `VQComm` (with `aux_loss`) ; `make_comm` table extended |
+| `harness/rollout.py` | `recv_bits` buffer field ; derangement helper over pairs |
+| `harness/train.py` | derangement delivery and replay for `gtm_mis` ; `warm_start_from` / `warm_exclude` ; `use_eng` and `plastic` sets ; auxiliary loss hook ; `run.json` fields `warm_from`, `warm_ckpt_sha256`, `derangement_stream` |
+| `harness/policy.py` | unchanged interface (`recv_bits` already exists) |
+| `harness/evaluate.py` | unchanged protocol ; `EvalRecord` gains the designation `R_primary` = `R_shuffled` for `gtm_mis`, `R_intact` otherwise |
+| `harness/manifest.py` | stage-2 manifest generator for the N10-C-bis file (`stage2-manifest-bis.md`), new arm sizes, KXKM throughput of the new arms, dev ledger |
+| `campaign/guards.py` | registration parameter (`n10c` default, `n10c-bis`) selecting `TAG_PREFIX` (`n10c-bis-freeze-`), `AMENDMENT_PATH` (this file), manifest name and `ARMS_BY_CONDITION` ; N10-C defaults unchanged |
+| `campaign/queue.py` | `build_queue_bis()` : seed-major, `eng_gtmrx`(s, c) before `gtm_warm`(s, c), 48 runs ; `RunSpec.warm_from` |
+| `campaign/run_campaign.py` | `--registration n10c-bis` ; `--n10c-results <dir>` (read-only, analysis stage only : no N10-C checkpoint is ever loaded by an N10-C-bis training or evaluation) ; STOP-file pause for N10-C evaluation windows |
+| `campaign/kxkm/deploy.sh`, `start.sh` | target `/ai/saisail/n10c-bis-run/` |
+| `analysis.py` | `bis_report()` implementing the Estimation plan below ; reads N10-C `eval.json` records as comparator groups |
+| `tests/unit/n10c/` | N10-C arm invariance test (parameter counts and bit-identical initialisation of the six arms) ; derangement, replay, warm-start exclusion, VQ bus-mapping and nibble tests |
+
+## Hypotheses (directional, fixed before any result)
+
+All predictions are about held-out team reward R (success rate over the 200 levels, range 1) in the **registered condition** ; the closed-condition contrasts are reported with the same categories as secondary (see Estimation plan). Δ = 0.10 is the N10-C SESOI. "GTM" denotes the N10-C `gtm` arm (R_intact), "NOCOMM" and "ENG" the N10-C arms.
+
+**H-bis-1 (content).** If the GTM team reward is content-borne, then R_GTM − R_MIS ≥ Δ and R_MIS − R_NOCOMM < Δ (the mismatched message retains less than the SESOI of any gain over silence). *Prediction :* the 98.33 % interval of C1 = R_GTM − R_MIS lies at or above Δ. *Conditional branch :* if N10-C's own GTM − NOCOMM estimate is below Δ, both components are predicted below Δ and H-bis-1 is reported as not testable at the SESOI scale (nothing to decompose). *What a null says :* an interval for C1 that includes 0, or whose upper bound is below Δ, means that a policy trained with content-free but present messages does as well as GTM at the SESOI scale ; any N10-C gain of GTM over no-communication or over a baseline is then consistent with a presence effect (the receiver uses the message as an uninformative input or a step-timing cue) or with a policy-capacity difference, and "GTM-comm communicates" cannot be stated (Cheng et al. : a large effect need not be a pairing effect).
+
+**H-bis-2 (optimisation).** Following Chauhan & Bera (0.857 warm against 0.562 cold), if N10-C shows an optimisation gap (R_ENG − R_GTM ≥ Δ), then R_WARM − R_GTM ≥ Δ. *Prediction :* the 98.33 % interval of C2 = R_WARM − R_GTM lies at or above Δ when the gap exists. *Conditional branch :* if N10-C shows no gap (R_ENG − R_GTM < Δ), C2 is predicted below Δ (nothing to recover) and is reported as such. *What a null says :* an interval for C2 including 0 while an N10-C gap exists means that a receiver already reading a known 4-symbol protocol does not help PPO discover a GTM protocol ; the gap is then not a receiver-side protocol-discovery failure. The receiver-capacity contrast C-rx = R_ENG_GTMRX − R_ENG then arbitrates : an interval below −Δ means the GTM receive path loses information on known content (a representational limit of the receive path) ; an interval within (−Δ, Δ) means the receive path reads known content as well as a plain decoder, and the remaining candidates are the sender side or the Gumbel-softmax path.
+
+**H-bis-3 (modern baseline and symbol structure).** Directional in the sense of N10-C's research hypothesis : R_GTM − R_VQ ≥ Δ (the γ/θ receive path and the Gumbel-softmax sender add at least the SESOI over VQ discretisation at the same K = 4 × A = 16 structure and bit budget). *Prediction :* the 98.33 % interval of C3 = R_GTM − R_VQ lies at or above Δ. *What a null says :* an interval within (−Δ, Δ), or including 0, means GTM ≈ VQ : any GTM advantage over the registered baselines is attributable to the discrete symbol structure, not to the γ/θ multiplexing, and Paper 2 §9 may at most describe a discrete-symbol channel. An interval with upper bound below −Δ (VQ exceeds GTM by at least the SESOI) means GTM is not competitive with a modern discrete baseline at matched rate : the N10-C "best baseline" set was incomplete, and any N10-C positive category is reported as superseded.
+
+## Reading rule : no positive reading of N10-C before N10-C-bis (binding)
+
+- **R1.** N10-C's analysis is run as registered when its 60 runs are evaluated, and its pilot category is recorded. If it is **pilot-positive**, the record reads : "pilot-positive (N10-C) ; interpretation embargoed pending N10-C-bis". No sentence of the form "GTM-comm communicates / coordinates / outperforms" derived from N10-C appears in any paper, talk, README, changelog or social post before the N10-C-bis report.
+- **R2.** A positive reading of N10-C (in Paper 2 §9 or elsewhere) requires, in addition to N10-C's own category, that in N10-C-bis (registered condition) : **(a)** the C1 interval (content) lies entirely above 0, and **(b)** the C3 interval (GTM − VQ) does not lie entirely below −Δ. H-bis-2 does not gate a positive reading ; it qualifies the reading of a negative or inconclusive N10-C (a GTM shortfall may be an optimisation failure).
+- **R3.** If N10-C-bis cannot be run or completed (hardware, compute, abandonment), N10-C is reported as **uninterpretable as evidence of communication**, with its estimates ; the embargo is permanent, not lifted.
+- **R4.** N10-C-bis results never change N10-C's recorded category, estimates or intervals ; they qualify the wording. Both reports are published together.
+- **R5.** A negative or inconclusive N10-C is reported as registered, without waiting for N10-C-bis ; N10-C-bis then refines the reading (optimisation gap, receiver capacity, baseline set).
+
+## Estimation plan
+
+The N10-C interval methods apply unchanged : Welch CI for a difference of two arms (6 seeds each, Welch–Satterthwaite df between 5 and 10), one-sample t CI for S (df 5), Fieller interval for NI, intervals **unavailable** when a required variance is zero or a df undefined (never zero-width), approximate normality assumed and read as pilot estimates, no bootstrap, no p-value, no verdict label beyond the pilot categories.
+
+**Groups.** Trained arms are **independent groups** (arm-specific seed streams ; seeds are labels), as in N10-C ; no pairing by seed is used in any interval. The only dependency is `gtm_warm`(s, c) being initialised from `eng_gtmrx`(s, c) ; a `gtm_warm` − `eng_gtmrx` difference, if reported, is descriptive only. The comparator groups are the six seed-level values of the N10-C arms of the same condition, taken from their archived `eval.json` records ; using them here does not alter N10-C's own analysis.
+
+### Primary contrasts (registered condition ; 3 simultaneous, 98.33 % Welch intervals)
+
+- C1 = R̄_GTM − R̄_MIS (content component ; R_MIS is the shuffled-pass return of `gtm_mis`),
+- C2 = R̄_WARM − R̄_GTM (warm-start gain),
+- C3 = R̄_GTM − R̄_VQ (GTM against the modern baseline).
+
+Each at level 1 − 0.05/3. Dynamic range = 1 (known constant). SESOI Δ = 0.10, the N10-C reference value, unchanged.
+
+**Pilot category per contrast** (mutually exclusive, exhaustive, applied in this order, with the N10-C wording) : 0. **pilot-interval-unavailable** ; 1. **pilot-excludes-SESOI** if U < Δ ("an effect of Δ or more is not supported by this pilot") ; 2. **pilot-positive** if L ≥ Δ ("the pilot estimates are consistent only with effects of at least Δ ; superiority is not established, because this is not a confirmatory test") ; 3. **pilot-inconclusive** otherwise. For C1 and C3 the reading rule additionally uses the sign conditions stated in R2 (interval entirely above 0 ; interval not entirely below −Δ), which are read off the same intervals.
+
+### Secondary contrasts (descriptive, adjusted intervals, no label)
+
+- **Set A (new learned arms against GTM, registered condition) :** for X ∈ {`gtm_mis`, `gtm_warm`, `vq`} and the three N10-C metrics (team reward, sample efficiency, bandwidth utilisation) : 9 contrasts, Welch intervals at 1 − 0.05/9 = 99.444 %. Directions as in N10-C (team reward GTM − X ; sample efficiency X − GTM, positive favours GTM ; bandwidth signed, no favourable direction). The `gtm_warm` sample-efficiency contrast is flagged not comparable (warm start).
+- **Set B (components and capacity, registered condition) :** C-pres = R̄_MIS − R̄_NOCOMM (presence component) and C-rx = R̄_ENG_GTMRX − R̄_ENG (receiver capacity) : 2 contrasts, Welch intervals at 1 − 0.05/2 = 97.5 %.
+- **Set C (closed condition) :** C1, C2, C3, C-pres and C-rx recomputed in the side-channel-closed condition against the N10-C closed-condition arms : 5 contrasts, Welch intervals at 1 − 0.05/5 = 99 %, reported with the pilot-category wording but as secondary (the primary estimand is the registered condition, as in N10-C). The closed condition is the discriminating regime of Chauhan & Bera (side channel closed), so the H-bis-1 and H-bis-2 directions are predicted to be at least as large there ; this is a prediction, not a test.
+- For each set, the number of intervals entirely above 0, entirely below 0 and including 0 is reported without a label.
+
+### Normalized improvement, S, cross-play, by-host (descriptive)
+
+- **NI** for `gtm_mis` (with R_MIS), `gtm_warm` and `vq`, both conditions, relative to the N10-C ENG and NOCOMM arms of the same condition, with the N10-C Fieller interval and interpretability rule ; NI of `eng_gtmrx` is also reported (its sender is ENG's, so NI measures the receive path).
+- **S** for every new arm × condition : mean of the 6 seed values with a 95 % one-sample t interval, reported only as sensitivity to message disruption, under the N10-C positive-control rule (ENG closed-condition S interval entirely above 0 ; if that control is insensitive or uninterpretable in N10-C, no S of N10-C-bis is interpreted either). For `gtm_mis`, S is additionally the sanity check described under Arm 1.
+- **Cross-seed cross-play** for the 8 new cells, same fixed pairing, descriptive ; for `gtm_mis` the probe is reported but carries no reading.
+- **By-host :** all N10-C-bis runs are on KXKM-AI, whereas each N10-C comparator has 3 macM1 and 3 KXKM seeds. For every contrast the pooled estimate is reported next to the estimate restricted to the comparator's three KXKM seeds (73, 101, 131) against the new arm's same three seed labels (different arm streams, so not a pairing). No interval or label is attached to the restricted figure, and a difference between the two is never described as a host effect.
+
+### Power (idealised, as in N10-C)
+
+No seed-level variance estimate exists (no N10-C held-out result has been read, by the Blinding rule), so power at the SESOI cannot be computed. The N10-C fixed-df (df = 10) two-sided t figures for two groups of n = 6 apply unchanged : for the three primary contrasts (per-test α = 0.01667), power 18.4 % at d = 1 and d = 2.19 for 80 % power ; for a single unadjusted contrast, 34.7 % and d = 1.80 ; for the 9-contrast set A, 8.9 % and d = 2.59 (d = standardized mean difference). N10-C-bis is therefore a pilot like N10-C ; the seed set is fixed at 6 and is not resized on the realised variance. The N10-C-bis variance, like N10-C's, may inform the sample size of a future confirmatory registration whose test does not reuse the pilot data.
+
+## Evaluation protocol
+
+Unchanged from N10-C in every respect (Evaluation protocol and randomness, Message-shuffle probe, Cross-seed cross-play probe of the N10-C amendment), with two designations : (i) for `gtm_mis` the shuffled pass is the in-distribution pass and R_MIS = R_shuffled is its team-reward outcome ; (ii) `gtm_warm` is evaluated as any GTM model (argmax symbols, intact and shuffled passes), the warm source being recorded. Metric 1 (team reward), completion time, sample efficiency (capped time-to-threshold at 50M of the stage's own budget) and bandwidth utilisation are defined as in N10-C.
+
+## Seeds, host and known deviations (declared before any N10-C-bis run)
+
+1. **Host.** All 48 N10-C-bis runs train and evaluate on **KXKM-AI** (RTX 4090, MLX 0.31.1 + mlx-cuda-12 0.31.1, Python 3.10, official Procgen 0.10.7 x86-64 wheel), with the registered KXKM settings. Seeds 0, 17, 42 were trained on macM1 in N10-C ; in N10-C-bis they are KXKM runs. The host is therefore **not balanced** between a new arm and its N10-C comparator ; this is disclosed, absorbed in the Welch variance, and shown by the by-host figures. macM1 is not used (it is the N10-C bottleneck host, and the N10-C-bis models would otherwise be trained on a rendering that differs from the evaluation build).
+2. **K = 4 × A = 16 and 16 bits/step for the VQ arm** are N10-C's PI decisions (2026-10-23), adopted for comparability and for the symbol-structure control ; Farooq & Iqbal's own codebook size, dimension, IB weighting and gate are not reproduced (IB term and gate : TBD by PI, see Arm 3).
+3. **Non-determinism.** On CUDA (and Metal) the convolution backward of MLX 0.31.1 is non-deterministic (1.4e-5 to 4.5e-5 relative per gradient on CUDA ; no deterministic switch). N10-C-bis runs are **statistically, not bitwise, reproducible from the seed** ; an infrastructure restart does not retrace the failed attempt (N10-C Reproducibility statement, applied as is).
+4. **Comparators are not re-trained.** The N10-C `gtm`, `eng`, `nocomm` seed values come from the N10-C campaign window ; the N10-C-bis venv pins (mlx, mlx-cuda-12, numpy, gym3, gym, procgen, Python) must equal the N10-C KXKM pins recorded in the N10-C manifest, and any difference is a declared deviation.
+5. **Throughput of the new arms is unmeasured** at drafting ; planning uses the N10-C KXKM figure of about 10.8 h per run (1,290 pair-steps/s). The stage-2 manifest records the measured rates (frozen-policy or ledgered `throughput_learning` runs, as allowed by N10-C).
+6. **`eng_gtmrx` nibble misalignment** (see Arm 2a) ; **`gtm_warm` cumulative budget** 100M pair-steps across its two stages, sample efficiency not comparable.
+7. **Code on master.** N10-C-bis harness code will be merged to master while N10-C runs ; the N10-C clones are pinned to `n10c-freeze-20261024` and are never updated (What is not modified). After the merge, master no longer satisfies the N10-C launch guard (file digests differ from the N10-C manifest) ; this is expected and only the frozen clones launch or evaluate N10-C.
+8. **KXKM GPU services** (`gpu-worker`, `whisper-dex`) stay stopped through N10-C-bis instead of being restored after N10-C (TBD by PI).
+
+## Compute plan
+
+**Timeline (planning figures from the N10-C manifest ; nothing measured for N10-C-bis).** N10-C started 2026-10-24 (14:22 CEST). KXKM-AI trains its 30 N10-C runs at about 10.8 h each, about 324 h, finishing **about 2026-11-07** ; its own runs are evaluated inline. macM1 trains its 30 runs at about 17.6 h each, about 521–528 h, finishing about 2026-11-15 ; its checkpoints are then synced and evaluated on KXKM (about 3.4 h) and the N10-C cross-play probe runs (about 3.4 h), about 2026-11-15/16.
+
+**Sequence for N10-C-bis on KXKM-AI :**
+
+1. During N10-C : implementation and unit tests on the scripted stub only (no GPU, no host of N10-C touched) ; review ; this stage-1 text finalised except for TBD items decided by the PI.
+2. After the 30 KXKM N10-C training runs are done (about 2026-11-07) and only while no N10-C evaluation or cross-play pass is pending : development runs for the four new arms on KXKM under the N10-C allowance (smoke ≤ 1,000,000 pair-steps each, ≤ 3 per new arm, training levels 0–15, ledgered in `manifest/smoke_ledger.json` ; throughput measurement) ; stage-2 manifest ; freeze tag ; Software Heritage ; start.
+3. N10-C-bis training on KXKM, one run at a time (`--max-concurrent 1`, GPU guard `--min-free-gb 8`). **N10-C has priority :** when the macM1 N10-C runs are synced (about 2026-11-15), the N10-C-bis runner is paused between runs (`STOP` file) until the N10-C evaluations and cross-play passes are done (about 7 h), then resumed. N10-C-bis never evaluates or trains while an N10-C evaluation is running.
+4. N10-C-bis evaluations (same protocol) and cross-play for the 8 new cells ; analysis ; joint report.
+
+**Scope options (TBD by PI ; this draft is written for bis-A).** Runs at about 10.8 h each on KXKM-AI, evaluation about 6.7 min per model, cross-play about 3.35 min per pass, 6 pairs per cell :
+
+| Option | Cells | Runs | Training | Evaluation + cross-play | Wall time on KXKM | Indicative end (start about 2026-11-07, plus the 7 h N10-C pause) |
+|---|---|---:|---:|---:|---:|---|
+| **bis-A.** 4 arms × both conditions | 8 | 48 | about 518 h | about 5.4 h + 2.7 h | about 526 h ≈ 21.9 days | about 2026-11-29 |
+| bis-B. 4 arms, registered condition only | 4 | 24 | about 259 h | about 2.7 h + 1.3 h | about 263 h ≈ 11 days | about 2026-11-18 |
+| bis-C. 4 arms, closed condition only | 4 | 24 | about 259 h | about 2.7 h + 1.3 h | about 263 h ≈ 11 days | about 2026-11-18 |
+| bis-H (optional add-on). N10-C `gtm` re-run on KXKM for seeds 0, 17, 42, both conditions, as a within-host comparator | +2 | +6 | about 65 h | about 0.7 h | about 66 h ≈ 2.7 days | — |
+
+bis-H would give a 6-seed all-KXKM GTM comparator (3 N10-C KXKM seeds + 3 re-runs with the same seed labels on the same code configuration) ; default : **not adopted** (it mixes campaigns in one group) ; if adopted, it is descriptive only and does not replace the N10-C `gtm` group in C1–C3. Under bis-B the primary contrasts are unchanged and set C is dropped ; under bis-C the primary contrasts move to the closed condition and this is recorded as a change of the primary estimand before the tag.
+
+**Risk.** KXKM-AI is a shared GPU host ; contention slows runs but changes no registered quantity (step budgets, seeds, protocol). A run killed by contention is an infrastructure failure (restart from scratch, at most twice, logged).
+
+## Failure, exclusion and replacement
+
+The N10-C rules apply unchanged (infrastructure failure : restart from scratch with the same seed stream, at most twice, all attempts logged ; training failure : not replaced, evaluated at the last finite checkpoint or at initialisation ; no outcome-based exclusion ; a bug affecting an arm's registered configuration found after runs started → all runs of every affected arm repeated and reported as a deviation). One addition : a `gtm_warm` run whose warm source is untrained is flagged `warm_source_untrained` and kept.
+
+## Development allowance (unchanged from N10-C)
+
+Development before the N10-C-bis tag may use only the scripted stub (unit tests), smoke runs of at most 1,000,000 pair-steps (at most 3 per new arm, on training levels 0–15, every one recorded with its outcome in `manifest/smoke_ledger.json` and listed unfiltered in the stage-2 manifest), throughput measurements on frozen random or untrained policies, and ledgered `throughput_learning` runs (≤ 1,000,000 pair-steps, training levels only). It never uses held-out levels 1000–1199, any N10-C held-out result (Blinding) or the result of a full-length run. No development run executes on macM1 or KXKM-AI while an N10-C training run is in progress on that host.
+
+## Filing (two stages, commitment by frozen git tag, as for N10-C)
+
+- **Stage 1 :** this addendum, final : the three arms, the hypotheses, the reading rule, the estimation plan, the scope option, the deviations and the resolved TBD items (each TBD item is replaced by the PI's decision, dated, before the tag).
+- **Stage 2 :** the configuration manifest `experiments/procgen_multiagent_gtm_comm/manifest/stage2-manifest-bis.md`, which may contain only : the commit and per-file SHA-256 of the harness as extended ; the integer codes ; the network, VQ, GTM-receiver and warm-start sizes and settings of the four new arms as implemented ; the KXKM host record (software pins equal to N10-C's, Procgen x86-64 wheel hash, measured throughput of the new arms, compute estimate) ; the development ledger ; the non-determinism statement ; and the N10-C arm invariance test result.
+- **Commitment point :** an annotated tag `n10c-bis-freeze-<YYYYMMDD>` on the commit whose tree holds stage 1, stage 2 and the code, with a message containing `manifest: <path>` and `manifest-sha256: <hex>` of the N10-C-bis manifest as tagged ; pushed to GitHub (`hypneum-lab/nerve-wml`) ; the tagged state submitted to Software Heritage ("Save Code Now") for an independent archival timestamp and SWHID ; OSF registration filed afterwards, referencing tag, commit and SWHID. Evidentiary timestamps are the GitHub push time of the tag and the Software Heritage archival time. **Runs started before the tag's push time are excluded from all analyses and reported.** The N10-C-bis launcher refuses to start unless the tag exists on origin, is annotated, points at HEAD (or at an ancestor with only `docs/` and manifest-folder changes since), the tree is clean, the SHA-256 in the tag message equals the committed manifest's, and the manifest reads `Status: FROZEN (tag <tag>)` ; this file's Status line then reads `**Status:** FROZEN by tag n10c-bis-freeze-<YYYYMMDD> (stage 1 + stage 2 manifest); OSF registration to follow`.
+- The N10-C-bis freeze commit **must not touch** the N10-C tagged documents or the N10-C manifest ; the N10-C guards' allowance for later `docs/` commits is thereby respected on master as well.
+- **Confirmatory follow-up :** any superiority claim about any arm requires a separate confirmatory pre-registration with a powered N ; the pilot data of N10-C and N10-C-bis are not reused in its test.
+
+## PI decisions required before the freeze (TBD by PI)
+
+1. Scope option : bis-A (default of this draft), bis-B or bis-C ; bis-H add-on yes / no (default no).
+2. `gtm_mis` sender gradient : replay only (default) or donor-row recomputation with gradient.
+3. `gtm_warm` plasticity schedule : restart at 1.0 (default) or hold at the floor 0.1.
+4. `vq` : d_e (default 8), λ_VQ (default 1.0), β (default 0.25), IB term (formulation or none), gate (default none).
+5. KXKM GPU services stay stopped through N10-C-bis.
+6. Whether a concurrent N10-C-bis training run may overlap an N10-C evaluation window (default : no, strict serialisation).
+
+If the PI changes any item, this text is edited before the tag, never after data are seen.
+
+## References
+
+- Chauhan, M., Bera, A. (2026). Emergence, Not Bandwidth: Physical Coupling and the Limits of Learned Multi-Agent Communication. arXiv:2609.34373 (v1 2026-09-28, v2 2026-09-29), ICLR 2027 submission under review. Cited for the engineered-vs-learned gap (1.000 vs 0.482), the warm-start localisation (0.857 vs 0.562) and the side-channel-closed discriminating regime.
+- Cheng, J., Das, S., Ramnath, R. (2026). When Does Latent Communication Pay? A Causal Audit of Relayed KV Caches in Multi-Agent LLMs. arXiv:2608.04893 (2026-08-05). Cited for the deranged / zeroed / moment-matched substitution battery.
+- Zhang, H., Emu, M. (2026). Do Latent Channels Actually Communicate? A Causal Audit of Latent Multi-Agent LLM. arXiv:2607.26773 (2026-07-29). Cited for the decomposition into an other-example (presence) component and an example-specific (content) component.
+- Gazzaev, A.-B., Gavrilov, A., Muravyov, S., Makarov, I. (2026). Hidden Messages Between Diffusion Language Model Agents: Causal Evidence for Latent Communication. arXiv:2610.28905 (2026-10-20). Cited for the derangement test and the timing result (one late transfer 87.8 %, +7.0 over four exchanges).
+- Farooq, A., Iqbal, K. (2026). Bandwidth-Efficient Multi-Agent Communication through Information Bottleneck and Vector Quantization. arXiv:2602.02035 (2026-02-02), ICRA 2026. Cited as the IB + VQ + gate baseline family.
+- Kapoor, A., Bhisikar, Y., Freed, B., Peters, J., Sun, M. (2025). Learning what to say and how precisely: Efficient Communication via Differentiable Discrete Communication Learning. arXiv:2511.01554 (2025-11-03). Cited as motivation (learned bit-level precision) ; not implemented at fixed rate.
+- Canesse, A., Goupil, B., Read, J., Vanier, S. (2026). Decoupling Communication from Policy: Robust MARL under Bandwidth Constraints. arXiv:2605.21085 (2026-05-20). Cited as motivation (SLIM decouples the communication pathway from the policy latent, which N10-C does not) ; not implemented.
+- van den Oord, A., Vinyals, O., Kavukcuoglu, K. (2017). Neural Discrete Representation Learning. NeurIPS 2017. Cited for the VQ codebook and commitment losses (β = 0.25).
+- Foerster, J., Assael, Y. M., de Freitas, N., Whiteson, S. (2016). Learning to Communicate with Deep Multi-Agent Reinforcement Learning. NeurIPS 2016 (DIAL, N10-C baseline).
+- Jiang, J., Lu, Z. (2018). Learning Attentional Communication for Multi-Agent Cooperation. NeurIPS 2018 (ATOC, N10-C baseline).
+
+All arXiv identifiers above were resolved on 2026-10-25 and their titles checked against arxiv.org.
