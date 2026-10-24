@@ -422,21 +422,22 @@ def test_by_host_summaries_use_fixed_three_seed_blocks():
     bh = rep["by_host"]
     assert set(bh) == {"macm1", "kxkm"}
     assert bh["macm1"]["seeds"] == [0, 17, 42] and bh["kxkm"]["seeds"] == [73, 101, 131]
-    R = res[("gtm", "registered")]["R"]
-    assert bh["macm1"]["arm_means"][("gtm", "registered")]["R"] == pytest.approx(R[:3].mean())
-    assert bh["kxkm"]["arm_means"][("gtm", "registered")]["R"] == pytest.approx(R[3:].mean())
+    r_gtm = res[("gtm", "registered")]["R"]
+    assert bh["macm1"]["arm_means"][("gtm", "registered")]["R"] == pytest.approx(r_gtm[:3].mean())
+    assert bh["kxkm"]["arm_means"][("gtm", "registered")]["R"] == pytest.approx(r_gtm[3:].mean())
     base = res[("dial", "registered")]["R"]
-    assert bh["kxkm"]["primary"]["dial"] == pytest.approx(R[3:].mean() - base[3:].mean())
-    T = res[("gtm", "registered")]["time_to_half"]
-    To = res[("dial", "registered")]["time_to_half"]
+    assert bh["kxkm"]["primary"]["dial"] == pytest.approx(r_gtm[3:].mean() - base[3:].mean())
+    t_gtm = res[("gtm", "registered")]["time_to_half"]
+    t_dial = res[("dial", "registered")]["time_to_half"]
     sec = {(c["baseline"], c["metric"]): c for c in bh["macm1"]["secondary"]}
     assert len(sec) == 9
-    assert sec[("dial", "time_to_half")]["estimate"] == pytest.approx(To[:3].mean() - T[:3].mean())
+    assert sec[("dial", "time_to_half")]["estimate"] == pytest.approx(
+        t_dial[:3].mean() - t_gtm[:3].mean())
     assert sec[("dial", "bandwidth_bits")]["estimate"] == pytest.approx(
         res[("gtm", "registered")]["bandwidth_bits"][:3].mean()
         - res[("dial", "registered")]["bandwidth_bits"][:3].mean())
-    S = res[("eng", "closed")]["S"]
-    assert bh["macm1"]["S"][("eng", "closed")] == pytest.approx(S[:3].mean())
+    s_eng = res[("eng", "closed")]["S"]
+    assert bh["macm1"]["S"][("eng", "closed")] == pytest.approx(s_eng[:3].mean())
     assert ("nocomm", "closed") not in bh["kxkm"]["S"]
     # no interval, level or label anywhere in a by-host figure
     flat = repr(bh)
