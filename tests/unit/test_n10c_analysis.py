@@ -134,6 +134,7 @@ def test_fieller_none_when_variances_degenerate():
 def _cell(r, t, bw, s):
     t = np.asarray(t, float)
     return {
+        "seeds": [0, 17, 42, 73, 101, 131],
         "reached_threshold": t < 50e6,
         "R": np.array(r, float),
         "time_to_half": np.array(t, float),
@@ -208,18 +209,23 @@ def test_primary_report_end_to_end():
     assert set(ni["closed"]) == {"eng", "nocomm", "gtm", "dial"}
 
 
-def test_ni_unavailable_when_denominator_not_above_zero():
+def test_ni_suppressed_when_denominator_not_above_zero():
     res = _fixture()
-    res[("eng", "closed")]["R"] = res[("nocomm", "closed")]["R"] + np.array(
+    res[("eng", "closed")]["R"] = 0.2 + 0.6 * np.array(
         [0.3, -0.3, 0.2, -0.1, 0.0, 0.1]
     )
     rep = primary_report(res)
     g = rep["normalized_improvement"]["closed"]["gtm"]
-    assert g["low"] is None and g["high"] is None
-    assert g["estimate"] == pytest.approx(
-        (res[("gtm", "closed")]["R"].mean() - res[("nocomm", "closed")]["R"].mean())
-        / (res[("eng", "closed")]["R"].mean() - res[("nocomm", "closed")]["R"].mean())
-    )
+    assert g["estimate"] is None and g["low"] is None and g["high"] is None
+    assert g["interpretable"] is False
+    # numerator / denominator estimates stay available separately
+    assert g["numerator"] == pytest.approx(
+        res[("gtm", "closed")]["R"].mean() - res[("nocomm", "closed")]["R"].mean())
+    assert g["denominator"] == pytest.approx(
+        res[("eng", "closed")]["R"].mean() - res[("nocomm", "closed")]["R"].mean())
+    # an interpretable cell keeps its estimate and flag
+    ok = rep["normalized_improvement"]["registered"]["gtm"]
+    assert ok["interpretable"] is True and ok["estimate"] is not None
 
 
 def test_positive_control_sensitive_allows_s_interpretation():
@@ -340,30 +346,128 @@ def test_reached_threshold_length_rejected():
         primary_report(res)
 
 
-def test_cross_play_report_is_descriptive_only():
+SEEDS6 = [0, 17, 42, 73, 101, 131]
+PAIRS6 = [(0, 17), (17, 42), (42, 73), (73, 101), (101, 131), (131, 0)]
+CELLS = ([(a, "registered") for a in ("gtm", "mlp", "atoc", "dial", "eng", "nocomm")]
+         + [(a, "closed") for a in ("gtm", "dial", "eng", "nocomm")])
+
+
+def _cross_cell(r_int, r_cross, untrained=None):
+    return {"seeds": list(SEEDS6), "pairs": [list(p) for p in PAIRS6],
+            "R_intact": list(r_int), "R_cross": list(r_cross),
+            "untrained": [False] * 6 if untrained is None else list(untrained)}
+
+
+def _cross_all(**over):
     r_int = [0.9, 0.8, 0.7, 0.85, 0.95, 0.75]
     r_cross = [0.2, 0.3, 0.1, 0.25, 0.15, 0.2]
-    out = cross_play_report({
-        ("gtm", "registered"): {"R_intact": r_int, "R_cross": r_cross},
-        ("nocomm", "closed"): {"R_intact": r_int, "R_cross": r_int},
-    })
+    res = {c: _cross_cell(r_int, r_cross) for c in CELLS}
+    res.update(over)
+    return res, r_int, r_cross
+
+
+def test_cross_play_report_is_descriptive_only():
+    res, r_int, r_cross = _cross_all()
+    res[("nocomm", "closed")] = _cross_cell(r_int, r_int)
+    res[("gtm", "registered")] = _cross_cell(
+        r_int, r_cross, untrained=[False, True, False, False, True, False])
+    out = cross_play_report(res)
     g = out[("gtm", "registered")]
     assert g["R_cross"] == r_cross
     assert g["mean_cross"] == pytest.approx(np.mean(r_cross))
     assert g["mean_intact"] == pytest.approx(np.mean(r_int))
     assert g["gap"] == pytest.approx(np.mean(r_int) - np.mean(r_cross))
+    # untrained flags are carried into the output, per pair
+    assert g["untrained"] == [False, True, False, False, True, False]
+    assert g["n_untrained"] == 2 and g["pairs"] == [list(p) for p in PAIRS6]
     # no interval, p-value, label or comparison of any kind
-    assert set(g) == {"R_cross", "mean_cross", "mean_intact", "gap"}
+    assert set(g) == {"R_cross", "mean_cross", "mean_intact", "gap", "pairs",
+                      "untrained", "n_untrained"}
     assert out[("nocomm", "closed")]["gap"] == pytest.approx(0.0)
+    assert set(out) == set(CELLS)
 
 
-def test_cross_play_report_validates_input():
-    ok = {"R_intact": [0.5, 0.6], "R_cross": [0.1, 0.2]}
-    with pytest.raises(ValueError):
-        cross_play_report({("gtm", "registered"): {"R_intact": [0.5, 0.6]}})
-    with pytest.raises(ValueError):
-        cross_play_report({("gtm", "registered"): {**ok, "R_cross": [0.1]}})
-    with pytest.raises(ValueError):
-        cross_play_report({("gtm", "registered"): {**ok, "R_cross": [0.1, np.nan]}})
-    with pytest.raises(ValueError):
-        cross_play_report({("gtm", "registered"): {"R_intact": [0.5], "R_cross": [0.1]}})
+def test_cross_play_requires_all_cells():
+    res, _, _ = _cross_all()
+    del res[("atoc", "registered")]
+    with pytest.raises(ValueError, match="cell"):
+        cross_play_report(res)
+
+
+def test_cross_play_requires_all_six_fixed_pairs_and_seeds():
+    r_int = [0.5] * 6
+    for bad in (
+        {**_cross_cell(r_int, r_int), "pairs": [list(p) for p in PAIRS6[:5]]},
+        {**_cross_cell(r_int, r_int), "pairs": [list(p) for p in PAIRS6[::-1]]},
+        {**_cross_cell(r_int, r_int), "seeds": [0, 17, 42, 73, 101, 7]},
+        {**_cross_cell(r_int, r_int), "untrained": [False] * 5},
+        {**_cross_cell(r_int, r_int), "R_cross": [0.1, 0.2]},
+        {**_cross_cell(r_int, r_int), "R_cross": [0.1] * 5 + [np.nan]},
+        {**_cross_cell(r_int, r_int), "R_cross": [0.1] * 5 + [1.5]},
+    ):
+        res, _, _ = _cross_all()
+        res[("gtm", "registered")] = bad
+        with pytest.raises(ValueError):
+            cross_play_report(res)
+    res, _, _ = _cross_all()
+    del res[("gtm", "registered")]["untrained"]
+    with pytest.raises(ValueError, match="untrained"):
+        cross_play_report(res)
+
+
+# ------------------------------------------------- by-host (item 7)
+def test_by_host_summaries_use_fixed_three_seed_blocks():
+    res = _fixture()
+    rep = primary_report(res)
+    bh = rep["by_host"]
+    assert set(bh) == {"macm1", "kxkm"}
+    assert bh["macm1"]["seeds"] == [0, 17, 42] and bh["kxkm"]["seeds"] == [73, 101, 131]
+    R = res[("gtm", "registered")]["R"]
+    assert bh["macm1"]["arm_means"][("gtm", "registered")]["R"] == pytest.approx(R[:3].mean())
+    assert bh["kxkm"]["arm_means"][("gtm", "registered")]["R"] == pytest.approx(R[3:].mean())
+    base = res[("dial", "registered")]["R"]
+    assert bh["kxkm"]["primary"]["dial"] == pytest.approx(R[3:].mean() - base[3:].mean())
+    T = res[("gtm", "registered")]["time_to_half"]
+    To = res[("dial", "registered")]["time_to_half"]
+    sec = {(c["baseline"], c["metric"]): c for c in bh["macm1"]["secondary"]}
+    assert len(sec) == 9
+    assert sec[("dial", "time_to_half")]["estimate"] == pytest.approx(To[:3].mean() - T[:3].mean())
+    assert sec[("dial", "bandwidth_bits")]["estimate"] == pytest.approx(
+        res[("gtm", "registered")]["bandwidth_bits"][:3].mean()
+        - res[("dial", "registered")]["bandwidth_bits"][:3].mean())
+    S = res[("eng", "closed")]["S"]
+    assert bh["macm1"]["S"][("eng", "closed")] == pytest.approx(S[:3].mean())
+    assert ("nocomm", "closed") not in bh["kxkm"]["S"]
+    # no interval, level or label anywhere in a by-host figure
+    flat = repr(bh)
+    for word in ("low", "high", "level", "category", "above_0", "sensitive"):
+        assert word not in flat
+
+
+# ------------------------------------------------- input validation (nit)
+@pytest.mark.parametrize("metric,bad", [
+    ("R", np.array([0.1, 0.2, 0.3, 0.4, 0.5, 1.2])),
+    ("R", np.array([-0.1, 0.2, 0.3, 0.4, 0.5, 0.6])),
+    ("S", np.array([0.0, 0.0, 0.0, 0.0, 0.0, 1.5])),
+    ("bandwidth_bits", np.array([1.0, 2.0, 3.0, 4.0, 5.0, 16.5])),
+    ("bandwidth_bits", np.array([-1.0, 2.0, 3.0, 4.0, 5.0, 6.0])),
+    ("time_to_half", np.array([-1.0, 2e6, 3e6, 4e6, 5e6, 6e6])),
+])
+def test_metric_ranges_validated(metric, bad):
+    res = _fixture()
+    res[("gtm", "registered")][metric] = bad
+    if metric == "time_to_half":
+        res[("gtm", "registered")]["reached_threshold"] = bad < 50e6
+    with pytest.raises(ValueError, match="range"):
+        primary_report(res)
+
+
+def test_seed_identities_validated():
+    for bad in ([0, 17, 42, 73, 101, 7], [17, 0, 42, 73, 101, 131], None):
+        res = _fixture()
+        if bad is None:
+            del res[("gtm", "registered")]["seeds"]
+        else:
+            res[("gtm", "registered")]["seeds"] = bad
+        with pytest.raises(ValueError, match="seeds"):
+            primary_report(res)

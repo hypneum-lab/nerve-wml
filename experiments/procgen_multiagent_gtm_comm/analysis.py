@@ -13,8 +13,9 @@ Input format of :func:`primary_report`
 * ``arm`` in ``{"gtm", "mlp", "atoc", "dial", "eng", "nocomm"}``,
 * ``condition`` in ``{"registered", "closed"}`` (the closed condition
   has gtm, dial, eng, nocomm),
-* the inner dict holding one length-6 array per seed (same seed order
-  in every cell) for the metrics
+* the inner dict holding ``"seeds"`` (exactly the six registered seeds,
+  in order) and one length-6 array per seed (same seed order in every
+  cell) for the metrics
 
   - ``"R"``: held-out team reward (success rate, range 1),
   - ``"time_to_half"``: sample efficiency endpoint, already capped at
@@ -27,20 +28,26 @@ Input format of :func:`primary_report`
   disambiguates runs reaching it at the final 50M evaluation (also
   time 50M) from runs never reaching it (time 50M, flag False).
 
-Every array must be 1-D, of exactly 6 finite values; malformed cells
-raise ``ValueError``.
+Every array must be 1-D, of exactly 6 finite values inside the metric's
+range (R in [0, 1], S in [-1, 1], bandwidth in [0, 16], time in [0, 50M]);
+malformed cells raise ``ValueError``.
 
 Output of :func:`primary_report` (all intervals are
 ``{"estimate"|"mean", "low", "high", ...}``; unavailable intervals have
 ``low = high = None`` and keep the point estimate) is a dict with keys
-``primary``, ``secondary``, ``normalized_improvement``, ``S`` and
-``threshold_counts``.
+``primary``, ``secondary``, ``normalized_improvement``, ``S``,
+``threshold_counts`` and ``by_host`` (descriptive per-host summaries of the
+fixed 3-seed blocks: no interval, no label). A normalized improvement whose
+Fieller interpretability condition fails has ``estimate = None`` and
+``interpretable = False``; ``numerator`` / ``denominator`` stay reported.
 """
 
 from __future__ import annotations
 
 import numpy as np
 from scipy import stats
+
+from .harness.codes import HOSTS, SEED_HOST, SEEDS
 
 DELTA = 0.10
 RANGE = 1.0
@@ -53,6 +60,12 @@ N_ENV = 1
 
 
 N_SEEDS = 6  # amendment 2026-10-23 (second round): seeds 0,17,42,73,101,131
+ARMS_REGISTERED = ("gtm", "mlp", "atoc", "dial", "eng", "nocomm")
+ARMS_CLOSED = ("gtm", "dial", "eng", "nocomm")
+CELLS = tuple((a, "registered") for a in ARMS_REGISTERED) + tuple(
+    (a, "closed") for a in ARMS_CLOSED)
+CROSS_PAIRS = tuple((s, SEEDS[(k + 1) % len(SEEDS)]) for k, s in enumerate(SEEDS))
+BANDWIDTH_MAX = 16.0  # bits: entropy of a 16-bit message
 
 
 def _var(x):
@@ -101,6 +114,20 @@ def one_sample_ci(x, level):
     m = float(x.mean())
     h = stats.t.ppf(1 - (1 - level) / 2, n - 1) * s / np.sqrt(n)
     return m, m - h, m + h
+
+
+def fieller_interpretable(a_arm, nocomm, eng, level=0.95):
+    """Interpretability rule of the normalized improvement.
+
+    True if the denominator interval b +- t sqrt(Var b) lies entirely above
+    0, False if it does not, None if it cannot be computed (undefined df).
+    """
+    pa = _welch_parts(a_arm, nocomm)
+    pb = _welch_parts(eng, nocomm)
+    if pa is None or pb is None:
+        return None
+    t = stats.t.ppf(1 - (1 - level) / 2, min(pa[2], pb[2]))
+    return bool(pb[0] - t * pb[1] > 0)
 
 
 def fieller_ci(a_arm, nocomm, eng, level=0.95):
@@ -216,14 +243,24 @@ def _ni(results):
                 cell[arm] = {"estimate": None, "low": None, "high": None}
                 continue
             r = lambda a, cond=cond: _metric(results, a, cond, "R")  # noqa: E731
-            den = r("eng").mean() - r("nocomm").mean()
-            est = float((r(arm).mean() - r("nocomm").mean()) / den) if den != 0 else None
+            num = float(r(arm).mean() - r("nocomm").mean())
+            den = float(r("eng").mean() - r("nocomm").mean())
+            ok = fieller_interpretable(r(arm), r("nocomm"), r("eng"), 0.95)
             ci = fieller_ci(r(arm), r("nocomm"), r("eng"), 0.95)
+            if ok is False or (ok is None and not den > 0):
+                # interpretability rule fails: NI is not reported (a property
+                # of the data); numerator and denominator stay available
+                est = None
+            else:
+                est = num / den if ci is None else ci[0]
             cell[arm] = {
-                "estimate": est if ci is None else ci[0],
+                "estimate": est,
                 "low": None if ci is None else ci[1],
                 "high": None if ci is None else ci[2],
                 "level": 0.95,
+                "interpretable": ok,
+                "numerator": num,
+                "denominator": den,
             }
         out[cond] = cell
     return out
@@ -279,12 +316,24 @@ def _threshold_counts(results):
     return out
 
 
+RANGES = {  # metric -> (low, high) inclusive
+    "R": (0.0, 1.0),
+    "S": (-1.0, 1.0),
+    "bandwidth_bits": (0.0, BANDWIDTH_MAX),
+    "time_to_half": (0.0, float(CAP)),
+}
+
+
 def _validate(results):
-    req = ("R", "time_to_half", "bandwidth_bits", "S", "reached_threshold")
+    req = ("seeds", "R", "time_to_half", "bandwidth_bits", "S", "reached_threshold")
     for key, cell in results.items():
         for m in req:
             if m not in cell:
                 raise ValueError(f"cell {key}: missing metric {m!r}")
+        if [int(x) for x in np.asarray(cell["seeds"]).ravel()] != list(SEEDS):
+            raise ValueError(
+                f"cell {key}: seeds must be exactly {list(SEEDS)} in this order")
+        for m in req[1:]:
             a = np.asarray(cell[m])
             if a.ndim != 1 or len(a) != N_SEEDS:
                 raise ValueError(
@@ -296,12 +345,59 @@ def _validate(results):
                     raise ValueError(f"cell {key}: reached_threshold must be bool")
             elif not np.all(np.isfinite(a.astype(float))):
                 raise ValueError(f"cell {key}, {m}: non-finite values")
+            elif m in RANGES:
+                lo, hi = RANGES[m]
+                af = a.astype(float)
+                if np.any(af < lo) or np.any(af > hi):
+                    raise ValueError(f"cell {key}, {m}: value outside range [{lo}, {hi}]")
         reached = np.asarray(cell["reached_threshold"], bool)
         t = np.asarray(cell["time_to_half"], float)
         if np.any(~reached & (t != CAP)):
             raise ValueError(f"cell {key}: never-reaching runs must carry the cap")
         if np.any(t > CAP):
             raise ValueError(f"cell {key}: time_to_half exceeds the cap")
+
+
+def _by_host(results):
+    """Descriptive per-host summaries on the fixed 3-seed host blocks.
+
+    Per host: per-cell arm means of every metric, the point estimate of
+    every primary and secondary contrast (same sign conventions as the
+    pooled report) and S per cell. No interval, level or label.
+    """
+    out = {}
+    for host in HOSTS:
+        idx = [i for i, sd in enumerate(SEEDS) if SEED_HOST[sd] == host]
+
+        def blk(arm, cond, metric, idx=idx):
+            return _metric(results, arm, cond, metric)[idx]
+
+        arm_means = {
+            key: {m: float(blk(*key, m).mean()) for m in ("R", "time_to_half",
+                                                          "bandwidth_bits", "S")}
+            for key in results
+        }
+        primary, secondary = {}, []
+        if ("gtm", "registered") in results:
+            for b in BASELINES:
+                if (b, "registered") not in results:
+                    continue
+                primary[b] = float(blk("gtm", "registered", "R").mean()
+                                   - blk(b, "registered", "R").mean())
+                for m in METRICS:
+                    g = blk("gtm", "registered", m).mean()
+                    o = blk(b, "registered", m).mean()
+                    est = o - g if m == "time_to_half" else g - o
+                    secondary.append({"baseline": b, "metric": m,
+                                      "estimate": float(est)})
+        out[host] = {
+            "seeds": [SEEDS[i] for i in idx],
+            "arm_means": arm_means,
+            "primary": primary,
+            "secondary": secondary,
+            "S": {key: arm_means[key]["S"] for key in results if key[0] != "nocomm"},
+        }
+    return out
 
 
 def primary_report(results):
@@ -313,34 +409,57 @@ def primary_report(results):
         "normalized_improvement": _ni(results),
         "S": _s_report(results),
         "threshold_counts": _threshold_counts(results),
+        "by_host": _by_host(results),
     }
 
 
 def cross_play_report(results):
     """Descriptive cross-seed cross-play summary (amendment 2026-10-23).
 
-    ``results[(arm, condition)]`` holds ``"R_intact"`` and ``"R_cross"``,
-    one value per seed in the fixed seed order (same length, at least 2,
-    finite). Per cell: the cross values, their mean, the mean intact
-    value and the gap ``mean_intact - mean_cross``. No interval, p-value,
-    category or between-arm comparison is computed, and a gap is not a
-    loss of communication.
+    ``results`` must hold ALL ten (arm, condition) cells (6 registered, 4
+    closed). Each cell: ``"seeds"`` (= the six registered seeds in order),
+    ``"pairs"`` (= the six fixed (role-0 seed, role-1 seed) pairs in order),
+    ``"R_intact"`` (one per seed), ``"R_cross"`` (one per pair, in [0, 1])
+    and ``"untrained"`` (bool per pair: a failed/untrained model took part).
+    Per cell: the cross values, the pair identities, the untrained flags and
+    their count, the means and the gap ``mean_intact - mean_cross``. No
+    interval, p-value, category or between-arm comparison is computed, and a
+    gap is not a loss of communication.
     """
+    missing = [c for c in CELLS if c not in results]
+    extra = [k for k in results if k not in CELLS]
+    if missing or extra:
+        raise ValueError(f"cross-play cells must be exactly the {len(CELLS)} "
+                         f"registered cells; missing {missing}, unexpected {extra}")
     out = {}
-    for key, cell in results.items():
-        arrs = {}
-        for m in ("R_intact", "R_cross"):
+    for key in CELLS:
+        cell = results[key]
+        for m in ("seeds", "pairs", "R_intact", "R_cross", "untrained"):
             if m not in cell:
                 raise ValueError(f"cell {key}: missing metric {m!r}")
+        if [int(x) for x in cell["seeds"]] != list(SEEDS):
+            raise ValueError(f"cell {key}: seeds must be {list(SEEDS)}")
+        if [tuple(int(x) for x in p) for p in cell["pairs"]] != list(CROSS_PAIRS):
+            raise ValueError(f"cell {key}: pairs must be the six fixed pairs "
+                             f"{list(CROSS_PAIRS)} in order")
+        arrs = {}
+        for m in ("R_intact", "R_cross"):
             a = np.asarray(cell[m], float)
-            if a.ndim != 1 or len(a) < 2 or not np.all(np.isfinite(a)):
-                raise ValueError(f"cell {key}, {m}: need >= 2 finite values")
+            if a.ndim != 1 or len(a) != N_SEEDS or not np.all(np.isfinite(a)):
+                raise ValueError(
+                    f"cell {key}, {m}: need {N_SEEDS} finite values, one each")
+            if np.any(a < 0) or np.any(a > RANGE):
+                raise ValueError(f"cell {key}, {m}: value outside range [0, {RANGE}]")
             arrs[m] = a
-        if len(arrs["R_intact"]) != len(arrs["R_cross"]):
-            raise ValueError(f"cell {key}: R_intact and R_cross lengths differ")
+        un = np.asarray(cell["untrained"])
+        if un.dtype != bool or un.ndim != 1 or len(un) != N_SEEDS:
+            raise ValueError(f"cell {key}: untrained must be {N_SEEDS} booleans")
         mi, mc = float(arrs["R_intact"].mean()), float(arrs["R_cross"].mean())
         out[key] = {
             "R_cross": [float(x) for x in arrs["R_cross"]],
+            "pairs": [list(p) for p in CROSS_PAIRS],
+            "untrained": [bool(x) for x in un],
+            "n_untrained": int(un.sum()),
             "mean_cross": mc,
             "mean_intact": mi,
             "gap": mi - mc,
