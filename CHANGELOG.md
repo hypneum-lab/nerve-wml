@@ -15,9 +15,10 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
   8.3 %). Gate script now checks all three conditions. Details, all sizes
   and affected claims:
   `docs/superpowers/research/2026-10-24-lif-l1a-gate-erratum.md`.
-  Zenodo v1.9.0 archived files stay as released; its description can be
-  corrected by the maintainer in the Zenodo UI (follow-up), and the next
-  release description will carry the correction.
+  No Zenodo record exists for v1.9.0 (no GitHub release was published,
+  so the GitHub-Zenodo webhook never fired); the L1a claim was never
+  archived on Zenodo. The correction must be carried in the
+  description of the next published release.
 
 ## [1.9.4] — 2026-06-20
 

@@ -50,18 +50,22 @@ Explicit claims:
 
 Implicit / indirect mention (does not assert a pass):
 
-- `.zenodo.json` (v1.9.0): title "... Full-LIF L1a" and description item
-  "(5) L1a Full-LIF sim training + scaling sweep (#48)". It names the L1a
-  work but does not state that the gate passed.
+- `.zenodo.json` at the v1.9.0 tag: title "... Full-LIF L1a" and
+  description item "(5) L1a Full-LIF sim training + scaling sweep
+  (#48)". It names the L1a work but does not state that the gate
+  passed. This file was never archived on Zenodo for v1.9.0 (see
+  Handling).
 
 ## Handling
 
-- Zenodo: the archived files of v1.9.0 stay as they are; the published
-  record's metadata (description) remains editable, including for
-  previous versions. Follow-up for the maintainer (PI): correct the
-  v1.9.0 description in the Zenodo UI and carry the correction in the
-  next release's description.
-- Historical JSON files and the v1.9.0 release are not modified.
+- Zenodo: no Zenodo record exists for v1.9.0. v1.9.0 (and the later
+  v1.9.x tags) exist only as git tags; no GitHub release was published
+  after v1.8.1, so the GitHub-Zenodo webhook never fired (latest
+  version of concept record 19656342 is 1.8.0). The L1a gate claim was
+  therefore never archived on Zenodo, and there is no Zenodo
+  description to correct. The correction must be carried in the
+  description of the next published release.
+- Historical JSON files and the v1.9.0 tag are not modified.
 - `scripts/lif_l1a_train.py` now requires all three conditions and writes
   each condition's boolean separately. The training was not rerun.
 - `test_gate_untrained_lte_10pct` is unchanged (still `@slow`, <= 10 %).
