@@ -1,0 +1,44 @@
+{
+  "arm": "gtm",
+  "seed": 9001,
+  "condition": "registered",
+  "codes": {
+    "arm": 0,
+    "condition": 0
+  },
+  "total_pair_steps": 16384,
+  "pair_steps_done": 16384,
+  "n_updates": 2,
+  "wall_time_s": 13.97152853012085,
+  "pair_steps_per_s": 1172.6705467249462,
+  "samples_per_s": 2345.3410934498925,
+  "restarts": 0,
+  "using_stub": false,
+  "training_failure": false,
+  "failure_reason": null,
+  "success_curve": [
+    [
+      16384,
+      0.0
+    ]
+  ],
+  "success_curve_n": [
+    23
+  ],
+  "time_to_half": null,
+  "bits_logged": 524288,
+  "last_checkpoint": "ckpt_16384.safetensors",
+  "completed_episodes": 23,
+  "losses": [
+    -0.02747777822272231,
+    -0.03201604401692748
+  ],
+  "optimizer_steps": 48,
+  "first_mb_ratio_dev": [
+    3.62396240234375e-05,
+    0.000118255615234375
+  ],
+  "micro_batch_pairs": null,
+  "clear_cache": false,
+  "peak_memory_bytes": 11998365056
+}

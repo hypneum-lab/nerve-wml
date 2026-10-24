@@ -1,0 +1,21 @@
+{
+ "init": "27b76d35596884ab",
+ "forward": "c62beac7ed5e497d8e601fffbb680e97",
+ "rollout": {
+  "1": {
+   "obs": "59efd028633b3666",
+   "actions": "17897d4869b5da82",
+   "logp": "5b69b60e762ab3c4",
+   "value": "e3233ae8c8b33fe1",
+   "returns": "46324dcccd1643cb"
+  },
+  "8": {
+   "obs": "0d9f87442d0bae83",
+   "actions": "9596d2705fbaa77c",
+   "logp": "8b6d87c88d75c34d",
+   "value": "67f8546a86d1bc11",
+   "returns": "0cb57de078a2102f"
+  }
+ },
+ "failure": false
+}

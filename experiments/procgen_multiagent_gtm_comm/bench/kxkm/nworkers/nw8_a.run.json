@@ -1,0 +1,56 @@
+{
+  "arm": "gtm",
+  "seed": 9001,
+  "condition": "registered",
+  "codes": {
+    "arm": 0,
+    "condition": 0
+  },
+  "total_pair_steps": 65536,
+  "pair_steps_done": 65536,
+  "n_updates": 8,
+  "wall_time_s": 47.10926795005798,
+  "pair_steps_per_s": 1391.148766511863,
+  "samples_per_s": 2782.297533023726,
+  "restarts": 0,
+  "using_stub": false,
+  "training_failure": false,
+  "failure_reason": null,
+  "success_curve": [
+    [
+      65536,
+      0.0
+    ]
+  ],
+  "success_curve_n": [
+    100
+  ],
+  "time_to_half": null,
+  "bits_logged": 2097152,
+  "last_checkpoint": "ckpt_65536.safetensors",
+  "completed_episodes": 112,
+  "losses": [
+    -0.02738272959565317,
+    -0.03276439176958471,
+    -0.030697361808658268,
+    -0.03179574203386437,
+    -0.030399328329773805,
+    -0.03120672588799304,
+    -0.030251600030169357,
+    -0.029394414169170584
+  ],
+  "optimizer_steps": 192,
+  "first_mb_ratio_dev": [
+    3.600120544433594e-05,
+    0.00012803077697753906,
+    0.0001728534698486328,
+    0.00018471479415893555,
+    0.00017058849334716797,
+    0.0002478957176208496,
+    0.0002581477165222168,
+    0.00040149688720703125
+  ],
+  "micro_batch_pairs": 512,
+  "clear_cache": true,
+  "peak_memory_bytes": 6693708288
+}
