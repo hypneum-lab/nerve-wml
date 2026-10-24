@@ -163,6 +163,17 @@
       "started_at": "2026-10-24T12:58:42+0200",
       "outcome": "crashed",
       "note": "infrastructure crash after 0.05 s, before any environment step or update: the macM1 shell had no /opt/homebrew/bin on PATH, so Procgen tried to rebuild and failed on a missing cmake. Counted by rule (a crashed run counts); not erased."
+    },
+    {
+      "kind": "smoke",
+      "arm": "gtm",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "policy_updates": true,
+      "started_at": "2026-10-24T13:07:37+0200",
+      "outcome": "completed"
     }
   ],
   "arm_allowance": {

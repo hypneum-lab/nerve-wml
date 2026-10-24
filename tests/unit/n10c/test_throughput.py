@@ -34,15 +34,15 @@ def test_committed_ledger_matches_the_disclosed_smoke_runs():
     ledger = json.loads(th.SMOKE_LEDGER.read_text())
     sm = json.loads((th.PKG / "manifest" / "smoke_runs.json").read_text())
     smokes = [r for r in ledger["runs"] if r["kind"] == "smoke"]
-    assert len(smokes) == len(sm["runs"]) == 8  # 7 + the fresh gtm crash (PATH error)
+    assert len(smokes) == len(sm["runs"]) == 9  # 7 + gtm crash (PATH error) + fresh gtm
     counts = th.smoke_counts(th.SMOKE_LEDGER)
-    assert counts["gtm"] == 3 and all(v <= th.SMOKE_MAX_PER_ARM for v in counts.values())
+    assert counts["gtm"] == 4 and all(v <= devledger.allowance(a) for a, v in counts.items())
     # history is kept: the pre-rule throughput / profiling runs are disclosed
     legacy = [r for r in ledger["runs"] if r["kind"] == "legacy_measurement"]
     assert len(legacy) == 6 and all(r["policy_updates"] for r in legacy)
     assert {r["arm"] for r in legacy} == {"gtm", "mlp", "nocomm"}
     assert devledger.remaining(["gtm", "mlp", "atoc"], th.SMOKE_LEDGER) == {
-        "gtm": 1, "mlp": 2, "atoc": 2}
+        "gtm": 0, "mlp": 2, "atoc": 2}
 
 
 def test_reserve_enforces_step_cap_and_three_per_arm(tmp_path):
