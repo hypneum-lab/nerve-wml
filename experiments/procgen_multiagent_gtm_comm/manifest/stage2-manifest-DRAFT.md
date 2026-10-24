@@ -6,7 +6,7 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 
 ## 1. Commit, integer codes and bus
 
-- Harness commit at manifest time: `480b40f2e03844aec25b3eda27b49fb757dfb458` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
+- Harness commit at manifest time: `9fbe47f95be5fb80d9b23d75fce035bcd1f393e0` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
 - Code identity independent of git (SHA-256 of each file at manifest time):
 
 | file | SHA-256 |
@@ -16,10 +16,10 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 | `experiments/procgen_multiagent_gtm_comm/harness/bus.py` | `1bb3bc23aec588da8bfb73864215e00ee5a4510324ff3d1045bb0b9af21703c2` |
 | `experiments/procgen_multiagent_gtm_comm/harness/codes.py` | `5c266eb2363655cc159ed8d03d9c9c8adb9b6dac4c083f7788af970aab96e7c8` |
 | `experiments/procgen_multiagent_gtm_comm/harness/comm.py` | `7a9a27c6906d3b320ba47aad1bf6e80ee92ff5883f00ec426ad541a798e492d1` |
-| `experiments/procgen_multiagent_gtm_comm/harness/devledger.py` | `1a6cf21b60630243f2ed11d02af2b246e64861b96d785f6622a47a4c7cf2e1a7` |
+| `experiments/procgen_multiagent_gtm_comm/harness/devledger.py` | `2cccf82d53170c02d052c9b85f27f33df627cdbb1ee032827448ad8ec165482d` |
 | `experiments/procgen_multiagent_gtm_comm/harness/evaluate.py` | `dbee3358173bd303ca0d74ebf74759ef01ac7a319a3c0f73fd1f939ea798b376` |
 | `experiments/procgen_multiagent_gtm_comm/harness/gtm_mlx.py` | `daba415dcf627927c9545501f4c8592448b8e1f4667dc50b0de0459385f92faf` |
-| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `3aa57762d29d6c621b51f73bf1e75be42d329d940fbdc9546ffc0a7a07258e53` |
+| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `cfae025255b31229ba8eef6e884e8d7b61445dbe52a0e549d8fb15f75e857aef` |
 | `experiments/procgen_multiagent_gtm_comm/harness/policy.py` | `15b8e8a0209600e4f550266fb607d14786b857cab6289e509800e2b450de919d` |
 | `experiments/procgen_multiagent_gtm_comm/harness/rollout.py` | `5f291b8c99eed91e1bd62320b842ed2b51af349297da7340b11901e962aa65a5` |
 | `experiments/procgen_multiagent_gtm_comm/harness/throughput.py` | `a038ae6422267027bcaeb0402620a286604609e47a0dd1d1db7e6dbfde245706` |
@@ -142,7 +142,7 @@ On both Metal and CUDA, MLX 0.31.1 convolution backward in the IMPALA trunk is n
 
 ## Smoke runs and development disclosure
 
-8 smoke runs of 200,000 pair-steps each (cap: 3 per arm, 1M steps), training levels only (start_level 0, num_levels 16), smoke seed 9001 (not a registered seed), 64 pairs, 128-step rollouts. Their results informed no registered quantity; outcomes are listed unfiltered.
+9 smoke runs of 200,000 pair-steps each (cap: 3 per arm, 1M steps), training levels only (start_level 0, num_levels 16), smoke seed 9001 (not a registered seed), 64 pairs, 128-step rollouts. Their results informed no registered quantity; outcomes are listed unfiltered.
 
 | arm | condition | outcome | pair-steps done | wall s | pair-steps/s (incl. warm-up) | episodes | success (last 100) | losses finite |
 |---|---|---|---:|---:|---:|---:|---:|---|
@@ -154,10 +154,11 @@ On both Metal and CUDA, MLX 0.31.1 convolution backward in the IMPALA trunk is n
 | nocomm | registered | completed | 200000 | 256 | 782 | 217 | 0.00 | True |
 | gtm | closed | completed | 200000 | 255 | 784 | 1304 | 0.13 | True |
 | gtm | registered | crashed | - | 0 | 0 | - | - | - |
+| gtm | registered | completed | 200000 | 270 | 742 | 312 | 0.00 | True |
 
 Failure detail (gtm/registered): FileNotFoundError(2, 'No such file or directory')
 
-Development ledger (persistent, one per-arm ledger for every real-environment development run, written before each run starts; `manifest/smoke_ledger.json`): 6 legacy_measurement, 8 smoke; counted learning runs per arm atoc 1, dial 1, eng 1, gtm 3, mlp 1, nocomm 1; cap 3 per arm and 1,000,000 pair-steps per run, training levels only. Throughput measurements made from now on use a frozen random policy (learning rate 0; kind `measurement`, ledgered, not counted).
+Development ledger (persistent, one per-arm ledger for every real-environment development run, written before each run starts; `manifest/smoke_ledger.json`): 6 legacy_measurement, 9 smoke; counted learning runs per arm atoc 1, dial 1, eng 1, gtm 4, mlp 1, nocomm 1; cap 3 per arm (gtm 4, PI decision 2026-10-24) and 1,000,000 pair-steps per run, training levels only. Throughput measurements made from now on use a frozen random policy (learning rate 0; kind `measurement`, ledgered, not counted).
 **Disclosure:** 6 throughput / profiling run(s) of 2026-10-23 (gtm 245,760, gtm 114,688, mlp 114,688, gtm 65,536, gtm 163,840, nocomm 163,840 pair-steps) were executed BEFORE this rule with learning updates enabled, from an untrained start, on training levels; they are recorded (kind `legacy_measurement`), not counted and not erased.
 
 Development used only the stub (unit tests with scripted environments), these smoke runs and throughput measurements on untrained policies. Levels 1000-1199 were never touched and no full-length run result was used.
