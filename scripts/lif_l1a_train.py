@@ -70,6 +70,31 @@ def _eval_acc(
     return (preds == y).float().mean().item()
 
 
+def evaluate_gate(
+    acc_final: float,
+    loss_100: float | None,
+    loss_final: float,
+    acc_untrained: float,
+) -> dict:
+    """Evaluate the three L1a gate conditions of spec section 5.2.
+
+    1. final accuracy >= 20 %
+    2. loss at the last step < loss at step 100
+    3. untrained accuracy <= 10 % on the same eval batch
+
+    Returns each condition's boolean and ``gate_passed`` (all three).
+    """
+    acc_ok = bool(acc_final >= 0.20)
+    descent_ok = bool(loss_100 is not None and loss_final < loss_100)
+    untrained_ok = bool(acc_untrained <= 0.10)
+    return {
+        "gate_acc_final_ge_20pct": acc_ok,
+        "gate_loss_descends": descent_ok,
+        "gate_untrained_le_10pct": untrained_ok,
+        "gate_passed": acc_ok and descent_ok and untrained_ok,
+    }
+
+
 def train_one(
     n_neurons: int,
     seed: int = SEED,
@@ -181,7 +206,7 @@ def train_one(
         "loss_step2000": loss_final,
         "acc_final": acc_final,
         "loss_descent": (loss_final < loss_100) if loss_100 is not None else None,
-        "gate_passed": acc_final >= 0.20 and (loss_100 is not None and loss_final < loss_100),
+        **evaluate_gate(acc_final, loss_100, loss_final, acc_untrained),
     }
 
 
@@ -245,7 +270,8 @@ def main() -> None:
         gate_status = "PASSED" if primary["gate_passed"] else "FAILED"
         print(
             f"Gate {gate_status}: acc={primary['acc_final']:.3f} >= 0.20"
-            f" and loss descends = {primary['loss_descent']}"
+            f", loss descends = {primary['loss_descent']}"
+            f", untrained={primary['acc_untrained']:.3f} <= 0.10"
         )
 
     else:
@@ -256,7 +282,9 @@ def main() -> None:
         gate_path.write_text(json.dumps(gate_data, indent=2))
         print(f"\nGate evidence written to {gate_path}")
         print(f"Gate {'PASSED' if r['gate_passed'] else 'FAILED'}: "
-              f"acc={r['acc_final']:.3f} >= 0.20 and loss descends = {r['loss_descent']}")
+              f"acc={r['acc_final']:.3f} >= 0.20, "
+              f"loss descends = {r['loss_descent']}, "
+              f"untrained={r['acc_untrained']:.3f} <= 0.10")
 
 
 if __name__ == "__main__":

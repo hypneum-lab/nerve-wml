@@ -213,6 +213,64 @@ class TestLIFL1aLearnsSignal:
 # (c) Full L1a gate — marked slow; requires macM1 run for citation
 # ---------------------------------------------------------------------------
 
+class TestGateFunction:
+    """Fast checks of evaluate_gate (spec 5.2), synthetic inputs only."""
+
+    @staticmethod
+    def _gate(**kw):
+        from scripts.lif_l1a_train import evaluate_gate
+        args = {"acc_final": 0.89, "loss_100": 0.66, "loss_final": 0.22,
+                "acc_untrained": 0.08}
+        args.update(kw)
+        return evaluate_gate(**args)
+
+    def test_all_conditions_pass(self):
+        g = self._gate()
+        assert g["gate_passed"] is True
+        assert g["gate_acc_final_ge_20pct"] is True
+        assert g["gate_loss_descends"] is True
+        assert g["gate_untrained_le_10pct"] is True
+
+    def test_low_final_acc_alone_fails(self):
+        g = self._gate(acc_final=0.15)
+        assert g["gate_passed"] is False
+        assert g["gate_acc_final_ge_20pct"] is False
+        assert g["gate_loss_descends"] is True
+        assert g["gate_untrained_le_10pct"] is True
+
+    def test_no_loss_descent_alone_fails(self):
+        g = self._gate(loss_final=0.70)
+        assert g["gate_passed"] is False
+        assert g["gate_loss_descends"] is False
+        assert g["gate_acc_final_ge_20pct"] is True
+        assert g["gate_untrained_le_10pct"] is True
+
+    def test_missing_loss_100_fails(self):
+        g = self._gate(loss_100=None)
+        assert g["gate_passed"] is False
+        assert g["gate_loss_descends"] is False
+
+    def test_untrained_above_10pct_alone_fails(self):
+        g = self._gate(acc_untrained=0.130859375)
+        assert g["gate_passed"] is False
+        assert g["gate_untrained_le_10pct"] is False
+        assert g["gate_acc_final_ge_20pct"] is True
+        assert g["gate_loss_descends"] is True
+
+    def test_equal_losses_fail(self):
+        g = self._gate(loss_100=0.5, loss_final=0.5)
+        assert g["gate_loss_descends"] is False
+        assert g["gate_passed"] is False
+
+    def test_final_acc_exactly_20pct_passes(self):
+        g = self._gate(acc_final=0.20)
+        assert g["gate_acc_final_ge_20pct"] is True
+        assert g["gate_passed"] is True
+
+    def test_untrained_exactly_10pct_passes(self):
+        assert self._gate(acc_untrained=0.10)["gate_passed"] is True
+
+
 class TestLIFL1aGate:
     """Full gate conditions from spec §5.2 (2000 steps, n=1024).
 
