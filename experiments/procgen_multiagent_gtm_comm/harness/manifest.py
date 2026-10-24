@@ -123,12 +123,18 @@ RULINGS = [
     "n_workers (PR #54) are merged into the harness branch; the freeze commit "
     "must contain both. The KXKM-AI settings above refer to them.",
     "Task 9: smoke runs = 1 per arm in the registered condition plus gtm in the "
-    "closed condition, 200,000 pair-steps each (7 runs), training levels only. "
-    "The amendment allows up to 3 per arm of up to 1M steps; the cap is "
-    "enforced in code (harness/throughput.py) with a persistent ledger "
-    "(manifest/smoke_ledger.json) written before each run starts; train_run "
-    "itself refuses any budget above 1M pair-steps without the registered "
-    "execution context.",
+    "closed condition, 200,000 pair-steps each, training levels only; the "
+    "gtm registered smoke was run twice more after its gradient path changed "
+    "(one crashed at 0 steps), so the ledger lists 9 smoke runs. The "
+    "amendment allows counted learning runs (smoke / dev_train) of up to 1M "
+    "pair-steps each: 3 per arm, GTM-comm 4 (PI decision 2026-10-24). "
+    "Throughput / profiling runs with learning enabled form a separate "
+    "category, `throughput_learning` (each <= 1M pair-steps, training levels "
+    "0-15, not counted against that allowance). The caps are enforced in code "
+    "(harness/devledger.py, used by harness/throughput.py) with a persistent "
+    "ledger (manifest/smoke_ledger.json) written before each run starts; "
+    "train_run itself refuses any budget above 1M pair-steps without the "
+    "registered execution context.",
 ]
 
 
@@ -354,9 +360,14 @@ def _fmt_ledger(led: dict | None, sm: dict | None) -> list[str]:
              + f"; cap {led['max_per_arm']} per arm (gtm "
              f"{led.get('arm_allowance', {}).get('gtm', led['max_per_arm'])}, PI "
              f"decision 2026-10-24) and {led['max_steps']:,} "
-             "pair-steps per run, training levels only. Throughput "
-             "measurements made from now on use a frozen random policy "
-             "(learning rate 0; kind `measurement`, ledgered, not counted)."]
+             "pair-steps per run, training levels only. Further throughput "
+             "measurements use either a frozen random policy (learning rate "
+             "0; kind `measurement`, ledgered, not counted) or, when learning "
+             "is enabled for throughput / profiling, the separate "
+             "`throughput_learning` category (each <= 1,000,000 pair-steps, "
+             "training levels 0-15, ledgered, not counted against the "
+             "allowance; the six runs of 2026-10-23 below are declared as a "
+             "deviation)."]
     tl = [r for r in led["runs"] if r.get("kind") == "throughput_learning"]
     if tl:
         lines.append(
@@ -598,7 +609,11 @@ def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
     lines += _fmt_smoke(sm)
     lines += _fmt_ledger(ledger, sm)
     lines += ["Development used only the stub (unit tests with scripted environments), "
-          "these smoke runs and throughput measurements on untrained policies. "
+          "these smoke runs, throughput measurements on untrained or frozen "
+          "random policies, and the `throughput_learning` throughput / "
+          "profiling runs with learning enabled listed above (each <= "
+          "1,000,000 pair-steps, training levels 0-15; the six runs of "
+          "2026-10-23 are a declared deviation). "
           "Levels 1000-1199 were never touched and no full-length run result was "
           "used.", "",
           "## Artefact archiving (PI decision 2026-10-23)", "",
