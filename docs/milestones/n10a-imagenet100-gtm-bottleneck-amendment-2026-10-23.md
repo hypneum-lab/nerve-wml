@@ -128,6 +128,13 @@ These close choices that the locked file left open:
 - No run is excluded or replaced on the basis of its metric values. Restarts and training failures are reported per arm.
 - If a bug that affects an arm's registered configuration is found after runs have started, all runs of every affected arm are repeated with the fixed code, and this is reported as a deviation.
 
+## Descriptive additions (literature check, 2026-10-23)
+
+Added before filing, as descriptive reporting items. They add **no contrast, no test and no exclusion or failure rule**, and do not change any pilot category.
+
+- **Code-usage manipulation check (all discrete-code arms).** For each discrete-code arm (GTM, VQ-VAE) and each seed, report from the single deterministic evaluation pass on the val split : the number of distinct symbols (VQ : codebook vectors) used, and the perplexity exp(H) of the empirical symbol distribution, per code position for GTM (alphabet 64) and over the 512-vector codebook for the VQ-VAE. Continuous-code arms (β-VAE, oscillator) have no symbol usage : reported as not applicable. A hard Gumbel-softmax code with a large alphabet can collapse onto few symbols under an extra gradient (Fang, arXiv:2607.08312, single-author preprint, different setting) ; a collapsed code would make a GTM-vs-VQ difference uninterpretable as a bottleneck comparison, so the figure is shown next to every MI and bandwidth-efficiency result. It is a manipulation check, not an exclusion criterion.
+- **Parameter- and FLOP-matched disclosure per arm.** The stage-2 manifest reports, for every arm, the trainable parameter count and the forward FLOPs per image of the bottleneck module (encoder, code and decoder), as a table next to the existing "≤ M² + M extra parameters" statement. Phase-aware models can help on PSK-only tasks without helping universally, and are best judged against parameter- and FLOP-matched real-valued baselines (Kumar, arXiv:2605.27673). Disclosure only : no arm is resized, and no matched-capacity contrast is registered.
+
 ## Filing (two stages, PI decision 2026-10-23)
 
 - **Stage 1, filed now:** this amendment text, that is the research hypothesis, the estimands, the analysis, failure and exclusion rules and the superseded provisions.
@@ -140,7 +147,7 @@ Stage 2 cannot change any stage-1 provision. If the manifest cannot be written w
 Before the first ImageNet-100 sweep run, the PI files a dated manifest on OSF as an update to this registration. It may contain only:
 
 1. the commit of the training / evaluation harness used for every run, and the integer arm codes ;
-2. the architecture, adapter and objective of every arm as implemented at that commit, within the settings frozen above: the GTM symbol count and encode/decode adapter, the encoder/decoder and loss weighting of the VQ-VAE and β-VAE baselines, and the parameter count of every arm ;
+2. the architecture, adapter and objective of every arm as implemented at that commit, within the settings frozen above: the GTM symbol count and encode/decode adapter, the encoder/decoder and loss weighting of the VQ-VAE and β-VAE baselines, and the parameter count and forward FLOPs of every arm (the parameter- and FLOP-matched disclosure of the Descriptive additions) ;
 3. the ImageNet-100 class list (the CMC 100-class subset) and the SHA-256 of the cached feature files ;
 4. the smoke outcome (pass/fail and the three smoke quantities) and the resulting oscillator choice (KoPE-style, WONN-style or none).
 
@@ -167,8 +174,13 @@ No PI confirmation item remains open for N10-A. If the PI changes any of these d
 
 No registered N10-A metric is a phase–amplitude coupling index. If an exploratory PAC diagnostic based on the Tort modulation index is reported for the GTM arm, the **preferred phase** is reported alongside it. Keshavarzi (bioRxiv 2026, [doi:10.64898/2026.06.05.730524](https://doi.org/10.64898/2026.06.05.730524)) shows that the modulation index does not distinguish a 180° inversion of the slow phase. This rule adds no contrast to either set.
 
+**Added 2026-10-23 (literature check, all four N10/N11 amendments).** Scalar PAC indices are many-to-one : different coupling geometries and phase polarities can give the same value. Besides the Tort modulation index and the preferred phase, any exploratory PAC diagnostic therefore also reports the **circular moments** of the coupling or the **phase-binned amplitude histogram** (Keshavarzi & Goswami, bioRxiv follow-up posted 2026-09-21, [doi:10.64898/2026.09.15.751789](https://doi.org/10.64898/2026.09.15.751789)). Exploratory only, no contrast, no test.
+
 ## References
 
 - Xiao, M., Wang, Y., Han, D., Shan, C., Li, D. (2026). Kuramoto Oscillatory Phase Encoding: Neuro-inspired Synchronization for Improved Learning Efficiency. ICML 2026. arXiv:2604.07904 (v1 submitted 2026-04-09).
 - Dai, J., Song, Y. (2026). Winfree Oscillatory Neural Network. arXiv:2605.20922.
 - Keshavarzi, M. (2026). Modulation index-based phase–amplitude coupling does not encode temporal polarity. bioRxiv. doi:10.64898/2026.06.05.730524.
+- Keshavarzi, M., Goswami, S. (2026). Computing the geometry of phase–amplitude coupling: A new moment-based framework. bioRxiv. doi:10.64898/2026.09.15.751789 (posted 2026-09-21).
+- Fang (2026). Write-Protected Discrete Bottlenecks for Language-Grounded World Models: A Structural Limitation and Sufficient Fix. arXiv:2607.08312.
+- Kumar (2026). When do complex-valued neural networks help? A study of representation, geometry, and optimization. arXiv:2605.27673.

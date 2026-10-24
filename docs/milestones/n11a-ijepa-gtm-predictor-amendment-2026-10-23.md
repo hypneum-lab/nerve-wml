@@ -124,6 +124,13 @@ Unchanged: 15 runs × about 12 h ≈ **180 GPU-h** on ImageNet-100. The optional
 
 No PI confirmation item remains open for N11-A. If the PI changes any of these decisions, the text above is edited before filing, never after data are seen.
 
+## Descriptive additions (literature check, 2026-10-23)
+
+Added before filing, as descriptive secondary reporting items. They add **no contrast, no test and no exclusion or failure rule**, and do not change any pilot category.
+
+- **Code-usage manipulation check (GTM predictor).** For the GTM arm and each seed, report from the deterministic evaluation pass the number of distinct symbols used and the perplexity exp(H) of the empirical symbol distribution of the predictor's Gumbel code (alphabet 64), per code position, on the 10,000-image MI set. A hard Gumbel-softmax code can collapse onto few symbols (Fang, arXiv:2607.08312, single-author preprint, different setting) ; a collapsed code would make a GTM-vs-MLP difference uninterpretable as a code effect. It is a manipulation check, not an exclusion criterion. The MLP and cross-attention arms have no discrete code : not applicable.
+- **Effective rank (descriptive secondary).** For every arm and seed, report the effective rank of the frozen context-encoder representation (average-pooled, same evaluation set as the MI measurement) and, optionally, of the predictor outputs. Predictor architecture shifts the effective rank that emerges in JEPA pretraining (De Melo Costa et al., "Drive vs. Decay: On the Training Dynamics of Joint-Embedding Predictive Architectures", [arXiv:2610.02344](https://arxiv.org/abs/2610.02344), NeurIPS 2026 main track), so a GTM-vs-MLP difference may act through collapse dynamics rather than through the code. Reported beside the registered metrics, never as a fifth registered metric. The stage-2 manifest also records whether the cross-attention arm follows the I-JEPA default initialisation. Adding a ResidualPred arm is not done : it would change the registered arm set.
+
 ## Deferred: hierarchical JEPA sub-study (not registered here)
 
 The literature review proposed a secondary sub-study placing GTM inside a hierarchical, action-conditioned JEPA world model:
@@ -141,6 +148,8 @@ LeWorldModel ([arXiv:2603.19312](https://arxiv.org/abs/2603.19312), 2026-03-13) 
 
 No registered N11-A metric is a phase–amplitude coupling index. If an exploratory PAC diagnostic based on the Tort modulation index is reported for a GTM arm, the **preferred phase** is reported alongside it (Keshavarzi, bioRxiv 2026, [doi:10.64898/2026.06.05.730524](https://doi.org/10.64898/2026.06.05.730524)). This rule adds no contrast.
 
+**Added 2026-10-23 (literature check, all four N10/N11 amendments).** Scalar PAC indices are many-to-one : different coupling geometries and phase polarities can give the same value. Besides the Tort modulation index and the preferred phase, any exploratory PAC diagnostic therefore also reports the **circular moments** of the coupling or the **phase-binned amplitude histogram** (Keshavarzi & Goswami, bioRxiv follow-up posted 2026-09-21, [doi:10.64898/2026.09.15.751789](https://doi.org/10.64898/2026.09.15.751789)). Exploratory only, no contrast, no test.
+
 ## References
 
 - Zhang, W., Terver, B., Rabbat, M., LeCun, Y., Balestriero, R. (2026). H-JEPA: End-to-End Learning of Hierarchical World Models for Visual Planning. arXiv:2610.06805.
@@ -148,3 +157,6 @@ No registered N11-A metric is a phase–amplitude coupling index. If an explorat
 - Zhu, Penachio, Mukherjee, Jonelagadda (2026). Spectral-Target Physical Latent Structuring for JEPA-Style World Models. arXiv:2609.04264.
 - Maes, Le Lidec, Scieur, LeCun, Balestriero (2026). LeWorldModel: Stable End-to-End Joint-Embedding Predictive Architecture from Pixels. arXiv:2603.19312.
 - Keshavarzi, M. (2026). Modulation index-based phase–amplitude coupling does not encode temporal polarity. bioRxiv. doi:10.64898/2026.06.05.730524.
+- Keshavarzi, M., Goswami, S. (2026). Computing the geometry of phase–amplitude coupling: A new moment-based framework. bioRxiv. doi:10.64898/2026.09.15.751789 (posted 2026-09-21).
+- De Melo Costa, Ahn, Popineau, Rimmel, Doan (2026). Drive vs. Decay: On the Training Dynamics of Joint-Embedding Predictive Architectures. arXiv:2610.02344 (NeurIPS 2026).
+- Fang (2026). Write-Protected Discrete Bottlenecks for Language-Grounded World Models: A Structural Limitation and Sufficient Fix. arXiv:2607.08312.

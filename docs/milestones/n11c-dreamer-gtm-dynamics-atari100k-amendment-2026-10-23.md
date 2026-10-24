@@ -153,6 +153,12 @@ The research hypothesis (GTM-dynamics DreamerV3 exceeds baseline DreamerV3 mean 
 - Hardware: macM1 (Apple M1 Max, 32 GB) with MLX, after N10-C option D on the same machine.
 - Compute: no option is chosen yet. The choice waits for a DreamerV3 throughput measurement on macM1 with MLX, recorded in the stage-2 manifest before any run (item below).
 
+## Module-level comparator discipline and related work (literature check, 2026-10-23)
+
+- **MixturePrior** ("MixturePrior: Action-Routed Transition Priors for Latent World Models", anonymous ICLR 2027 submission under review, [OpenReview Pl6FqOsTQL](https://openreview.net/forum?id=Pl6FqOsTQL)) replaces only the stochastic transition prior of DreamerV3 "with everything else fixed", on 26 Atari-100k games. It is cited as the closest module-level precedent, and its "only the prior changes" reporting discipline is adopted : the stage-2 manifest names the exact DreamerV3 sub-module that the GTM arm replaces (the transition predictor of the GTM–RSSM interface item of the manifest) and states that nothing else differs from the MLP control. This is a statement about the arms already registered, not a new arm.
+- **Optional matched-module arm (conditional).** MixturePrior is registered as an **OPTIONAL** matched-module comparator only if its code is public before stage 2 is filed. In that case it runs under the same rules as the ITC comparator (official code at a recorded commit, the common protocol, the 10k-step smoke run, a fallback if it cannot be run), and the manifest records the decision. If its code is not public before stage 2, there is no such arm, and this paragraph has no further effect. Its claims are unreviewed (anonymous submission), and its 26-game protocol differs from the 6 games here.
+- **Koopman Dreamer** (Li et al., "Koopman Dreamer: Spectrally Constrained Latent Dynamics for Stable World-Model Imagination", [arXiv:2607.19719](https://arxiv.org/abs/2607.19719)) is the closest published oscillator-family (damped-rotation) latent dynamics in a Dreamer-style agent, evaluated on DMC and UAV navigation, not Atari. It is cited as related work, not registered : a port to Atari-100k would be an unvalidated adaptation.
+
 ## PI confirmation item (open, settled in the stage-2 manifest before any run)
 
 - Compute option (A drafted and pending, or B / C), after the DreamerV3 throughput measurement on macM1 with MLX.
@@ -163,9 +169,14 @@ If the PI changes any item, the text above is edited before filing, never after 
 
 No registered N11-C metric is a phase–amplitude coupling index. If an exploratory PAC diagnostic based on the Tort modulation index is reported for the GTM-dynamics arm, the **preferred phase** is reported alongside it (Keshavarzi, bioRxiv 2026, [doi:10.64898/2026.06.05.730524](https://doi.org/10.64898/2026.06.05.730524)). This rule adds no contrast.
 
+**Added 2026-10-23 (literature check, all four N10/N11 amendments).** Scalar PAC indices are many-to-one : different coupling geometries and phase polarities can give the same value. Besides the Tort modulation index and the preferred phase, any exploratory PAC diagnostic therefore also reports the **circular moments** of the coupling or the **phase-binned amplitude histogram** (Keshavarzi & Goswami, bioRxiv follow-up posted 2026-09-21, [doi:10.64898/2026.09.15.751789](https://doi.org/10.64898/2026.09.15.751789)). Exploratory only, no contrast, no test.
+
 ## References
 
 - Kim, Y., Sun, R., Kim, I., Park, B., Song, H. O. (2026). Identifiable Token Correspondence for World Models. arXiv:2605.16457.
 - Hafner, D., Yan, W., Lillicrap, T. (2025). Training Agents Inside of Scalable World Models. arXiv:2509.24527.
 - Micheli, V., Alonso, E., Fleuret, F. (2023). Transformers are Sample-Efficient World Models (IRIS). ICLR 2023.
 - Keshavarzi, M. (2026). Modulation index-based phase–amplitude coupling does not encode temporal polarity. bioRxiv. doi:10.64898/2026.06.05.730524.
+- Keshavarzi, M., Goswami, S. (2026). Computing the geometry of phase–amplitude coupling: A new moment-based framework. bioRxiv. doi:10.64898/2026.09.15.751789 (posted 2026-09-21).
+- MixturePrior: Action-Routed Transition Priors for Latent World Models. Anonymous ICLR 2027 submission under review, OpenReview Pl6FqOsTQL.
+- Li, Zhang, Xie, Lan, Pan, Xu (2026). Koopman Dreamer: Spectrally Constrained Latent Dynamics for Stable World-Model Imagination. arXiv:2607.19719.
