@@ -6,7 +6,7 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 
 ## 1. Commit, integer codes and bus
 
-- Harness commit at manifest time: `491011ec1e492d33cf7e87490d69d7dad9ea8732` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
+- Harness commit at manifest time: `480b40f2e03844aec25b3eda27b49fb757dfb458` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
 - Code identity independent of git (SHA-256 of each file at manifest time):
 
 | file | SHA-256 |
@@ -16,13 +16,14 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 | `experiments/procgen_multiagent_gtm_comm/harness/bus.py` | `1bb3bc23aec588da8bfb73864215e00ee5a4510324ff3d1045bb0b9af21703c2` |
 | `experiments/procgen_multiagent_gtm_comm/harness/codes.py` | `5c266eb2363655cc159ed8d03d9c9c8adb9b6dac4c083f7788af970aab96e7c8` |
 | `experiments/procgen_multiagent_gtm_comm/harness/comm.py` | `7a9a27c6906d3b320ba47aad1bf6e80ee92ff5883f00ec426ad541a798e492d1` |
+| `experiments/procgen_multiagent_gtm_comm/harness/devledger.py` | `1a6cf21b60630243f2ed11d02af2b246e64861b96d785f6622a47a4c7cf2e1a7` |
 | `experiments/procgen_multiagent_gtm_comm/harness/evaluate.py` | `dbee3358173bd303ca0d74ebf74759ef01ac7a319a3c0f73fd1f939ea798b376` |
 | `experiments/procgen_multiagent_gtm_comm/harness/gtm_mlx.py` | `daba415dcf627927c9545501f4c8592448b8e1f4667dc50b0de0459385f92faf` |
-| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `dccc53ca4450a5a968496dd6c9140962420b647099c9b51e7b0a763e000043b0` |
+| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `3aa57762d29d6c621b51f73bf1e75be42d329d940fbdc9546ffc0a7a07258e53` |
 | `experiments/procgen_multiagent_gtm_comm/harness/policy.py` | `15b8e8a0209600e4f550266fb607d14786b857cab6289e509800e2b450de919d` |
 | `experiments/procgen_multiagent_gtm_comm/harness/rollout.py` | `5f291b8c99eed91e1bd62320b842ed2b51af349297da7340b11901e962aa65a5` |
-| `experiments/procgen_multiagent_gtm_comm/harness/throughput.py` | `59107bccee04c2b6f2d657d3020432c5dc4630f0162898d127ec39f5d4facbb6` |
-| `experiments/procgen_multiagent_gtm_comm/harness/train.py` | `0c82fcbccdc51d0cf8ad810dc3538bc5620451ffe88d3d975ca0fe953e563bf0` |
+| `experiments/procgen_multiagent_gtm_comm/harness/throughput.py` | `a038ae6422267027bcaeb0402620a286604609e47a0dd1d1db7e6dbfde245706` |
+| `experiments/procgen_multiagent_gtm_comm/harness/train.py` | `8251dd621fe06abf2d528cc232e50880c841e9838837bf95603d8d7dc5064d81` |
 | `experiments/procgen_multiagent_gtm_comm/harness/vec_env.py` | `81b8b8446916bd7eb5015be472fae5b1bc55aea3c01cfd2f4ac1b6d8a69e2d2a` |
 | `experiments/procgen_multiagent_gtm_comm/harness/requirements.lock` | `8609ef54bb4d5879bcd4159fa45624048da05b4e077e15ca2bee748fa09724e8` |
 
@@ -104,7 +105,7 @@ The measured macM1 estimate is within the amendment's planning figure.
 
 - Build patch: `experiments/procgen_multiagent_gtm_comm/bench/procgen-0.10.7-arm64-build.patch`, **SHA-256 `df9bbfa1d454ee51cbea1b8af47fbb1966a79f4a075357ba2a4c95acca834e7f`**.
 - Procgen 0.10.7, source commit `5e1dbf3`; installed package version: 0.10.7+5e1dbf3.
-- Qt 5.15.19 (Qt 5.15.19 via Homebrew `qt@5`, found through `PROCGEN_CMAKE_PREFIX_PATH`); observed: `unavailable (FileNotFoundError)`.
+- Qt 5.15.19 (Qt 5.15.19 via Homebrew `qt@5`, found through `PROCGEN_CMAKE_PREFIX_PATH`); observed: `qt@5 5.15.19`.
 - clang: `Apple clang version 21.0.0 (clang-2100.1.1.101) | Target: arm64-apple-darwin27.0.0`
 - Xcode: `Xcode 26.6 | Build version 17F113`
 - SDKROOT: `/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk` (documented build value (SDKROOT not set in this shell)); `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`; `CMAKE_POLICY_VERSION_MINIMUM=3.5`.
@@ -141,7 +142,7 @@ On both Metal and CUDA, MLX 0.31.1 convolution backward in the IMPALA trunk is n
 
 ## Smoke runs and development disclosure
 
-7 smoke runs of 200,000 pair-steps each (cap: 3 per arm, 1M steps), training levels only (start_level 0, num_levels 16), smoke seed 9001 (not a registered seed), 64 pairs, 128-step rollouts. Their results informed no registered quantity; outcomes are listed unfiltered.
+8 smoke runs of 200,000 pair-steps each (cap: 3 per arm, 1M steps), training levels only (start_level 0, num_levels 16), smoke seed 9001 (not a registered seed), 64 pairs, 128-step rollouts. Their results informed no registered quantity; outcomes are listed unfiltered.
 
 | arm | condition | outcome | pair-steps done | wall s | pair-steps/s (incl. warm-up) | episodes | success (last 100) | losses finite |
 |---|---|---|---:|---:|---:|---:|---:|---|
@@ -152,8 +153,12 @@ On both Metal and CUDA, MLX 0.31.1 convolution backward in the IMPALA trunk is n
 | eng | registered | completed | 200000 | 249 | 804 | 466 | 0.00 | True |
 | nocomm | registered | completed | 200000 | 256 | 782 | 217 | 0.00 | True |
 | gtm | closed | completed | 200000 | 255 | 784 | 1304 | 0.13 | True |
+| gtm | registered | crashed | - | 0 | 0 | - | - | - |
 
-Smoke ledger (persistent, written before each run starts; `manifest/smoke_ledger.json`): 7 run(s) started, per arm atoc 1, dial 1, eng 1, gtm 2, mlp 1, nocomm 1; cap 3 per arm and 1,000,000 pair-steps per run, training levels only.
+Failure detail (gtm/registered): FileNotFoundError(2, 'No such file or directory')
+
+Development ledger (persistent, one per-arm ledger for every real-environment development run, written before each run starts; `manifest/smoke_ledger.json`): 6 legacy_measurement, 8 smoke; counted learning runs per arm atoc 1, dial 1, eng 1, gtm 3, mlp 1, nocomm 1; cap 3 per arm and 1,000,000 pair-steps per run, training levels only. Throughput measurements made from now on use a frozen random policy (learning rate 0; kind `measurement`, ledgered, not counted).
+**Disclosure:** 6 throughput / profiling run(s) of 2026-10-23 (gtm 245,760, gtm 114,688, mlp 114,688, gtm 65,536, gtm 163,840, nocomm 163,840 pair-steps) were executed BEFORE this rule with learning updates enabled, from an untrained start, on training levels; they are recorded (kind `legacy_measurement`), not counted and not erased.
 
 Development used only the stub (unit tests with scripted environments), these smoke runs and throughput measurements on untrained policies. Levels 1000-1199 were never touched and no full-length run result was used.
 
