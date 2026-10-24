@@ -281,9 +281,26 @@ Before the first N10-C run, the PI commits a dated manifest and freezes it with 
 3. the statement that Caveflyer-coop and Maze-coop are not run under this registration (scope option D) ;
 4. the host record : the seed-to-host mapping ; for each host the measured training throughput (pair-steps/s with the GTM and message-bus overhead included), `n_workers` and the resulting compute estimate including evaluation ; the Procgen build of each host (macM1 : the arm64 build patch SHA-256 and the toolchain versions ; KXKM-AI : the official x86-64 wheel and its hash) ; the MLX and mlx-cuda versions ; `micro_batch_pairs` and `clear_cache` for KXKM ; and the nondeterminism statement of the Reproducibility section.
 
-Development that informs items 1–2 and 4 may use only the stub, smoke runs of at most 1M steps (at most 3 per arm, **except GTM-comm, at most 4** ; all disclosed in the manifest with their outcomes), throughput measurements on random or untrained policies, and unit tests. It never uses held-out levels 1000–1199 or results of a full-length run. The manifest cannot be changed after the tag is pushed. Runs started before the tag's GitHub push time are excluded from all analyses and reported.
+Development that informs items 1–2 and 4 may use only the stub, smoke runs of at most 1M steps (at most 3 per arm, **except GTM-comm, at most 4** ; all disclosed in the manifest with their outcomes), throughput measurements on random or untrained policies, throughput / profiling runs with learning enabled (see the change of 2026-10-24, 13:17), and unit tests. It never uses held-out levels 1000–1199 or results of a full-length run. The manifest cannot be changed after the tag is pushed. Runs started before the tag's GitHub push time are excluded from all analyses and reported.
 
 **CHANGE 2026-10-24 (PI decision, 13:03) : GTM-comm smoke allowance raised from 3 to 4.** Reason: the GTM gradient was changed to the GTMBridge straight-through path after the earlier smoke runs, so a fresh GTM smoke run is needed ; and the third GTM slot was consumed by an infrastructure crash at 0 steps (missing `cmake` on PATH, recorded in the development ledger). The other arms keep 3. The change is made before any N10-C training run and before any use of held-out levels.
+
+**CHANGE 2026-10-24 (PI decision, 13:17) : throughput / profiling runs with learning enabled are allowed, and six runs of 2026-10-23 are declared as a deviation.**
+
+(b) *Rule.* In addition to smoke runs, development may include **throughput or profiling runs with learning enabled** (the policy is updated), each of **at most 1,000,000 pair-steps** (the largest historical run below is 245,760 pair-steps, so the cap is not raised for them), on **training levels only (0–15)**, never on held-out levels. Each such run is recorded in the development ledger (`manifest/smoke_ledger.json`, category `throughput_learning`) with its pair-steps, arm, condition and what was inspected (throughput, losses, success rate). These runs are **separate from the smoke allowance** (GTM-comm 4, other arms 3) ; the ledger counts them per arm in their own category. Throughput measurements on a frozen random policy stay allowed as before.
+
+(a) *Deviation declared.* Six runs executed on macM1 on 2026-10-23, before this rule was finalised, had learning enabled (learning rate 5e-4, untrained start, training levels 0–15, condition `registered`, seed 9001). The PI accepts them, by this decision, as declared engineering measurements under the rule in (b). They are recorded in the ledger as `throughput_learning`:
+
+| # | time (2026-10-23, macM1) | arm | condition | pair-steps | learning | levels | inspected | purpose |
+|---|---|---|---|---:|---|---|---|---|
+| 1 | 18:59 | gtm | registered | 245,760 (30 updates) | on | training 0–15 | throughput (pair-steps/s) | first end-to-end throughput measurement |
+| 2 | 20:18 | gtm | registered | 114,688 (14 updates) | on | training 0–15 | per-phase wall time of an update cycle | profiling the GTM update cost |
+| 3 | 20:20 | mlp | registered | 114,688 (14 updates) | on | training 0–15 | per-phase wall time of an update cycle | profiling, comparison arm |
+| 4 | 20:29 | gtm | registered | 65,536 (8 updates) | on | training 0–15 | throughput (pair-steps/s) | re-check of run 1 |
+| 5 | 20:33 | gtm | registered | 163,840 (20 updates) | on | training 0–15 | throughput (pair-steps/s) | final throughput for the manifest |
+| 6 | 20:33 | nocomm | registered | 163,840 (20 updates) | on | training 0–15 | throughput (pair-steps/s) | final throughput for the manifest |
+
+None of these runs touched held-out levels 1000–1199 or any result of a full-length run, and none informed a registered quantity. Development runs of earlier tasks that left no file may be missing from the ledger ; the ledger is the only accounting from now on.
 
 ## Effect on hypotheses
 
