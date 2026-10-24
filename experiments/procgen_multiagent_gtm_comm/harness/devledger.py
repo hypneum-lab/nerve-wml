@@ -1,28 +1,32 @@
 """Persistent development-run ledger (no mlx import).
 
 One per-arm ledger, ``manifest/smoke_ledger.json``, accounts for EVERY
-real-environment development run, whichever path launched it (smoke runs,
-throughput measurements, a direct development ``train_run`` or the trainer
-CLI). Amendment, Configuration manifest: development may use "smoke runs of
-at most 1M steps (at most 3 per arm, all disclosed in the manifest with their
-outcomes), throughput measurements on random or untrained policies".
+real-environment development run, whichever path launched it. Amendment,
+Configuration manifest (with the changes of 2026-10-24): development may use
+smoke runs, throughput / profiling runs with learning enabled, and throughput
+measurements on a frozen random policy.
 
 Kinds:
 
-* ``smoke`` and ``dev_train``: runs whose policy learns. At most
-  ``allowance(arm)`` per arm (3; gtm 4), each at most ``MAX_STEPS`` pair-steps.
-* ``measurement``: throughput measurements. The policy stays at its random
-  initialisation (the optimiser runs with learning rate 0), so the amendment's
-  "random or untrained policies" wording holds. Ledgered, not counted.
-* ``legacy_measurement``: throughput / profiling runs executed BEFORE this
-  rule with learning updates enabled (disclosed; not counted, not erased).
+* ``smoke`` and ``dev_train``: runs whose policy learns; counted against the
+  per-arm allowance (``allowance(arm)``: 3, gtm 4), each <= ``MAX_STEPS``.
+* ``throughput_learning``: throughput / profiling runs with learning on,
+  <= ``MAX_STEPS``, training levels only; a SEPARATE category (no per-arm
+  count cap), counted per arm in the ledger; each records what was inspected.
+* ``measurement``: throughput on a frozen random policy (learning rate 0).
 
-A reservation is written BEFORE the run starts: a crashed run still counts.
+A reservation is written BEFORE the run starts (a crashed run still counts),
+has a persistent unique id and is CLAIMED exactly once, atomically, at the
+training boundary; claimed or completed reservations are rejected.
 """
 from __future__ import annotations
 
+import fcntl
 import json
+import os
 import time
+import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -42,7 +46,8 @@ def allowance(arm: str) -> int:
 
 
 COUNTED = ("smoke", "dev_train")
-KINDS = (*COUNTED, "measurement", "legacy_measurement")
+KINDS = (*COUNTED, "throughput_learning", "measurement")
+LEARNING_KINDS = (*COUNTED, "throughput_learning")
 SMOKE_SEED = 9001  # not a registered seed
 _TOKEN = object()
 
@@ -59,6 +64,7 @@ class Reservation:
     steps: int
     kind: str
     path: Path
+    id: str = ""
     _token: object = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -78,7 +84,20 @@ def _write(path: Path, ledger: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(ledger, indent=2))
-    tmp.replace(path)
+    os.replace(tmp, path)
+
+
+@contextmanager
+def _locked(path: Path):
+    """Exclusive inter-process (and inter-thread) lock for read-modify-write."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path.with_name(path.name + ".lock"), "w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
 
 
 def counts(path: Path = LEDGER) -> dict[str, int]:
@@ -90,55 +109,92 @@ def counts(path: Path = LEDGER) -> dict[str, int]:
     return out
 
 
+def counts_by_kind(path: Path = LEDGER) -> dict[str, dict[str, int]]:
+    """Runs per kind and arm (any outcome)."""
+    out: dict[str, dict[str, int]] = {}
+    for r in read(path)["runs"]:
+        k = r.get("kind", "smoke")
+        out.setdefault(k, {})
+        out[k][r["arm"]] = out[k].get(r["arm"], 0) + 1
+    return out
+
+
 def remaining(arms, path: Path = LEDGER) -> dict[str, int]:
     c = counts(path)
     return {a: allowance(a) - c.get(a, 0) for a in arms}
 
 
 def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
-            path: Path = LEDGER, seed: int = SMOKE_SEED) -> Reservation:
+            path: Path = LEDGER, seed: int = SMOKE_SEED,
+            inspected: list[str] | None = None) -> Reservation:
     """Account one development run before it starts; raise if not allowed."""
     from .codes import ARM_CODES, CONDITION_CODES
 
     if arm not in ARM_CODES or condition not in CONDITION_CODES:
         raise ValueError(f"unknown arm/condition {arm!r}/{condition!r}")
-    if kind not in ("smoke", "dev_train", "measurement"):
+    if kind not in KINDS:
         raise ValueError(f"unknown ledger kind {kind!r}")
+    if kind == "throughput_learning" and not inspected:
+        raise ValueError("a throughput_learning run must record what was "
+                         "inspected (throughput, losses, success rate, ...)")
     if steps < 1:
         raise ValueError("steps must be >= 1")
     if steps > MAX_STEPS:
         raise SmokeLimitError(
             f"development runs are limited to {MAX_STEPS:,} pair-steps "
             f"(requested {steps:,}); larger runs only via the registered path")
-    ledger = read(path)
-    if kind in COUNTED:
-        used = sum(1 for r in ledger["runs"]
-                   if r["arm"] == arm and r.get("kind", "smoke") in COUNTED)
-        if used >= allowance(arm):
-            raise SmokeLimitError(
-                f"arm {arm!r} already used {used} of {allowance(arm)} smoke runs")
-    ledger["runs"].append({
-        "kind": kind, "arm": arm, "condition": condition, "seed": seed,
-        "steps": steps, "levels": "training (start_level=0, num_levels=16)",
-        "policy_updates": kind != "measurement",
-        "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "outcome": "started"})
-    _write(path, ledger)
-    return Reservation(len(ledger["runs"]) - 1, arm, condition, steps, kind,
-                       Path(path), _TOKEN)
+    with _locked(path):
+        ledger = read(path)
+        if kind in COUNTED:
+            used = sum(1 for r in ledger["runs"]
+                       if r["arm"] == arm and r.get("kind", "smoke") in COUNTED)
+            if used >= allowance(arm):
+                raise SmokeLimitError(
+                    f"arm {arm!r} already used {used} of {allowance(arm)} smoke runs")
+        rid = uuid.uuid4().hex
+        entry = {
+            "id": rid, "claimed": False, "kind": kind, "arm": arm,
+            "condition": condition, "seed": seed, "steps": steps,
+            "levels": "training (start_level=0, num_levels=16)",
+            "policy_updates": kind != "measurement",
+            "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "outcome": "started"}
+        if inspected:
+            entry["inspected"] = list(inspected)
+        ledger["runs"].append(entry)
+        _write(path, ledger)
+        return Reservation(len(ledger["runs"]) - 1, arm, condition, steps, kind,
+                           Path(path), rid, _TOKEN)
 
 
 def finish(res: Reservation, outcome: str) -> None:
-    ledger = read(res.path)
-    ledger["runs"][res.index]["outcome"] = outcome
-    _write(res.path, ledger)
+    with _locked(res.path):
+        ledger = read(res.path)
+        run = next(r for r in ledger["runs"] if r.get("id") == res.id)
+        run["outcome"] = outcome
+        _write(res.path, ledger)
 
 
-def check(res: Reservation | None, arm: str, condition: str, steps: int) -> Reservation:
-    """The reservation handed to a trainer must match the run it covers."""
+def claim(res: Reservation | None, arm: str, condition: str, steps: int) -> Reservation:
+    """Atomically claim ``res`` for exactly one run at the training boundary.
+
+    Rejects forged objects, a reservation that does not cover this run, and
+    any reservation already claimed or completed (also across processes)."""
     if not isinstance(res, Reservation) or res._token is not _TOKEN:
         raise SmokeLimitError("not a genuine development-ledger reservation")
     if (res.arm, res.condition, res.steps) != (arm, condition, steps):
         raise SmokeLimitError(
             f"reservation ({res.arm}, {res.condition}, {res.steps}) does not "
             f"cover this run ({arm}, {condition}, {steps})")
+    with _locked(res.path):
+        ledger = read(res.path)
+        run = next((r for r in ledger["runs"] if r.get("id") == res.id), None)
+        if run is None:
+            raise SmokeLimitError("reservation not found in the ledger")
+        if run.get("claimed") or run.get("outcome") != "started":
+            raise SmokeLimitError(
+                f"reservation {res.id} already claimed or completed")
+        run["claimed"] = True
+        run["claimed_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        _write(res.path, ledger)
     return res

@@ -98,13 +98,16 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
                        n_pairs: int = 64, horizon: int = 128,
                        eval_levels: range = TRAIN_LEVELS,
                        skip: int = STEADY_SKIP, n_workers: int = 1,
-                       ledger: Path = SMOKE_LEDGER) -> dict:
+                       ledger: Path = SMOKE_LEDGER, learning: bool = False) -> dict:
     """Measure end-to-end training throughput of ``arm`` (untrained start).
 
     One job, real env (unless ``env_factory`` is given for tests), policy,
     bus and PPO update, on training levels only. The policy stays at its
     random initialisation (learning rate 0: "throughput measurements on
     random or untrained policies"); the run is ledgered as ``measurement``.
+    ``learning=True`` (allowed by the amendment change of 2026-10-24) keeps
+    learning on and ledgers the run as
+    ``throughput_learning``.
     Steady-state rate uses the per-update wall clock after ``skip`` warm-up cycles.
     """
     from .train import train_run
@@ -122,8 +125,10 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
     total = n_updates * n_pairs * horizon
     res = None
     if env_factory is None:  # real environment: ledgered before it starts
-        res = devledger.reserve(arm, "registered", total, kind="measurement",
-                                path=ledger)
+        res = devledger.reserve(
+            arm, "registered", total, path=ledger,
+            kind="throughput_learning" if learning else "measurement",
+            inspected=["throughput"] if learning else None)
     outcome = "crashed"
     try:
         with tempfile.TemporaryDirectory() as td:
@@ -133,7 +138,7 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
                 Path(td), env_factory=env_factory, n_pairs=n_pairs,
                 horizon=horizon, log_every_pair_steps=n_pairs * horizon,
                 ckpt_every_pair_steps=10**12, _rollout_hook=hook,
-                n_workers=n_workers, frozen_policy=True,
+                n_workers=n_workers, frozen_policy=not learning,
                 dev_reservation=res, dev_ledger=ledger,
             )
             wall = time.time() - t0

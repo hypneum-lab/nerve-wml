@@ -1383,3 +1383,56 @@ def test_cross_refuses_a_checkpoint_changed_after_self_play(tmp_path):
     assert st["pairs"]["42-73"]["done"] and kx.cross_summary["registered-gtm"] == "pairs_failed"
     assert not any(17 in (c[4], c[5]) for c in calls["cross"]
                    if (c[2], c[3]) == ("gtm", "registered"))
+
+
+# ---- recorded digest is mandatory for a selected checkpoint (round 3) ----
+
+def test_verify_checkpoint_requires_a_valid_recorded_digest(tmp_path):
+    (tmp_path / "ckpt_1.safetensors").write_text("w")
+    good = hashlib.sha256(b"w").hexdigest()
+    rc.verify_checkpoint(tmp_path, "ckpt_1.safetensors", good)
+    rc.verify_checkpoint(tmp_path, None, None)  # explicit untrained init
+    for bad in (None, "", "abc", "Z" * 64, good.upper(), good[:-1]):
+        with pytest.raises(RuntimeError, match="digest"):
+            rc.verify_checkpoint(tmp_path, "ckpt_1.safetensors", bad)
+    with pytest.raises(RuntimeError, match="differs"):
+        rc.verify_checkpoint(tmp_path, "ckpt_1.safetensors", "0" * 64)
+
+
+def test_evaluation_refuses_a_checkpoint_without_recorded_digest(tmp_path):
+    c, calls = _campaign(tmp_path, lambda n, kw: _rec())
+    c.pin({})
+    c.train(FIRST, c.store.load(FIRST))
+    st = c.store.load(FIRST)
+    st["last_checkpoint_sha256"] = None
+    c.evaluate(FIRST, st)
+    assert calls["eval"] == [] and c.store.load(FIRST)["eval_failures"] == 1
+
+
+def test_untrained_init_needs_no_digest(tmp_path):
+    c, calls = _campaign(tmp_path, lambda n, kw: _rec(training_failure=True, pair_steps_done=8,
+                                                       last_checkpoint=None, failure_reason="nan"))
+    assert c.run() == rc.EXIT_AWAITING_SYNC
+    assert calls["eval"][0][0] is None and c.store.load(FIRST)["eval_done"]
+
+
+def test_cross_play_refuses_a_missing_recorded_digest(tmp_path):
+    kx, calls = _full_kx(tmp_path)
+    kx.pin({})
+    for s in q.build_queue():
+        stt = kx.store.load(s)
+        stt.update(status=q.DONE, eval_done=True, archived=True)
+        if s.seed == 17 and (s.arm, s.condition) == ("gtm", "registered"):
+            stt["last_checkpoint_sha256"] = None
+        kx.store.save(stt)
+    assert kx.run() == rc.EXIT_PROBLEMS
+    assert not any(17 in (c[4], c[5]) for c in calls["cross"]
+                   if (c[2], c[3]) == ("gtm", "registered"))
+
+
+def test_training_that_leaves_no_checkpoint_file_is_an_infra_failure(tmp_path):
+    c, calls = _campaign(tmp_path, lambda n, kw: _rec(), ckpts=False)
+    c.pin({})
+    st = c.store.load(FIRST)
+    c.train(FIRST, st)
+    assert c.store.load(FIRST)["status"] == q.INFRA_FAILED

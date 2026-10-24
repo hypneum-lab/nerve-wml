@@ -37,10 +37,9 @@ def test_committed_ledger_matches_the_disclosed_smoke_runs():
     assert len(smokes) == len(sm["runs"]) == 9  # 7 + gtm crash (PATH error) + fresh gtm
     counts = th.smoke_counts(th.SMOKE_LEDGER)
     assert counts["gtm"] == 4 and all(v <= devledger.allowance(a) for a, v in counts.items())
-    # history is kept: the pre-rule throughput / profiling runs are disclosed
-    legacy = [r for r in ledger["runs"] if r["kind"] == "legacy_measurement"]
-    assert len(legacy) == 6 and all(r["policy_updates"] for r in legacy)
-    assert {r["arm"] for r in legacy} == {"gtm", "mlp", "nocomm"}
+    # history is kept: the pre-rule runs are counted as throughput_learning
+    kinds = devledger.counts_by_kind(th.SMOKE_LEDGER)
+    assert kinds["throughput_learning"] == {"gtm": 4, "mlp": 1, "nocomm": 1}
     assert devledger.remaining(["gtm", "mlp", "atoc"], th.SMOKE_LEDGER) == {
         "gtm": 0, "mlp": 2, "atoc": 2}
 
@@ -254,3 +253,115 @@ def test_per_arm_allowance_single_constant_gtm_four_others_three(tmp_path):
         devledger.reserve("dial", "closed", 64, kind="smoke", path=led)
     assert devledger.remaining(["gtm", "dial", "eng"], led) == {"gtm": 0, "dial": 0, "eng": 3}
     assert json.loads(th.SMOKE_LEDGER.read_text())["arm_allowance"] == {"gtm": 4}
+
+
+# ---- round 3: throughput_learning category, unique claimed reservations ----
+AMEND = th.PKG.parent.parent / "docs" / "milestones" / (
+    "n10c-procgen-multiagent-gtm-comm-amendment-2026-10-23.md")
+
+
+def test_throughput_learning_is_its_own_counted_category(tmp_path):
+    led = tmp_path / "l.json"
+    with pytest.raises(ValueError, match="inspected"):
+        devledger.reserve("gtm", "registered", 64, kind="throughput_learning", path=led)
+    with pytest.raises(th.SmokeLimitError, match="1,000,000"):
+        devledger.reserve("gtm", "registered", 1_000_001, kind="throughput_learning",
+                          path=led, inspected=["throughput"])
+    for _ in range(6):  # separate from the smoke allowance: no per-arm count cap
+        devledger.reserve("gtm", "registered", 64, kind="throughput_learning", path=led,
+                          inspected=["throughput", "losses", "success rate"])
+    assert th.smoke_counts(led) == {}  # smoke allowance untouched
+    assert devledger.counts_by_kind(led)["throughput_learning"] == {"gtm": 6}
+    for _ in range(4):
+        th.reserve_smoke("gtm", "registered", 64, led)  # all 4 smoke slots still free
+    r = json.loads(led.read_text())["runs"][0]
+    assert r["policy_updates"] is True and r["inspected"] == [
+        "throughput", "losses", "success rate"]
+
+
+def test_historical_runs_are_counted_as_throughput_learning_and_match_the_amendment():
+    led = json.loads(th.SMOKE_LEDGER.read_text())
+    runs = [r for r in led["runs"] if r["kind"] == "throughput_learning"]
+    assert not [r for r in led["runs"] if r["kind"] == "legacy_measurement"]
+    assert [(r["arm"], r["steps"]) for r in runs] == [
+        ("gtm", 245760), ("gtm", 114688), ("mlp", 114688), ("gtm", 65536),
+        ("gtm", 163840), ("nocomm", 163840)]
+    assert all(r["policy_updates"] and r["inspected"] and r["steps"] <= devledger.MAX_STEPS
+               for r in runs)
+    assert devledger.counts_by_kind(th.SMOKE_LEDGER)["throughput_learning"] == {
+        "gtm": 4, "mlp": 1, "nocomm": 1}
+    # the amendment lists the same six runs individually
+    rows = [ln for ln in AMEND.read_text().splitlines() if ln.startswith("| ") and "| on |" in ln]
+    assert len(rows) == 6
+    for row, r in zip(rows, runs, strict=True):
+        assert f"| {r['arm']} |" in row and f"{r['steps']:,}" in row
+
+
+def test_reservation_is_claimed_exactly_once(tmp_path, real_env):
+    led = tmp_path / "l.json"
+    res = devledger.reserve("mlp", "registered", 8, kind="smoke", path=led)
+    _dev(led, out=tmp_path / "a", dev_reservation=res)
+    with pytest.raises(th.SmokeLimitError, match="already claimed"):
+        _dev(led, out=tmp_path / "b", dev_reservation=res)  # different output dir
+    with pytest.raises(th.SmokeLimitError, match="already claimed"):
+        _dev(led, out=tmp_path / "a", dev_reservation=res)  # identical call
+    assert not (tmp_path / "b").exists()
+    assert len(json.loads(led.read_text())["runs"]) == 1  # no extra entry either
+
+
+def test_reservations_have_persistent_unique_ids(tmp_path):
+    led = tmp_path / "l.json"
+    a = devledger.reserve("mlp", "registered", 8, kind="smoke", path=led)
+    b = devledger.reserve("mlp", "registered", 8, kind="smoke", path=led)
+    assert a.id != b.id and len(a.id) == 32
+    runs = json.loads(led.read_text())["runs"]
+    assert [r["id"] for r in runs] == [a.id, b.id] and not any(r["claimed"] for r in runs)
+    devledger.claim(a, "mlp", "registered", 8)
+    runs = json.loads(led.read_text())["runs"]
+    assert runs[0]["claimed"] is True and runs[1]["claimed"] is False
+    # a rebuilt/copied object with the same id cannot be claimed twice either
+    twin = devledger.Reservation(a.index, a.arm, a.condition, a.steps, a.kind, a.path,
+                                 a.id, devledger._TOKEN)
+    with pytest.raises(th.SmokeLimitError, match="already claimed"):
+        devledger.claim(twin, "mlp", "registered", 8)
+
+
+def test_concurrent_claims_succeed_exactly_once(tmp_path):
+    import threading
+
+    led = tmp_path / "l.json"
+    res = devledger.reserve("mlp", "registered", 8, kind="smoke", path=led)
+    results = []
+
+    def go():
+        try:
+            devledger.claim(res, "mlp", "registered", 8)
+            results.append("ok")
+        except th.SmokeLimitError:
+            results.append("refused")
+
+    ts = [threading.Thread(target=go) for _ in range(8)]
+    [t.start() for t in ts]
+    [t.join() for t in ts]
+    assert sorted(results) == ["ok"] + ["refused"] * 7
+
+
+def test_completed_reservation_is_rejected(tmp_path):
+    led = tmp_path / "l.json"
+    res = devledger.reserve("mlp", "registered", 8, kind="smoke", path=led)
+    devledger.claim(res, "mlp", "registered", 8)
+    devledger.finish(res, "completed")
+    with pytest.raises(th.SmokeLimitError, match="already claimed"):
+        devledger.claim(res, "mlp", "registered", 8)
+
+
+def test_measure_throughput_with_learning_is_ledgered_as_throughput_learning(
+        tmp_path, real_env, monkeypatch):
+    led = tmp_path / "l.json"
+    monkeypatch.setattr(th, "eval_proxy_seconds", lambda *a, **k: {"label": "PROXY"})
+    th.measure_throughput("gtm", n_updates=2, n_pairs=2, horizon=4, skip=0, ledger=led,
+                          learning=True)
+    r = json.loads(led.read_text())["runs"][0]
+    assert (r["kind"], r["policy_updates"], r["inspected"], r["claimed"]) == (
+        "throughput_learning", True, ["throughput"], True)
+    assert th.smoke_counts(led) == {}

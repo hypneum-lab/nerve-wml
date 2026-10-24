@@ -357,14 +357,23 @@ def _fmt_ledger(led: dict | None, sm: dict | None) -> list[str]:
              "pair-steps per run, training levels only. Throughput "
              "measurements made from now on use a frozen random policy "
              "(learning rate 0; kind `measurement`, ledgered, not counted)."]
-    legacy = [r for r in led["runs"] if r.get("kind") == "legacy_measurement"]
-    if legacy:
+    tl = [r for r in led["runs"] if r.get("kind") == "throughput_learning"]
+    if tl:
         lines.append(
-            f"**Disclosure:** {len(legacy)} throughput / profiling run(s) of "
-            "2026-10-23 (" + ", ".join(f"{r['arm']} {r['steps']:,}" for r in legacy)
-            + " pair-steps) were executed BEFORE this rule with learning updates "
-            "enabled, from an untrained start, on training levels; they are "
-            "recorded (kind `legacy_measurement`), not counted and not erased.")
+            "Throughput / profiling runs with learning enabled (category "
+            "`throughput_learning`, allowed by the amendment change of "
+            "2026-10-24 13:17, each <= 1,000,000 pair-steps, training levels "
+            "only, separate from the smoke allowance): "
+            + ", ".join(f"{r['arm']} {r['steps']:,}" for r in tl) + " pair-steps.")
+        hist = [r for r in tl if str(r.get("started_at", "")).startswith("2026-10-23")]
+        if hist:
+            lines.append(
+                f"**Declared deviation:** {len(hist)} of them ran on 2026-10-23, "
+                "before the rule was finalised, with learning updates (lr 5e-4) "
+                "from an untrained start on training levels; the PI accepted "
+                "them as declared engineering measurements (amendment, change "
+                "of 2026-10-24 13:17). Recorded individually in the ledger and "
+                "in the amendment; nothing touched held-out data.")
     n_sm = len(sm["runs"]) if sm else 0
     n_led = kinds.get("smoke", 0) + kinds.get("dev_train", 0)
     if n_led != n_sm:
@@ -378,7 +387,8 @@ def _fmt_smoke(sm: dict | None) -> list[str]:
     if not sm:
         return ["**No smoke runs recorded** (smoke_runs.json absent).", ""]
     lines = [f"{len(sm['runs'])} smoke runs of {sm.get('pair_steps_each'):,} "
-             f"pair-steps each (cap: 3 per arm, 1M steps), training levels only "
+             "pair-steps each (cap: 1M steps per run; 3 per arm, GTM-comm 4), "
+             "training levels only "
              f"(start_level 0, num_levels 16), smoke seed {sm.get('smoke_seed')} "
              "(not a registered seed), 64 pairs, 128-step rollouts. Their results "
              "informed no registered quantity; outcomes are listed unfiltered.", "",

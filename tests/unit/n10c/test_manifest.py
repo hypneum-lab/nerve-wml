@@ -228,13 +228,15 @@ def test_manifest_text_includes_cross_play_cost_and_smoke_ledger(tmp_path):
                            "label": "PROXY"}}
         for a in ("gtm", "nocomm")}}))
     (tmp_path / "smoke_ledger.json").write_text(
-        json.dumps({"max_steps": 1_000_000, "max_per_arm": 3, "runs": [
+        json.dumps({"max_steps": 1_000_000, "max_per_arm": 3,
+                    "arm_allowance": {"gtm": 4}, "runs": [
             {"arm": "gtm", "condition": "registered"}]}))
     text = _manifest(tmp_path)
     assert "cross-seed cross-play probe" in text and "60 passes" in text
     assert "60 cross-play passes" in text
     assert "Development ledger" in text and "cap 3 per arm" in text
-    assert "ledger lists 1 counted run(s) but" in text  # no smoke_runs.json beside it
+    assert "ledger lists 1 counted run(s) but" in text
+    assert "(gtm 4, PI decision" in text and "cap: 3 per arm," not in text
 
 
 def test_gtm_gradient_deviation_no_longer_disclosed(tmp_path):
@@ -272,3 +274,14 @@ def test_manifest_records_archive_target_and_pull(tmp_path):
     assert "<PATH>" not in text
     assert "electron@100.78.191.52:/home/electron/archives/n10c/" in text
     assert "pull_archive.sh" in text and "10.2.0.237" in text
+
+
+def test_manifest_discloses_the_throughput_learning_deviation(tmp_path):
+    import shutil
+
+    shutil.copy(throughput.SMOKE_LEDGER, tmp_path / "smoke_ledger.json")
+    shutil.copy(throughput.PKG / "manifest" / "smoke_runs.json", tmp_path / "smoke_runs.json")
+    text = _manifest(tmp_path)
+    assert "throughput_learning" in text and "Declared deviation" in text
+    assert "6 of them ran on 2026-10-23" in text and "legacy" not in text
+    assert "ledger lists" not in text  # ledger and smoke_runs.json agree

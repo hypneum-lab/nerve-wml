@@ -331,13 +331,19 @@ def train_run(
         if dev_reservation is None:
             own_res = devledger.reserve(arm, condition, total_pair_steps,
                                         kind=kind, path=dev_ledger, seed=seed)
+            devledger.claim(own_res, arm, condition, total_pair_steps)
         else:
-            res = devledger.check(dev_reservation, arm, condition, total_pair_steps)
-            ok_kind = (res.kind == "measurement") if frozen_policy \
-                else res.kind in devledger.COUNTED
+            if not isinstance(dev_reservation, devledger.Reservation):
+                raise devledger.SmokeLimitError(
+                    "not a genuine development-ledger reservation")
+            ok_kind = (dev_reservation.kind == "measurement") if frozen_policy \
+                else dev_reservation.kind in devledger.LEARNING_KINDS
             if not ok_kind:
                 raise devledger.SmokeLimitError(
-                    f"reservation kind {res.kind!r} does not match this run")
+                    f"reservation kind {dev_reservation.kind!r} does not match "
+                    "this run")
+            # exactly once, atomically: claimed or completed ones are rejected
+            devledger.claim(dev_reservation, arm, condition, total_pair_steps)
     if micro_batch_pairs is not None and micro_batch_pairs < 1:
         raise ValueError("micro_batch_pairs must be >= 1")
     if total_pair_steps % n_pairs or log_every_pair_steps % n_pairs:

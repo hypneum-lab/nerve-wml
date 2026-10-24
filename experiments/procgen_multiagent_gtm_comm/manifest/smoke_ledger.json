@@ -1,10 +1,10 @@
 {
   "max_steps": 1000000,
   "max_per_arm": 3,
-  "note": "One per-arm ledger for every real-environment development run (harness/devledger.py). kind smoke/dev_train: policy learns, counted, max 3 per arm and 1M pair-steps. kind measurement: throughput on a frozen random policy, ledgered, not counted. kind legacy_measurement: throughput/profiling runs executed on 2026-10-23 BEFORE this rule with learning updates; disclosed, not counted, not erased. Backfilled from smoke_runs.json and macM1 files; development runs from earlier tasks that left no file may be missing. Allowance: 3 per arm, GTM-comm 4 (PI decision 2026-10-24; gradient path changed after the earlier smoke runs; third slot consumed by a crash at 0 steps).",
+  "note": "One per-arm ledger for every real-environment development run (harness/devledger.py). kinds: smoke/dev_train (learning, counted: 3 per arm, GTM 4, <=1M steps); throughput_learning (throughput/profiling with learning on, <=1M steps, training levels, separate category, records what was inspected; includes the six runs of 2026-10-23, declared deviation); measurement (frozen random policy). Allowance changes: GTM 4 (PI 2026-10-24 13:03); throughput_learning (PI 2026-10-24 13:17). Development runs of earlier tasks that left no file may be missing.",
   "runs": [
     {
-      "kind": "legacy_measurement",
+      "kind": "throughput_learning",
       "arm": "gtm",
       "condition": "registered",
       "seed": 9001,
@@ -13,10 +13,15 @@
       "policy_updates": true,
       "started_at": "2026-10-23T18:59",
       "outcome": "completed",
-      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; throughput measurement, 30 updates (macM1 ~/scratch/n10c/runs/throughput.json); disclosed, not counted"
+      "id": "75fa3b46bb85468d9705bee3813ccf97",
+      "claimed": true,
+      "inspected": [
+        "throughput (pair-steps/s)"
+      ],
+      "note": "executed 2026-10-23 before the rule was finalised, with learning on; declared as a deviation accepted by the PI under the broadened rule of 2026-10-24 (amendment, change of 13:17); throughput measurement, 30 updates (macM1 ~/scratch/n10c/runs/throughput.json)"
     },
     {
-      "kind": "legacy_measurement",
+      "kind": "throughput_learning",
       "arm": "gtm",
       "condition": "registered",
       "seed": 9001,
@@ -25,10 +30,15 @@
       "policy_updates": true,
       "started_at": "2026-10-23T20:18",
       "outcome": "completed",
-      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; profiling run profile_cycle.py, 14 updates (prof_gtm14.log); disclosed, not counted"
+      "id": "3f3a1f1eff0b4ab884abe56172e5e547",
+      "claimed": true,
+      "inspected": [
+        "per-phase wall time of an update cycle"
+      ],
+      "note": "executed 2026-10-23 before the rule was finalised, with learning on; declared as a deviation accepted by the PI under the broadened rule of 2026-10-24 (amendment, change of 13:17); profiling run profile_cycle.py, 14 updates (prof_gtm14.log)"
     },
     {
-      "kind": "legacy_measurement",
+      "kind": "throughput_learning",
       "arm": "mlp",
       "condition": "registered",
       "seed": 9001,
@@ -37,10 +47,15 @@
       "policy_updates": true,
       "started_at": "2026-10-23T20:20",
       "outcome": "completed",
-      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; profiling run profile_cycle.py, 14 updates (prof_mlp14.log); disclosed, not counted"
+      "id": "0136100f69934f4c994054b175475c5d",
+      "claimed": true,
+      "inspected": [
+        "per-phase wall time of an update cycle"
+      ],
+      "note": "executed 2026-10-23 before the rule was finalised, with learning on; declared as a deviation accepted by the PI under the broadened rule of 2026-10-24 (amendment, change of 13:17); profiling run profile_cycle.py, 14 updates (prof_mlp14.log)"
     },
     {
-      "kind": "legacy_measurement",
+      "kind": "throughput_learning",
       "arm": "gtm",
       "condition": "registered",
       "seed": 9001,
@@ -49,10 +64,15 @@
       "policy_updates": true,
       "started_at": "2026-10-23T20:29",
       "outcome": "completed",
-      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; throughput re-check, 8 updates (runs/tp_check.json); disclosed, not counted"
+      "id": "8209c5f74e9048b4adc9c73cbf2a90c2",
+      "claimed": true,
+      "inspected": [
+        "throughput (pair-steps/s)"
+      ],
+      "note": "executed 2026-10-23 before the rule was finalised, with learning on; declared as a deviation accepted by the PI under the broadened rule of 2026-10-24 (amendment, change of 13:17); throughput re-check, 8 updates (runs/tp_check.json)"
     },
     {
-      "kind": "legacy_measurement",
+      "kind": "throughput_learning",
       "arm": "gtm",
       "condition": "registered",
       "seed": 9001,
@@ -61,10 +81,15 @@
       "policy_updates": true,
       "started_at": "2026-10-23T20:33",
       "outcome": "completed",
-      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; throughput measurement, 20 updates (manifest/throughput.json); disclosed, not counted"
+      "id": "82416e5aeb7b42b3b71016016419d077",
+      "claimed": true,
+      "inspected": [
+        "throughput (pair-steps/s)"
+      ],
+      "note": "executed 2026-10-23 before the rule was finalised, with learning on; declared as a deviation accepted by the PI under the broadened rule of 2026-10-24 (amendment, change of 13:17); throughput measurement, 20 updates (manifest/throughput.json)"
     },
     {
-      "kind": "legacy_measurement",
+      "kind": "throughput_learning",
       "arm": "nocomm",
       "condition": "registered",
       "seed": 9001,
@@ -73,7 +98,12 @@
       "policy_updates": true,
       "started_at": "2026-10-23T20:33",
       "outcome": "completed",
-      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; throughput measurement, 20 updates (manifest/throughput.json); disclosed, not counted"
+      "id": "47e72d3168d94e4f93ab7ba1b83b9b00",
+      "claimed": true,
+      "inspected": [
+        "throughput (pair-steps/s)"
+      ],
+      "note": "executed 2026-10-23 before the rule was finalised, with learning on; declared as a deviation accepted by the PI under the broadened rule of 2026-10-24 (amendment, change of 13:17); throughput measurement, 20 updates (manifest/throughput.json)"
     },
     {
       "kind": "smoke",
@@ -84,7 +114,9 @@
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
       "outcome": "completed",
-      "policy_updates": true
+      "policy_updates": true,
+      "id": "3628a218dde24b79914648d65f4fb84c",
+      "claimed": true
     },
     {
       "kind": "smoke",
@@ -95,7 +127,9 @@
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
       "outcome": "completed",
-      "policy_updates": true
+      "policy_updates": true,
+      "id": "b6477b9d7e35475a951bc4c0447940fd",
+      "claimed": true
     },
     {
       "kind": "smoke",
@@ -106,7 +140,9 @@
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
       "outcome": "completed",
-      "policy_updates": true
+      "policy_updates": true,
+      "id": "fb87bd6d31ee4d44adedf7f491765e3d",
+      "claimed": true
     },
     {
       "kind": "smoke",
@@ -117,7 +153,9 @@
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
       "outcome": "completed",
-      "policy_updates": true
+      "policy_updates": true,
+      "id": "9360179af9234cd4821073b4c614c641",
+      "claimed": true
     },
     {
       "kind": "smoke",
@@ -128,7 +166,9 @@
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
       "outcome": "completed",
-      "policy_updates": true
+      "policy_updates": true,
+      "id": "4812ef1b608a49a7b580c79b3b41b5b3",
+      "claimed": true
     },
     {
       "kind": "smoke",
@@ -139,7 +179,9 @@
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
       "outcome": "completed",
-      "policy_updates": true
+      "policy_updates": true,
+      "id": "e411695ef3db471abd57fb3a67973e8e",
+      "claimed": true
     },
     {
       "kind": "smoke",
@@ -150,7 +192,9 @@
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
       "outcome": "completed",
-      "policy_updates": true
+      "policy_updates": true,
+      "id": "f9703bfba1244c25925024de045d0df0",
+      "claimed": true
     },
     {
       "kind": "smoke",
@@ -162,7 +206,9 @@
       "policy_updates": true,
       "started_at": "2026-10-24T12:58:42+0200",
       "outcome": "crashed",
-      "note": "infrastructure crash after 0.05 s, before any environment step or update: the macM1 shell had no /opt/homebrew/bin on PATH, so Procgen tried to rebuild and failed on a missing cmake. Counted by rule (a crashed run counts); not erased."
+      "note": "infrastructure crash after 0.05 s, before any environment step or update: the macM1 shell had no /opt/homebrew/bin on PATH, so Procgen tried to rebuild and failed on a missing cmake. Counted by rule (a crashed run counts); not erased.",
+      "id": "74c2211889d74e1bb6b1f2ac711fe980",
+      "claimed": true
     },
     {
       "kind": "smoke",
@@ -173,7 +219,9 @@
       "levels": "training (start_level=0, num_levels=16)",
       "policy_updates": true,
       "started_at": "2026-10-24T13:07:37+0200",
-      "outcome": "completed"
+      "outcome": "completed",
+      "id": "6221c42e126745c58c65d52b4e9826d3",
+      "claimed": true
     }
   ],
   "arm_allowance": {

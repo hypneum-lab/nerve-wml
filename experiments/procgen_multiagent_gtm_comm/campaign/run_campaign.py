@@ -268,6 +268,13 @@ class Campaign:
             return
         st["last_checkpoint"] = rec.last_checkpoint
         st["last_checkpoint_sha256"] = checkpoint_sha256(rd, rec.last_checkpoint)
+        if rec.last_checkpoint and st["last_checkpoint_sha256"] is None:
+            q.fail_attempt(st, f"checkpoint {rec.last_checkpoint} missing after training")
+            self.store.save(st)
+            self.event(run=spec.run_id, attempt=attempt, phase="train",
+                       state="infra_failed", reason=st["failure_reason"],
+                       infra_failures=st["infra_failures"])
+            return
         st["finished_at"] = _now()
         if rec.training_failure:
             st.update(status=q.TRAINING_FAILURE, failure_reason=rec.failure_reason)
@@ -578,10 +585,20 @@ def checkpoint_sha256(run_dir: Path, last_ckpt: str | None) -> str | None:
     return None if p is None else sha256_file(p)
 
 
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
 def verify_checkpoint(run_dir: Path, last_ckpt: str | None, sha: str | None) -> None:
-    """Raise unless the checkpoint on disk still has the recorded digest."""
-    if not last_ckpt or not sha:
+    """Raise unless the selected checkpoint has its recorded SHA-256.
+
+    A valid recorded digest is REQUIRED whenever ``last_ckpt`` is set; only
+    the explicit untrained-initialisation case (no checkpoint) needs none."""
+    if not last_ckpt:
         return
+    if not isinstance(sha, str) or not SHA256_RE.match(sha):
+        raise RuntimeError(
+            f"checkpoint {last_ckpt} has no valid recorded SHA-256 digest "
+            "(training-time evidence is required before evaluation / cross-play)")
     p = resolve_checkpoint(run_dir, last_ckpt)
     if p is not None and sha256_file(p) != sha:
         raise RuntimeError(f"checkpoint {last_ckpt} SHA-256 differs from the "
