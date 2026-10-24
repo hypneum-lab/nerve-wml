@@ -125,7 +125,7 @@ RULINGS = [
     "Task 9: smoke runs = 1 per arm in the registered condition plus gtm in the "
     "closed condition, 200,000 pair-steps each, training levels only; the "
     "gtm registered smoke was run twice more after its gradient path changed "
-    "(one crashed at 0 steps), so the ledger lists 9 smoke runs. The "
+    "(one crashed at 0 steps): 9 smoke runs in all. The "
     "amendment allows counted learning runs (smoke / dev_train) of up to 1M "
     "pair-steps each: 3 per arm, GTM-comm 4 (PI decision 2026-10-24). "
     "Throughput / profiling runs with learning enabled form a separate "
