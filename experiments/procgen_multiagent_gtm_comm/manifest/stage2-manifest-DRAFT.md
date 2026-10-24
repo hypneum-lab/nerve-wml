@@ -6,7 +6,7 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 
 ## 1. Commit, integer codes and bus
 
-- Harness commit at manifest time: `077ecfe4bfb9193853eb48f9046980836994c8e6` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
+- Harness commit at manifest time: `b810adfbd7102d06155933ed6a812c98117e8a18` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
 - Code identity independent of git (SHA-256 of each file at manifest time):
 
 | file | SHA-256 |
@@ -19,7 +19,7 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 | `experiments/procgen_multiagent_gtm_comm/harness/devledger.py` | `b55cf7e62a173c4b5f6e2137e777dd3d7ad1576f6bc8441f63869553d3e28a7a` |
 | `experiments/procgen_multiagent_gtm_comm/harness/evaluate.py` | `dbee3358173bd303ca0d74ebf74759ef01ac7a319a3c0f73fd1f939ea798b376` |
 | `experiments/procgen_multiagent_gtm_comm/harness/gtm_mlx.py` | `daba415dcf627927c9545501f4c8592448b8e1f4667dc50b0de0459385f92faf` |
-| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `b3008a64e77ec475c9cd7d705ddf510e1da393f49799a1fa6021b1f7e6f722d0` |
+| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `de2fe4ee76f0e23564b45d5c5b0d03fc20aeb996c79a38ecbe5839215c67136c` |
 | `experiments/procgen_multiagent_gtm_comm/harness/policy.py` | `15b8e8a0209600e4f550266fb607d14786b857cab6289e509800e2b450de919d` |
 | `experiments/procgen_multiagent_gtm_comm/harness/rollout.py` | `5f291b8c99eed91e1bd62320b842ed2b51af349297da7340b11901e962aa65a5` |
 | `experiments/procgen_multiagent_gtm_comm/harness/throughput.py` | `23916c31850dff5d302e6a3143e7c507f43faeb5e29cbe89ba53f53dbdc85e90` |
@@ -181,4 +181,4 @@ After each run and each evaluation, the run directory (`run.json`, checkpoints, 
 - Task 6: GTM and DIAL message noise is stored per pair-step in the rollout and replayed in the PPO update (so the PPO ratio is 1 for an unchanged policy).
 - Task 7: evaluation action sampling = one uniform per agent per step (agent 0 then agent 1) from default_rng([20261023, j]), inverse CDF on the float64 softmax; identical across passes and models. Evaluation episodes are capped at 5,000 steps (an error, not an outcome). Evaluation messages are deterministic (GTM argmax symbols).
 - R4: gradient accumulation (micro_batch_pairs, clear_cache; PR #53) and n_workers (PR #54) are merged into the harness branch; the freeze commit must contain both. The KXKM-AI settings above refer to them.
-- Task 9: smoke runs = 1 per arm in the registered condition plus gtm in the closed condition, 200,000 pair-steps each, training levels only; the gtm registered smoke was run twice more after its gradient path changed (one crashed at 0 steps), so the ledger lists 9 smoke runs. The amendment allows counted learning runs (smoke / dev_train) of up to 1M pair-steps each: 3 per arm, GTM-comm 4 (PI decision 2026-10-24). Throughput / profiling runs with learning enabled form a separate category, `throughput_learning` (each <= 1M pair-steps, training levels 0-15, not counted against that allowance). The caps are enforced in code (harness/devledger.py, used by harness/throughput.py) with a persistent ledger (manifest/smoke_ledger.json) written before each run starts; train_run itself refuses any budget above 1M pair-steps without the registered execution context.
+- Task 9: smoke runs = 1 per arm in the registered condition plus gtm in the closed condition, 200,000 pair-steps each, training levels only; the gtm registered smoke was run twice more after its gradient path changed (one crashed at 0 steps): 9 smoke runs in all. The amendment allows counted learning runs (smoke / dev_train) of up to 1M pair-steps each: 3 per arm, GTM-comm 4 (PI decision 2026-10-24). Throughput / profiling runs with learning enabled form a separate category, `throughput_learning` (each <= 1M pair-steps, training levels 0-15, not counted against that allowance). The caps are enforced in code (harness/devledger.py, used by harness/throughput.py) with a persistent ledger (manifest/smoke_ledger.json) written before each run starts; train_run itself refuses any budget above 1M pair-steps without the registered execution context.
