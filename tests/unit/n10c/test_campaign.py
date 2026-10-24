@@ -880,6 +880,7 @@ def test_trial_run_may_override_settings(tmp_path):
 
 
 def test_campaign_and_manifest_agree_on_host_settings():
+    pytest.importorskip("mlx.core")  # manifest.py needs MLX; harness venv only
     from experiments.procgen_multiagent_gtm_comm.harness import codes, manifest
 
     assert set(manifest.HOST_TRAIN_SETTINGS) == set(codes.HOST_SETTINGS)
@@ -907,6 +908,7 @@ def _full_kx(tmp_path, **kw):
 
 
 def test_cross_probe_runs_for_every_complete_cell_in_fixed_pairing(tmp_path):
+    pytest.importorskip("mlx.core")  # evaluate.py needs MLX; harness venv only
     from experiments.procgen_multiagent_gtm_comm.harness.evaluate import cross_pairs
 
     kx, calls = _full_kx(tmp_path)
