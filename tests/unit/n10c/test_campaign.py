@@ -519,8 +519,14 @@ REL = "experiments/procgen_multiagent_gtm_comm/manifest/stage2-manifest.md"
 AMEND = guards.AMENDMENT_PATH
 
 
+def amendment_text(tag=TAG, status=None):
+    st = status or (f"**Status:** FROZEN by tag {tag} (stage 1 + stage 2 manifest); "
+                    "OSF registration to follow")
+    return f"# Amendment\n\n{st}\n**Amends:** x\n\nfinal text\n"
+
+
 def _frozen_repo(tmp_path, *, status=None, annotated=True, msg_sha=None, tag=TAG,
-                 tag_before_manifest=False, with_amendment=True):
+                 tag_before_manifest=False, with_amendment=True, amend_status=None):
     """Repo with origin (bare), code commit, manifest commit, freeze tag."""
     origin = tmp_path / "origin.git"
     subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
@@ -537,7 +543,7 @@ def _frozen_repo(tmp_path, *, status=None, annotated=True, msg_sha=None, tag=TAG
     (repo / "code.py").write_text("x = 1\n")
     if with_amendment:
         (repo / AMEND).parent.mkdir(parents=True)
-        (repo / AMEND).write_text("# Amendment\nfinal text\n")
+        (repo / AMEND).write_text(amendment_text(tag, amend_status))
     g("add", ".")
     g("commit", "-q", "-m", "code")
     md = repo / "experiments" / "procgen_multiagent_gtm_comm" / "manifest"
@@ -666,9 +672,26 @@ def test_amendment_absent_from_the_tagged_tree_refused(tmp_path):
     assert any("amendment" in p for p in _probs(_fkw(repo, m, sha, tag)))
 
 
+@pytest.mark.parametrize("status", [
+    "**Status:** DRAFT — not yet frozen or registered (committed by a frozen git tag)",
+    "**Status:** FROZEN by tag n10c-freeze-20250101 (stage 1 + stage 2 manifest)",
+    "**Status:** DRAFT FROZEN by tag n10c-freeze-20261024",
+    "**Status:** registered on OSF",
+])
+def test_draft_or_wrong_tag_amendment_status_refused(tmp_path, status):
+    # frozen manifest + non-final amendment status at the tag
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path, amend_status=status)
+    assert any("amendment" in p and "Status" in p for p in _probs(_fkw(repo, m, sha, tag)))
+
+
+def test_final_amendment_status_accepted(tmp_path):
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path)
+    assert _probs(_fkw(repo, m, sha, tag)) == []
+
+
 def test_docs_commit_cannot_alter_the_tagged_documents(tmp_path):
     repo, m, sha, tag, g = _frozen_repo(tmp_path)
-    (repo / AMEND).write_text("# Amendment\nchanged after the tag\n")
+    (repo / AMEND).write_text(amendment_text() + "changed after the tag\n")
     g("commit", "-q", "-am", "docs: edit amendment")
     assert any("amendment differs" in p for p in _probs(_fkw(repo, m, sha, tag)))
     g("checkout", "-q", "HEAD~1", "--", AMEND)
@@ -1233,3 +1256,52 @@ def test_pull_archive_does_not_self_copy_status_files(tmp_path):
     assert "cp -f" not in (pathlib.Path(rc.__file__).parent
                            / "pull_archive.sh").read_text()
     assert _pull(src, dest).returncode == 0
+
+
+# ---- freeze_prepare: deterministic freeze commit (round 2) -------------
+
+def test_freeze_prepare_rewrites_status_lines_on_a_temp_copy(tmp_path):
+    from experiments.procgen_multiagent_gtm_comm.campaign import freeze_prepare as fp
+
+    repo, m, sha, tag, g = _frozen_repo(tmp_path, amend_status="**Status:** DRAFT — not yet")
+    new_tag = "n10c-freeze-20261101"
+
+    def fake_manifest(out, t):
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(f"# M\n**Status: FROZEN (tag {t})**\n")
+
+    res = fp.prepare(repo, new_tag, "stage2-manifest-frozen.md", write_manifest=fake_manifest)
+    amend = (repo / AMEND).read_text()
+    assert (f"**Status:** FROZEN by tag {new_tag} (stage 1 + stage 2 manifest); "
+            "OSF registration to follow") in amend
+    assert "DRAFT" not in amend and amend.count("**Status:**") == 1
+    assert guards.amendment_status_problem(amend, new_tag) is None
+    out = repo / res["manifest"]
+    assert res["manifest_sha256"] == hashlib.sha256(out.read_bytes()).hexdigest()
+    assert f"manifest: {res['manifest']}" in res["tag_message"]
+    # deterministic: a second run changes nothing
+    again = fp.prepare(repo, new_tag, "stage2-manifest-frozen.md", write_manifest=fake_manifest)
+    assert again == res
+    # the prepared tree passes the guards once committed and tagged
+    g("add", ".")
+    g("commit", "-q", "-m", "freeze")
+    g("tag", "-a", new_tag, "-m", res["tag_message"])
+    g("push", "-q", "origin", f"refs/tags/{new_tag}")
+    kw = _fkw(repo, repo / res["manifest"], res["manifest_sha256"], new_tag)
+    assert _probs(kw) == []
+
+
+def test_freeze_prepare_refuses_bad_inputs(tmp_path):
+    from experiments.procgen_multiagent_gtm_comm.campaign import freeze_prepare as fp
+
+    with pytest.raises(ValueError):
+        fp.rewrite_amendment_status("**Status:** DRAFT\n", "bad-tag")
+    with pytest.raises(ValueError):
+        fp.rewrite_amendment_status("no status here\n", TAG)
+    with pytest.raises(ValueError):
+        fp.rewrite_amendment_status("**Status:** a\n**Status:** b\n", TAG)
+    repo, *_ = _frozen_repo(tmp_path)
+    with pytest.raises(ValueError, match="DRAFT"):
+        fp.prepare(repo, TAG, "stage2-manifest-DRAFT.md")
+    with pytest.raises(ValueError, match="not a valid frozen"):
+        fp.prepare(repo, TAG, "x.md", write_manifest=lambda o, t: o.write_text("Status: DRAFT"))

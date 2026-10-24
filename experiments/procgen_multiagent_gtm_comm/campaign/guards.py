@@ -71,6 +71,26 @@ ARMS_BY_CONDITION = {
     "closed": ("gtm", "dial", "eng", "nocomm"),
 }
 ORIGIN = "origin"
+AMEND_STATUS_LINE_RE = re.compile(r"^\*\*Status:\*\*(.*)$", re.MULTILINE)
+
+
+def amendment_status_line(tag: str) -> str:
+    """The final Status line of the amendment for a freeze tag."""
+    return (f"**Status:** FROZEN by tag {tag} (stage 1 + stage 2 manifest); "
+            "OSF registration to follow")
+
+
+def amendment_status_problem(text: str, tag: str) -> str | None:
+    """None if the amendment's Status line is the final, tag-naming one."""
+    m = AMEND_STATUS_LINE_RE.search(text)
+    if not m:
+        return "amendment has no '**Status:**' line"
+    line = m.group(1)
+    if "DRAFT" in line or not re.match(
+            r"\s*FROZEN by tag " + re.escape(tag) + r"\b", line):
+        return (f"amendment Status is not final: expected "
+                f"'**Status:** FROZEN by tag {tag} ...', got {line.strip()[:80]!r}")
+    return None
 TAG_PREFIX = "n10c-freeze-"
 SWHID_RE = re.compile(
     r"^swh:1:(snp|rev|dir):[0-9a-f]{40}(;[a-z]+=[^;\s]+)*$")
@@ -236,6 +256,10 @@ def _freeze_problems(*, repo: Path, manifest: Path | None,
     amend = _git_bytes(repo, "show", f"{commit}:{AMENDMENT_PATH}")
     if not amend:
         bad.append(f"amendment {AMENDMENT_PATH} is not in the tagged commit")
+    else:
+        prob = amendment_status_problem(amend.decode("utf-8", "replace"), freeze_tag)
+        if prob:
+            bad.append(prob + " (Status)")
     # working-tree copies must be the tagged ones (docs/ commits are allowed
     # after the tag, but they must not alter the committed documents)
     wt = repo / rel
