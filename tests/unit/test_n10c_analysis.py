@@ -472,3 +472,17 @@ def test_seed_identities_validated():
             res[("gtm", "registered")]["seeds"] = bad
         with pytest.raises(ValueError, match="seeds"):
             primary_report(res)
+
+
+def test_ni_not_reported_when_interpretability_cannot_be_established():
+    # Codex round 2: GTM and NOCOMM constant, ENG nearly constant -> the
+    # numerator df is undefined, interpretability is None, NI must be unavailable
+    res = _fixture()
+    res[("gtm", "closed")]["R"] = np.full(6, 0.2)
+    res[("nocomm", "closed")]["R"] = np.full(6, 0.2)
+    res[("eng", "closed")]["R"] = np.array([0.21] * 5 + [0.9])
+    g = primary_report(res)["normalized_improvement"]["closed"]["gtm"]
+    assert g["interpretable"] is None
+    assert g["estimate"] is None and g["low"] is None and g["high"] is None
+    assert g["numerator"] == pytest.approx(0.0)
+    assert g["denominator"] == pytest.approx(np.mean([0.21] * 5 + [0.9]) - 0.2)

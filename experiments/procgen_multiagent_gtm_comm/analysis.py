@@ -247,7 +247,7 @@ def _ni(results):
             den = float(r("eng").mean() - r("nocomm").mean())
             ok = fieller_interpretable(r(arm), r("nocomm"), r("eng"), 0.95)
             ci = fieller_ci(r(arm), r("nocomm"), r("eng"), 0.95)
-            if ok is False or (ok is None and not den > 0):
+            if ok is not True:
                 # interpretability rule fails: NI is not reported (a property
                 # of the data); numerator and denominator stay available
                 est = None
