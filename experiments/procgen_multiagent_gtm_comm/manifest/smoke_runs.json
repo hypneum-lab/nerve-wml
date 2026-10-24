@@ -386,6 +386,22 @@
       ],
       "bits_logged": 6400000,
       "max_first_minibatch_ratio_dev": 1.430511474609375e-06
+    },
+    {
+      "arm": "gtm",
+      "condition": "registered",
+      "seed": 9001,
+      "codes": {
+        "arm": 0,
+        "condition": 0
+      },
+      "pair_steps_requested": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "outcome": "crashed",
+      "error": "FileNotFoundError(2, 'No such file or directory')",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/electron/scratch/code/nwml-fix/experiments/procgen_multiagent_gtm_comm/harness/throughput.py\", line 197, in run_smoke\n    rec = train_run(\n  File \"/Users/electron/scratch/code/nwml-fix/experiments/procgen_multiagent_gtm_comm/harness/train.py\", line 355, in train_run\n    vec = VecCoopEnv(\n  File \"/Users/electron/scratch/code/nwml-fix/experiments/procgen_multiagent_gtm_comm/harness/vec_env.py\", line 221, in __init__\n    self._block = _Block(\n  File \"/Users/electron/scratch/code/nwml-fix/experiments/procgen_multiagent_gtm_comm/harness/vec_env.py\", line 65, in __init__\n    ProcgenCoopEnv(\n  File \"/Users/electron/scratch/code/nwml-fix/experiments/procgen_multiagent_gtm_comm/coop_env.py\", line 144, in __init__\n    self._reset_envs()\n  File \"/Users/electron/scratch/code/nwml-fix/experiments/procgen_multiagent_gtm_comm/coop_env.py\", line 181, in _reset_envs\n    self._envs.append(self._make_env(rand_seed))\n  File \"/Users/electron/scratch/code/nwml-fix/experiments/procgen_multiagent_gtm_comm/coop_env.py\", line 164, in _make_env\n    return ProcgenGym3Env(\n  File \"/Users/electron/scratch/procgen-arm64/procgen/procgen/env.py\", line 246, in __init__\n    super().__init__(num, env_name, options, **kwargs)\n  File \"/Users/electron/scratch/procgen-arm64/procgen/procgen/env.py\", line 96, in __init__\n    lib_dir = build(debug=debug)\n  File \"/Users/electron/scratch/procgen-arm64/procgen/procgen/builder.py\", line 123, in build\n    _attempt_configure(build_type, package)\n  File \"/Users/electron/scratch/procgen-arm64/procgen/procgen/builder.py\", line 92, in _attempt_configure\n    check(run(configure_cmd), verbose=package)\n  File \"/Users/electron/scratch/procgen-arm64/procgen/procgen/builder.py\", line 41, in run\n    return sp.run(cmd, stdout=sp.PIPE, stderr=sp.STDOUT, encoding=\"utf8\")\n  File \"/Users/electron/.local/share/uv/python/cpython-3.10-macos-aarch64-none/lib/python3.10/subprocess.py\", line 503, in run\n    with Popen(*popenargs, **kwargs) as process:\n  File \"/Users/electron/.local/share/uv/python/cpython-3.10-macos-aarch64-none/lib/python3.10/subprocess.py\", line 971, in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\n  File \"/Users/electron/.local/share/uv/python/cpython-3.10-macos-aarch64-none/lib/python3.10/subprocess.py\", line 1863, in _execute_child\n    raise child_exception_type(errno_num, err_msg, err_filename)\nFileNotFoundError: [Errno 2] No such file or directory: 'cmake'\n",
+      "wall_time_s": 0.05315208435058594,
+      "note": "infrastructure crash after 0.05 s, before any environment step or update: the macM1 shell had no /opt/homebrew/bin on PATH, so Procgen tried to rebuild and failed on a missing cmake. Counted by rule (a crashed run counts); not erased."
     }
   ]
 }
