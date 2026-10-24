@@ -351,7 +351,9 @@ def _fmt_ledger(led: dict | None, sm: dict | None) -> list[str]:
              + ", ".join(f"{n} {k}" for k, n in sorted(kinds.items()))
              + "; counted learning runs per arm "
              + ", ".join(f"{a} {n}" for a, n in sorted(per.items()))
-             + f"; cap {led['max_per_arm']} per arm and {led['max_steps']:,} "
+             + f"; cap {led['max_per_arm']} per arm (gtm "
+             f"{led.get('arm_allowance', {}).get('gtm', led['max_per_arm'])}, PI "
+             f"decision 2026-10-24) and {led['max_steps']:,} "
              "pair-steps per run, training levels only. Throughput "
              "measurements made from now on use a frozen random policy "
              "(learning rate 0; kind `measurement`, ledgered, not counted)."]

@@ -1,7 +1,7 @@
 {
   "max_steps": 1000000,
   "max_per_arm": 3,
-  "note": "One per-arm ledger for every real-environment development run (harness/devledger.py). kind smoke/dev_train: policy learns, counted, max 3 per arm and 1M pair-steps. kind measurement: throughput on a frozen random policy, ledgered, not counted. kind legacy_measurement: throughput/profiling runs executed on 2026-10-23 BEFORE this rule with learning updates; disclosed, not counted, not erased. Backfilled from smoke_runs.json and macM1 files; development runs from earlier tasks that left no file may be missing.",
+  "note": "One per-arm ledger for every real-environment development run (harness/devledger.py). kind smoke/dev_train: policy learns, counted, max 3 per arm and 1M pair-steps. kind measurement: throughput on a frozen random policy, ledgered, not counted. kind legacy_measurement: throughput/profiling runs executed on 2026-10-23 BEFORE this rule with learning updates; disclosed, not counted, not erased. Backfilled from smoke_runs.json and macM1 files; development runs from earlier tasks that left no file may be missing. Allowance: 3 per arm, GTM-comm 4 (PI decision 2026-10-24; gradient path changed after the earlier smoke runs; third slot consumed by a crash at 0 steps).",
   "runs": [
     {
       "kind": "legacy_measurement",
@@ -164,5 +164,8 @@
       "outcome": "crashed",
       "note": "infrastructure crash after 0.05 s, before any environment step or update: the macM1 shell had no /opt/homebrew/bin on PATH, so Procgen tried to rebuild and failed on a missing cmake. Counted by rule (a crashed run counts); not erased."
     }
-  ]
+  ],
+  "arm_allowance": {
+    "gtm": 4
+  }
 }

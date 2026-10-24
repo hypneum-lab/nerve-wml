@@ -42,7 +42,7 @@ def test_committed_ledger_matches_the_disclosed_smoke_runs():
     assert len(legacy) == 6 and all(r["policy_updates"] for r in legacy)
     assert {r["arm"] for r in legacy} == {"gtm", "mlp", "nocomm"}
     assert devledger.remaining(["gtm", "mlp", "atoc"], th.SMOKE_LEDGER) == {
-        "gtm": 0, "mlp": 2, "atoc": 2}
+        "gtm": 1, "mlp": 2, "atoc": 2}
 
 
 def test_reserve_enforces_step_cap_and_three_per_arm(tmp_path):
@@ -78,7 +78,7 @@ def test_run_smoke_refuses_before_starting_anything(tmp_path):
         th.run_smoke("gtm", "registered", tmp_path / "r", total=2_000_000,
                      env_factory=lambda s: called.append(1), ledger=led)
     assert called == [] and not led.exists() and not (tmp_path / "r").exists()
-    for _ in range(3):
+    for _ in range(4):
         th.reserve_smoke("gtm", "registered", 8, led)
     with pytest.raises(th.SmokeLimitError):
         th.run_smoke("gtm", "closed", tmp_path / "r", total=8, n_pairs=2, horizon=4,
@@ -237,3 +237,20 @@ def test_registered_runs_never_use_the_dev_ledger_paths(tmp_path):
     with pytest.raises(guards.GuardError):
         tr.train_run("gtm", 0, "registered", 50_000_000, tmp_path, registration=ctx,
                      frozen_policy=True)
+
+
+def test_per_arm_allowance_single_constant_gtm_four_others_three(tmp_path):
+    assert devledger.ARM_ALLOWANCE == {"gtm": 4}
+    assert [devledger.allowance(a) for a in ("gtm", "mlp", "atoc", "dial", "eng", "nocomm")] == [
+        4, 3, 3, 3, 3, 3]
+    led = tmp_path / "l.json"
+    for _ in range(4):
+        th.reserve_smoke("gtm", "registered", 64, led)
+    with pytest.raises(th.SmokeLimitError, match="4 of 4"):
+        th.reserve_smoke("gtm", "closed", 64, led)
+    for _ in range(3):
+        devledger.reserve("dial", "registered", 64, kind="dev_train", path=led)
+    with pytest.raises(th.SmokeLimitError, match="3 of 3"):
+        devledger.reserve("dial", "closed", 64, kind="smoke", path=led)
+    assert devledger.remaining(["gtm", "dial", "eng"], led) == {"gtm": 0, "dial": 0, "eng": 3}
+    assert json.loads(th.SMOKE_LEDGER.read_text())["arm_allowance"] == {"gtm": 4}

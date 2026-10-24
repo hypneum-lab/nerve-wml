@@ -10,7 +10,7 @@ outcomes), throughput measurements on random or untrained policies".
 Kinds:
 
 * ``smoke`` and ``dev_train``: runs whose policy learns. At most
-  ``MAX_PER_ARM`` per arm, each at most ``MAX_STEPS`` pair-steps.
+  ``allowance(arm)`` per arm (3; gtm 4), each at most ``MAX_STEPS`` pair-steps.
 * ``measurement``: throughput measurements. The policy stays at its random
   initialisation (the optimiser runs with learning rate 0), so the amendment's
   "random or untrained policies" wording holds. Ledgered, not counted.
@@ -29,7 +29,18 @@ from pathlib import Path
 PKG = Path(__file__).resolve().parent.parent
 LEDGER = PKG / "manifest" / "smoke_ledger.json"
 MAX_STEPS = 1_000_000
-MAX_PER_ARM = 3
+MAX_PER_ARM = 3  # default allowance per arm
+# PI decision 2026-10-24 (amendment, development allowance): GTM-comm gets 4
+# counted learning runs, because its gradient path changed after the earlier
+# smoke runs and the third slot was consumed by a crash at 0 steps.
+ARM_ALLOWANCE: dict[str, int] = {"gtm": 4}
+
+
+def allowance(arm: str) -> int:
+    """Counted development learning runs allowed for ``arm`` (single source)."""
+    return ARM_ALLOWANCE.get(arm, MAX_PER_ARM)
+
+
 COUNTED = ("smoke", "dev_train")
 KINDS = (*COUNTED, "measurement", "legacy_measurement")
 SMOKE_SEED = 9001  # not a registered seed
@@ -58,7 +69,8 @@ class Reservation:
 def read(path: Path = LEDGER) -> dict:
     if Path(path).exists():
         return json.loads(Path(path).read_text())
-    return {"max_steps": MAX_STEPS, "max_per_arm": MAX_PER_ARM, "runs": []}
+    return {"max_steps": MAX_STEPS, "max_per_arm": MAX_PER_ARM,
+            "arm_allowance": ARM_ALLOWANCE, "runs": []}
 
 
 def _write(path: Path, ledger: dict) -> None:
@@ -80,7 +92,7 @@ def counts(path: Path = LEDGER) -> dict[str, int]:
 
 def remaining(arms, path: Path = LEDGER) -> dict[str, int]:
     c = counts(path)
-    return {a: MAX_PER_ARM - c.get(a, 0) for a in arms}
+    return {a: allowance(a) - c.get(a, 0) for a in arms}
 
 
 def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
@@ -102,9 +114,9 @@ def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
     if kind in COUNTED:
         used = sum(1 for r in ledger["runs"]
                    if r["arm"] == arm and r.get("kind", "smoke") in COUNTED)
-        if used >= MAX_PER_ARM:
+        if used >= allowance(arm):
             raise SmokeLimitError(
-                f"arm {arm!r} already used {used} of {MAX_PER_ARM} smoke runs")
+                f"arm {arm!r} already used {used} of {allowance(arm)} smoke runs")
     ledger["runs"].append({
         "kind": kind, "arm": arm, "condition": condition, "seed": seed,
         "steps": steps, "levels": "training (start_level=0, num_levels=16)",
