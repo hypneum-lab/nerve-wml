@@ -23,10 +23,11 @@ LIF constants match the spikingkiki HF card: ``T=128``, ``threshold=0.0625``,
 """
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 import torch
 from torch import Tensor, nn
+from torch.autograd.function import FunctionCtx
 
 from nerve_core.protocols import Nerve
 
@@ -46,12 +47,12 @@ class _SuperSpike(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx: object, x: Tensor) -> Tensor:
+    def forward(ctx: FunctionCtx, x: Tensor) -> Tensor:
         ctx.save_for_backward(x)
         return (x > 0).float()
 
     @staticmethod
-    def backward(ctx: object, grad_output: Tensor) -> Tensor:
+    def backward(ctx: Any, grad_output: Tensor) -> Tensor:
         (x,) = ctx.saved_tensors
         return grad_output / (1.0 + _SURROGATE_BETA * x.abs()) ** 2
 
