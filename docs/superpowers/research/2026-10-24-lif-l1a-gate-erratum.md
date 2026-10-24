@@ -38,19 +38,29 @@ conditions on this single seed. Condition 2 values are taken from
 
 ## Places that claimed the gate passed
 
+Explicit claims:
+
 - `CHANGELOG.md` (v1.9.0 section, "L1a Full-LIF sim training + scaling
   sweep (#48)"): "closes the L1a gate".
-- `.zenodo.json` (v1.9.0): title "Full-LIF L1a" and description item (5).
 - PR #48 body: "all 4 sizes pass gate" and the sizes table (PASS column,
   including n=1024 with 13.1 % untrained).
 - `docs/superpowers/research/2026-05-30-lif-l1a-gate.json` and
   `...-scaling.json`: `gate_passed: true` (left unmodified as historical
   records).
 
+Implicit / indirect mention (does not assert a pass):
+
+- `.zenodo.json` (v1.9.0): title "... Full-LIF L1a" and description item
+  "(5) L1a Full-LIF sim training + scaling sweep (#48)". It names the L1a
+  work but does not state that the gate passed.
+
 ## Handling
 
-- The archived Zenodo v1.9.0 record cannot be edited; it will be
-  corrected in the description of the next release.
+- Zenodo: the archived files of v1.9.0 stay as they are; the published
+  record's metadata (description) remains editable, including for
+  previous versions. Follow-up for the maintainer (PI): correct the
+  v1.9.0 description in the Zenodo UI and carry the correction in the
+  next release's description.
 - Historical JSON files and the v1.9.0 release are not modified.
 - `scripts/lif_l1a_train.py` now requires all three conditions and writes
   each condition's boolean separately. The training was not rerun.

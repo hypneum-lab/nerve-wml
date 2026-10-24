@@ -257,6 +257,16 @@ class TestGateFunction:
         assert g["gate_acc_final_ge_20pct"] is True
         assert g["gate_loss_descends"] is True
 
+    def test_equal_losses_fail(self):
+        g = self._gate(loss_100=0.5, loss_final=0.5)
+        assert g["gate_loss_descends"] is False
+        assert g["gate_passed"] is False
+
+    def test_final_acc_exactly_20pct_passes(self):
+        g = self._gate(acc_final=0.20)
+        assert g["gate_acc_final_ge_20pct"] is True
+        assert g["gate_passed"] is True
+
     def test_untrained_exactly_10pct_passes(self):
         assert self._gate(acc_untrained=0.10)["gate_passed"] is True
 
