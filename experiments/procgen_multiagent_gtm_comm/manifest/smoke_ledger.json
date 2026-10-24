@@ -1,0 +1,70 @@
+{
+  "max_steps": 1000000,
+  "max_per_arm": 3,
+  "note": "backfilled from smoke_runs.json (7 disclosed runs, 200,000 pair-steps each); later runs are appended before they start",
+  "runs": [
+    {
+      "arm": "gtm",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "started_at": null,
+      "outcome": "completed"
+    },
+    {
+      "arm": "mlp",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "started_at": null,
+      "outcome": "completed"
+    },
+    {
+      "arm": "atoc",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "started_at": null,
+      "outcome": "completed"
+    },
+    {
+      "arm": "dial",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "started_at": null,
+      "outcome": "completed"
+    },
+    {
+      "arm": "eng",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "started_at": null,
+      "outcome": "completed"
+    },
+    {
+      "arm": "nocomm",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "started_at": null,
+      "outcome": "completed"
+    },
+    {
+      "arm": "gtm",
+      "condition": "closed",
+      "seed": 9001,
+      "steps": 200000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "started_at": null,
+      "outcome": "completed"
+    }
+  ]
+}

@@ -57,7 +57,7 @@ def test_measure_throughput_reports_rates(tmp_path):
 def test_smoke_records_outcome_and_crash(tmp_path):
     ok = throughput.run_smoke("gtm", "registered", tmp_path, total=16,
                               env_factory=_factory(), n_pairs=2, horizon=4,
-                              log_every=8)
+                              log_every=8, ledger=tmp_path / "ledger.json")
     assert ok["outcome"] == "completed" and ok["pair_steps_done"] == 16
     assert ok["all_losses_finite"] and ok["using_stub"] is False
 
@@ -66,7 +66,7 @@ def test_smoke_records_outcome_and_crash(tmp_path):
 
     bad = throughput.run_smoke("mlp", "closed", tmp_path, total=16,
                                env_factory=boom, n_pairs=2, horizon=4,
-                               log_every=8)
+                               log_every=8, ledger=tmp_path / "ledger.json")
     assert bad["outcome"] == "crashed" and "env exploded" in bad["error"]
 
 
@@ -210,11 +210,37 @@ def test_compute_estimate_splits_hosts():
     assert e["kxkm_train_hours"] == pytest.approx(30 * 50e6 / 1290 / 3600)
     # evaluation of all 60 models on KXKM
     assert e["kxkm_eval_hours"] == pytest.approx(60 * 402.0 / 3600)
-    assert e["wall_hours"] == pytest.approx(
-        max(e["macm1_hours"], e["kxkm_train_hours"] + e["kxkm_eval_hours"]))
+    # cross-seed cross-play: 10 cells x 6 fixed pairs, half an evaluation each
+    assert e["kxkm_cross_hours"] == pytest.approx(60 * 0.5 * 402.0 / 3600)
+    kx = e["kxkm_train_hours"] + e["kxkm_eval_hours"] + e["kxkm_cross_hours"]
+    assert e["kxkm_total_hours"] == pytest.approx(kx)
+    assert e["wall_hours"] == pytest.approx(max(e["macm1_hours"], kx))
     assert e["bottleneck_host"] == "macm1"
-    assert e["total_hours"] == pytest.approx(
-        e["macm1_hours"] + e["kxkm_train_hours"] + e["kxkm_eval_hours"])
+    assert e["total_hours"] == pytest.approx(e["macm1_hours"] + kx)
+
+
+def test_manifest_text_includes_cross_play_cost_and_smoke_ledger(tmp_path):
+    (tmp_path / "throughput.json").write_text(json.dumps({"measured_on": "t", "results": {
+        a: {"pair_steps_per_s": 800.0, "agent_samples_per_s": 1600.0,
+            "steady_s_per_update_cycle": 10.0, "pair_steps_per_s_incl_warmup": 780.0,
+            "uptime_before": "up", "uptime_after": "up",
+            "eval_proxy": {"levels": [0, 16], "seconds_per_model_2x200": 100.0,
+                           "label": "PROXY"}}
+        for a in ("gtm", "nocomm")}}))
+    (tmp_path / "smoke_ledger.json").write_text(
+        json.dumps({"max_steps": 1_000_000, "max_per_arm": 3, "runs": [
+            {"arm": "gtm", "condition": "registered"}]}))
+    text = _manifest(tmp_path)
+    assert "cross-seed cross-play probe" in text and "60 passes" in text
+    assert "60 cross-play passes" in text
+    assert "Smoke ledger" in text and "cap 3 per arm" in text
+    assert "ledger lists 1 run(s) but" in text  # no smoke_runs.json beside it
+
+
+def test_gtm_gradient_deviation_no_longer_disclosed(tmp_path):
+    text = _manifest(tmp_path)
+    assert "differs from the GTMBridge" not in text
+    assert "GTMBridge straight-through one-hot" in text
 
 
 def test_frozen_status_line_and_no_draft_word(tmp_path):

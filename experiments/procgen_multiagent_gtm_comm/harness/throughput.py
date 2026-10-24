@@ -26,6 +26,8 @@ import numpy as np
 
 from .codes import ARM_CODES, CONDITION_CODES
 
+PKG = Path(__file__).resolve().parent.parent
+
 # Training levels are start_level=0, num_levels=16; the evaluation-cost
 # proxy replays them (labelled as a proxy: not the 200 held-out levels).
 TRAIN_LEVELS = range(0, 16)
@@ -37,6 +39,70 @@ SMOKE_RUNS: list[tuple[str, str]] = [
     (arm, "registered") for arm in ("gtm", "mlp", "atoc", "dial", "eng", "nocomm")
 ] + [("gtm", "closed")]
 STEADY_SKIP = 2  # discard the first update cycles (mx.compile warm-up)
+
+# Development allowance (amendment, Configuration manifest): smoke runs of at
+# most 1M steps, at most 3 per arm, all disclosed in the manifest. Counted in
+# a persistent ledger BEFORE each run starts (a crashed run still counts).
+SMOKE_MAX_STEPS = 1_000_000
+SMOKE_MAX_PER_ARM = 3
+SMOKE_LEDGER = PKG / "manifest" / "smoke_ledger.json"
+
+
+class SmokeLimitError(RuntimeError):
+    """The development allowance for smoke runs would be exceeded."""
+
+
+def _read_ledger(path: Path) -> dict:
+    if Path(path).exists():
+        return json.loads(Path(path).read_text())
+    return {"max_steps": SMOKE_MAX_STEPS, "max_per_arm": SMOKE_MAX_PER_ARM, "runs": []}
+
+
+def smoke_counts(path: Path = SMOKE_LEDGER) -> dict[str, int]:
+    """Smoke runs already started, per arm (any condition, any outcome)."""
+    out: dict[str, int] = {}
+    for r in _read_ledger(path)["runs"]:
+        out[r["arm"]] = out.get(r["arm"], 0) + 1
+    return out
+
+
+def reserve_smoke(arm: str, condition: str, steps: int,
+                  path: Path = SMOKE_LEDGER) -> int:
+    """Account one smoke run before it starts; raise if the allowance is
+    exceeded. Larger runs exist only on the registered path."""
+    if arm not in ARM_CODES or condition not in CONDITION_CODES:
+        raise ValueError(f"unknown arm/condition {arm!r}/{condition!r}")
+    if steps > SMOKE_MAX_STEPS:
+        raise SmokeLimitError(
+            f"smoke runs are limited to {SMOKE_MAX_STEPS:,} pair-steps "
+            f"(requested {steps:,}); larger runs only via the registered path")
+    if steps < 1:
+        raise ValueError("steps must be >= 1")
+    ledger = _read_ledger(path)
+    used = sum(1 for r in ledger["runs"] if r["arm"] == arm)
+    if used >= SMOKE_MAX_PER_ARM:
+        raise SmokeLimitError(
+            f"arm {arm!r} already used {used} of {SMOKE_MAX_PER_ARM} smoke runs")
+    ledger["runs"].append({
+        "arm": arm, "condition": condition, "seed": SMOKE_SEED, "steps": steps,
+        "levels": "training (start_level=0, num_levels=16)",
+        "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "outcome": "started"})
+    _write_ledger(path, ledger)
+    return len(ledger["runs"]) - 1
+
+
+def finish_smoke(index: int, outcome: str, path: Path = SMOKE_LEDGER) -> None:
+    ledger = _read_ledger(path)
+    ledger["runs"][index]["outcome"] = outcome
+    _write_ledger(path, ledger)
+
+
+def _write_ledger(path: Path, ledger: dict) -> None:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(ledger, indent=2))
+    tmp.replace(path)
 
 
 def _uptime() -> str:
@@ -86,6 +152,10 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
     """
     from .train import train_run
 
+    if n_updates * n_pairs * horizon > SMOKE_MAX_STEPS:
+        raise ValueError(
+            f"throughput measurements are limited to {SMOKE_MAX_STEPS:,} "
+            "pair-steps (development mode)")
     stamps: list[float] = []
 
     def hook(update: int, buf: Any) -> None:  # after rollout, before update
@@ -135,9 +205,17 @@ def run_smoke(arm: str, condition: str, out_dir: Path, *,
               total: int = SMOKE_PAIR_STEPS,
               env_factory: Callable[[int], Any] | None = None,
               n_pairs: int = 64, horizon: int = 128,
-              log_every: int = 25_600) -> dict:
-    """One smoke run; never raises: a crash is recorded, not hidden."""
+              log_every: int = 25_600,
+              ledger: Path = SMOKE_LEDGER) -> dict:
+    """One smoke run; a crash is recorded, not hidden.
+
+    Raises :class:`SmokeLimitError` BEFORE anything starts when the run
+    would exceed 1M steps or the 3-runs-per-arm allowance; the run is
+    entered in the persistent ledger first (training levels only).
+    """
     from .train import train_run
+
+    idx = reserve_smoke(arm, condition, total, ledger)
 
     entry: dict[str, Any] = {
         "arm": arm, "condition": condition, "seed": SMOKE_SEED,
@@ -175,6 +253,7 @@ def run_smoke(arm: str, condition: str, out_dir: Path, *,
         entry.update({"outcome": "crashed", "error": repr(exc),
                       "traceback": traceback.format_exc(),
                       "wall_time_s": time.time() - t0})
+    finish_smoke(idx, entry["outcome"], ledger)
     return entry
 
 
@@ -190,7 +269,12 @@ def main() -> None:
     s.add_argument("--runs-dir", type=Path, required=True)
     s.add_argument("--out", type=Path, required=True)
     s.add_argument("--steps", type=int, default=SMOKE_PAIR_STEPS)
+    s.add_argument("--ledger", type=Path, default=SMOKE_LEDGER,
+                   help="persistent smoke-run accounting (under manifest/)")
     a = p.parse_args()
+    if a.cmd == "smoke" and a.steps > SMOKE_MAX_STEPS:
+        p.error(f"--steps is capped at {SMOKE_MAX_STEPS:,} (development "
+                "allowance); larger runs only via the registered path")
     if a.cmd == "throughput":
         res = {"measured_on": time.strftime("%Y-%m-%d %H:%M:%S %Z"),
                "results": {}}
@@ -204,7 +288,12 @@ def main() -> None:
         runs = []
         a.out.parent.mkdir(parents=True, exist_ok=True)
         for arm, cond in SMOKE_RUNS:
-            e = run_smoke(arm, cond, a.runs_dir, total=a.steps)
+            try:
+                e = run_smoke(arm, cond, a.runs_dir, total=a.steps, ledger=a.ledger)
+            except SmokeLimitError as exc:
+                print(json.dumps({"arm": arm, "condition": cond,
+                                  "skipped": str(exc)}), flush=True)
+                continue
             runs.append(e)
             a.out.write_text(json.dumps(
                 {"smoke_seed": SMOKE_SEED, "pair_steps_each": a.steps,

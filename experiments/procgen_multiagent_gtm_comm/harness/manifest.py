@@ -52,6 +52,12 @@ N_EVAL_MODELS = 60
 # PR #53); the amendment uses 1,290. Evaluation ~6.7 min per model on KXKM.
 KXKM_PAIR_STEPS_PER_S = 1290.0
 KXKM_EVAL_S_PER_MODEL = 402.0
+# Cross-seed cross-play probe (amendment: "about half of one model evaluation
+# per pass"; one intact pass instead of the intact + shuffled pair): 10
+# (arm, condition) cells x 6 fixed seed pairs, all on KXKM.
+N_CROSS_CELLS = 10
+N_CROSS_PAIRS = N_CROSS_CELLS * len(SEEDS)
+CROSS_PASS_EVAL_FRACTION = 0.5
 KXKM_VERSIONS = {  # venv310 on KXKM-AI, recorded 2026-10-23; re-verify at deploy
     "python": "3.10.18", "mlx": "0.31.1", "mlx-cuda-12": "0.31.1",
     "numpy": "1.26.4", "gym3": "0.3.3", "gym": "0.26.2", "procgen": "0.10.7",
@@ -118,8 +124,11 @@ RULINGS = [
     "must contain both. The KXKM-AI settings above refer to them.",
     "Task 9: smoke runs = 1 per arm in the registered condition plus gtm in the "
     "closed condition, 200,000 pair-steps each (7 runs), training levels only. "
-    "The amendment allows up to 3 per arm of up to 1M steps; more may be added "
-    "before the freeze within that cap.",
+    "The amendment allows up to 3 per arm of up to 1M steps; the cap is "
+    "enforced in code (harness/throughput.py) with a persistent ledger "
+    "(manifest/smoke_ledger.json) written before each run starts; train_run "
+    "itself refuses any budget above 1M pair-steps without the registered "
+    "execution context.",
 ]
 
 
@@ -209,8 +218,9 @@ def compute_estimate(results: dict) -> dict:
     macM1 (seeds 0, 17, 42): 6 gtm runs at the measured gtm rate, 24 others
     at the measured nocomm rate (proxy), training only. KXKM-AI (seeds 73,
     101, 131): 30 runs at the KXKM rate, plus the evaluation of all 60
-    models (macM1 checkpoints are copied to KXKM). The hosts run in
-    parallel; the wall time is set by the slower host.
+    models (macM1 checkpoints are copied to KXKM) and the 60 cross-seed
+    cross-play passes (0.5 of one evaluation each, amendment figure). The
+    hosts run in parallel; the wall time is set by the slower host.
     """
     g, n = results["gtm"], results["nocomm"]
 
@@ -222,14 +232,18 @@ def compute_estimate(results: dict) -> dict:
     kx_run = TOTAL_PAIR_STEPS / KXKM_PAIR_STEPS_PER_S / 3600
     kx_train = RUNS_PER_HOST * kx_run
     kx_eval = N_EVAL_MODELS * KXKM_EVAL_S_PER_MODEL / 3600
-    wall = max(mac, kx_train + kx_eval)
+    kx_cross = (N_CROSS_PAIRS * CROSS_PASS_EVAL_FRACTION
+                * KXKM_EVAL_S_PER_MODEL / 3600)
+    kx_total = kx_train + kx_eval + kx_cross
+    wall = max(mac, kx_total)
     return {
         "hours_per_run_gtm": hg, "hours_per_run_nocomm": hn,
         "macm1_hours": mac, "kxkm_hours_per_run": kx_run,
         "kxkm_train_hours": kx_train, "kxkm_eval_hours": kx_eval,
+        "kxkm_cross_hours": kx_cross, "kxkm_total_hours": kx_total,
         "wall_hours": wall, "wall_days": wall / 24,
-        "bottleneck_host": "macm1" if mac >= kx_train + kx_eval else "kxkm",
-        "total_hours": mac + kx_train + kx_eval,
+        "bottleneck_host": "macm1" if mac >= kx_total else "kxkm",
+        "total_hours": mac + kx_total,
         "planning_h_per_run": PLANNING_H_PER_RUN,
         "planning_total_hours": PLANNING_TOTAL_H,
         "exceeds_planning": mac > PLANNING_TOTAL_H,
@@ -289,13 +303,19 @@ def _fmt_estimate(thr: dict | None) -> list[str]:
         f"KXKM-AI uses {KXKM_PAIR_STEPS_PER_S:.0f} pair-steps/s (micro_batch_pairs "
         "= 512 + clear_cache; bench/kxkm/README.md, PR #53). ALL evaluations run on "
         "KXKM-AI (macM1 checkpoints are copied there), about "
-        f"{KXKM_EVAL_S_PER_MODEL / 60:.1f} min per model.", "",
+        f"{KXKM_EVAL_S_PER_MODEL / 60:.1f} min per model, plus the cross-seed "
+        f"cross-play probe: {N_CROSS_CELLS} cells x {len(SEEDS)} fixed pairs = "
+        f"{N_CROSS_PAIRS} passes at {CROSS_PASS_EVAL_FRACTION:g} of one model "
+        "evaluation each (amendment figure; one intact pass instead of the "
+        "intact + shuffled pair).", "",
         f"- macM1: {RUNS_PER_HOST} runs, gtm {e['hours_per_run_gtm']:.1f} h and "
         f"others (nocomm proxy) {e['hours_per_run_nocomm']:.1f} h per run, total "
         f"**{e['macm1_hours']:.0f} h = {e['macm1_hours'] / 24:.1f} days**",
         f"- KXKM-AI: {RUNS_PER_HOST} runs x {e['kxkm_hours_per_run']:.1f} h = "
         f"**{e['kxkm_train_hours']:.0f} h** training, plus "
-        f"{e['kxkm_eval_hours']:.1f} h for the {N_EVAL_MODELS} evaluations",
+        f"{e['kxkm_eval_hours']:.1f} h for the {N_EVAL_MODELS} evaluations and "
+        f"{e['kxkm_cross_hours']:.1f} h for the {N_CROSS_PAIRS} cross-play "
+        f"passes (KXKM total **{e['kxkm_total_hours']:.0f} h**)",
         f"- hosts run in parallel; wall time **{e['wall_hours']:.0f} h = "
         f"{e['wall_days']:.1f} days**, set by {e['bottleneck_host']} (the "
         "bottleneck)",
@@ -311,6 +331,26 @@ def _fmt_estimate(thr: dict | None) -> list[str]:
         lines += ["The measured macM1 estimate is within the amendment's planning "
                   "figure.", ""]
     return lines
+
+
+def _fmt_ledger(led: dict | None, sm: dict | None) -> list[str]:
+    if not led:
+        return ["**Smoke ledger absent** (manifest/smoke_ledger.json): the "
+                "development allowance cannot be audited.", ""]
+    per: dict[str, int] = {}
+    for r in led["runs"]:
+        per[r["arm"]] = per.get(r["arm"], 0) + 1
+    lines = [f"Smoke ledger (persistent, written before each run starts; "
+             f"`manifest/smoke_ledger.json`): {len(led['runs'])} run(s) started, "
+             "per arm " + ", ".join(f"{a} {n}" for a, n in sorted(per.items()))
+             + f"; cap {led['max_per_arm']} per arm and {led['max_steps']:,} "
+             "pair-steps per run, training levels only."]
+    n_sm = len(sm["runs"]) if sm else 0
+    if len(led["runs"]) != n_sm:
+        lines.append(f"**The ledger lists {len(led['runs'])} run(s) but "
+                     f"smoke_runs.json lists {n_sm}; every ledger run counts "
+                     "against the allowance and must be disclosed.**")
+    return [*lines, ""]
 
 
 def _fmt_smoke(sm: dict | None) -> list[str]:
@@ -346,6 +386,7 @@ def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
     out = Path(out)
     thr = _load(out.parent / "throughput.json")
     sm = _load(out.parent / "smoke_runs.json")
+    ledger = _load(out.parent / "smoke_ledger.json")
     if thr:
         _check_levels(thr)
     git = git_state()
@@ -524,6 +565,7 @@ def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
           "`bench/kxkm/README.md` (branch feat/n10c-grad-accum, PR #53).", "",
           "## Smoke runs and development disclosure", ""]
     lines += _fmt_smoke(sm)
+    lines += _fmt_ledger(ledger, sm)
     lines += ["Development used only the stub (unit tests with scripted environments), "
           "these smoke runs and throughput measurements on untrained policies. "
           "Levels 1000-1199 were never touched and no full-length run result was "
