@@ -63,6 +63,8 @@ from .guards import (  # noqa: F401 - re-exported for callers and tests
 )
 
 EXIT_OK, EXIT_ERROR, EXIT_GUARD, EXIT_GPU, EXIT_STOP, EXIT_PROBLEMS = 0, 1, 2, 3, 4, 5
+# KXKM finished its work but macM1 runs / cross-play cells still await `sync`
+EXIT_AWAITING_SYNC = 6
 
 
 def gpu_free_gb(runner: Callable[..., Any] = subprocess.run) -> float | None:
@@ -180,6 +182,7 @@ class Campaign:
         self.archive_fn = archive_fn or rsync_archive
         self.log = log
         self._pinned = False
+        self.cross_summary: dict[str, str] = {}
 
     # -- logging ----------------------------------------------------
     def event(self, **kw) -> None:
@@ -313,45 +316,77 @@ class Campaign:
         ck = self.store.load(spec)["last_checkpoint"]
         return self.run_dir(spec) / ck if ck else None
 
-    def cross_cell_ready(self, arm: str, condition: str) -> bool:
-        """All seeds of the cell exist, are trained or failed, and evaluated."""
+    def cross_verified_digest(self, arm: str, condition: str, seed: int) -> str | None:
+        """SHA-256 of one seed's status-selected checkpoint, verified against
+        the digest recorded at training time immediately before cross-play
+        (None = untrained init). Raises on a missing file or a mismatch."""
+        spec = q.RunSpec(arm, seed, condition)
+        st = self.store.load(spec)
+        rd = self.run_dir(spec)
+        verify_checkpoint(rd, st["last_checkpoint"], st.get("last_checkpoint_sha256"))
+        p = resolve_checkpoint(rd, st["last_checkpoint"])
+        return None if p is None else sha256_file(p)
+
+    def cross_cell_state(self, arm: str, condition: str) -> str:
+        """ready | awaiting_sync (a seed's run is absent) | unresolved (a seed
+        is present but cannot become ready: no terminal status, or its
+        evaluation retries are exhausted)."""
         for seed in q.SEEDS:
             spec = q.RunSpec(arm, seed, condition)
             if not self.store.path(spec).exists():
-                return False
-            st = self.store.load(spec)
-            if st["status"] not in (q.TRAINED, q.TRAINING_FAILURE, q.DONE) \
-                    or not st["eval_done"]:
-                return False
-        return True
+                return "awaiting_sync"
+        for seed in q.SEEDS:
+            st = self.store.load(q.RunSpec(arm, seed, condition))
+            if st["status"] in (q.TRAINED, q.TRAINING_FAILURE, q.DONE) \
+                    and st["eval_done"]:
+                continue
+            if st["status"] in (q.TRAINED, q.TRAINING_FAILURE) and q.needs_eval(st):
+                return "pending_eval"
+            return "unresolved"
+        return "ready"
+
+    def cross_cell_ready(self, arm: str, condition: str) -> bool:
+        """All seeds of the cell exist, are trained or failed, and evaluated."""
+        return self.cross_cell_state(arm, condition) == "ready"
 
     def cross_pass(self) -> bool:
         """Cross-seed cross-play probe for every ready (arm, condition) cell.
 
         KXKM only (x86 Procgen build). Resumable: a pair marked done is never
         repeated; a failed pair is retried up to MAX_EVAL_ATTEMPTS in total.
-        Returns True when every ready cell is complete.
+        Returns True ONLY when all ten cells are complete; ``self.cross_summary``
+        maps every cell to done | awaiting_sync | pending_eval | unresolved |
+        pairs_failed, so incomplete cells are never mistaken for success.
         """
         if self.o.host != "kxkm":
             raise GuardError("the cross-play probe runs only with --host kxkm "
                              "(x86 Procgen build)")
-        complete = True
         out = self.dir / "cross"
+        self.cross_summary = {}
         for arm, condition in q.cross_cells():
-            if not self.cross_cell_ready(arm, condition):
+            cell = q.cross_cell_id(arm, condition)
+            state = self.cross_cell_state(arm, condition)
+            if state != "ready":
+                self.cross_summary[cell] = state
                 continue
             cs = self.cross_store.load(arm, condition)
             for pid, pair in cs["pairs"].items():
                 s0, s1 = pair["seed_role0"], pair["seed_role1"]
                 while q.cross_pair_pending(pair):
-                    ck0 = self.cross_ckpt(arm, condition, s0)
-                    ck1 = self.cross_ckpt(arm, condition, s1)
                     self.event(phase="cross", cell=cs["cell"], pair=pid, state="start")
                     try:
+                        # both digests re-verified right before the pair runs
+                        sha0 = self.cross_verified_digest(arm, condition, s0)
+                        sha1 = self.cross_verified_digest(arm, condition, s1)
+                        ck0 = self.cross_ckpt(arm, condition, s0)
+                        ck1 = self.cross_ckpt(arm, condition, s1)
                         rec = self.cross_fn(ck0, ck1, arm, condition, s0, s1,
                                             env_factory=self.o.env_factory)
                         out.mkdir(parents=True, exist_ok=True)
-                        (out / f"{cs['cell']}-s{s0}-s{s1}.json").write_text(rec.to_json())
+                        body = json.loads(rec.to_json())
+                        body.update(sha256_role0=sha0, sha256_role1=sha1)
+                        (out / f"{cs['cell']}-s{s0}-s{s1}.json").write_text(
+                            json.dumps(body, indent=2))
                     except Exception as exc:  # noqa: BLE001
                         pair["failures"] += 1
                         self.cross_store.save(cs)
@@ -362,14 +397,16 @@ class Campaign:
                     pair.update(done=True, R_cross=float(rec.R_cross),
                                 untrained=ck0 is None or ck1 is None,
                                 ckpt_role0=None if ck0 is None else str(ck0.name),
-                                ckpt_role1=None if ck1 is None else str(ck1.name))
+                                ckpt_role1=None if ck1 is None else str(ck1.name),
+                                sha256_role0=sha0, sha256_role1=sha1)
                     self.cross_store.save(cs)
                     self.event(phase="cross", cell=cs["cell"], pair=pid, state="done",
                                R_cross=pair["R_cross"])
             cs["done"] = all(p["done"] for p in cs["pairs"].values())
             self.cross_store.save(cs)
-            complete = complete and cs["done"]
-        return complete
+            self.cross_summary[cell] = "done" if cs["done"] else "pairs_failed"
+        return all(v == "done" for v in self.cross_summary.values()) \
+            and len(self.cross_summary) == len(q.cross_cells())
 
     def archive(self, spec: q.RunSpec, st: dict) -> None:
         if not self.o.archive_to:
@@ -468,15 +505,37 @@ class Campaign:
             if q.needs_archive(st):
                 self.archive(spec, st)
         states = [self.store.load(s) for s in queue]
-        awaiting = [s for s in q.runs_for_host("macm1")
-                    if can_eval and not self.store.path(s).exists()]
-        self.event(phase="campaign", state="finished", host=self.o.host,
-                   summary=q.summarize(states), awaiting_sync=len(awaiting))
-        problems = [s for s in states if can_eval
-                    and s["status"] in (q.TRAINED, q.TRAINING_FAILURE)
-                    and not s["eval_done"]]
-        cross_ok = self.cross_pass() if can_eval else True
-        return EXIT_PROBLEMS if problems or not cross_ok else EXIT_OK
+        if not can_eval:  # macM1: trains only; evaluation happens on KXKM
+            self.event(phase="campaign", state="finished", host=self.o.host,
+                       summary=q.summarize(states))
+            return EXIT_OK
+        # KXKM: completion needs ALL 60 evaluations and ALL 10 cross-play cells
+        everything = q.build_queue()
+        awaiting, unresolved = [], []
+        for s in everything:
+            if not self.store.path(s).exists():
+                awaiting.append(s.run_id)
+                continue
+            st = self.store.load(s)
+            if not (st["eval_done"] and st["status"] in (q.TRAINED, q.TRAINING_FAILURE, q.DONE)):
+                unresolved.append(s.run_id)
+        cross_ok = self.cross_pass()
+        cross_bad = {c: v for c, v in self.cross_summary.items()
+                     if v in ("unresolved", "pairs_failed")}
+        cross_wait = {c: v for c, v in self.cross_summary.items()
+                      if v in ("awaiting_sync", "pending_eval")}
+        complete = not (awaiting or unresolved or not cross_ok)
+        self.event(phase="campaign", state="complete" if complete else "finished",
+                   host=self.o.host, summary=q.summarize(states),
+                   evaluations_done=len(everything) - len(awaiting) - len(unresolved),
+                   evaluations_required=len(everything),
+                   awaiting_sync=awaiting, unresolved=unresolved,
+                   cross_cells_done=sum(v == "done" for v in self.cross_summary.values()),
+                   cross_cells_required=len(q.cross_cells()),
+                   cross_pending=cross_wait, cross_failed=cross_bad)
+        if unresolved or cross_bad:
+            return EXIT_PROBLEMS
+        return EXIT_OK if complete else EXIT_AWAITING_SYNC
 
 
 CKPT_RE = re.compile(r"^ckpt_(\d+)\.safetensors$")

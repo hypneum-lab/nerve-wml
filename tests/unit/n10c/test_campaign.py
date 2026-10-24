@@ -131,11 +131,11 @@ def _campaign(tmp_path, train, eval_fn=None, gpu=None, archive=None,
 
 def test_full_campaign_runs_all_and_resume_skips_done(tmp_path):
     c, calls = _campaign(tmp_path, lambda n, kw: _rec())
-    assert c.run() == rc.EXIT_OK
+    assert c.run() == rc.EXIT_AWAITING_SYNC
     assert len(calls["train"]) == 30 and len(calls["eval"]) == 30
     assert all(c.store.load(s)["status"] == q.DONE for s in KX)
     c2, calls2 = _campaign(tmp_path, lambda n, kw: _rec())
-    assert c2.run() == rc.EXIT_OK
+    assert c2.run() == rc.EXIT_AWAITING_SYNC
     assert calls2["train"] == [] and calls2["eval"] == []
 
 
@@ -148,7 +148,7 @@ def test_resume_after_interruption_restarts_running_from_scratch(tmp_path):
     c.store.save(st)
     (c.dir / "runs" / first.run_id).mkdir(parents=True)
     (c.dir / "runs" / first.run_id / "partial").write_text("p")
-    assert c.run() == rc.EXIT_OK
+    assert c.run() == rc.EXIT_AWAITING_SYNC
     s = c.store.load(first)
     assert s["status"] == q.DONE and s["infra_failures"] == 1  # counted
     assert (c.dir / "runs" / f"{first.run_id}.failed-1" / "partial").exists()
@@ -172,7 +172,7 @@ def test_infra_restart_capped_at_two_then_training_failure(tmp_path):
     # evaluated at the last finite checkpoint kept from the failed attempts
     ckpt = calls["eval"][0][0]
     assert ckpt is not None and ckpt.resolve().exists()
-    assert code == rc.EXIT_OK
+    assert code == rc.EXIT_AWAITING_SYNC
     c2, calls2 = _campaign(tmp_path, _boom_first)
     c2.run()
     assert calls2["train"] == [] and calls2["eval"] == []
@@ -202,7 +202,7 @@ def test_tmp_checkpoint_never_picked(tmp_path):
 
 def test_exhausted_before_run_dir_created_still_evaluates(tmp_path):
     c, calls = _campaign(tmp_path, _boom_first, ckpts=False, mkdir=False)
-    assert c.run() == rc.EXIT_OK
+    assert c.run() == rc.EXIT_AWAITING_SYNC
     s = c.store.load(FIRST)
     assert s["eval_done"] and s["eval_failures"] == 0
     assert calls["eval"][0][0] is None
@@ -233,7 +233,7 @@ def test_infra_failure_then_success(tmp_path):
             raise RuntimeError("procgen stub in use")
         return _rec()
     c, calls = _campaign(tmp_path, flaky)
-    assert c.run() == rc.EXIT_OK
+    assert c.run() == rc.EXIT_AWAITING_SYNC
     assert calls["train"][0] == calls["train"][1]
     assert c.store.load(FIRST)["infra_failures"] == 1
 
@@ -245,7 +245,7 @@ def test_training_failure_not_retried_and_evaluated_untrained(tmp_path):
                         last_checkpoint=None, failure_reason="nan")
         return _rec()
     c, calls = _campaign(tmp_path, tf)
-    assert c.run() == rc.EXIT_OK
+    assert c.run() == rc.EXIT_AWAITING_SYNC
     first = FIRST
     s = c.store.load(first)
     assert s["status"] == q.TRAINING_FAILURE and s["eval_done"]
@@ -262,7 +262,7 @@ def test_eval_only_after_training_and_eval_retry_does_not_retrain(tmp_path):
             raise RuntimeError("eval crash")
         return _Eval()
     c, calls = _campaign(tmp_path, lambda n, kw: _rec(), eval_fn=ev)
-    assert c.run() == rc.EXIT_OK
+    assert c.run() == rc.EXIT_AWAITING_SYNC
     assert calls["train"].count(FIRST_TAG) == 1
     assert c.store.load(FIRST)["eval_failures"] == 1
 
@@ -289,7 +289,7 @@ def test_archive_called_and_failure_nonfatal(tmp_path):
             raise RuntimeError("rsync down")
     c, _ = _campaign(tmp_path, lambda n, kw: _rec(), archive=arch,
                      archive_to="u@h:/p")
-    assert c.run() == rc.EXIT_OK
+    assert c.run() == rc.EXIT_AWAITING_SYNC
     assert len(got) == 30
     assert not c.store.load(FIRST)["archived"]
     assert c.store.load(SECOND)["archived"]
@@ -379,7 +379,7 @@ def test_gpu_free_parsing_and_missing_smi(monkeypatch):
 
 def test_kxkm_campaign_touches_only_its_own_runs(tmp_path):
     c, calls = _campaign(tmp_path, lambda n, kw: _rec(), host="kxkm")
-    assert c.run() == rc.EXIT_OK
+    assert c.run() == rc.EXIT_AWAITING_SYNC
     assert len(calls["train"]) == 30 and len(calls["eval"]) == 30
     assert {int(t.rsplit("/", 1)[1]) for t in calls["train"]} == {73, 101, 131}
     # the other host's runs were never touched (no status file written)
@@ -473,7 +473,7 @@ def test_kxkm_evaluates_synced_macm1_runs_but_never_trains_them(tmp_path):
         rd.mkdir(parents=True)
         (rd / st["last_checkpoint"]).write_text("x")
         kx.store.save(dict(st, synced_from="macm1", synced=False))
-    assert kx.run() == rc.EXIT_OK
+    assert kx.run() == rc.EXIT_AWAITING_SYNC
     trained = {int(t.rsplit("/", 1)[1]) for t in calls["train"]}
     assert trained == {73, 101, 131}  # never trains macM1 seeds
     assert len(calls["eval"]) == 30 + 3
@@ -870,7 +870,7 @@ def test_train_run_receives_exactly_the_host_settings(tmp_path, host):
         return _rec()
 
     c, calls = _campaign(tmp_path, train, host=host)
-    assert c.run() == rc.EXIT_OK
+    assert c.run() == (rc.EXIT_OK if host == "macm1" else rc.EXIT_AWAITING_SYNC)
     assert len(seen) == 30
     assert all(s == codes.HOST_SETTINGS[host] for s in seen)
 
@@ -879,7 +879,7 @@ def test_host_settings_recorded_in_status_file(tmp_path):
     from experiments.procgen_multiagent_gtm_comm.harness import codes
 
     c, _ = _campaign(tmp_path, lambda n, kw: _rec(), host="kxkm")
-    assert c.run() == rc.EXIT_OK
+    assert c.run() == rc.EXIT_AWAITING_SYNC
     for s in KX:
         assert c.store.load(s)["train_settings"] == codes.HOST_SETTINGS["kxkm"]
 
@@ -953,7 +953,7 @@ def test_cross_probe_runs_for_every_complete_cell_in_fixed_pairing(tmp_path):
 
 def test_cross_probe_waits_until_every_seed_of_the_cell_is_evaluated(tmp_path):
     kx, calls = _campaign(tmp_path, lambda n, k: _rec(), host="kxkm")
-    assert kx.run() == rc.EXIT_OK  # macM1 seeds never synced
+    assert kx.run() == rc.EXIT_AWAITING_SYNC  # macM1 seeds never synced
     assert calls["cross"] == []
 
 
@@ -961,7 +961,7 @@ def test_cross_probe_partial_cell_is_skipped(tmp_path):
     kx, calls = _full_kx(tmp_path)
     victim = q.RunSpec("gtm", 0, "registered")
     kx.store.path(victim).unlink()  # one macM1 run not synced
-    assert kx.run() == rc.EXIT_OK
+    assert kx.run() == rc.EXIT_AWAITING_SYNC
     cells = {(a, c) for _, _, a, c, _, _ in calls["cross"]}
     assert ("gtm", "registered") not in cells and len(cells) == 9
 
@@ -1035,7 +1035,7 @@ def test_kxkm_without_push_target_marks_archive_via_pull(tmp_path):
     got = []
     c, _ = _campaign(tmp_path, lambda n, kw: _rec(), host="kxkm",
                      archive=lambda *a: got.append(a))
-    assert c.run() == rc.EXIT_OK
+    assert c.run() == rc.EXIT_AWAITING_SYNC
     assert got == []  # nothing pushed from KXKM
     for s in KX:
         st = c.store.load(s)
@@ -1305,3 +1305,81 @@ def test_freeze_prepare_refuses_bad_inputs(tmp_path):
         fp.prepare(repo, TAG, "stage2-manifest-DRAFT.md")
     with pytest.raises(ValueError, match="not a valid frozen"):
         fp.prepare(repo, TAG, "x.md", write_manifest=lambda o, t: o.write_text("Status: DRAFT"))
+
+
+# ---- completion = 60 evaluations + 10 cross-play cells (round 2) --------
+
+def test_cross_pass_is_false_when_no_cell_is_ready(tmp_path):
+    kx, calls = _campaign(tmp_path, lambda n, k: _rec(), host="kxkm")
+    assert kx.cross_pass() is False  # Codex: used to return True
+    assert set(kx.cross_summary.values()) == {"awaiting_sync"}
+    assert len(kx.cross_summary) == 10 and calls["cross"] == []
+
+
+def test_awaiting_sync_is_not_complete_and_is_reported(tmp_path):
+    events = []
+    kx, calls = _campaign(tmp_path, lambda n, k: _rec(), host="kxkm")
+    kx.log = events.append
+    assert kx.run() == rc.EXIT_AWAITING_SYNC != rc.EXIT_OK
+    last = json.loads(events[-1])
+    assert last["state"] == "finished" and last["evaluations_required"] == 60
+    assert last["evaluations_done"] == 30 and len(last["awaiting_sync"]) == 30
+    assert last["cross_cells_done"] == 0 and last["cross_cells_required"] == 10
+
+
+def test_complete_requires_all_60_evaluations_and_10_cells(tmp_path):
+    events = []
+    kx, calls = _full_kx(tmp_path)
+    kx.log = events.append
+    assert kx.run() == rc.EXIT_OK
+    last = json.loads(events[-1])
+    assert last["state"] == "complete" and last["evaluations_done"] == 60
+    assert last["cross_cells_done"] == 10 and last["awaiting_sync"] == []
+    assert kx.cross_pass() is True
+
+
+def test_exhausted_macm1_evaluation_makes_the_campaign_fail_not_succeed(tmp_path):
+    # Codex: a synced macM1 evaluation exhausting its retries left cross-play
+    # incomplete while KXKM returned success
+    def bad_eval(ckpt, arm, cond, seed):
+        if (arm, cond, seed) == ("gtm", "registered", 0):
+            raise RuntimeError("eval boom")
+        return _Eval()
+
+    kx, calls = _full_kx(tmp_path, eval_fn=bad_eval)
+    assert kx.run() == rc.EXIT_PROBLEMS
+    assert kx.cross_summary["registered-gtm"] in ("unresolved", "pending_eval")
+    assert kx.cross_pass() is False
+    assert not any(a == "gtm" and c == "registered" for _, _, a, c, _, _ in calls["cross"])
+
+
+# ---- cross-play re-verifies both checkpoint digests (round 2) -----------
+
+def test_cross_records_both_checkpoint_digests_in_the_pair_result(tmp_path):
+    kx, calls = _full_kx(tmp_path)
+    assert kx.run() == rc.EXIT_OK
+    for pair_file in ("registered-gtm-s0-s17", "registered-gtm-s131-s0"):
+        rec = json.loads((kx.dir / "cross" / f"{pair_file}.json").read_text())
+        assert rec["sha256_role0"] == hashlib.sha256(b"x").hexdigest()
+        assert rec["sha256_role1"] == hashlib.sha256(b"x").hexdigest()
+    st = json.loads((kx.dir / "cross_status" / "registered-gtm.json").read_text())
+    assert st["pairs"]["0-17"]["sha256_role0"] and st["pairs"]["0-17"]["sha256_role1"]
+
+
+def test_cross_refuses_a_checkpoint_changed_after_self_play(tmp_path):
+    kx, calls = _full_kx(tmp_path)
+    kx.pin({})
+    for s in q.build_queue():  # evaluations already done by a previous process
+        stt = kx.store.load(s)
+        stt.update(status=q.DONE, eval_done=True, archived=True,
+                   last_checkpoint_sha256=hashlib.sha256(b"x").hexdigest())
+        kx.store.save(stt)
+    spec = q.RunSpec("gtm", 17, "registered")
+    (kx.run_dir(spec) / kx.store.load(spec)["last_checkpoint"]).write_text("changed")
+    assert kx.run() == rc.EXIT_PROBLEMS
+    st = json.loads((kx.dir / "cross_status" / "registered-gtm.json").read_text())
+    assert st["pairs"]["0-17"]["failures"] == q.MAX_EVAL_ATTEMPTS  # role 1 = seed 17
+    assert st["pairs"]["17-42"]["failures"] == q.MAX_EVAL_ATTEMPTS  # role 0 = seed 17
+    assert st["pairs"]["42-73"]["done"] and kx.cross_summary["registered-gtm"] == "pairs_failed"
+    assert not any(17 in (c[4], c[5]) for c in calls["cross"]
+                   if (c[2], c[3]) == ("gtm", "registered"))
