@@ -1,6 +1,6 @@
 # N10-C — Pre-registration amendment 2026-10-23: estimation reframing, engineered reference sender and side-channel control
 
-**Status:** DRAFT — not yet frozen or registered (committed by a frozen git tag, then registered on OSF referencing the tag ; see Filing)
+**Status:** FROZEN by tag n10c-freeze-20261024 (stage 1 + stage 2 manifest); OSF registration to follow
 **Amends:** `docs/milestones/n10c-procgen-multiagent-gtm-comm-2026-05-11.md` (pre-registered 2026-05-11, commit `1640c5c`)
 **Date drafted:** 2026-10-23 (revised the same day for the second round of PI decisions: items 7-10 of the summary; draft edits only, nothing filed)
 **OSF registration:** no N10-C-specific OSF identifier is recorded in this repository. The programme-level OSF pre-registration is [10.17605/OSF.IO/Q6JYN](https://doi.org/10.17605/OSF.IO/Q6JYN) (dreamOfkiki, locked 2026-04-19).
