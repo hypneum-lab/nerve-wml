@@ -174,3 +174,81 @@ def test_plasticity_scale_endpoints_and_monotone():
     vals = [plasticity_scale(u, 1000) for u in range(0, 1001, 50)]
     assert all(a >= b for a, b in zip(vals, vals[1:], strict=False))
     assert plasticity_scale(500, 1000) == pytest.approx(0.55)
+
+
+# -- GTMBridge straight-through path (pre-freeze fix, item 6) ---------------
+def _gtm_logits_and_noise(comm, x, key):
+    logits = comm.encode_logits(x).reshape(x.shape[0], 4, 16)
+    return logits, mx.random.gumbel(logits.shape, key=key)
+
+
+def _st_onehot(logits, g):
+    soft = mx.softmax(logits + g, axis=-1)
+    hard = mx.eye(16, dtype=mx.float32)[mx.argmax(logits + g, axis=-1)]
+    return hard + (soft - mx.stop_gradient(soft))
+
+
+def test_gtm_train_message_is_the_st_onehot_equal_to_hard_symbols():
+    comm = make_comm("gtm", mx.random.key(21))
+    x, h, _ = _inputs()
+    key = mx.random.key(22)
+    msg, bits = comm.send(x, train=True, key=key, eng_bits=None)
+    assert msg.shape == (B, 64)  # [K=4, A=16] one-hot, flattened
+    oh = np.array(msg).reshape(B, 4, 16)
+    assert set(np.unique(oh)).issubset({0.0, 1.0}) and (oh.sum(-1) == 1).all()
+    # value identical to the hard symbols the bus carries
+    expect = np.array(mx.eye(16)[mx.array(oh.argmax(-1))] @ CODE_TABLE).reshape(B, 16)
+    assert np.array_equal(expect, np.array(bits))
+
+
+def test_gtm_training_gradient_is_the_gtmbridge_onehot_st_path():
+    comm = make_comm("gtm", mx.random.key(23))
+    x, h, _ = _inputs()
+    key = mx.random.key(24)
+
+    def new_loss(params):
+        comm.update(params)
+        msg, _ = comm.send(x, train=True, key=key, eng_bits=None)
+        return (comm.receive(msg, h) ** 2).sum()
+
+    def reference_loss(params):  # GTMBridge: receiver consumes the ST one-hot
+        comm.update(params)
+        logits, g = _gtm_logits_and_noise(comm, x, key)
+        oh = _st_onehot(logits, g)
+        return (_receive_onehot(comm, oh, h) ** 2).sum()
+
+    def old_loss(params):  # old path: ST one-hot -> bits -> product one-hot
+        comm.update(params)
+        logits, g = _gtm_logits_and_noise(comm, x, key)
+        bits = (_st_onehot(logits, g) @ CODE_TABLE).reshape(B, 16)
+        return (_receive_onehot(comm, onehot_from_bits(bits), h) ** 2).sum()
+
+    p = comm.trainable_parameters()
+    gn = mx.grad(new_loss)(p)["encode_logits"]["weight"]
+    gr = mx.grad(reference_loss)(p)["encode_logits"]["weight"]
+    go = mx.grad(old_loss)(p)["encode_logits"]["weight"]
+    assert float(mx.abs(gn).sum()) > 0
+    np.testing.assert_allclose(np.array(gn), np.array(gr), rtol=1e-5, atol=1e-7)
+    assert not np.allclose(np.array(gn), np.array(go), rtol=1e-3, atol=1e-6)
+
+
+def _receive_onehot(comm, oh, h):
+    mux = GammaThetaMultiplexerMLX(GTMConfigMLX(), comm.constellation)
+    carrier = mux.carrier_from_onehot(oh)
+    pooled = carrier @ comm._pool
+    iq = (oh @ comm.constellation).reshape(oh.shape[0], 8)
+    return comm.decode(mx.concatenate([pooled, iq], axis=-1))
+
+
+def test_gtm_eval_receive_rebuilds_onehot_from_bits_identically():
+    comm = make_comm("gtm", mx.random.key(25))
+    x, h, _ = _inputs()
+    msg, bits = comm.send(x, train=False, key=None, eng_bits=None)
+    assert msg.shape == (B, 16)
+    oh = mx.eye(16, dtype=mx.float32)[bits_to_indices(bits)]
+    np.testing.assert_allclose(np.array(comm.receive(msg, h)),
+                               np.array(_receive_onehot(comm, oh, h)), atol=1e-6)
+    # the train-time one-hot message and the rebuilt-from-bits one agree
+    tmsg, tbits = comm.send(x, train=True, key=mx.random.key(26), eng_bits=None)
+    np.testing.assert_allclose(np.array(comm.receive(tmsg, h)),
+                               np.array(comm.receive(tbits, h)), atol=1e-6)

@@ -80,11 +80,12 @@ RULINGS = [
     "R1: the harness venv (Python 3.10) has no scipy (uv.lock pins scipy 1.17, "
     "which needs Python >= 3.11); the analysis code runs in the repo environment.",
     "R2: GTM message over the 16-bit bus = 4-bit binary code (MSB first) of each "
-    "of the 4 symbol indices; in training the straight-through one-hot is mapped "
-    "to bits by a fixed table (value = hard bits, gradient through the softmax), "
-    "and the receiver rebuilds a differentiable one-hot per symbol as "
-    "prod_j (b_j if CODE_TABLE[a,j] = 1 else 1 - b_j), exact for hard bits. This "
-    "gradient path differs from the GTMBridge soft-IQ path of the earlier code.",
+    "of the 4 symbol indices (the bus carries and validates these 16 hard bits). "
+    "In training the receiver gets the GTMBridge straight-through one-hot "
+    "[K=4, A=16] directly (value identical to the hard symbols, gradient through "
+    "the Gumbel-softmax); at evaluation and in the cross-play and shuffle probes "
+    "it rebuilds the same one-hot from the 16 bits as prod_j (b_j if CODE_TABLE[a,j] "
+    "= 1 else 1 - b_j), exact for hard bits (identical forward).",
     "R3: train_run takes keyword arguments log_every_pair_steps and "
     "ckpt_every_pair_steps (defaults 1,000,000).",
     "Task 4: the IMPALA trunk is duplicated between policy.py (live) and "
@@ -413,8 +414,9 @@ def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
           "- Training: Gumbel-softmax sample, tau = 1.0, hard one-hot with "
           "straight-through gradient; evaluation: argmax symbols (deterministic).",
           "- Bus mapping (ruling R2): each symbol index -> 4-bit binary code, MSB "
-          "first, giving 4 x 4 = 16 bits.",
-          f"- Receiver: rebuilds the one-hot from bits, multiplexes the carrier "
+          "first, giving 4 x 4 = 16 bits (validated on the bus).",
+          f"- Receiver: takes the straight-through one-hot directly in training "
+          f"(rebuilt from the 16 bits at evaluation), multiplexes the carrier "
           f"with the GTM (gamma {cfg.gamma_hz} Hz, theta {cfg.theta_hz} Hz, sample "
           f"rate {cfg.sample_rate_hz} Hz, {cfg.symbols_per_theta} symbols per "
           "theta), adaptive mean-pool of the carrier to 64 samples (pool 64), "

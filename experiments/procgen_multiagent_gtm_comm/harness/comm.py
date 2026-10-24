@@ -229,11 +229,17 @@ class GTMComm(Comm):
         # hard one-hot of the noisy sample, ST gradient through the softmax
         hard_oh = mx.eye(ALPHABET, dtype=mx.float32)[mx.argmax(logits + g, axis=-1)]
         st = hard_oh + (soft - mx.stop_gradient(soft))  # value == hard_oh exactly
-        msg = (st @ CODE_TABLE).reshape(x.shape[0], N_BITS)
-        return msg, (hard_oh @ CODE_TABLE).reshape(x.shape[0], N_BITS)
+        # GTMBridge straight-through path: the receiver gets the ST one-hot
+        # [K, A] itself (flattened to [B, K*A]); the bus still validates the
+        # 16 hard bits returned alongside.
+        return (st.reshape(x.shape[0], K_SYMBOLS * ALPHABET),
+                (hard_oh @ CODE_TABLE).reshape(x.shape[0], N_BITS))
 
     def receive(self, msg, h):
-        oh = onehot_from_bits(msg)  # [B, 4, 16]
+        if msg.shape[-1] == K_SYMBOLS * ALPHABET:  # training: ST one-hot
+            oh = msg.reshape(msg.shape[0], K_SYMBOLS, ALPHABET)
+        else:  # evaluation / probes: rebuild the one-hot from the 16 bits
+            oh = onehot_from_bits(msg)  # [B, 4, 16], exact for hard bits
         mux = GammaThetaMultiplexerMLX(self._cfg, self.constellation)
         carrier = mux.carrier_from_onehot(oh)  # [B, T]
         pooled = carrier @ self._pool  # adaptive mean-pool -> [B, 64]

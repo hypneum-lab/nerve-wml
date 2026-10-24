@@ -109,12 +109,12 @@ class PairPolicy(nn.Module):
         msg, hard = self.comm.send(
             self.to_msg(h), train=train, key=key, eng_bits=eb, noise=nz
         )
-        msg_p = msg.reshape(b, 2, N_BITS)
+        msg_p = msg.reshape(b, 2, -1)  # 16 bits, or the GTM ST one-hot (64)
         if recv_bits is None:
             msg_in = mx.stack([msg_p[:, 1], msg_p[:, 0]], axis=1)
         else:
             msg_in = recv_bits.astype(msg_p.dtype)
-        msg_in = msg_in.reshape(b * 2, N_BITS)
+        msg_in = msg_in.reshape(b * 2, -1)
         recv = self.comm.receive(msg_in, h)
         z = mx.concatenate([h, recv, summary.reshape(b * 2, SUMMARY_DIM)], axis=-1)
         z = nn.relu(self.fuse(z))
