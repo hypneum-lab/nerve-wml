@@ -6,7 +6,7 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 
 ## 1. Commit, integer codes and bus
 
-- Harness commit at manifest time: `70a104a981da5145bb018b8ada7b801a2c4df2e8` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
+- Harness commit at manifest time: `491011ec1e492d33cf7e87490d69d7dad9ea8732` (source: N10C_COMMIT env). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
 - Code identity independent of git (SHA-256 of each file at manifest time):
 
 | file | SHA-256 |
@@ -14,15 +14,15 @@ Registration: N10-C amendment of 2026-10-23, configuration manifest (stage 2). I
 | `experiments/procgen_multiagent_gtm_comm/coop_env.py` | `9fcf95ea0736f7e7821e4872d587ce1c98f1114506095f1eaa11639bba253873` |
 | `experiments/procgen_multiagent_gtm_comm/harness/__init__.py` | `82d6bfc42ee49ac2c985f1463ca97a7cc7f36cb74218ce296702f05be4701e56` |
 | `experiments/procgen_multiagent_gtm_comm/harness/bus.py` | `1bb3bc23aec588da8bfb73864215e00ee5a4510324ff3d1045bb0b9af21703c2` |
-| `experiments/procgen_multiagent_gtm_comm/harness/codes.py` | `be5208212e135a17315e7f51e7837aacd7be8a1ca5bcce185f49f1b3cccbe1da` |
-| `experiments/procgen_multiagent_gtm_comm/harness/comm.py` | `88bc176ab933cde3dfb2849c66b08c8b8dc5244566758a84f6255c3e7904a98d` |
-| `experiments/procgen_multiagent_gtm_comm/harness/evaluate.py` | `44a407f539ac212fda7cdb6adfc72a505b9c2a281329322bbbb517de1080b82f` |
+| `experiments/procgen_multiagent_gtm_comm/harness/codes.py` | `5c266eb2363655cc159ed8d03d9c9c8adb9b6dac4c083f7788af970aab96e7c8` |
+| `experiments/procgen_multiagent_gtm_comm/harness/comm.py` | `7a9a27c6906d3b320ba47aad1bf6e80ee92ff5883f00ec426ad541a798e492d1` |
+| `experiments/procgen_multiagent_gtm_comm/harness/evaluate.py` | `dbee3358173bd303ca0d74ebf74759ef01ac7a319a3c0f73fd1f939ea798b376` |
 | `experiments/procgen_multiagent_gtm_comm/harness/gtm_mlx.py` | `daba415dcf627927c9545501f4c8592448b8e1f4667dc50b0de0459385f92faf` |
-| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `dee82e9398966566e27f72b2a29eb400f9b96233aedf77eb7cfb14ad3a7ba388` |
-| `experiments/procgen_multiagent_gtm_comm/harness/policy.py` | `b1fc49bcb2b0648ba74aaef2b8d2d6aec1e6a6935ff19651a97251bc756b9826` |
+| `experiments/procgen_multiagent_gtm_comm/harness/manifest.py` | `dccc53ca4450a5a968496dd6c9140962420b647099c9b51e7b0a763e000043b0` |
+| `experiments/procgen_multiagent_gtm_comm/harness/policy.py` | `15b8e8a0209600e4f550266fb607d14786b857cab6289e509800e2b450de919d` |
 | `experiments/procgen_multiagent_gtm_comm/harness/rollout.py` | `5f291b8c99eed91e1bd62320b842ed2b51af349297da7340b11901e962aa65a5` |
-| `experiments/procgen_multiagent_gtm_comm/harness/throughput.py` | `f0c03a4eb62184a114b83c3ba6a839b6542dc067a5728a64580477f234de616f` |
-| `experiments/procgen_multiagent_gtm_comm/harness/train.py` | `579d8c473930b9049f719e7c2c553bd16a648a99bf4997f9eea49acbf762042d` |
+| `experiments/procgen_multiagent_gtm_comm/harness/throughput.py` | `59107bccee04c2b6f2d657d3020432c5dc4630f0162898d127ec39f5d4facbb6` |
+| `experiments/procgen_multiagent_gtm_comm/harness/train.py` | `0c82fcbccdc51d0cf8ad810dc3538bc5620451ffe88d3d975ca0fe953e563bf0` |
 | `experiments/procgen_multiagent_gtm_comm/harness/vec_env.py` | `81b8b8446916bd7eb5015be472fae5b1bc55aea3c01cfd2f4ac1b6d8a69e2d2a` |
 | `experiments/procgen_multiagent_gtm_comm/harness/requirements.lock` | `8609ef54bb4d5879bcd4159fa45624048da05b4e077e15ca2bee748fa09724e8` |
 
@@ -57,8 +57,8 @@ Comm modules (encoder/decoder sizes):
 
 - K = 4 symbols per message from an alphabet A = 16; sender head Linear(64 -> 64) reshaped to [4, 16] logits.
 - Training: Gumbel-softmax sample, tau = 1.0, hard one-hot with straight-through gradient; evaluation: argmax symbols (deterministic).
-- Bus mapping (ruling R2): each symbol index -> 4-bit binary code, MSB first, giving 4 x 4 = 16 bits.
-- Receiver: rebuilds the one-hot from bits, multiplexes the carrier with the GTM (gamma 40.0 Hz, theta 6.0 Hz, sample rate 1000.0 Hz, 4 symbols per theta), adaptive mean-pool of the carrier to 64 samples (pool 64), concatenated with the 8 IQ coordinates of the 4 symbols, then Linear(72 -> 64).
+- Bus mapping (ruling R2): each symbol index -> 4-bit binary code, MSB first, giving 4 x 4 = 16 bits (validated on the bus).
+- Receiver: takes the straight-through one-hot directly in training (rebuilt from the 16 bits at evaluation), multiplexes the carrier with the GTM (gamma 40.0 Hz, theta 6.0 Hz, sample rate 1000.0 Hz, 4 symbols per theta), adaptive mean-pool of the carrier to 64 samples (pool 64), concatenated with the 8 IQ coordinates of the 4 symbols, then Linear(72 -> 64).
 - Constellation: 16-PSK initialisation + 0.01 N(0, 1), trainable; cosine plasticity schedule 1.0 -> 0.1 over the run's total updates (multiplies the constellation gradient).
 
 ### PPO and training settings
@@ -91,10 +91,10 @@ Evaluation cost is a **proxy**: an untrained policy, intact + shuffled passes ov
 
 ### Compute estimate including evaluation
 
-Option D on two hosts: 60 runs (36 registered + 24 closed), each 50,000,000 pair-steps, 30 per host. macM1 uses the gtm rate for its 6 gtm runs and the nocomm rate as a proxy for its 24 other runs (mlp, atoc, dial, eng were not throughput-measured). KXKM-AI uses 1290 pair-steps/s (micro_batch_pairs = 512 + clear_cache; bench/kxkm/README.md, PR #53). ALL evaluations run on KXKM-AI (macM1 checkpoints are copied there), about 6.7 min per model.
+Option D on two hosts: 60 runs (36 registered + 24 closed), each 50,000,000 pair-steps, 30 per host. macM1 uses the gtm rate for its 6 gtm runs and the nocomm rate as a proxy for its 24 other runs (mlp, atoc, dial, eng were not throughput-measured). KXKM-AI uses 1290 pair-steps/s (micro_batch_pairs = 512 + clear_cache; bench/kxkm/README.md, PR #53). ALL evaluations run on KXKM-AI (macM1 checkpoints are copied there), about 6.7 min per model, plus the cross-seed cross-play probe: 10 cells x 6 fixed pairs = 60 passes at 0.5 of one model evaluation each (amendment figure; one intact pass instead of the intact + shuffled pair).
 
 - macM1: 30 runs, gtm 17.9 h and others (nocomm proxy) 17.2 h per run, total **521 h = 21.7 days**
-- KXKM-AI: 30 runs x 10.8 h = **323 h** training, plus 6.7 h for the 60 evaluations
+- KXKM-AI: 30 runs x 10.8 h = **323 h** training, plus 6.7 h for the 60 evaluations and 3.4 h for the 60 cross-play passes (KXKM total **333 h**)
 - hosts run in parallel; wall time **521 h = 21.7 days**, set by macm1 (the bottleneck)
 - amendment planning figure: macM1 about 17.6 h per run, about 528 h (22 days); KXKM about 324 h
 
@@ -153,6 +153,8 @@ On both Metal and CUDA, MLX 0.31.1 convolution backward in the IMPALA trunk is n
 | nocomm | registered | completed | 200000 | 256 | 782 | 217 | 0.00 | True |
 | gtm | closed | completed | 200000 | 255 | 784 | 1304 | 0.13 | True |
 
+Smoke ledger (persistent, written before each run starts; `manifest/smoke_ledger.json`): 7 run(s) started, per arm atoc 1, dial 1, eng 1, gtm 2, mlp 1, nocomm 1; cap 3 per arm and 1,000,000 pair-steps per run, training levels only.
+
 Development used only the stub (unit tests with scripted environments), these smoke runs and throughput measurements on untrained policies. Levels 1000-1199 were never touched and no full-length run result was used.
 
 ## Artefact archiving (PI decision 2026-10-23)
@@ -162,7 +164,7 @@ After each run and each evaluation, the run directory (`run.json`, checkpoints, 
 ## Implementation rulings disclosed
 
 - R1: the harness venv (Python 3.10) has no scipy (uv.lock pins scipy 1.17, which needs Python >= 3.11); the analysis code runs in the repo environment.
-- R2: GTM message over the 16-bit bus = 4-bit binary code (MSB first) of each of the 4 symbol indices; in training the straight-through one-hot is mapped to bits by a fixed table (value = hard bits, gradient through the softmax), and the receiver rebuilds a differentiable one-hot per symbol as prod_j (b_j if CODE_TABLE[a,j] = 1 else 1 - b_j), exact for hard bits. This gradient path differs from the GTMBridge soft-IQ path of the earlier code.
+- R2: GTM message over the 16-bit bus = 4-bit binary code (MSB first) of each of the 4 symbol indices (the bus carries and validates these 16 hard bits). In training the receiver gets the GTMBridge straight-through one-hot [K=4, A=16] directly (value identical to the hard symbols, gradient through the Gumbel-softmax); at evaluation and in the cross-play and shuffle probes it rebuilds the same one-hot from the 16 bits as prod_j (b_j if CODE_TABLE[a,j] = 1 else 1 - b_j), exact for hard bits (identical forward).
 - R3: train_run takes keyword arguments log_every_pair_steps and ckpt_every_pair_steps (defaults 1,000,000).
 - Task 4: the IMPALA trunk is duplicated between policy.py (live) and bench/bench_ppo_mlx.py (frozen archived evidence); never run together.
 - Task 6: advantage normalisation is applied per minibatch (as in common Procgen PPO baselines); this is a PPO detail not in the registered list.
@@ -172,4 +174,4 @@ After each run and each evaluation, the run directory (`run.json`, checkpoints, 
 - Task 6: GTM and DIAL message noise is stored per pair-step in the rollout and replayed in the PPO update (so the PPO ratio is 1 for an unchanged policy).
 - Task 7: evaluation action sampling = one uniform per agent per step (agent 0 then agent 1) from default_rng([20261023, j]), inverse CDF on the float64 softmax; identical across passes and models. Evaluation episodes are capped at 5,000 steps (an error, not an outcome). Evaluation messages are deterministic (GTM argmax symbols).
 - R4: gradient accumulation (micro_batch_pairs, clear_cache; PR #53) and n_workers (PR #54) are merged into the harness branch; the freeze commit must contain both. The KXKM-AI settings above refer to them.
-- Task 9: smoke runs = 1 per arm in the registered condition plus gtm in the closed condition, 200,000 pair-steps each (7 runs), training levels only. The amendment allows up to 3 per arm of up to 1M steps; more may be added before the freeze within that cap.
+- Task 9: smoke runs = 1 per arm in the registered condition plus gtm in the closed condition, 200,000 pair-steps each (7 runs), training levels only. The amendment allows up to 3 per arm of up to 1M steps; the cap is enforced in code (harness/throughput.py) with a persistent ledger (manifest/smoke_ledger.json) written before each run starts; train_run itself refuses any budget above 1M pair-steps without the registered execution context.
