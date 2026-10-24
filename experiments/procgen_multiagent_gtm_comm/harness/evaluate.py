@@ -36,6 +36,7 @@ import numpy as np
 
 from experiments.procgen_multiagent_gtm_comm.coop_env import ProcgenCoopEnv
 
+from ..campaign import guards
 from .bus import MessageBus
 from .codes import ARM_CODES, CONDITION_CODES, SEEDS, init_key_int
 from .policy import PairPolicy
@@ -253,8 +254,13 @@ def cross_play_policy(model0, model1, arm: str, condition: str, levels: range,
                       *, env_factory: Callable[[int], Any] | None = None,
                       seed0: int | None = None, seed1: int | None = None,
                       ckpt0: str | None = None, ckpt1: str | None = None,
-                      untrained: bool = False) -> CrossRecord:
+                      untrained: bool = False,
+                      registration: guards.RegistrationContext | None = None,
+                      ) -> CrossRecord:
     levels = list(levels)
+    guards.check_eval_boundary(
+        registration, levels, arm=arm, condition=condition, seeds=(seed0, seed1),
+        has_env_factory=env_factory is not None, cross=True)
     team_summary = condition == "registered"
     bus = MessageBus(arm)
     res = [_run_level_cross(model0, model1, arm, team_summary, j, env_factory,
@@ -280,11 +286,16 @@ def cross_play_model(ckpt0: Path | None, ckpt1: Path | None, arm: str,
                      condition: str, seed0: int, seed1: int,
                      levels: range = HELD_OUT, *,
                      env_factory: Callable[[int], Any] | None = None,
+                     registration: guards.RegistrationContext | None = None,
                      ) -> CrossRecord:
     """Cross-play of role 0 = checkpoint of ``seed0`` with role 1 = checkpoint
-    of ``seed1`` (``None`` evaluates that seed's untrained init)."""
+    of ``seed1`` (``None`` evaluates that seed's untrained init). Held-out
+    levels need the registration context (execution boundary)."""
     if arm not in ARM_CODES or condition not in CONDITION_CODES:
         raise ValueError(f"unknown arm/condition {arm!r}/{condition!r}")
+    guards.check_eval_boundary(
+        registration, list(levels), arm=arm, condition=condition,
+        seeds=(seed0, seed1), has_env_factory=env_factory is not None, cross=True)
     m0 = _load_model(ckpt0, arm, condition, seed0)
     m1 = _load_model(ckpt1, arm, condition, seed1)
 
@@ -294,15 +305,20 @@ def cross_play_model(ckpt0: Path | None, ckpt1: Path | None, arm: str,
     return cross_play_policy(
         m0, m1, arm, condition, levels, env_factory=env_factory,
         seed0=seed0, seed1=seed1, ckpt0=name(ckpt0), ckpt1=name(ckpt1),
-        untrained=ckpt0 is None or ckpt1 is None,
+        untrained=ckpt0 is None or ckpt1 is None, registration=registration,
     )
 
 
 def evaluate_policy(model, arm: str, condition: str, levels: range, *,
                     env_factory: Callable[[int], Any] | None = None,
                     seed: int | None = None, ckpt: str | None = None,
-                    untrained: bool = False) -> EvalRecord:
+                    untrained: bool = False,
+                    registration: guards.RegistrationContext | None = None,
+                    ) -> EvalRecord:
     levels = list(levels)
+    guards.check_eval_boundary(
+        registration, levels, arm=arm, condition=condition, seeds=(seed,),
+        has_env_factory=env_factory is not None)
     team_summary = condition == "registered"
     bus = MessageBus(arm)
     intact = []
@@ -334,10 +350,20 @@ def evaluate_policy(model, arm: str, condition: str, levels: range, *,
 
 def evaluate_model(ckpt: Path | None, arm: str, condition: str,
                    levels: range = HELD_OUT, *, seed: int = 0,
-                   env_factory: Callable[[int], Any] | None = None) -> EvalRecord:
-    """Evaluate a checkpoint, or the run's untrained init if ``ckpt`` is None."""
+                   env_factory: Callable[[int], Any] | None = None,
+                   registration: guards.RegistrationContext | None = None,
+                   ) -> EvalRecord:
+    """Evaluate a checkpoint, or the run's untrained init if ``ckpt`` is None.
+
+    Held-out levels (>= 1000) need the registration context and the KXKM
+    x86-64 Procgen build (execution boundary); without one only the
+    training levels 0-15 are allowed.
+    """
     if arm not in ARM_CODES or condition not in CONDITION_CODES:
         raise ValueError(f"unknown arm/condition {arm!r}/{condition!r}")
+    guards.check_eval_boundary(
+        registration, list(levels), arm=arm, condition=condition, seeds=(seed,),
+        has_env_factory=env_factory is not None)
     model = PairPolicy(arm, mx.random.key(init_key_int(seed, arm, condition)))
     if ckpt is not None:
         model.load_weights(str(ckpt))  # strict: every parameter must match
@@ -345,6 +371,7 @@ def evaluate_model(ckpt: Path | None, arm: str, condition: str,
     return evaluate_policy(
         model, arm, condition, levels, env_factory=env_factory, seed=seed,
         ckpt=None if ckpt is None else Path(ckpt).name, untrained=ckpt is None,
+        registration=registration,
     )
 
 
@@ -364,24 +391,26 @@ def main() -> None:
     p.add_argument("--cross-seed", type=int, default=None,
                    help="cross-play probe: seed of the role-1 model")
     p.add_argument("--out", type=Path, required=True)
-    from experiments.procgen_multiagent_gtm_comm.campaign import guards
-
     guards.add_guard_args(p)
     a = p.parse_args()
-    guards.enforce_cli(a, registered=a.levels[1] > guards.HELD_OUT_START,
-                       what="held-out evaluation")
+    held_out = a.levels[1] > guards.HELD_OUT_START
+    ctx = guards.enforce_cli(a, registered=held_out, what="held-out evaluation")
+    if held_out and tuple(a.levels) != (guards.HELD_OUT_RANGE.start,
+                                        guards.HELD_OUT_RANGE.stop):
+        p.error("held-out evaluation uses exactly --levels 1000 1200")
     if (a.cross_seed is None) != (a.cross_ckpt is None) and a.cross_seed is None:
         p.error("--cross-ckpt requires --cross-seed")
     if a.cross_seed is not None:
         crec = cross_play_model(a.ckpt, a.cross_ckpt, a.arm, a.condition,
-                                a.seed, a.cross_seed, range(*a.levels))
+                                a.seed, a.cross_seed, range(*a.levels),
+                                registration=ctx)
         a.out.parent.mkdir(parents=True, exist_ok=True)
         a.out.write_text(crec.to_json())
         print(json.dumps({k: v for k, v in asdict(crec).items()
                           if not k.startswith(("returns", "lengths"))}))
         return
     rec = evaluate_model(a.ckpt, a.arm, a.condition, range(*a.levels),
-                         seed=a.seed)
+                         seed=a.seed, registration=ctx)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(rec.to_json())
     print(json.dumps({k: v for k, v in asdict(rec).items()

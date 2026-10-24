@@ -1,37 +1,38 @@
 """Sequential N10-C campaign runner (option D, 60 runs, one at a time per host).
 
     python -m experiments.procgen_multiagent_gtm_comm.campaign.run_campaign \
-        --campaign-dir /ai/saisail/n10c-run/campaign \
-        --manifest experiments/procgen_multiagent_gtm_comm/manifest/<file>.md \
-        --manifest-sha256 <sha256> \
-        --manifest-doi 10.17605/OSF.IO/XXXXX --expect-commit <40-hex> \
+        --campaign-dir /ai/saisail/n10c-run/campaign --host {macm1,kxkm} \
+        --freeze-tag n10c-freeze-YYYYMMDD --swhid swh:1:rev:<40 hex> \
+        [--manifest PATH --manifest-sha256 SHA --expect-commit COMMIT] \
+        [--manifest-doi 10.17605/OSF.IO/ID]   (optional metadata only) \
         [--archive-to user@host:/path] [--dry-run --throughput-json t.json]
 
-    ... --host {macm1,kxkm}      only that host's runs (seed block factor)
-    ... --freeze-tag TAG [--swhid SWHID]   instead of --manifest-doi
     python -m ...run_campaign sync --campaign-dir D --to user@kxkm:CAMPAIGN_DIR
 
 Hosts: macM1 trains seeds 0, 17, 42; KXKM trains 73, 101, 131. Evaluation
 runs ONLY with --host kxkm (x86 Procgen build); macM1 runs end at status
 "trained" and are evaluated on KXKM after `sync` copied their checkpoints.
 
-Hard guards (campaign/guards.py, shared with the harness CLIs; all must
-pass, else exit 2 before any training): real-looking OSF DOI, FILED
-(not DRAFT) manifest under the manifest/ folder containing that DOI and
-the expected commit, tracked in git, matching ``--manifest-sha256``; git
-tree clean; HEAD == ``--expect-commit`` or a descendant whose every
-intervening commit only touched docs/ or the manifest folder. The budget
-and trial flag are pinned in campaign.json at first start. Before every
-run on Linux: nvidia-smi free memory >= ``--min-free-gb``. Other
-processes are never signalled or killed. After 3 infrastructure
-failures a run becomes a training failure (amendment: evaluated at the
-last finite checkpoint, else at initialisation; never replaced).
+Hard guards (campaign/guards.py, shared with the harness CLIs and the
+execution boundary of ``train_run`` / ``evaluate_*``; all must pass, else
+exit 2 before any training): the annotated freeze tag
+``n10c-freeze-YYYYMMDD`` on origin is MANDATORY (a DOI is never required
+and never a substitute); manifest and amendment are read from the peeled
+tag commit and the tagged manifest hash must equal the tag message; a
+Software Heritage id is required; git tree clean; HEAD == tag commit or a
+descendant whose every intervening commit only touched docs/ or the
+manifest folder. The tag, commit, SWHID and the GitHub push time (if
+obtainable) are pinned in campaign.json at first start, with the budget
+and trial flag. Before every run on Linux: nvidia-smi free memory >=
+``--min-free-gb``. Other processes are never signalled or killed. After 3
+infrastructure failures a run becomes a training failure (amendment:
+evaluated at the last finite checkpoint, else at initialisation; never
+replaced).
 """
 from __future__ import annotations
 
 import argparse
 import fcntl
-import hashlib
 import json
 import platform
 import re
@@ -41,18 +42,22 @@ import sys
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import Any
 
 from ..harness.codes import HOST_SETTINGS
 from . import queue as q
 from .guards import (  # noqa: F401 - re-exported for callers and tests
+    DEV_MAX_PAIR_STEPS,
     HEX40,
     REPO,
     SWHID_RE,
     GuardError,
+    RegistrationContext,
     freeze_tag_info,
     guard_problems,
+    issue_context,
     normalize_doi,
 )
 
@@ -108,33 +113,39 @@ class Options:
     trial: bool = False  # non-registered budget; never the real campaign
     train_kwargs: dict | None = None  # test / smoke overrides (n_pairs, ...)
     env_factory: Callable[[int], Any] | None = None
+    # context issued by campaign.guards (mandatory unless ``trial``)
+    registration: RegistrationContext | None = None
 
 
-def _default_train(**kw):
+def _default_train(registration=None, **kw):
     from experiments.procgen_multiagent_gtm_comm.harness.train import train_run
-    return train_run(**kw)
+    return train_run(registration=registration, **kw)
 
 
-def _default_eval(ckpt, arm, condition, seed, env_factory=None):
+def _default_eval(ckpt, arm, condition, seed, env_factory=None, registration=None):
     from experiments.procgen_multiagent_gtm_comm.harness.evaluate import (
         HELD_OUT,
         evaluate_model,
     )
     return evaluate_model(ckpt, arm, condition, HELD_OUT, seed=seed,
-                          env_factory=env_factory)
+                          env_factory=env_factory, registration=registration)
 
 
-def _default_cross(ckpt0, ckpt1, arm, condition, seed0, seed1, env_factory=None):
+def _default_cross(ckpt0, ckpt1, arm, condition, seed0, seed1, env_factory=None,
+                   registration=None):
     from experiments.procgen_multiagent_gtm_comm.harness.evaluate import (
         HELD_OUT,
         cross_play_model,
     )
     return cross_play_model(ckpt0, ckpt1, arm, condition, seed0, seed1, HELD_OUT,
-                            env_factory=env_factory)
+                            env_factory=env_factory, registration=registration)
 
 
 def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%S%z")
+
+
+INFO_PINS = ("tag_push_time", "tag_push_time_note", "manifest_doi")  # fill-in only
 
 
 class Campaign:
@@ -148,12 +159,21 @@ class Campaign:
                 raise GuardError(
                     f"registered runs refuse overrides of the per-host "
                     f"implementation settings {over} (codes.HOST_SETTINGS)")
+        if not opts.trial and opts.registration is None:
+            raise GuardError(
+                "a registered campaign needs the RegistrationContext issued by "
+                "the freeze-tag guards (campaign.guards.require_guards)")
+        if opts.trial and opts.total_pair_steps > DEV_MAX_PAIR_STEPS:
+            raise GuardError(
+                f"a non-registered trial is limited to {DEV_MAX_PAIR_STEPS:,} "
+                "pair-steps (development mode)")
         self.o = opts
         self.dir = Path(opts.campaign_dir)
         self.store = q.StatusStore(self.dir / "status")
-        self.train_fn = train_fn or _default_train
-        self.eval_fn = eval_fn or _default_eval
-        self.cross_fn = cross_fn or _default_cross
+        reg = opts.registration
+        self.train_fn = train_fn or partial(_default_train, registration=reg)
+        self.eval_fn = eval_fn or partial(_default_eval, registration=reg)
+        self.cross_fn = cross_fn or partial(_default_cross, registration=reg)
         self.cross_store = q.CrossStore(self.dir / "cross_status")
         self.gpu_fn = gpu_fn or gpu_free_gb
         self.archive_fn = archive_fn or rsync_archive
@@ -176,11 +196,18 @@ class Campaign:
         p = self.dir / "campaign.json"
         if p.exists():
             old = json.loads(p.read_text())
-            diff = {k: (old.get(k), v) for k, v in pins.items() if old.get(k) != v}
+            diff = {k: (old.get(k), v) for k, v in pins.items()
+                    if old.get(k) != v and k not in INFO_PINS}
             if diff:
                 raise GuardError(
                     f"campaign pinned to other inputs (trial/registered "
                     f"cannot be mixed, nor budget changed): {diff}")
+            late = {k: pins[k] for k in INFO_PINS
+                    if pins.get(k) and not old.get(k)}
+            if late:  # e.g. the GitHub push time became obtainable later
+                if "tag_push_time" in late:
+                    late["tag_push_time_note"] = None
+                p.write_text(json.dumps({**old, **late}, indent=2))
         else:
             own = [f for f in (self.dir / "status").glob("*.json")
                    if "synced_from" not in json.loads(f.read_text())]
@@ -394,7 +421,11 @@ class Campaign:
     def run(self) -> int:
         queue = q.runs_for_host(self.o.host)
         if not self._pinned:
-            self.pin({})
+            reg = self.o.registration
+            if reg is None and not self.o.trial:
+                raise GuardError("a registered campaign cannot start without "
+                                 "its registration context (provenance)")
+            self.pin({} if reg is None else reg.pins())
         can_eval = self.o.host == "kxkm"
         for spec in q.build_queue():
             if self.stop_requested():
@@ -559,13 +590,10 @@ def _parser() -> argparse.ArgumentParser:
                    help="state + run outputs; must be OUTSIDE the git repo")
     p.add_argument("--host", choices=list(q.HOSTS),
                    help="run only this host's runs (required to train)")
-    p.add_argument("--manifest", type=Path)
-    p.add_argument("--manifest-sha256")
-    p.add_argument("--manifest-doi")
-    p.add_argument("--freeze-tag", help="annotated freeze tag on origin "
-                   "(alternative to --manifest-doi)")
-    p.add_argument("--swhid", help="Software Heritage id recorded in campaign.json")
-    p.add_argument("--expect-commit")
+    from .guards import add_guard_args
+
+    add_guard_args(p)  # --manifest --manifest-sha256 --manifest-doi
+    #                    --expect-commit --freeze-tag --swhid
     p.add_argument("--min-free-gb", type=float, default=8.0)
     p.add_argument("--gpu-wait-s", type=float, default=0.0)
     p.add_argument("--archive-to", help="user@host:path (rsync over ssh)")
@@ -574,7 +602,8 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--total-pair-steps", type=int, default=q.TOTAL_PAIR_STEPS)
     p.add_argument("--non-registered-trial", action="store_true",
-                   help="allow a budget != 50M (never for the real campaign)")
+                   help="development trial: budget <= 1M pair-steps, fakes or "
+                        "training levels only (never the real campaign)")
     return p
 
 
@@ -586,11 +615,9 @@ def main(argv: list[str] | None = None) -> int:
     problems = guard_problems(
         repo=REPO, manifest=a.manifest, manifest_sha256=a.manifest_sha256,
         manifest_doi=a.manifest_doi, expect_commit=a.expect_commit,
-        freeze_tag=a.freeze_tag)
+        freeze_tag=a.freeze_tag, swhid=a.swhid)
     if not a.host and not a.dry_run:
         problems.append("--host {macm1,kxkm} is required")
-    if a.swhid and not SWHID_RE.match(a.swhid):
-        problems.append("--swhid is not a valid swh:1:<type>:<40 hex> identifier")
     try:
         cdir = a.campaign_dir.resolve()
         if REPO in (cdir, *cdir.parents):
@@ -601,16 +628,27 @@ def main(argv: list[str] | None = None) -> int:
         problems.append("--total-pair-steps differs from the registered 50M")
     if a.non_registered_trial and a.total_pair_steps == q.TOTAL_PAIR_STEPS:
         problems.append("--non-registered-trial with the registered 50M budget")
+    if a.non_registered_trial and a.total_pair_steps > DEV_MAX_PAIR_STEPS:
+        problems.append(f"--non-registered-trial is limited to "
+                        f"{DEV_MAX_PAIR_STEPS:,} pair-steps")
     if a.dry_run:
         return _dry_run(a, problems)
     if problems:
         print("REFUSED:\n- " + "\n- ".join(problems), file=sys.stderr)
         return EXIT_GUARD
+    try:
+        ctx = issue_context(
+            repo=REPO, manifest=a.manifest, manifest_sha256=a.manifest_sha256,
+            manifest_doi=a.manifest_doi, expect_commit=a.expect_commit,
+            freeze_tag=a.freeze_tag, swhid=a.swhid)
+    except GuardError as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_GUARD
     opts = Options(campaign_dir=a.campaign_dir, host=a.host,
                    total_pair_steps=a.total_pair_steps,
                    min_free_gb=a.min_free_gb, gpu_wait_s=a.gpu_wait_s,
                    archive_to=a.archive_to, max_concurrent=a.max_concurrent,
-                   trial=a.non_registered_trial)
+                   trial=a.non_registered_trial, registration=ctx)
     camp = Campaign(opts)
     camp.dir.mkdir(parents=True, exist_ok=True)
     with open(camp.dir / "campaign.lock", "w") as lock:
@@ -620,17 +658,7 @@ def main(argv: list[str] | None = None) -> int:
             print("REFUSED: another campaign process holds the lock", file=sys.stderr)
             return EXIT_GUARD
         try:
-            if a.freeze_tag:
-                commit, _ = freeze_tag_info(REPO, a.freeze_tag)
-                pins = {"freeze_tag": a.freeze_tag, "freeze_commit": commit,
-                        "swhid": a.swhid,
-                        "manifest_sha256": hashlib.sha256(
-                            a.manifest.read_bytes()).hexdigest()}
-            else:
-                pins = {"manifest_sha256": a.manifest_sha256.lower(),
-                        "manifest_doi": normalize_doi(a.manifest_doi),
-                        "commit": a.expect_commit.lower()}
-            camp.pin(pins)
+            camp.pin(ctx.pins())
             return camp.run()
         except GuardError as exc:
             print(f"REFUSED: {exc}", file=sys.stderr)

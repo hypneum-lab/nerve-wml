@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Start (or resume) the N10-C campaign on the host, detached (tmux, else nohup).
-# All hard guards live in run_campaign.py and refuse without the manifest DOI,
-# SHA-256, expected commit and a clean tree. Needs the PI's explicit go.
-#   BASE=/ai/saisail/n10c-run bash start.sh --manifest PATH --manifest-sha256 SHA \
-#        --manifest-doi 10.17605/OSF.IO/XXXXX --expect-commit COMMIT [--archive-to ...]
+# All hard guards live in guards.py / run_campaign.py and refuse without the
+# annotated freeze tag n10c-freeze-YYYYMMDD on origin (mandatory), a
+# Software Heritage id, the tagged manifest hash matching the tag message and
+# a clean tree. An OSF DOI is optional metadata only. Needs the PI's go.
+#   BASE=/ai/saisail/n10c-run bash start.sh --freeze-tag n10c-freeze-YYYYMMDD \
+#        --swhid swh:1:rev:<40 hex> [--manifest-doi 10.17605/OSF.IO/ID]
 set -euo pipefail
 BASE="${BASE:-/ai/saisail/n10c-run}"
 cd "$BASE/repo"

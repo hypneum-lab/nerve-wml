@@ -21,7 +21,15 @@ from pathlib import Path
 import mlx.core as mx
 
 from . import comm, train
-from .codes import ARM_CODES, CONDITION_CODES, HOST_SETTINGS, SEED_HOST, SEEDS
+from .codes import (
+    ARM_CODES,
+    CONDITION_CODES,
+    HOST_SETTINGS,
+    PROCGEN_X86_WHEEL,
+    PROCGEN_X86_WHEEL_SHA256,
+    SEED_HOST,
+    SEEDS,
+)
 from .gtm_mlx import GTMConfigMLX
 from .policy import PairPolicy, param_count
 
@@ -44,9 +52,6 @@ N_EVAL_MODELS = 60
 # PR #53); the amendment uses 1,290. Evaluation ~6.7 min per model on KXKM.
 KXKM_PAIR_STEPS_PER_S = 1290.0
 KXKM_EVAL_S_PER_MODEL = 402.0
-PROCGEN_X86_WHEEL = "procgen-0.10.7-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
-PROCGEN_X86_WHEEL_SHA256 = (
-    "4b594d14e42f0f2166e59a9e294477b906eb99c90c3343b570b7124cbc865f53")
 KXKM_VERSIONS = {  # venv310 on KXKM-AI, recorded 2026-10-23; re-verify at deploy
     "python": "3.10.18", "mlx": "0.31.1", "mlx-cuda-12": "0.31.1",
     "numpy": "1.26.4", "gym3": "0.3.3", "gym": "0.26.2", "procgen": "0.10.7",

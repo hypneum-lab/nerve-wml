@@ -42,3 +42,13 @@ HOST_SETTINGS: dict[str, dict] = {
 }
 SEED_HOST: dict[int, str] = {0: "macm1", 17: "macm1", 42: "macm1",
                              73: "kxkm", 101: "kxkm", 131: "kxkm"}
+# Fixed cross-seed cross-play pairing (role-0 seed, role-1 seed), wrapping.
+CROSS_PAIRS: tuple[tuple[int, int], ...] = tuple(
+    (s, SEEDS[(k + 1) % len(SEEDS)]) for k, s in enumerate(SEEDS))
+
+# Registered x86-64 Procgen build used for ALL held-out evaluations (KXKM-AI).
+PROCGEN_VERSION = "0.10.7"
+PROCGEN_X86_WHEEL = (
+    "procgen-0.10.7-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl")
+PROCGEN_X86_WHEEL_SHA256 = (
+    "4b594d14e42f0f2166e59a9e294477b906eb99c90c3343b570b7124cbc865f53")

@@ -22,20 +22,27 @@ and guards), `kxkm/deploy.sh`, `kxkm/start.sh`.
 - [ ] Stage-2 manifest frozen by an annotated git tag (the commitment
       point, see "freeze-tag mode" below); OSF is filed afterwards,
       referencing tag, commit and SWHID. Runs started before the freeze
-      tag are excluded by the amendment. (Legacy DOI mode: manifest filed
-      on OSF first, DOI recorded.)
+      tag are excluded by the amendment. The freeze tag
+      `n10c-freeze-YYYYMMDD` is MANDATORY for every registered launch and
+      held-out evaluation; an OSF DOI is optional supplementary metadata
+      and is never required (OSF is filed after the tag).
+- [ ] Software Heritage "Save Code Now" done for the tagged state; its
+      SWHID (`swh:1:(snp|rev|dir):<40 hex>`) is passed as `--swhid`
+      (required).
 - [ ] Manifest file committed under
       `experiments/procgen_multiagent_gtm_comm/manifest/`, named without
       `DRAFT`, with a `Status: FROZEN (tag <tag>)` line (written by
       `python -m ...harness.manifest --freeze-tag <tag> --out <file>`;
       the text is `DRAFT` until then, and no `DRAFT` anywhere once
       frozen) and the pinned commit in its text; its SHA-256 noted
-      (`shasum -a 256 <file>`). Legacy DOI mode: `Status: FILED` and the
-      exact OSF DOI (`10.17605/OSF.IO/<ID>`, placeholders refused).
+      (`shasum -a 256 <file>`). The guards read the manifest AND the
+      amendment from the tagged commit (`git show <tag>^{commit}:<path>`).
 - [ ] Code commit pinned: the commit named in the manifest. HEAD of the
       deployed clone must equal it, or descend from it with every intervening commit
-      touching only `docs/` or the manifest folder (the manifest cannot name its own commit). Pass it as
-      `--expect-commit` (40 hex).
+      touching only `docs/` or the manifest folder, and without altering the
+      tagged manifest or amendment (the manifest cannot name its own
+      commit). `--expect-commit` (40 hex) is an optional cross-check of
+      the tag commit.
 - [ ] Procgen builds: the macM1 arm64 build and the KXKM x86-64 wheel are
       known NOT to be bit-identical (disclosed in the amendment); nothing to
       equalise, but record both builds in the manifest.
@@ -74,29 +81,32 @@ Dry run (nothing trained; prints plan, guards, estimate):
 
     python -m experiments.procgen_multiagent_gtm_comm.campaign.run_campaign \
       --campaign-dir /ai/saisail/n10c-run/campaign --dry-run \
-      --throughput-json throughput.json --manifest experiments/procgen_multiagent_gtm_comm/manifest/<file>.md \
-      --manifest-sha256 SHA --manifest-doi 10.17605/OSF.IO/XXXXX \
-      --expect-commit COMMIT
+      --throughput-json throughput.json --host kxkm \
+      --freeze-tag n10c-freeze-YYYYMMDD --swhid swh:1:rev:<40 hex>
 
 Start (detached, tmux session `n10c` or nohup; pre-checks guards first):
 
-    BASE=/ai/saisail/n10c-run bash kxkm/start.sh --manifest ... \
-      --manifest-sha256 SHA --manifest-doi DOI --expect-commit COMMIT \
-      --min-free-gb 8   # no --archive-to on KXKM (pulled by electron-server)
+    BASE=/ai/saisail/n10c-run bash kxkm/start.sh \
+      --freeze-tag n10c-freeze-YYYYMMDD --swhid swh:1:rev:<40 hex> \
+      [--manifest-doi DOI] --min-free-gb 8   # no --archive-to on KXKM (pulled by electron-server)
 
 - Stop gracefully: `touch <campaign-dir>/STOP`; the runner exits
   between runs (exit 4). Remove the file to resume.
 - Hard stop (Ctrl-C, kill, reboot): the interrupted run is found
   `running` at resume and is restarted FROM SCRATCH; that counts as one
   infrastructure restart.
-- The same guards protect the harness CLIs: `harness.train` refuses
-  `--steps >= 50M` and `harness.evaluate` refuses levels >= 1000 unless
-  the four guard flags are valid (dev budgets and training levels stay
-  open). The campaign pins budget and trial flag in `campaign.json`;
+- The same guards protect the harness CLIs AND the execution boundary:
+  `train_run` / `evaluate_*` refuse any budget above the 1M development
+  cap and any level >= 1000 unless handed the `RegistrationContext` issued
+  by the freeze-tag guards; a registered run must be the exact registered
+  tuple (seed on its fixed host, arm allowed in the condition, 50M, frozen
+  rollout / measurement config, `codes.HOST_SETTINGS`), on the actual host
+  and MLX backend (macM1 = Metal, KXKM = CUDA); held-out evaluation needs
+  the KXKM x86-64 Procgen wheel. The campaign pins budget and trial flag in `campaign.json`;
   resuming with another budget or mixing trial and registered runs is
   refused.
 - Resume: run the same `start.sh` command. The campaign is pinned to the
-  manifest SHA, DOI and commit in `campaign.json`; different inputs are
+  freeze tag, commit, SWHID and manifest / amendment SHA-256 in `campaign.json`; different inputs are
   refused. Done runs are skipped; a trained run whose evaluation failed
   is re-evaluated without retraining.
 - State: `<campaign-dir>/status/<run_id>.json`, event log
@@ -153,14 +163,18 @@ Re-run the KXKM campaign command afterwards: it evaluates the newly
 synced runs and never trains them. The finished event reports
 `awaiting_sync`.
 
-**Commitment point (PI decision 2026-10-23 22:17).** Instead of
-`--manifest-doi`, start with `--freeze-tag <tag> [--swhid swh:1:rev:...]`:
-the tag must exist on origin (`git ls-remote`), be annotated, point at HEAD
-(or at an ancestor with only docs/ and manifest-folder commits since), the
-tree must be clean, and the tag message must contain `manifest: <path>` and
-`manifest-sha256: <hex>` equal to the committed manifest's SHA-256. The
-manifest says `Status: FROZEN (tag <tag>)`. Tag, commit and SWHID are pinned
-in `campaign.json`. The DOI mode is unchanged.
+**Commitment point (PI decision 2026-10-23 22:17).** Start with
+`--freeze-tag n10c-freeze-YYYYMMDD --swhid swh:1:rev:...` (mandatory): the
+tag must exist on origin (`git ls-remote`), be annotated, HEAD must be its
+commit (or a descendant with only docs/ and manifest-folder commits that do
+not change the tagged documents), the tree must be clean, and the tag
+message must contain `manifest: <path>` and `manifest-sha256: <hex>` equal
+to the SHA-256 of the manifest AS TAGGED. The manifest says
+`Status: FROZEN (tag <tag>)`. Tag, commit, SWHID, manifest and amendment
+SHA-256 are pinned in `campaign.json` together with the GitHub push time of
+the tag when `gh` can obtain it; otherwise the record says the server
+timestamp must be taken from GitHub / Software Heritage (runs started
+before the push time are excluded). The OSF DOI is optional metadata.
 
 ## Cross-seed cross-play probe and per-host settings
 

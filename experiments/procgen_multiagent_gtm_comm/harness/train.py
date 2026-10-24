@@ -33,12 +33,14 @@ import mlx.optimizers as optim
 import numpy as np
 from mlx.utils import tree_flatten, tree_map
 
+from ..campaign import guards
 from .bus import MessageBus
 from .codes import (
     ARM_CODES,
     CONDITION_CODES,
     HOST_SETTINGS,
     HOSTS,
+    SEED_HOST,
     init_key_int,
     run_seed_sequence,
 )
@@ -91,6 +93,9 @@ class RunRecord:
     clear_cache: bool = False
     n_workers: int = 1
     peak_memory_bytes: int | None = None
+    # provenance of a registered run (None in the development mode)
+    registration: dict | None = None
+    runtime: dict | None = None
 
 
 class EngCounters:
@@ -267,6 +272,7 @@ def train_run(
     clear_cache: bool = False,
     restarts: int = 0,
     n_workers: int = 1,
+    registration: guards.RegistrationContext | None = None,
     _fault_hook: Callable[[int, PairPolicy], None] | None = None,
     _rollout_hook: Callable[[int, RolloutBuffer], None] | None = None,
 ) -> RunRecord:
@@ -283,7 +289,24 @@ def train_run(
     gradient-accumulated micro-batches: same update, lower peak memory; it
     is an implementation setting, not a registered quantity.
     ``clear_cache`` calls ``mx.clear_cache()`` once per rollout update.
+
+    Execution boundary: a registered run (``registration`` = the context
+    issued by ``campaign.guards``) must be exactly the registered tuple
+    (seed in SEEDS on its fixed host, arm allowed in the condition, 50M
+    pair-steps, frozen rollout / measurement configuration) with exactly the
+    per-host ``HOST_SETTINGS``, on the actual host and backend. Without a
+    context only the development mode is available (<= 1M pair-steps).
     """
+    reg_host = guards.check_train_boundary(
+        registration, arm=arm, seed=seed, condition=condition,
+        total_pair_steps=total_pair_steps,
+        settings={"micro_batch_pairs": micro_batch_pairs,
+                  "clear_cache": clear_cache, "n_workers": n_workers},
+        config={"n_pairs": n_pairs, "horizon": horizon,
+                "log_every_pair_steps": log_every_pair_steps,
+                "ckpt_every_pair_steps": ckpt_every_pair_steps,
+                "minibatch_pairs": minibatch_pairs},
+        has_env_factory=env_factory is not None)
     if micro_batch_pairs is not None and micro_batch_pairs < 1:
         raise ValueError("micro_batch_pairs must be >= 1")
     if total_pair_steps % n_pairs or log_every_pair_steps % n_pairs:
@@ -306,7 +329,7 @@ def train_run(
             horizon, log_every_pair_steps, ckpt_every_pair_steps,
             minibatch_pairs, restarts, init_ss, shuf_rng, key_rng,
             _fault_hook, _rollout_hook, micro_batch_pairs, clear_cache,
-            n_workers,
+            n_workers, registration, reg_host,
         )
     finally:
         vec.close()
@@ -315,7 +338,8 @@ def train_run(
 def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
            log_every, ckpt_every, minibatch_pairs, restarts, init_ss,
            shuf_rng, key_rng, fault_hook, rollout_hook, micro_pairs=None,
-           clear_cache=False, n_workers=1) -> RunRecord:
+           clear_cache=False, n_workers=1, registration=None,
+           reg_host=None) -> RunRecord:
     rec = RunRecord(
         arm=arm, seed=seed, condition=condition,
         codes={"arm": ARM_CODES[arm], "condition": CONDITION_CODES[condition]},
@@ -323,6 +347,11 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
         micro_batch_pairs=micro_pairs, clear_cache=clear_cache,
         n_workers=n_workers,
     )
+    if registration is not None:
+        rec.registration = {k: registration.pins()[k] for k in (
+            "freeze_tag", "freeze_commit", "swhid", "manifest_sha256")}
+        rec.registration["host"] = reg_host
+        rec.runtime = guards._runtime_probe()
     model = PairPolicy(arm, mx.random.key(init_key_int(seed, arm, condition)))
     mx.eval(model.parameters())
     opt = optim.Adam(learning_rate=LR)
@@ -497,16 +526,19 @@ def main() -> None:
     p.add_argument("--n-workers", type=int, default=None)
     p.add_argument("--host", choices=list(HOSTS),
                    help="registered-budget runs: the host whose registered "
-                        "settings (codes.HOST_SETTINGS) apply")
-    from experiments.procgen_multiagent_gtm_comm.campaign import guards
-
+                        "settings (codes.HOST_SETTINGS) apply; must be the "
+                        "seed's fixed host")
     guards.add_guard_args(p)
     a = p.parse_args()
-    guards.enforce_cli(a, registered=a.steps >= guards.REGISTERED_BUDGET,
-                       what="registered-budget training")
+    registered = a.steps > guards.DEV_MAX_PAIR_STEPS
+    if registered and a.steps != guards.REGISTERED_BUDGET:
+        sys.exit(f"training refused: {a.steps:,} pair-steps is neither the "
+                 f"development mode (<= {guards.DEV_MAX_PAIR_STEPS:,}) nor the "
+                 f"exact registered budget ({guards.REGISTERED_BUDGET:,})")
     settings = {"micro_batch_pairs": a.micro_batch_pairs,
                 "clear_cache": a.clear_cache, "n_workers": a.n_workers or 1}
-    if a.steps >= guards.REGISTERED_BUDGET:
+    ctx = None
+    if registered:
         given = [f for f, v in (("--micro-batch-pairs", a.micro_batch_pairs),
                                 ("--clear-cache", a.clear_cache or None),
                                 ("--n-workers", a.n_workers)) if v is not None]
@@ -514,13 +546,27 @@ def main() -> None:
             sys.exit("registered-budget run refuses setting overrides "
                      f"{given}: settings come from codes.HOST_SETTINGS")
         if not a.host:
-            sys.exit("registered-budget run needs --host to select the "
-                     "registered per-host settings")
+            sys.exit("registered-budget training refused: --host is needed to "
+                     "select the registered per-host settings")
         settings = dict(HOST_SETTINGS[a.host])
+        errs = guards.registered_run_problems(
+            arm=a.arm, seed=a.seed, condition=a.condition,
+            total_pair_steps=a.steps, settings=settings,
+            config={"n_pairs": a.n_pairs, "horizon": a.horizon,
+                    "log_every_pair_steps": a.log_every,
+                    "ckpt_every_pair_steps": a.ckpt_every,
+                    "minibatch_pairs": MINIBATCH_PAIRS})
+        if a.seed in SEED_HOST and SEED_HOST[a.seed] != a.host:
+            errs.append(f"--host {a.host} is not seed {a.seed}'s fixed host "
+                        f"{SEED_HOST[a.seed]}")
+        if errs:
+            sys.exit("registered-budget training refused: " + "; ".join(errs))
+        ctx = guards.enforce_cli(a, registered=True,
+                                 what="registered-budget training")
     rec = train_run(
         a.arm, a.seed, a.condition, a.steps, a.out, n_pairs=a.n_pairs,
         horizon=a.horizon, log_every_pair_steps=a.log_every,
-        ckpt_every_pair_steps=a.ckpt_every, **settings,
+        ckpt_every_pair_steps=a.ckpt_every, registration=ctx, **settings,
     )
     print(json.dumps({k: v for k, v in asdict(rec).items() if k != "losses"}))
 

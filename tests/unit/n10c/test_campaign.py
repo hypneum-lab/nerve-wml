@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from experiments.procgen_multiagent_gtm_comm.campaign import guards
 from experiments.procgen_multiagent_gtm_comm.campaign import queue as q
 from experiments.procgen_multiagent_gtm_comm.campaign import run_campaign as rc
 
@@ -117,6 +118,8 @@ def _campaign(tmp_path, train, eval_fn=None, gpu=None, archive=None,
         calls["cross"].append((ckpt0, ckpt1, arm, cond, seed0, seed1))
         return (cross_fn or (lambda *a: _Cross(*a)))(ckpt0, ckpt1, arm, cond, seed0, seed1)
 
+    if "trial" not in o:
+        o.setdefault("registration", guards.make_context_for_tests())
     c = rc.Campaign(rc.Options(campaign_dir=tmp_path / "c", host=host, total_pair_steps=TOTAL,
                                min_free_gb=8, **o),
                     train_fn=t, eval_fn=e, cross_fn=x, gpu_fn=gpu or (lambda: None),
@@ -299,163 +302,11 @@ def test_pin_refuses_other_manifest(tmp_path):
         c.pin({"manifest_sha256": "other", "commit": "b"})
 
 
-# ---- guards ---------------------------------------------------------
-
-def _git_repo(tmp_path):
-    """Code commit C, then a later commit adding docs/manifest.md naming C."""
-    repo = tmp_path / "repo"
-    repo.mkdir()
-
-    def g(*a):
-        return subprocess.run(["git", "-C", str(repo), *a], check=True,
-                              capture_output=True, text=True).stdout.strip()
-    g("init", "-q")
-    g("config", "user.email", "t@t")
-    g("config", "user.name", "t")
-    (repo / "code.py").write_text("x = 1\n")
-    g("add", ".")
-    g("commit", "-q", "-m", "code")
-    code = g("rev-parse", "HEAD")
-    md = repo / "experiments" / "procgen_multiagent_gtm_comm" / "manifest"
-    md.mkdir(parents=True)
-    (md / "stage2-manifest.md").write_text(MANIFEST_TMPL.format(code=code))
-    g("add", ".")
-    g("commit", "-q", "-m", "manifest")
-    return repo, code, g
-
-
-MANIFEST_TMPL = ("# Stage 2 manifest\n**Status: FILED on OSF**\n"
-                 "DOI 10.17605/OSF.IO/A1B2C\nharness commit {code}\n")
-DOI = "10.17605/OSF.IO/A1B2C"
-
-
-def _ok(repo, code):
-    m = repo / "experiments" / "procgen_multiagent_gtm_comm" / "manifest" / "stage2-manifest.md"
-    return dict(repo=repo, manifest=m,
-                manifest_sha256=hashlib.sha256(m.read_bytes()).hexdigest(),
-                manifest_doi=DOI, expect_commit=code)
-
-
-def test_guards_pass_when_only_docs_changed_since_commit(tmp_path):
-    repo, code, _ = _git_repo(tmp_path)
-    assert rc.guard_problems(**_ok(repo, code)) == []
-
-
-def test_guard_refusals(tmp_path):
-    repo, code, g = _git_repo(tmp_path)
-    kw = _ok(repo, code)
-    assert any("DOI" in p for p in rc.guard_problems(**{**kw, "manifest_doi": None}))
-    assert any("DOI" in p for p in rc.guard_problems(
-        **{**kw, "manifest_doi": "not-a-doi"}))
-    assert any("SHA-256" in p for p in rc.guard_problems(
-        **{**kw, "manifest_sha256": "0" * 64}))
-    assert any("sha256" in p.lower() for p in rc.guard_problems(
-        **{**kw, "manifest_sha256": None}))
-    assert any("expect-commit" in p for p in rc.guard_problems(
-        **{**kw, "expect_commit": None}))
-    assert any("HEAD" in p for p in rc.guard_problems(
-        **{**kw, "expect_commit": "1" * 40}))
-    # code changed after the recorded commit -> refused
-    (repo / "code.py").write_text("x = 2\n")
-    g("commit", "-q", "-am", "code2")
-    assert any("code changed" in p for p in rc.guard_problems(**kw))
-    # dirty tree -> refused
-    (repo / "dirty.txt").write_text("d")
-    assert any("dirty" in p for p in rc.guard_problems(**kw))
-    assert rc.normalize_doi("https://doi.org/" + DOI) == DOI
-
-
-def test_guard_untracked_manifest_refused(tmp_path):
-    repo, code, g = _git_repo(tmp_path)
-    m = repo / "experiments" / "procgen_multiagent_gtm_comm" / "manifest" / "o.md"
-    m.write_text(MANIFEST_TMPL.format(code=code))
-    kw = {**_ok(repo, code), "manifest": m,
-          "manifest_sha256": hashlib.sha256(m.read_bytes()).hexdigest()}
-    probs = rc.guard_problems(**kw)
-    assert any("not tracked" in p for p in probs)
-
-
-@pytest.mark.parametrize("doi", [
-    "10.17605/OSF.IO/XXXXX", "10.17605/OSF.IO/AAAAA", "10.1234/abcde",
-    "10.17605/OSF.IO/AB", "not-a-doi", "10.17605/osf.io/a1b2c", ""])
-def test_placeholder_dois_rejected(tmp_path, doi):
-    repo, code, _ = _git_repo(tmp_path)
-    assert rc.normalize_doi(doi) is None
-    assert any("DOI" in p for p in rc.guard_problems(
-        **{**_ok(repo, code), "manifest_doi": doi}))
-
-
-def _rewrite_manifest(repo, g, text, code):
-    m = repo / "experiments" / "procgen_multiagent_gtm_comm" / "manifest" / "stage2-manifest.md"
-    m.write_text(text.format(code=code))
-    g("commit", "-q", "-am", "edit manifest")
-    return m
-
-
-@pytest.mark.parametrize("text,needle", [
-    ("# M\n**Status: DRAFT**\nDOI 10.17605/OSF.IO/A1B2C\n{code}\n", "DRAFT"),
-    ("# M\nDOI 10.17605/OSF.IO/A1B2C\n{code}\n", "FILED"),
-    ("# M\nStatus: FILED\nDOI 10.17605/OSF.IO/Z9Z9Z\n{code}\n", "DOI"),
-    ("# M\nStatus: FILED\nDOI 10.17605/OSF.IO/A1B2C\n", "expect-commit"),
-    ("# M\nStatus: FILED draft later\nDRAFT\n10.17605/OSF.IO/A1B2C {code}\n",
-     "DRAFT"),
-])
-def test_manifest_content_binding(tmp_path, text, needle):
-    repo, code, g = _git_repo(tmp_path)
-    m = _rewrite_manifest(repo, g, text, code)
-    kw = {**_ok(repo, code), "manifest": m,
-          "manifest_sha256": hashlib.sha256(m.read_bytes()).hexdigest()}
-    assert any(needle in p for p in rc.guard_problems(**kw))
-
-
-def test_manifest_outside_manifest_dir_refused(tmp_path):
-    repo, code, g = _git_repo(tmp_path)
-    m = repo / "docs" / "m.md"
-    m.parent.mkdir()
-    m.write_text(MANIFEST_TMPL.format(code=code))
-    g("add", ".")
-    g("commit", "-q", "-m", "docs manifest")
-    kw = {**_ok(repo, code), "manifest": m,
-          "manifest_sha256": hashlib.sha256(m.read_bytes()).hexdigest()}
-    assert any("must be under" in p for p in rc.guard_problems(**kw))
-
-
-def test_intervening_code_commit_reverted_is_still_refused(tmp_path):
-    repo, code, g = _git_repo(tmp_path)
-    (repo / "code.py").write_text("x = 2\n")
-    g("commit", "-q", "-am", "change")
-    (repo / "code.py").write_text("x = 1\n")
-    g("commit", "-q", "-am", "revert")  # net diff empty, history not
-    assert any("code changed" in p for p in rc.guard_problems(**_ok(repo, code)))
-
-
-@pytest.mark.parametrize("extra", [
-    ["--manifest-doi", "10.17605/OSF.IO/XXXXX"],
-    ["--manifest-sha256", "0" * 64],
-    [],
-])
-def test_main_negative_guards_call_nothing(tmp_path, monkeypatch, extra):
-    repo, code, _ = _git_repo(tmp_path)
-    called = []
-    monkeypatch.setattr(rc, "REPO", repo)
-    monkeypatch.setattr(rc, "_default_train", lambda **kw: called.append("t"))
-    monkeypatch.setattr(rc, "_default_eval", lambda *a, **k: called.append("e"))
-    m = _ok(repo, code)
-    argv = ["--campaign-dir", str(tmp_path / "c"), "--manifest", str(m["manifest"]),
-            "--manifest-sha256", m["manifest_sha256"], "--manifest-doi", DOI,
-            "--expect-commit", code]
-    for i in range(0, len(extra), 2):
-        argv[argv.index(extra[i]) + 1] = extra[i + 1]
-    if not extra:
-        argv += ["--total-pair-steps", "64"]  # trial flag missing
-    assert rc.main(argv) == rc.EXIT_GUARD
-    assert called == [] and not (tmp_path / "c").exists()
-
-
 def test_pin_budget_and_trial_status(tmp_path):
     c, _ = _campaign(tmp_path, lambda n, kw: _rec(), trial=True)
     c.pin({"manifest_sha256": "a"})
-    c2, _ = _campaign(tmp_path, lambda n, kw: _rec(), trial=False)
+    c2, _ = _campaign(tmp_path, lambda n, kw: _rec(), trial=False,
+                      registration=guards.make_context_for_tests())
     with pytest.raises(rc.GuardError, match="trial"):
         c2.pin({"manifest_sha256": "a"})
     c3, _ = _campaign(tmp_path, lambda n, kw: _rec(), trial=True)
@@ -478,7 +329,7 @@ def test_run_pins_budget_automatically(tmp_path):
     assert meta["total_pair_steps"] == TOTAL and meta["trial"] is False
 
 
-def test_main_refuses_without_doi_and_trains_nothing(tmp_path, monkeypatch):
+def test_main_refuses_without_freeze_tag_and_trains_nothing(tmp_path, monkeypatch):
     called = []
     monkeypatch.setattr(rc, "_default_train", lambda **kw: called.append(kw))
     code = rc.main(["--campaign-dir", str(tmp_path / "c")])
@@ -659,9 +510,16 @@ def test_dry_run_with_host_lists_only_that_host(tmp_path, capsys):
     assert code == 0 and "30 runs" in out and "s73" not in out and "s0" in out
 
 
-# ---- freeze-tag guard mode (2026-10-23 22:17) -------------------------
+# ---- freeze-tag guards (mandatory tag; DOI optional metadata) ---------
 
-def _frozen_repo(tmp_path, *, status=None, annotated=True, msg_sha=None, tag="n10c-freeze-t"):
+TAG = "n10c-freeze-20261024"
+DOI = "10.17605/OSF.IO/A1B2C"
+REL = "experiments/procgen_multiagent_gtm_comm/manifest/stage2-manifest.md"
+AMEND = guards.AMENDMENT_PATH
+
+
+def _frozen_repo(tmp_path, *, status=None, annotated=True, msg_sha=None, tag=TAG,
+                 tag_before_manifest=False, with_amendment=True):
     """Repo with origin (bare), code commit, manifest commit, freeze tag."""
     origin = tmp_path / "origin.git"
     subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
@@ -676,89 +534,210 @@ def _frozen_repo(tmp_path, *, status=None, annotated=True, msg_sha=None, tag="n1
     g("config", "user.name", "t")
     g("remote", "add", "origin", str(origin))
     (repo / "code.py").write_text("x = 1\n")
+    if with_amendment:
+        (repo / AMEND).parent.mkdir(parents=True)
+        (repo / AMEND).write_text("# Amendment\nfinal text\n")
     g("add", ".")
     g("commit", "-q", "-m", "code")
     md = repo / "experiments" / "procgen_multiagent_gtm_comm" / "manifest"
-    md.mkdir(parents=True)
     m = md / "stage2-manifest.md"
-    m.write_text(f"# Manifest\n**{status or f'Status: FROZEN (tag {tag})'}**\n")
+    text = f"# Manifest\n**{status or f'Status: FROZEN (tag {tag})'}**\n"
+    sha = hashlib.sha256(text.encode()).hexdigest()
+    msg = f"freeze\n\nmanifest: {REL}\nmanifest-sha256: {msg_sha or sha}"
+
+    def tag_it():
+        if annotated:
+            g("tag", "-a", tag, "-m", msg)
+        else:
+            g("tag", tag)
+        g("push", "-q", "origin", "HEAD:refs/heads/main", f"refs/tags/{tag}")
+    if tag_before_manifest:
+        tag_it()
+    md.mkdir(parents=True)
+    m.write_text(text)
     g("add", ".")
     g("commit", "-q", "-m", "manifest")
-    sha = hashlib.sha256(m.read_bytes()).hexdigest()
-    rel = "experiments/procgen_multiagent_gtm_comm/manifest/stage2-manifest.md"
-    if annotated:
-        g("tag", "-a", tag, "-m", f"freeze\n\nmanifest: {rel}\n"
-          f"manifest-sha256: {msg_sha or sha}")
-    else:
-        g("tag", tag)
-    g("push", "-q", "origin", "HEAD:refs/heads/main", f"refs/tags/{tag}")
+    if not tag_before_manifest:
+        tag_it()
     return repo, m, sha, tag, g
 
 
-def _fkw(repo, m, sha, tag):
+SWH = "swh:1:rev:" + "ab" * 20
+
+
+def _fkw(repo, m, sha, tag, **over):
     return dict(repo=repo, manifest=m, manifest_sha256=sha, manifest_doi=None,
-                expect_commit=None, freeze_tag=tag)
+                expect_commit=None, freeze_tag=tag, swhid=SWH) | over
+
+
+def _probs(kw):
+    return rc.guard_problems(**kw)
 
 
 def test_freeze_tag_mode_passes(tmp_path):
     repo, m, sha, tag, _ = _frozen_repo(tmp_path)
-    assert rc.guard_problems(**_fkw(repo, m, sha, tag)) == []
+    assert _probs(_fkw(repo, m, sha, tag)) == []
+    # manifest path / sha / commit are all optional hints
+    assert _probs(_fkw(repo, None, None, tag)) == []
 
 
 def test_freeze_tag_passes_with_docs_only_descendant(tmp_path):
     repo, m, sha, tag, g = _frozen_repo(tmp_path)
-    (repo / "docs").mkdir()
+    (repo / "docs").mkdir(exist_ok=True)
     (repo / "docs" / "n.md").write_text("n")
     g("add", ".")
     g("commit", "-q", "-m", "docs")
-    assert rc.guard_problems(**_fkw(repo, m, sha, tag)) == []
+    assert _probs(_fkw(repo, m, sha, tag)) == []
     (repo / "code.py").write_text("x = 2\n")
     g("commit", "-q", "-am", "code2")
-    assert any("code changed" in p for p in rc.guard_problems(**_fkw(repo, m, sha, tag)))
+    assert any("code changed" in p for p in _probs(_fkw(repo, m, sha, tag)))
+
+
+def test_freeze_tag_is_mandatory_doi_alone_never_enough(tmp_path):
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path)
+    kw = _fkw(repo, m, sha, None, manifest_doi=DOI)
+    assert any("freeze-tag" in p and "mandatory" in p for p in _probs(kw))
+    assert not any("DOI" in p and "missing" in p for p in _probs(_fkw(repo, m, sha, tag)))
+
+
+def test_doi_is_optional_supplementary_metadata(tmp_path):
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path)
+    assert _probs(_fkw(repo, m, sha, tag, manifest_doi=None)) == []
+    assert _probs(_fkw(repo, m, sha, tag, manifest_doi=DOI)) == []  # no conflict
+    assert any("DOI" in p for p in _probs(_fkw(repo, m, sha, tag, manifest_doi="x")))
+    assert rc.normalize_doi("https://doi.org/" + DOI) == DOI
+    for bad in ("10.17605/OSF.IO/XXXXX", "10.17605/OSF.IO/AAAAA", "not-a-doi", ""):
+        assert rc.normalize_doi(bad) is None
+
+
+@pytest.mark.parametrize("name", ["n10c-freeze-t", "freeze-20261024", "n10c-freeze-2026",
+                                  "n10c-freeze-20261340", "n10c-freeze-20261024-b",
+                                  "N10C-freeze-20261024"])
+def test_tag_name_must_follow_the_registered_convention(tmp_path, name):
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path)
+    assert any("freeze tag name" in p for p in _probs(_fkw(repo, m, sha, name)))
+    assert not guards.valid_tag_name(name)
+    assert guards.valid_tag_name("n10c-freeze-20261024")
+
+
+def test_swhid_required_and_format_checked(tmp_path):
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path)
+    assert any("swhid" in p for p in _probs(_fkw(repo, m, sha, tag, swhid=None)))
+    for bad in ("not-a-swhid", "swh:1:cnt:" + "ab" * 20, "swh:1:rev:" + "ab" * 19,
+                "swh:1:rev:" + "AB" * 20, "swh:2:rev:" + "ab" * 20):
+        assert any("swhid" in p for p in _probs(_fkw(repo, m, sha, tag, swhid=bad)))
+    for ok in ("swh:1:rev:" + "ab" * 20, "swh:1:snp:" + "01" * 20,
+               "swh:1:dir:" + "ab" * 20 + ";origin=https://github.com/x/y"):
+        assert _probs(_fkw(repo, m, sha, tag, swhid=ok)) == []
 
 
 def test_freeze_tag_negatives(tmp_path):
     repo, m, sha, tag, g = _frozen_repo(tmp_path)
     kw = _fkw(repo, m, sha, tag)
-    assert any("does not exist" in p for p in rc.guard_problems(
-        **{**kw, "freeze_tag": "nope"}))
-    assert any("both" in p for p in rc.guard_problems(**{**kw, "manifest_doi": DOI}))
-    assert any("SHA-256 mismatch" in p for p in rc.guard_problems(
-        **{**kw, "manifest_sha256": "0" * 64}))
+    assert any("does not exist" in p for p in _probs({**kw, "freeze_tag": "n10c-freeze-20250101"}))
+    assert any("SHA-256 mismatch" in p for p in _probs({**kw, "manifest_sha256": "0" * 64}))
+    assert any("tag commit" in p for p in _probs({**kw, "expect_commit": "1" * 40}))
+    assert _probs({**kw, "expect_commit": g("rev-parse", "HEAD")}) == []
     (repo / "dirty.txt").write_text("d")
-    assert any("dirty" in p for p in rc.guard_problems(**kw))
+    assert any("dirty" in p for p in _probs(kw))
 
 
 def test_freeze_lightweight_tag_refused(tmp_path):
     repo, m, sha, tag, _ = _frozen_repo(tmp_path, annotated=False)
-    assert any("lightweight" in p for p in rc.guard_problems(**_fkw(repo, m, sha, tag)))
+    assert any("lightweight" in p for p in _probs(_fkw(repo, m, sha, tag)))
 
 
 def test_freeze_tag_message_sha_mismatch_refused(tmp_path):
     repo, m, sha, tag, _ = _frozen_repo(tmp_path, msg_sha="a" * 64)
-    assert any("tag message" in p for p in rc.guard_problems(**_fkw(repo, m, sha, tag)))
+    assert any("tag message" in p for p in _probs(_fkw(repo, m, sha, tag)))
 
 
-def test_freeze_tag_at_wrong_commit_refused(tmp_path):
+def test_manifest_absent_from_the_tagged_tree_refused(tmp_path):
+    # tag created BEFORE the manifest commit: a later commit supplies the file
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path, tag_before_manifest=True)
+    assert m.exists()
+    probs = _probs(_fkw(repo, m, sha, tag))
+    assert any("not in the tagged commit" in p for p in probs)
+
+
+def test_amendment_absent_from_the_tagged_tree_refused(tmp_path):
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path, with_amendment=False)
+    assert any("amendment" in p for p in _probs(_fkw(repo, m, sha, tag)))
+
+
+def test_docs_commit_cannot_alter_the_tagged_documents(tmp_path):
     repo, m, sha, tag, g = _frozen_repo(tmp_path)
-    g("reset", "-q", "--hard", "HEAD~1")  # HEAD no longer descends from the tag
-    probs = rc.guard_problems(**_fkw(repo, m if m.exists() else m, sha, tag))
-    assert probs and any("manifest" in p or "descendant" in p for p in probs)
+    (repo / AMEND).write_text("# Amendment\nchanged after the tag\n")
+    g("commit", "-q", "-am", "docs: edit amendment")
+    assert any("amendment differs" in p for p in _probs(_fkw(repo, m, sha, tag)))
+    g("checkout", "-q", "HEAD~1", "--", AMEND)
+    g("commit", "-q", "-am", "docs: restore")
+    assert _probs(_fkw(repo, m, sha, tag)) == []
+    m.write_text(m.read_text() + "edited\n")
+    g("commit", "-q", "-am", "manifest: edit")
+    assert any("manifest differs" in p for p in _probs(_fkw(repo, m, sha, tag)))
+
+
+def test_manifest_path_must_be_the_tagged_one(tmp_path):
+    repo, m, sha, tag, g = _frozen_repo(tmp_path)
+    other = m.with_name("other.md")
+    other.write_bytes(m.read_bytes())
+    g("add", ".")
+    g("commit", "-q", "-m", "manifest: copy")
+    assert any("tagged manifest path" in p for p in _probs(_fkw(repo, other, sha, tag)))
 
 
 def test_freeze_manifest_status_must_name_the_tag(tmp_path):
     repo, m, sha, tag, _ = _frozen_repo(tmp_path, status="Status: FROZEN (tag other)")
-    assert any("FROZEN" in p for p in rc.guard_problems(**_fkw(repo, m, sha, tag)))
+    assert any("FROZEN" in p for p in _probs(_fkw(repo, m, sha, tag)))
     repo2, m2, sha2, tag2, _ = _frozen_repo(tmp_path / "d", status="Status: DRAFT")
-    assert any("DRAFT" in p for p in rc.guard_problems(**_fkw(repo2, m2, sha2, tag2)))
+    assert any("DRAFT" in p for p in _probs(_fkw(repo2, m2, sha2, tag2)))
 
 
-def test_filed_doi_mode_still_works_alongside(tmp_path):
-    repo, code, _ = _git_repo(tmp_path)
-    assert rc.guard_problems(**_ok(repo, code)) == []
+def test_context_is_only_issued_by_the_guards(tmp_path):
+    with pytest.raises(rc.GuardError):
+        guards.RegistrationContext(
+            tag=TAG, commit="0" * 40, swhid=SWH, manifest_path=REL,
+            manifest_sha256="0" * 64, amendment_sha256="0" * 64)
+    repo, m, sha, tag, g = _frozen_repo(tmp_path)
+    ctx = guards.issue_context(**_fkw(repo, m, sha, tag),
+                               push_time_fn=lambda r, t: "2026-10-24T10:00:00Z")
+    pins = ctx.pins()
+    assert pins["freeze_tag"] == tag and pins["swhid"] == SWH
+    assert pins["freeze_commit"] == g("rev-parse", "refs/tags/" + tag + "^{commit}")
+    assert pins["manifest_sha256"] == sha and pins["tag_push_time"] == "2026-10-24T10:00:00Z"
+    assert pins["amendment_sha256"] == hashlib.sha256(
+        (repo / AMEND).read_bytes()).hexdigest()
+    assert pins["tag_push_time_note"] is None
+    # push time not obtainable: the record says where to take it from
+    ctx2 = guards.issue_context(**_fkw(repo, m, sha, tag), push_time_fn=lambda r, t: None)
+    assert ctx2.tag_push_time is None and "GitHub" in ctx2.tag_push_time_note
+    with pytest.raises(rc.GuardError):
+        guards.issue_context(**_fkw(repo, m, sha, tag, swhid=None))
 
 
-@pytest.mark.parametrize("variant", ["missing", "lightweight", "sha", "dirty"])
+def test_github_push_time_from_events(tmp_path):
+    repo, m, sha, tag, g = _frozen_repo(tmp_path)
+    g("remote", "set-url", "origin", "git@github.com:hypneum-lab/nerve-wml.git")
+    events = [{"type": "PushEvent", "payload": {"ref": "refs/heads/x"}, "created_at": "A"},
+              {"type": "PushEvent", "payload": {"ref": f"refs/tags/{tag}"},
+               "created_at": "2026-10-24T09:00:00Z"}]
+    calls = []
+
+    def fake(cmd, **k):
+        calls.append(cmd)
+        return SimpleNamespace(returncode=0, stdout=json.dumps(events), stderr="")
+
+    assert guards.github_push_time(repo, tag, run=fake) == "2026-10-24T09:00:00Z"
+    assert "repos/hypneum-lab/nerve-wml/events" in calls[0][2]
+    assert guards.github_push_time(repo, "n10c-freeze-20250101", run=fake) is None
+    boom = SimpleNamespace(returncode=1, stdout="", stderr="no gh")
+    assert guards.github_push_time(repo, tag, run=lambda *a, **k: boom) is None
+    g("remote", "set-url", "origin", str(tmp_path / "origin.git"))
+    assert guards.github_push_time(repo, tag, run=fake) is None  # not GitHub
+
+
+@pytest.mark.parametrize("variant", ["missing", "lightweight", "sha", "dirty", "noswhid"])
 def test_main_freeze_negatives_call_nothing(tmp_path, monkeypatch, variant):
     kw = {"annotated": variant != "lightweight",
           "msg_sha": "b" * 64 if variant == "sha" else None}
@@ -771,25 +750,76 @@ def test_main_freeze_negatives_call_nothing(tmp_path, monkeypatch, variant):
     monkeypatch.setattr(rc, "_default_eval", lambda *a, **k: called.append("e"))
     argv = ["--campaign-dir", str(tmp_path / "c"), "--host", "kxkm",
             "--manifest", str(m), "--manifest-sha256", sha,
-            "--freeze-tag", "ghost" if variant == "missing" else tag]
+            "--freeze-tag", "n10c-freeze-20250101" if variant == "missing" else tag]
+    if variant != "noswhid":
+        argv += ["--swhid", SWH]
     assert rc.main(argv) == rc.EXIT_GUARD
     assert called == [] and not (tmp_path / "c").exists()
 
 
-def test_main_freeze_mode_pins_tag_commit_and_swhid(tmp_path, monkeypatch):
+def test_main_without_tag_refuses_even_with_a_valid_doi(tmp_path, monkeypatch):
+    repo, m, sha, tag, _ = _frozen_repo(tmp_path)
+    called = []
+    monkeypatch.setattr(rc, "REPO", repo)
+    monkeypatch.setattr(rc.Campaign, "run", lambda self: called.append(1) or 0)
+    argv = ["--campaign-dir", str(tmp_path / "c"), "--host", "kxkm",
+            "--manifest", str(m), "--manifest-sha256", sha,
+            "--manifest-doi", DOI, "--swhid", SWH]
+    assert rc.main(argv) == rc.EXIT_GUARD and called == []
+
+
+def test_main_freeze_mode_pins_tag_commit_swhid_and_push_time_record(tmp_path, monkeypatch):
     repo, m, sha, tag, g = _frozen_repo(tmp_path)
     called = []
     monkeypatch.setattr(rc, "REPO", repo)
     monkeypatch.setattr(rc.Campaign, "run", lambda self: called.append(1) or 0)
-    swh = "swh:1:rev:" + g("rev-parse", "HEAD")
     argv = ["--campaign-dir", str(tmp_path / "c"), "--host", "macm1",
             "--manifest", str(m), "--manifest-sha256", sha,
-            "--freeze-tag", tag, "--swhid", swh]
+            "--freeze-tag", tag, "--swhid", SWH]
     assert rc.main(argv) == 0 and called == [1]
     meta = json.loads((tmp_path / "c" / "campaign.json").read_text())
-    assert meta["freeze_tag"] == tag and meta["swhid"] == swh
+    assert meta["freeze_tag"] == tag and meta["swhid"] == SWH
     assert meta["freeze_commit"] == g("rev-parse", "HEAD") and meta["host"] == "macm1"
+    assert meta["manifest_sha256"] == sha and meta["manifest_doi"] is None
+    assert len(meta["amendment_sha256"]) == 64
+    assert meta["tag_push_time"] is None and "GitHub" in meta["tag_push_time_note"]
     assert rc.main(argv[:-1] + ["not-a-swhid"]) == rc.EXIT_GUARD
+    # a restart may add the DOI / push time later, but never change the tag
+    assert rc.main(argv + ["--manifest-doi", DOI]) == 0
+    meta = json.loads((tmp_path / "c" / "campaign.json").read_text())
+    assert meta["manifest_doi"] == DOI
+
+
+# ---- execution boundary of the campaign -------------------------------
+
+def test_registered_campaign_needs_a_registration_context(tmp_path):
+    with pytest.raises(rc.GuardError, match="RegistrationContext"):
+        rc.Campaign(rc.Options(campaign_dir=tmp_path / "c", host="kxkm"))
+
+
+def test_trial_is_limited_to_the_development_budget(tmp_path):
+    with pytest.raises(rc.GuardError, match="trial"):
+        rc.Campaign(rc.Options(campaign_dir=tmp_path / "c", host="kxkm", trial=True,
+                               total_pair_steps=2_000_000))
+    rc.Campaign(rc.Options(campaign_dir=tmp_path / "c", host="kxkm", trial=True,
+                           total_pair_steps=1_000_000))
+
+
+def test_run_pins_the_provenance_of_the_context_never_an_empty_dict(tmp_path):
+    ctx = guards.make_context_for_tests(swhid=SWH, tag=TAG)
+    c, _ = _campaign(tmp_path, lambda n, kw: _rec(), registration=ctx)
+    c.run()
+    meta = json.loads((c.dir / "campaign.json").read_text())
+    assert meta["freeze_tag"] == TAG and meta["swhid"] == SWH
+    assert meta["amendment_sha256"] and meta["manifest_sha256"]
+
+
+def test_default_functions_carry_the_registration_context(tmp_path):
+    ctx = guards.make_context_for_tests()
+    c = rc.Campaign(rc.Options(campaign_dir=tmp_path / "c", host="kxkm",
+                               registration=ctx))
+    for fn in (c.train_fn, c.eval_fn, c.cross_fn):
+        assert fn.keywords["registration"] is ctx
 
 
 # ---- per-host registered implementation settings (single source) ------
