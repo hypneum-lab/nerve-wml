@@ -4,6 +4,20 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Corrections
+
+- **L1a gate did not pass as specified at seed 0, n=1024.** The spec
+  (section 5.2) requires untrained accuracy <= 10 %; the recorded run has
+  13.1 %, and `scripts/lif_l1a_train.py` never evaluated that condition,
+  so the "closes the L1a gate" claim in v1.9.0 (and `gate_passed: true`
+  in the 2026-05-30 JSON) holds only for the other two conditions. The
+  learned gain is unchanged (89.1 % final vs 13.1 % untrained, chance
+  8.3 %). Gate script now checks all three conditions. Details, all sizes
+  and affected claims:
+  `docs/superpowers/research/2026-10-24-lif-l1a-gate-erratum.md`.
+  The archived Zenodo v1.9.0 record cannot be edited; the next release
+  description will carry the correction.
+
 ## [1.9.4] — 2026-06-20
 
 Paper 1 §Information Transmission gains Test (12): end-to-end validation
