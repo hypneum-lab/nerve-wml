@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import hashlib
 import json
 import platform
 import re
@@ -263,6 +264,7 @@ class Campaign:
                        infra_failures=st["infra_failures"])
             return
         st["last_checkpoint"] = rec.last_checkpoint
+        st["last_checkpoint_sha256"] = checkpoint_sha256(rd, rec.last_checkpoint)
         st["finished_at"] = _now()
         if rec.training_failure:
             st.update(status=q.TRAINING_FAILURE, failure_reason=rec.failure_reason)
@@ -286,6 +288,7 @@ class Campaign:
         self.event(run=spec.run_id, phase="eval", state="start",
                    ckpt=st["last_checkpoint"])
         try:  # held-out levels are touched only here, after training
+            verify_checkpoint(rd, st["last_checkpoint"], st.get("last_checkpoint_sha256"))
             rec = self.eval_fn(ckpt, spec.arm, spec.condition, spec.seed,
                                env_factory=self.o.env_factory)
             rd.mkdir(parents=True, exist_ok=True)
@@ -375,8 +378,8 @@ class Campaign:
                 self.store.save(st)
             return
         rd = self.run_dir(spec)
-        files = archive_files(rd, st["last_checkpoint"])
         try:
+            files = archive_files(rd, st["last_checkpoint"])
             self.archive_fn(rd, files, self.o.archive_to, spec.run_id)
         except Exception as exc:  # noqa: BLE001 - never blocks the campaign
             self.event(run=spec.run_id, phase="archive", state="failed",
@@ -407,6 +410,8 @@ class Campaign:
         st.update(
             status=q.TRAINING_FAILURE, infra_exhausted=True,
             last_checkpoint=self.find_last_checkpoint(spec),
+            last_checkpoint_sha256=checkpoint_sha256(
+                self.run_dir(spec), self.find_last_checkpoint(spec)),
             failure_reason=("still failing after 2 restarts: "
                             + str(st["failure_reason"])),
             finished_at=_now())
@@ -485,23 +490,145 @@ def completed_ckpts(d: Path) -> list[Path]:
     return [f for _, f in sorted(found)]
 
 
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def resolve_checkpoint(run_dir: Path, last_ckpt: str | None) -> Path | None:
+    """The status-selected checkpoint as an existing file, resolving the
+    ``../<run>.failed-N/ckpt_*.safetensors`` form of an exhausted run.
+    None = untrained init; a recorded but missing file raises."""
+    if not last_ckpt:
+        return None
+    p = (Path(run_dir) / last_ckpt).resolve()
+    if not p.is_file():
+        raise FileNotFoundError(
+            f"status-selected checkpoint {last_ckpt!r} not found at {p}")
+    return p
+
+
+def checkpoint_sha256(run_dir: Path, last_ckpt: str | None) -> str | None:
+    try:
+        p = resolve_checkpoint(run_dir, last_ckpt)
+    except FileNotFoundError:
+        return None
+    return None if p is None else sha256_file(p)
+
+
+def verify_checkpoint(run_dir: Path, last_ckpt: str | None, sha: str | None) -> None:
+    """Raise unless the checkpoint on disk still has the recorded digest."""
+    if not last_ckpt or not sha:
+        return
+    p = resolve_checkpoint(run_dir, last_ckpt)
+    if p is not None and sha256_file(p) != sha:
+        raise RuntimeError(f"checkpoint {last_ckpt} SHA-256 differs from the "
+                           "recorded digest (corrupted copy?)")
+
+
+def archive_name(run_dir: Path, f: Path) -> str:
+    """Name of ``f`` in the archive: its basename inside the run directory;
+    ``failed-<n>__<basename>`` for a file of a ``<run>.failed-<n>`` dir."""
+    parent = f.resolve().parent
+    if parent == Path(run_dir).resolve():
+        return f.name
+    return f"{parent.name.rsplit('.', 1)[-1]}__{f.name}"
+
+
 def archive_files(run_dir: Path, last_ckpt: str | None) -> list[Path]:
+    """run.json, eval.json, the newest finished checkpoint of the run
+    directory and the STATUS-SELECTED checkpoint (which, for an exhausted
+    run, lives in ``../<run>.failed-N/``). A recorded checkpoint that is
+    missing raises instead of being silently dropped."""
+    run_dir = Path(run_dir)
     files = [run_dir / "run.json", run_dir / "eval.json"]
     ckpts = completed_ckpts(run_dir)
-    keep = {c for c in ckpts[-1:]}
-    if last_ckpt:
-        keep.add(run_dir / last_ckpt)
+    keep = {c.resolve() for c in ckpts[-1:]}
+    sel = resolve_checkpoint(run_dir, last_ckpt)
+    if sel is not None:
+        keep.add(sel)
     files += sorted(keep)
     return [f for f in files if f.exists()]
 
 
-def rsync_archive(run_dir: Path, files: list[Path], target: str, run_id: str) -> None:
-    dest = f"{target.rstrip('/')}/{run_id}/"
-    cmd = ["rsync", "-a", "--partial", "-e", "ssh -o BatchMode=yes",
-           *[str(f) for f in files], dest]
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
-    if r.returncode != 0:
-        raise RuntimeError(f"rsync failed: {r.stderr.strip()}")
+def build_provenance(run_dir: Path, files: list[Path], run_id: str) -> dict:
+    """Digests and provenance of what is archived for one run."""
+    run_dir = Path(run_dir)
+    camp = run_dir.parent.parent
+    st_path = camp / "status" / f"{run_id}.json"
+    st = json.loads(st_path.read_text()) if st_path.exists() else {}
+    meta = {}
+    if (camp / "campaign.json").exists():
+        meta = json.loads((camp / "campaign.json").read_text())
+    return {
+        "run_id": run_id,
+        "status": st.get("status"),
+        "infra_exhausted": st.get("infra_exhausted", False),
+        "status_last_checkpoint": st.get("last_checkpoint"),
+        "recorded_checkpoint_sha256": st.get("last_checkpoint_sha256"),
+        "freeze": {k: meta.get(k) for k in (
+            "freeze_tag", "freeze_commit", "swhid", "manifest_sha256",
+            "amendment_sha256")},
+        "files": {archive_name(run_dir, f): {
+            "sha256": sha256_file(f), "bytes": f.stat().st_size,
+            "source": str(f.resolve().relative_to(run_dir.parent.resolve()))
+            if f.resolve().is_relative_to(run_dir.parent.resolve()) else str(f)}
+            for f in files},
+    }
+
+
+def rsync_archive(run_dir: Path, files: list[Path], target: str, run_id: str,
+                  *, runner: Callable[..., Any] = subprocess.run) -> None:
+    """Push one run to ``user@host:path/<run_id>/``.
+
+    Files are staged under their archive names (a checkpoint of a
+    ``.failed-N`` dir keeps its provenance in the name and in
+    ``PROVENANCE.json``), sent with ``rsync -aL --checksum`` and their
+    SHA-256 verified on the target; ``campaign.json`` and ``attempts.jsonl``
+    go to ``<target>/_campaign/``.
+    """
+    import tempfile
+
+    run_dir = Path(run_dir)
+    camp = run_dir.parent.parent
+    base = target.rstrip("/")
+    prov = build_provenance(run_dir, files, run_id)
+    rec = prov["recorded_checkpoint_sha256"]
+    if rec and prov["status_last_checkpoint"]:
+        name = archive_name(run_dir, resolve_checkpoint(
+            run_dir, prov["status_last_checkpoint"]))
+        if prov["files"][name]["sha256"] != rec:
+            raise RuntimeError(f"checkpoint {name} SHA-256 differs from the "
+                               "digest recorded at training time")
+    ssh = ["-e", "ssh -o BatchMode=yes -o ControlPath=none"]
+    with tempfile.TemporaryDirectory() as td:
+        stage = Path(td)
+        for f in files:
+            (stage / archive_name(run_dir, f)).symlink_to(f.resolve())
+        (stage / "PROVENANCE.json").write_text(json.dumps(prov, indent=2))
+        r = runner(["rsync", "-aL", "--partial", "--checksum", *ssh,
+                    f"{stage}/", f"{base}/{run_id}/"],
+                   capture_output=True, text=True, timeout=3600)
+        if r.returncode != 0:
+            raise RuntimeError(f"rsync failed: {r.stderr.strip()}")
+    host, _, path = base.partition(":")
+    listing = "".join(f"{v['sha256']}  {k}\n" for k, v in prov["files"].items())
+    v = runner(["ssh", "-o", "BatchMode=yes", "-o", "ControlPath=none", host,
+                f"cd '{path}/{run_id}' && sha256sum -c -"],
+               input=listing, capture_output=True, text=True, timeout=600)
+    if v.returncode != 0:
+        raise RuntimeError(f"remote SHA-256 verification failed: "
+                           f"{(v.stdout + v.stderr).strip()}")
+    extra = [camp / n for n in ("campaign.json", "attempts.jsonl")
+             if (camp / n).exists()]
+    if extra:
+        r = runner(["rsync", "-a", *ssh, *[str(x) for x in extra], f"{base}/_campaign/"],
+                   capture_output=True, text=True, timeout=600)
+        if r.returncode != 0:
+            raise RuntimeError(f"rsync of campaign files failed: {r.stderr.strip()}")
 
 
 DEFAULT_JUMP = "electron@100.78.191.52"  # electron-server

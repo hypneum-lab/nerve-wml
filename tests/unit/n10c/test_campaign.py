@@ -1,6 +1,7 @@
 """Campaign tests: fake train/eval functions, no mlx / procgen needed."""
 import hashlib
 import json
+import pathlib
 import subprocess
 from types import SimpleNamespace
 
@@ -1064,3 +1065,169 @@ def test_pull_archive_copies_completed_runs_only_and_is_idempotent(tmp_path):
     assert (dest / "cross" / "registered-gtm-s73-s101.json").exists()
     assert (dest / "pull.log").read_text().strip()
     assert _pull(src, dest).returncode == 0  # idempotent
+
+
+# ---- archive: status-selected checkpoint, digests, provenance (item 9) ----
+
+def _exhausted_campaign(tmp_path):
+    """First KXKM run exhausted; its checkpoint lives in <run>.failed-N/."""
+    made = {"n": 0}
+
+    def t(n, kw):
+        made["n"] += 1
+        if _is_first(kw):
+            if made["n"] > 1:  # later attempts leave no checkpoint
+                for f in kw["out_dir"].glob("ckpt_*"):
+                    f.unlink()
+            raise OSError("disk")
+        return _rec()
+    c, calls = _campaign(tmp_path, t)
+    c.pin({"freeze_tag": TAG})
+    c.run()
+    return c, calls
+
+
+def test_status_records_checkpoint_digest(tmp_path):
+    c, _ = _campaign(tmp_path, lambda n, kw: _rec())
+    c.run()
+    st = c.store.load(SECOND)
+    ck = c.run_dir(SECOND) / st["last_checkpoint"]
+    assert st["last_checkpoint_sha256"] == hashlib.sha256(ck.read_bytes()).hexdigest()
+
+
+def test_archive_files_include_the_status_selected_failed_dir_checkpoint(tmp_path):
+    c, _ = _exhausted_campaign(tmp_path)
+    st = c.store.load(FIRST)
+    assert st["last_checkpoint"].startswith("../") and ".failed-" in st["last_checkpoint"]
+    files = rc.archive_files(c.run_dir(FIRST), st["last_checkpoint"])
+    sel = rc.resolve_checkpoint(c.run_dir(FIRST), st["last_checkpoint"])
+    assert sel in files and sel.parent.name.endswith(".failed-1")
+    assert rc.archive_name(c.run_dir(FIRST), sel) == f"failed-1__{sel.name}"
+    assert st["last_checkpoint_sha256"] == hashlib.sha256(sel.read_bytes()).hexdigest()
+
+
+def test_missing_status_selected_checkpoint_is_an_archive_failure_not_silent(tmp_path):
+    c, _ = _campaign(tmp_path, lambda n, kw: _rec())
+    c.pin({})
+    st = c.store.load(FIRST)
+    st.update(status=q.DONE, eval_done=True, last_checkpoint="../gone.failed-1/ckpt_1.safetensors")
+    c.store.save(st)
+    with pytest.raises(FileNotFoundError):
+        rc.archive_files(c.run_dir(FIRST), st["last_checkpoint"])
+    got = []
+    c.archive_fn = lambda *a: got.append(a)
+    c.o.archive_to = "u@h:/p"
+    c.archive(FIRST, st)
+    assert got == [] and not c.store.load(FIRST)["archived"]
+
+
+def _run_rsync_archive(c, spec, commands, stage_log, fail_verify=False):
+    def runner(cmd, **kw):
+        commands.append((cmd, kw))
+        if cmd[0] == "rsync" and cmd[-1].endswith(f"{spec.run_id}/"):
+            stage = cmd[-2].rstrip("/")
+            sd = pathlib.Path(stage)
+            stage_log.update({p.name: p.resolve() for p in sd.iterdir()})
+            stage_log["PROV"] = json.loads((sd / "PROVENANCE.json").read_text())
+        rc_ = 1 if (fail_verify and cmd[0] == "ssh") else 0
+        return SimpleNamespace(returncode=rc_, stdout="", stderr="bad")
+
+    st = c.store.load(spec)
+    files = rc.archive_files(c.run_dir(spec), st["last_checkpoint"])
+    rc.rsync_archive(c.run_dir(spec), files, "u@h:/arch", spec.run_id, runner=runner)
+
+
+def test_rsync_archive_transfers_status_checkpoint_with_digest_and_provenance(tmp_path):
+    c, _ = _exhausted_campaign(tmp_path)
+    cmds, stage = [], {}
+    _run_rsync_archive(c, FIRST, cmds, stage)
+    sel = rc.resolve_checkpoint(c.run_dir(FIRST), c.store.load(FIRST)["last_checkpoint"])
+    assert stage[f"failed-1__{sel.name}"] == sel  # staged under the provenance name
+    prov = stage["PROV"]
+    assert prov["status_last_checkpoint"].startswith("../")
+    assert prov["files"][f"failed-1__{sel.name}"]["sha256"] == hashlib.sha256(
+        sel.read_bytes()).hexdigest()
+    assert prov["freeze"]["freeze_tag"] == TAG and prov["status"] == q.TRAINING_FAILURE
+    assert "--checksum" in cmds[0][0] and cmds[0][0][-1] == f"u@h:/arch/{FIRST.run_id}/"
+    # remote digest verification, then campaign.json + attempts.jsonl
+    assert cmds[1][0][0] == "ssh" and "sha256sum -c" in cmds[1][0][-1]
+    assert f"{prov['recorded_checkpoint_sha256']}  failed-1__{sel.name}" in cmds[1][1]["input"]
+    assert cmds[2][0][0] == "rsync" and cmds[2][0][-1] == "u@h:/arch/_campaign/"
+    sent = [p.rsplit("/", 1)[-1] for p in cmds[2][0] if p.endswith((".json", ".jsonl"))]
+    assert sorted(sent) == ["attempts.jsonl", "campaign.json"]
+
+
+def test_rsync_archive_fails_on_remote_digest_mismatch(tmp_path):
+    c, _ = _exhausted_campaign(tmp_path)
+    with pytest.raises(RuntimeError, match="verification"):
+        _run_rsync_archive(c, FIRST, [], {}, fail_verify=True)
+
+
+def test_rsync_archive_refuses_checkpoint_changed_since_training(tmp_path):
+    c, _ = _exhausted_campaign(tmp_path)
+    sel = rc.resolve_checkpoint(c.run_dir(FIRST), c.store.load(FIRST)["last_checkpoint"])
+    sel.write_text("corrupted")
+    with pytest.raises(RuntimeError, match="differs"):
+        _run_rsync_archive(c, FIRST, [], {})
+
+
+def test_evaluation_verifies_the_checkpoint_digest(tmp_path):
+    c, calls = _campaign(tmp_path, lambda n, kw: _rec())
+    c.pin({})
+    spec = FIRST
+    c.train(spec, c.store.load(spec))
+    st = c.store.load(spec)
+    (c.run_dir(spec) / st["last_checkpoint"]).write_text("tampered")
+    c.evaluate(spec, st)
+    assert calls["eval"] == [] and c.store.load(spec)["eval_failures"] == 1
+    assert not c.store.load(spec)["eval_done"]
+
+
+def test_pull_archive_resolves_failed_dir_checkpoint_and_verifies_digest(tmp_path):
+    src, dest = tmp_path / "src", tmp_path / "dest"
+    rid = "registered-gtm-s73"
+    (src / "status").mkdir(parents=True)
+    (src / "runs" / rid).mkdir(parents=True)
+    fd = src / "runs" / f"{rid}.failed-2"
+    fd.mkdir()
+    (fd / "ckpt_5.safetensors").write_text("weights")
+    (src / "runs" / rid / "run.json").write_text("{}")
+    (src / "runs" / rid / "eval.json").write_text("{}")
+    sha = hashlib.sha256(b"weights").hexdigest()
+    st = {"run_id": rid, "eval_done": True, "status": "training_failure",
+          "last_checkpoint": f"../{rid}.failed-2/ckpt_5.safetensors",
+          "last_checkpoint_sha256": sha}
+    (src / "status" / f"{rid}.json").write_text(json.dumps(st))
+    (src / "campaign.json").write_text('{"freeze_tag": "t"}')
+    (src / "attempts.jsonl").write_text("{}\n")
+    r = _pull(src, dest)
+    assert r.returncode == 0, r.stdout + r.stderr
+    d = dest / rid
+    assert (d / "failed-2__ckpt_5.safetensors").read_text() == "weights"
+    prov = json.loads((d / "PROVENANCE.json").read_text())
+    assert prov["sha256"] == sha and prov["status_last_checkpoint"] == st["last_checkpoint"]
+    assert (dest / "_campaign" / "campaign.json").exists()
+    assert (dest / "_campaign" / "attempts.jsonl").exists()
+    assert not list(d.glob(".fetch-*"))
+    # a corrupted source copy is refused: nothing stored, non-zero exit
+    (fd / "ckpt_5.safetensors").write_text("garbage")
+    (d / "failed-2__ckpt_5.safetensors").unlink()
+    r2 = _pull(src, dest)
+    assert r2.returncode != 0 and "SHA-256" in (dest / "pull.log").read_text()
+    assert not (d / "failed-2__ckpt_5.safetensors").exists()
+
+
+def test_pull_archive_missing_checkpoint_is_reported_not_pulled(tmp_path):
+    src, dest = _pull_fixture(tmp_path)
+    (src / "runs" / "registered-gtm-s73" / "ckpt_64.safetensors").unlink()
+    r = _pull(src, dest)
+    assert r.returncode != 0
+    assert "could not fetch" in (dest / "pull.log").read_text()
+    assert "pulled registered-gtm-s73" not in (dest / "pull.log").read_text()
+
+
+def test_pull_archive_does_not_self_copy_status_files(tmp_path):
+    src, dest = _pull_fixture(tmp_path)
+    assert "cp -f" not in (pathlib.Path(rc.__file__).parent
+                           / "pull_archive.sh").read_text()
+    assert _pull(src, dest).returncode == 0
