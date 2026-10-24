@@ -233,8 +233,8 @@ def test_manifest_text_includes_cross_play_cost_and_smoke_ledger(tmp_path):
     text = _manifest(tmp_path)
     assert "cross-seed cross-play probe" in text and "60 passes" in text
     assert "60 cross-play passes" in text
-    assert "Smoke ledger" in text and "cap 3 per arm" in text
-    assert "ledger lists 1 run(s) but" in text  # no smoke_runs.json beside it
+    assert "Development ledger" in text and "cap 3 per arm" in text
+    assert "ledger lists 1 counted run(s) but" in text  # no smoke_runs.json beside it
 
 
 def test_gtm_gradient_deviation_no_longer_disclosed(tmp_path):

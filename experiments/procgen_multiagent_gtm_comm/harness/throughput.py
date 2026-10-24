@@ -24,6 +24,7 @@ from typing import Any
 
 import numpy as np
 
+from . import devledger
 from .codes import ARM_CODES, CONDITION_CODES
 
 PKG = Path(__file__).resolve().parent.parent
@@ -40,69 +41,22 @@ SMOKE_RUNS: list[tuple[str, str]] = [
 ] + [("gtm", "closed")]
 STEADY_SKIP = 2  # discard the first update cycles (mx.compile warm-up)
 
-# Development allowance (amendment, Configuration manifest): smoke runs of at
-# most 1M steps, at most 3 per arm, all disclosed in the manifest. Counted in
-# a persistent ledger BEFORE each run starts (a crashed run still counts).
-SMOKE_MAX_STEPS = 1_000_000
-SMOKE_MAX_PER_ARM = 3
-SMOKE_LEDGER = PKG / "manifest" / "smoke_ledger.json"
-
-
-class SmokeLimitError(RuntimeError):
-    """The development allowance for smoke runs would be exceeded."""
-
-
-def _read_ledger(path: Path) -> dict:
-    if Path(path).exists():
-        return json.loads(Path(path).read_text())
-    return {"max_steps": SMOKE_MAX_STEPS, "max_per_arm": SMOKE_MAX_PER_ARM, "runs": []}
-
-
-def smoke_counts(path: Path = SMOKE_LEDGER) -> dict[str, int]:
-    """Smoke runs already started, per arm (any condition, any outcome)."""
-    out: dict[str, int] = {}
-    for r in _read_ledger(path)["runs"]:
-        out[r["arm"]] = out.get(r["arm"], 0) + 1
-    return out
+# Development allowance: see harness/devledger.py (one persistent per-arm
+# ledger for every real-environment development run).
+SMOKE_MAX_STEPS = devledger.MAX_STEPS
+SMOKE_MAX_PER_ARM = devledger.MAX_PER_ARM
+SMOKE_LEDGER = devledger.LEDGER
+SmokeLimitError = devledger.SmokeLimitError
+smoke_counts = devledger.counts
 
 
 def reserve_smoke(arm: str, condition: str, steps: int,
-                  path: Path = SMOKE_LEDGER) -> int:
-    """Account one smoke run before it starts; raise if the allowance is
-    exceeded. Larger runs exist only on the registered path."""
-    if arm not in ARM_CODES or condition not in CONDITION_CODES:
-        raise ValueError(f"unknown arm/condition {arm!r}/{condition!r}")
-    if steps > SMOKE_MAX_STEPS:
-        raise SmokeLimitError(
-            f"smoke runs are limited to {SMOKE_MAX_STEPS:,} pair-steps "
-            f"(requested {steps:,}); larger runs only via the registered path")
-    if steps < 1:
-        raise ValueError("steps must be >= 1")
-    ledger = _read_ledger(path)
-    used = sum(1 for r in ledger["runs"] if r["arm"] == arm)
-    if used >= SMOKE_MAX_PER_ARM:
-        raise SmokeLimitError(
-            f"arm {arm!r} already used {used} of {SMOKE_MAX_PER_ARM} smoke runs")
-    ledger["runs"].append({
-        "arm": arm, "condition": condition, "seed": SMOKE_SEED, "steps": steps,
-        "levels": "training (start_level=0, num_levels=16)",
-        "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "outcome": "started"})
-    _write_ledger(path, ledger)
-    return len(ledger["runs"]) - 1
+                  path: Path = SMOKE_LEDGER) -> devledger.Reservation:
+    return devledger.reserve(arm, condition, steps, kind="smoke", path=path)
 
 
-def finish_smoke(index: int, outcome: str, path: Path = SMOKE_LEDGER) -> None:
-    ledger = _read_ledger(path)
-    ledger["runs"][index]["outcome"] = outcome
-    _write_ledger(path, ledger)
-
-
-def _write_ledger(path: Path, ledger: dict) -> None:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(ledger, indent=2))
-    tmp.replace(path)
+def finish_smoke(res: devledger.Reservation, outcome: str) -> None:
+    devledger.finish(res, outcome)
 
 
 def _uptime() -> str:
@@ -143,12 +97,15 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
                        env_factory: Callable[[int], Any] | None = None,
                        n_pairs: int = 64, horizon: int = 128,
                        eval_levels: range = TRAIN_LEVELS,
-                       skip: int = STEADY_SKIP, n_workers: int = 1) -> dict:
+                       skip: int = STEADY_SKIP, n_workers: int = 1,
+                       ledger: Path = SMOKE_LEDGER) -> dict:
     """Measure end-to-end training throughput of ``arm`` (untrained start).
 
     One job, real env (unless ``env_factory`` is given for tests), policy,
-    bus and PPO update, on training levels only. Steady-state rate uses
-    the per-update wall clock after ``skip`` warm-up cycles.
+    bus and PPO update, on training levels only. The policy stays at its
+    random initialisation (learning rate 0: "throughput measurements on
+    random or untrained policies"); the run is ledgered as ``measurement``.
+    Steady-state rate uses the per-update wall clock after ``skip`` warm-up cycles.
     """
     from .train import train_run
 
@@ -162,16 +119,28 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
         stamps.append(time.time())
 
     uptime_before = _uptime()
-    with tempfile.TemporaryDirectory() as td:
-        t0 = time.time()
-        rec = train_run(
-            arm, SMOKE_SEED, "registered", n_updates * n_pairs * horizon,
-            Path(td), env_factory=env_factory, n_pairs=n_pairs,
-            horizon=horizon, log_every_pair_steps=n_pairs * horizon,
-            ckpt_every_pair_steps=10**12, _rollout_hook=hook,
-            n_workers=n_workers,
-        )
-        wall = time.time() - t0
+    total = n_updates * n_pairs * horizon
+    res = None
+    if env_factory is None:  # real environment: ledgered before it starts
+        res = devledger.reserve(arm, "registered", total, kind="measurement",
+                                path=ledger)
+    outcome = "crashed"
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            t0 = time.time()
+            rec = train_run(
+                arm, SMOKE_SEED, "registered", total,
+                Path(td), env_factory=env_factory, n_pairs=n_pairs,
+                horizon=horizon, log_every_pair_steps=n_pairs * horizon,
+                ckpt_every_pair_steps=10**12, _rollout_hook=hook,
+                n_workers=n_workers, frozen_policy=True,
+                dev_reservation=res, dev_ledger=ledger,
+            )
+            wall = time.time() - t0
+        outcome = "failed_non_finite" if rec.training_failure else "completed"
+    finally:
+        if res is not None:
+            devledger.finish(res, outcome)
     deltas = np.diff(stamps)  # cycle u = update u + rollout u+1
     steady = deltas[skip:] if len(deltas) > skip else deltas
     per_cycle = float(np.mean(steady)) if len(steady) else float("nan")
@@ -215,7 +184,7 @@ def run_smoke(arm: str, condition: str, out_dir: Path, *,
     """
     from .train import train_run
 
-    idx = reserve_smoke(arm, condition, total, ledger)
+    res = reserve_smoke(arm, condition, total, ledger)
 
     entry: dict[str, Any] = {
         "arm": arm, "condition": condition, "seed": SMOKE_SEED,
@@ -229,6 +198,7 @@ def run_smoke(arm: str, condition: str, out_dir: Path, *,
             arm, SMOKE_SEED, condition, total, out_dir / f"{arm}_{condition}",
             env_factory=env_factory, n_pairs=n_pairs, horizon=horizon,
             log_every_pair_steps=log_every, ckpt_every_pair_steps=10**12,
+            dev_reservation=res, dev_ledger=ledger,
         )
         losses = np.array(rec.losses, dtype=float)
         curve = [r for _, r in rec.success_curve]
@@ -253,7 +223,7 @@ def run_smoke(arm: str, condition: str, out_dir: Path, *,
         entry.update({"outcome": "crashed", "error": repr(exc),
                       "traceback": traceback.format_exc(),
                       "wall_time_s": time.time() - t0})
-    finish_smoke(idx, entry["outcome"], ledger)
+    finish_smoke(res, entry["outcome"])
     return entry
 
 

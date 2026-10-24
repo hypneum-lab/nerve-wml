@@ -34,6 +34,7 @@ import numpy as np
 from mlx.utils import tree_flatten, tree_map
 
 from ..campaign import guards
+from . import devledger
 from .bus import MessageBus
 from .codes import (
     ARM_CODES,
@@ -273,6 +274,9 @@ def train_run(
     restarts: int = 0,
     n_workers: int = 1,
     registration: guards.RegistrationContext | None = None,
+    frozen_policy: bool = False,
+    dev_reservation: devledger.Reservation | None = None,
+    dev_ledger: Path = devledger.LEDGER,
     _fault_hook: Callable[[int, PairPolicy], None] | None = None,
     _rollout_hook: Callable[[int, RolloutBuffer], None] | None = None,
 ) -> RunRecord:
@@ -296,6 +300,15 @@ def train_run(
     pair-steps, frozen rollout / measurement configuration) with exactly the
     per-host ``HOST_SETTINGS``, on the actual host and backend. Without a
     context only the development mode is available (<= 1M pair-steps).
+
+    Every REAL-environment development run (``env_factory`` None, no
+    registration) is accounted in the persistent per-arm ledger
+    (``harness/devledger.py``) before it starts: kind ``dev_train`` counts
+    against the 3-per-arm allowance; ``frozen_policy=True`` (learning rate 0:
+    the policy stays at its random initialisation, for throughput
+    measurements) is ledgered as ``measurement`` and not counted. A
+    ``dev_reservation`` made by the caller (smoke / throughput paths) is used
+    instead of making a second entry; the caller then finishes it.
     """
     reg_host = guards.check_train_boundary(
         registration, arm=arm, seed=seed, condition=condition,
@@ -307,6 +320,24 @@ def train_run(
                 "ckpt_every_pair_steps": ckpt_every_pair_steps,
                 "minibatch_pairs": minibatch_pairs},
         has_env_factory=env_factory is not None)
+    own_res = None
+    if registration is not None:
+        if frozen_policy or dev_reservation is not None:
+            raise guards.GuardError(
+                "a registered run cannot use frozen_policy or a development "
+                "reservation")
+    elif env_factory is None:  # real Procgen development run: account it
+        kind = "measurement" if frozen_policy else "dev_train"
+        if dev_reservation is None:
+            own_res = devledger.reserve(arm, condition, total_pair_steps,
+                                        kind=kind, path=dev_ledger, seed=seed)
+        else:
+            res = devledger.check(dev_reservation, arm, condition, total_pair_steps)
+            ok_kind = (res.kind == "measurement") if frozen_policy \
+                else res.kind in devledger.COUNTED
+            if not ok_kind:
+                raise devledger.SmokeLimitError(
+                    f"reservation kind {res.kind!r} does not match this run")
     if micro_batch_pairs is not None and micro_batch_pairs < 1:
         raise ValueError("micro_batch_pairs must be >= 1")
     if total_pair_steps % n_pairs or log_every_pair_steps % n_pairs:
@@ -318,28 +349,35 @@ def train_run(
     shuf_rng = np.random.default_rng(shuf_ss)
     key_rng = np.random.default_rng(key_ss)
 
-    vec = VecCoopEnv(
-        n_pairs, env_ss, team_summary=(condition == "registered"),
-        env_factory=env_factory, n_workers=n_workers,
-    )
+    outcome = "crashed"
+    vec = None
     try:
+        vec = VecCoopEnv(
+            n_pairs, env_ss, team_summary=(condition == "registered"),
+            env_factory=env_factory, n_workers=n_workers,
+        )
         _assert_not_stub(vec)  # raises before any training
-        return _train(
+        rec = _train(
             vec, arm, seed, condition, total_pair_steps, out_dir, n_pairs,
             horizon, log_every_pair_steps, ckpt_every_pair_steps,
             minibatch_pairs, restarts, init_ss, shuf_rng, key_rng,
             _fault_hook, _rollout_hook, micro_batch_pairs, clear_cache,
-            n_workers, registration, reg_host,
+            n_workers, registration, reg_host, frozen_policy,
         )
+        outcome = "failed_non_finite" if rec.training_failure else "completed"
+        return rec
     finally:
-        vec.close()
+        if vec is not None:
+            vec.close()
+        if own_res is not None:
+            devledger.finish(own_res, outcome)
 
 
 def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
            log_every, ckpt_every, minibatch_pairs, restarts, init_ss,
            shuf_rng, key_rng, fault_hook, rollout_hook, micro_pairs=None,
            clear_cache=False, n_workers=1, registration=None,
-           reg_host=None) -> RunRecord:
+           reg_host=None, frozen_policy=False) -> RunRecord:
     rec = RunRecord(
         arm=arm, seed=seed, condition=condition,
         codes={"arm": ARM_CODES[arm], "condition": CONDITION_CODES[condition]},
@@ -354,7 +392,9 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
         rec.runtime = guards._runtime_probe()
     model = PairPolicy(arm, mx.random.key(init_key_int(seed, arm, condition)))
     mx.eval(model.parameters())
-    opt = optim.Adam(learning_rate=LR)
+    # frozen_policy (throughput measurements): learning rate 0 keeps the
+    # policy at its random initialisation while the full update cost is paid
+    opt = optim.Adam(learning_rate=0.0 if frozen_policy else LR)
     opt.init(model.trainable_parameters())
     mx.eval(opt.state)
     use_eng = arm == "eng"

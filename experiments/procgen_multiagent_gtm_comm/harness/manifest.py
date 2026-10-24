@@ -337,17 +337,36 @@ def _fmt_ledger(led: dict | None, sm: dict | None) -> list[str]:
     if not led:
         return ["**Smoke ledger absent** (manifest/smoke_ledger.json): the "
                 "development allowance cannot be audited.", ""]
+    counted = ("smoke", "dev_train")
     per: dict[str, int] = {}
+    kinds: dict[str, int] = {}
     for r in led["runs"]:
-        per[r["arm"]] = per.get(r["arm"], 0) + 1
-    lines = [f"Smoke ledger (persistent, written before each run starts; "
-             f"`manifest/smoke_ledger.json`): {len(led['runs'])} run(s) started, "
-             "per arm " + ", ".join(f"{a} {n}" for a, n in sorted(per.items()))
+        k = r.get("kind", "smoke")
+        kinds[k] = kinds.get(k, 0) + 1
+        if k in counted:
+            per[r["arm"]] = per.get(r["arm"], 0) + 1
+    lines = ["Development ledger (persistent, one per-arm ledger for every "
+             "real-environment development run, written before each run "
+             "starts; `manifest/smoke_ledger.json`): "
+             + ", ".join(f"{n} {k}" for k, n in sorted(kinds.items()))
+             + "; counted learning runs per arm "
+             + ", ".join(f"{a} {n}" for a, n in sorted(per.items()))
              + f"; cap {led['max_per_arm']} per arm and {led['max_steps']:,} "
-             "pair-steps per run, training levels only."]
+             "pair-steps per run, training levels only. Throughput "
+             "measurements made from now on use a frozen random policy "
+             "(learning rate 0; kind `measurement`, ledgered, not counted)."]
+    legacy = [r for r in led["runs"] if r.get("kind") == "legacy_measurement"]
+    if legacy:
+        lines.append(
+            f"**Disclosure:** {len(legacy)} throughput / profiling run(s) of "
+            "2026-10-23 (" + ", ".join(f"{r['arm']} {r['steps']:,}" for r in legacy)
+            + " pair-steps) were executed BEFORE this rule with learning updates "
+            "enabled, from an untrained start, on training levels; they are "
+            "recorded (kind `legacy_measurement`), not counted and not erased.")
     n_sm = len(sm["runs"]) if sm else 0
-    if len(led["runs"]) != n_sm:
-        lines.append(f"**The ledger lists {len(led['runs'])} run(s) but "
+    n_led = kinds.get("smoke", 0) + kinds.get("dev_train", 0)
+    if n_led != n_sm:
+        lines.append(f"**The ledger lists {n_led} counted run(s) but "
                      f"smoke_runs.json lists {n_sm}; every ledger run counts "
                      "against the allowance and must be disclosed.**")
     return [*lines, ""]

@@ -1,70 +1,156 @@
 {
   "max_steps": 1000000,
   "max_per_arm": 3,
-  "note": "backfilled from smoke_runs.json (7 disclosed runs, 200,000 pair-steps each); later runs are appended before they start",
+  "note": "One per-arm ledger for every real-environment development run (harness/devledger.py). kind smoke/dev_train: policy learns, counted, max 3 per arm and 1M pair-steps. kind measurement: throughput on a frozen random policy, ledgered, not counted. kind legacy_measurement: throughput/profiling runs executed on 2026-10-23 BEFORE this rule with learning updates; disclosed, not counted, not erased. Backfilled from smoke_runs.json and macM1 files; development runs from earlier tasks that left no file may be missing.",
   "runs": [
     {
+      "kind": "legacy_measurement",
+      "arm": "gtm",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 245760,
+      "levels": "training (start_level=0, num_levels=16)",
+      "policy_updates": true,
+      "started_at": "2026-10-23T18:59",
+      "outcome": "completed",
+      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; throughput measurement, 30 updates (macM1 ~/scratch/n10c/runs/throughput.json); disclosed, not counted"
+    },
+    {
+      "kind": "legacy_measurement",
+      "arm": "gtm",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 114688,
+      "levels": "training (start_level=0, num_levels=16)",
+      "policy_updates": true,
+      "started_at": "2026-10-23T20:18",
+      "outcome": "completed",
+      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; profiling run profile_cycle.py, 14 updates (prof_gtm14.log); disclosed, not counted"
+    },
+    {
+      "kind": "legacy_measurement",
+      "arm": "mlp",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 114688,
+      "levels": "training (start_level=0, num_levels=16)",
+      "policy_updates": true,
+      "started_at": "2026-10-23T20:20",
+      "outcome": "completed",
+      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; profiling run profile_cycle.py, 14 updates (prof_mlp14.log); disclosed, not counted"
+    },
+    {
+      "kind": "legacy_measurement",
+      "arm": "gtm",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 65536,
+      "levels": "training (start_level=0, num_levels=16)",
+      "policy_updates": true,
+      "started_at": "2026-10-23T20:29",
+      "outcome": "completed",
+      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; throughput re-check, 8 updates (runs/tp_check.json); disclosed, not counted"
+    },
+    {
+      "kind": "legacy_measurement",
+      "arm": "gtm",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 163840,
+      "levels": "training (start_level=0, num_levels=16)",
+      "policy_updates": true,
+      "started_at": "2026-10-23T20:33",
+      "outcome": "completed",
+      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; throughput measurement, 20 updates (manifest/throughput.json); disclosed, not counted"
+    },
+    {
+      "kind": "legacy_measurement",
+      "arm": "nocomm",
+      "condition": "registered",
+      "seed": 9001,
+      "steps": 163840,
+      "levels": "training (start_level=0, num_levels=16)",
+      "policy_updates": true,
+      "started_at": "2026-10-23T20:33",
+      "outcome": "completed",
+      "note": "executed before the ledger rule, with learning updates (lr 5e-4) from an untrained start; throughput measurement, 20 updates (manifest/throughput.json); disclosed, not counted"
+    },
+    {
+      "kind": "smoke",
       "arm": "gtm",
       "condition": "registered",
       "seed": 9001,
       "steps": 200000,
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
-      "outcome": "completed"
+      "outcome": "completed",
+      "policy_updates": true
     },
     {
+      "kind": "smoke",
       "arm": "mlp",
       "condition": "registered",
       "seed": 9001,
       "steps": 200000,
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
-      "outcome": "completed"
+      "outcome": "completed",
+      "policy_updates": true
     },
     {
+      "kind": "smoke",
       "arm": "atoc",
       "condition": "registered",
       "seed": 9001,
       "steps": 200000,
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
-      "outcome": "completed"
+      "outcome": "completed",
+      "policy_updates": true
     },
     {
+      "kind": "smoke",
       "arm": "dial",
       "condition": "registered",
       "seed": 9001,
       "steps": 200000,
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
-      "outcome": "completed"
+      "outcome": "completed",
+      "policy_updates": true
     },
     {
+      "kind": "smoke",
       "arm": "eng",
       "condition": "registered",
       "seed": 9001,
       "steps": 200000,
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
-      "outcome": "completed"
+      "outcome": "completed",
+      "policy_updates": true
     },
     {
+      "kind": "smoke",
       "arm": "nocomm",
       "condition": "registered",
       "seed": 9001,
       "steps": 200000,
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
-      "outcome": "completed"
+      "outcome": "completed",
+      "policy_updates": true
     },
     {
+      "kind": "smoke",
       "arm": "gtm",
       "condition": "closed",
       "seed": 9001,
       "steps": 200000,
       "levels": "training (start_level=0, num_levels=16)",
       "started_at": null,
-      "outcome": "completed"
+      "outcome": "completed",
+      "policy_updates": true
     }
   ]
 }
