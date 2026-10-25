@@ -48,6 +48,8 @@ from pathlib import Path
 from typing import Any
 
 from ..harness.codes import HOST_SETTINGS
+from ..harness.options import options_for
+from . import guards as _guards
 from . import queue as q
 from .guards import (  # noqa: F401 - re-exported for callers and tests
     DEV_MAX_PAIR_STEPS,
@@ -247,8 +249,16 @@ class Campaign:
         # registered per-host implementation settings (single source:
         # codes.HOST_SETTINGS); only a non-registered trial may override them
         settings = dict(HOST_SETTINGS[self.o.host])
-        kw = {**settings, **(self.o.train_kwargs or {})}
+        # registered training-options preset (amendment 2026-10-25) and, for
+        # a pre-training preset, the seed's pinned trunk (hash checked by
+        # the training boundary)
+        opts = options_for(_guards.REGISTERED_TRAIN_OPTIONS)
+        base: dict[str, Any] = {"options": opts}
+        if opts.pretrained_trunk:
+            base["init_trunk"] = _guards.trunk_path(self.dir, spec.seed)
+        kw = {**settings, **base, **(self.o.train_kwargs or {})}
         st["train_settings"] = {k: kw[k] for k in settings}
+        st["train_options"] = kw["options"].preset
         if self.o.env_factory is not None:
             kw["env_factory"] = self.o.env_factory
         try:

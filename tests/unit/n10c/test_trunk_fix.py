@@ -233,6 +233,26 @@ def test_finished_agents_do_not_enter_policy_entropy_or_adv_stats():
     assert not all(_close(h1[k], h2[k], rel=5e-2) for k in h1)
 
 
+def test_finished_agents_do_not_enter_the_entropy_bonus(monkeypatch):
+    # isolate the entropy term: no value loss; perturb the dead samples'
+    # observations (-> their logits and entropy) and their advantages only
+    monkeypatch.setattr(tr, "VALUE_COEF", 0.0)
+    rng = np.random.default_rng(4)
+    mb = _mb(rng)
+    mb["advantages"] = mx.zeros(mb["advantages"].shape)  # no policy term
+    obs = np.array(mb["obs"])
+    dead = np.array(mb["live"]) == 0
+    obs2 = obs.copy()
+    obs2[dead] = 255 - obs2[dead]
+    mb2 = dict(mb, obs=mx.array(obs2))
+    g1, g2 = _grads(True, mb), _grads(True, mb2)
+    heads = [k for k in g1 if not k.startswith("trunk.")]
+    assert all(_close(g1[k], g2[k], 1e-4) for k in heads)
+    assert all(_close(g1[k], g2[k], 5e-3) for k in g1)
+    h1, h2 = _grads(False, mb), _grads(False, mb2)
+    assert not all(_close(h1[k], h2[k], 5e-2) for k in heads)
+
+
 def test_masked_loss_is_invariant_to_micro_batching():
     mb = _mb(np.random.default_rng(2))
     full, micro = _grads(True, mb), _grads(True, mb, micro=2)
@@ -411,3 +431,110 @@ def test_gate_ledger_kinds_are_separate_and_capped(tmp_path):
     with pytest.raises(devledger.SmokeLimitError):
         devledger.reserve("gtm", "registered", 1_000_001, kind="gate_dev",
                           path=led)
+
+
+# -- registered paths: launcher preset / trunk, trunk hash, pre-training -----
+def test_registered_pretrained_preset_requires_the_pinned_trunk(monkeypatch):
+    ctx = guards.make_context_for_tests()
+    monkeypatch.setattr(guards, "_runtime_probe", lambda: {
+        "system": "Darwin", "machine": "arm64", "backend": "metal"})
+    monkeypatch.setattr(guards, "REGISTERED_TRAIN_OPTIONS", "fix-c-coin-pretrain")
+    kw = dict(arm="gtm", seed=0, condition="registered",
+              total_pair_steps=50_000_000,
+              settings=dict(tr.HOST_SETTINGS["macm1"]),
+              config=dict(guards.REGISTERED_TRAIN_CONFIG), has_env_factory=False,
+              options_preset="fix-c-coin-pretrain", pretrained_trunk=True)
+    with pytest.raises(guards.GuardError, match="trunk sha256"):
+        guards.check_train_boundary(ctx, **kw, init_trunk_sha256="ab" * 32)
+    monkeypatch.setitem(guards.REGISTERED_TRUNK_SHA256, 0, "ab" * 32)
+    with pytest.raises(guards.GuardError, match="trunk sha256"):
+        guards.check_train_boundary(ctx, **kw, init_trunk_sha256="cd" * 32)
+    monkeypatch.setattr(guards, "_procgen_probe", lambda: {})
+    try:
+        guards.check_train_boundary(ctx, **kw, init_trunk_sha256="ab" * 32)
+    except guards.GuardError as exc:  # only the procgen-build probe may remain
+        assert "trunk" not in str(exc) and "options" not in str(exc)
+
+
+def test_launcher_passes_registered_preset_and_seed_trunk(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from experiments.procgen_multiagent_gtm_comm.campaign import queue as q
+    from experiments.procgen_multiagent_gtm_comm.campaign import run_campaign as rc
+
+    seen = []
+
+    def train_fn(**kw):
+        seen.append(kw)
+        kw["out_dir"].mkdir(parents=True, exist_ok=True)
+        (kw["out_dir"] / f"ckpt_{q.TOTAL_PAIR_STEPS}.safetensors").write_text("x")
+        return SimpleNamespace(training_failure=False,
+                               pair_steps_done=q.TOTAL_PAIR_STEPS,
+                               last_checkpoint=f"ckpt_{q.TOTAL_PAIR_STEPS}.safetensors",
+                               wall_time_s=1.0, failure_reason=None)
+
+    for preset in (tr.FROZEN_PRESET, "fix-c-coin-pretrain"):
+        monkeypatch.setattr(guards, "REGISTERED_TRAIN_OPTIONS", preset)
+        seen.clear()
+        c = rc.Campaign(
+            rc.Options(campaign_dir=tmp_path / preset, host="macm1",
+                       registration=guards.make_context_for_tests()),
+            train_fn=train_fn, eval_fn=lambda *a, **k: None,
+            cross_fn=lambda *a, **k: None, gpu_fn=lambda: None)
+        spec = q.runs_for_host("macm1")[0]
+        c.train(spec, c.store.load(spec))
+        kw = seen[0]
+        assert kw["options"] == tr.PRESETS[preset]
+        if preset == tr.FROZEN_PRESET:
+            assert "init_trunk" not in kw
+        else:
+            assert kw["init_trunk"] == guards.trunk_path(tmp_path / preset, spec.seed)
+
+
+def test_registered_pretraining_boundary(tmp_path):
+    ctx = guards.make_context_for_tests()
+    with pytest.raises(guards.GuardError, match="RegistrationContext"):
+        guards.check_pretrain_boundary(object(), seed=0, total_steps=10**6,
+                                       has_env=False)
+    with pytest.raises(guards.GuardError, match="seed"):
+        guards.check_pretrain_boundary(ctx, seed=9101, total_steps=10**6,
+                                       has_env=False)
+    with pytest.raises(guards.GuardError, match="budget"):
+        guards.check_pretrain_boundary(ctx, seed=0, total_steps=500_000,
+                                       has_env=False)
+    with pytest.raises(guards.GuardError, match="real Procgen"):
+        pretrain_trunk(0, 10**6, tmp_path, env=_VecBandit(4), registration=ctx)
+    with pytest.raises(guards.GuardError, match="limited"):
+        guards.check_pretrain_boundary(None, seed=9101, total_steps=10**6 + 1,
+                                       has_env=False)
+
+
+def test_pretrain_ledgers_a_failed_env_build(tmp_path, monkeypatch):
+    from experiments.procgen_multiagent_gtm_comm.harness import pretrain as pt
+
+    def boom(*a, **k):
+        raise RuntimeError("no cmake")
+
+    monkeypatch.setattr(pt, "make_env", boom)
+    led = tmp_path / "ledger.json"
+    with pytest.raises(RuntimeError, match="cmake"):
+        pt.pretrain_trunk(9101, 1000, tmp_path / "o", dev_ledger=led)
+    run = devledger.read(led)["runs"][-1]
+    assert run["kind"] == "pretrain_dev" and run["outcome"] == "crashed"
+    assert (tmp_path / "o" / "pretrain.json").exists()
+
+
+def test_pretrain_ledger_survives_a_failing_close(tmp_path, monkeypatch):
+    from experiments.procgen_multiagent_gtm_comm.harness import pretrain as pt
+
+    class _BadClose(_VecBandit):
+        def close(self):
+            raise OSError("close failed")
+
+    monkeypatch.setattr(pt, "make_env", lambda n, s: _BadClose(n))
+    led = tmp_path / "ledger.json"
+    with pytest.raises(OSError):
+        pt.pretrain_trunk(9101, 32, tmp_path / "o", n_envs=4, horizon=8,
+                          dev_ledger=led)
+    assert devledger.read(led)["runs"][-1]["outcome"] == "completed"
+    assert json.loads((tmp_path / "o" / "pretrain.json").read_text())["usable"]

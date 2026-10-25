@@ -17,8 +17,12 @@ the first update ending at or after every ``liveness_every`` steps; the run
 aborts at the first flagged probe (a dead trunk is never written as a
 usable checkpoint: ``pretrain.json`` then has ``usable: false``).
 
-Real-environment runs are accounted in the development ledger (kind
-``pretrain_dev``) and are limited to ``devledger.MAX_STEPS`` steps.
+Development runs (no registration context) are accounted in the
+development ledger (kind ``pretrain_dev``) and are limited to
+``devledger.MAX_STEPS`` steps. A registered pre-training run (context issued
+by ``campaign.guards``) must be a registered seed, on that seed's fixed host,
+with exactly ``guards.PRETRAIN_BUDGET`` steps; it is not ledgered and its
+record carries the freeze pins.
 """
 from __future__ import annotations
 
@@ -36,6 +40,7 @@ import mlx.optimizers as optim
 import numpy as np
 from mlx.utils import tree_flatten
 
+from ..campaign import guards
 from . import devledger
 from .policy import N_ACTIONS, Impala
 from .rollout import compute_gae
@@ -86,6 +91,7 @@ class PretrainRecord:
     failure_reason: str | None = None
     trunk_file: str | None = None
     trunk_sha256: str | None = None
+    registration: dict | None = None
     levels: str = "training (start_level=0, num_levels=16, easy)"
 
 
@@ -105,19 +111,24 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
                    n_envs: int = 64, horizon: int = 128,
                    liveness_every: int = 100_000,
                    env: Any | None = None,
-                   dev_ledger: Path = devledger.LEDGER) -> PretrainRecord:
+                   dev_ledger: Path = devledger.LEDGER,
+                   registration: Any = None) -> PretrainRecord:
     """Pre-train the trunk for ``total_steps`` single-agent steps.
 
     ``env`` (tests only) replaces procgen: a gym3-style vector env with
     ``act`` / ``observe`` / ``close`` over ``n_envs`` copies."""
+    host = guards.check_pretrain_boundary(registration, seed=seed,
+                                          total_steps=total_steps,
+                                          has_env=env is not None)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     ss = np.random.SeedSequence([seed, PRETRAIN_CODE])
-    env_ss, init_ss, shuf_ss, key_ss = ss.spawn(4)
+    env_ss, init_ss, shuf_ss, key_ss, probe_ss = ss.spawn(5)
     shuf_rng = np.random.default_rng(shuf_ss)
     key_rng = np.random.default_rng(key_ss)
+    probe_rng = np.random.default_rng(probe_ss)  # probes never touch shuf_rng
     res = None
-    if env is None:
+    if env is None and registration is None:
         if total_steps > devledger.MAX_STEPS:
             raise devledger.SmokeLimitError(
                 f"pre-training is limited to {devledger.MAX_STEPS:,} steps")
@@ -127,23 +138,33 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
         devledger.claim(res, devledger.PRETRAIN_ARM,
                         devledger.PRETRAIN_CONDITION, total_steps)
     rec = PretrainRecord(seed, total_steps, n_envs, horizon)
+    if registration is not None:
+        rec.registration = {k: registration.pins()[k] for k in (
+            "freeze_tag", "freeze_commit", "swhid", "manifest_sha256")}
+        rec.registration["host"] = host
     outcome = "crashed"
     try:
-        if env is None:  # inside try: a failed env build is ledgered
-            env = make_env(n_envs,
-                           int(env_ss.generate_state(1)[0] % (2**31 - 1)))
-        _pretrain(rec, env, out_dir, init_ss, shuf_rng, key_rng, liveness_every)
-        outcome = "completed" if rec.usable else "liveness_abort"
-    finally:
-        if env is not None:
-            env.close()
-        if res is not None:
-            devledger.finish(res, outcome)
-        (out_dir / "pretrain.json").write_text(json.dumps(asdict(rec), indent=2))
+        try:
+            if env is None:  # inside try: a failed env build is ledgered
+                env = make_env(n_envs,
+                               int(env_ss.generate_state(1)[0] % (2**31 - 1)))
+            _pretrain(rec, env, out_dir, init_ss, shuf_rng, key_rng, probe_rng,
+                      liveness_every)
+            outcome = "completed" if rec.usable else "liveness_abort"
+        finally:
+            if env is not None:
+                env.close()
+    finally:  # ledger and record even if the env build or close fails
+        try:
+            (out_dir / "pretrain.json").write_text(
+                json.dumps(asdict(rec), indent=2))
+        finally:
+            if res is not None:
+                devledger.finish(res, outcome)
     return rec
 
 
-def _pretrain(rec, env, out_dir, init_ss, shuf_rng, key_rng,
+def _pretrain(rec, env, out_dir, init_ss, shuf_rng, key_rng, probe_rng,
               liveness_every) -> None:
     mx.random.seed(int(init_ss.generate_state(1)[0] % (2**31 - 1)))
     model = SinglePolicy()
@@ -170,8 +191,8 @@ def _pretrain(rec, env, out_dir, init_ss, shuf_rng, key_rng,
     coin_now = np.zeros(n, bool)
 
     def probe(frames: np.ndarray) -> bool:
-        k = shuf_rng.choice(frames.shape[0], min(256, frames.shape[0]),
-                            replace=False)
+        k = probe_rng.choice(frames.shape[0], min(256, frames.shape[0]),
+                             replace=False)
         m = trunk_activity(model.trunk,
                            mx.array(frames[k]).astype(mx.float32) / 255.0)
         m["step"] = rec.steps_done
@@ -261,8 +282,14 @@ def main() -> None:
     p.add_argument("--seed", type=int, required=True)
     p.add_argument("--steps", type=int, default=1_000_000)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--registered", action="store_true",
+                   help="registered pre-training of a registered seed "
+                        "(requires the freeze-tag guards)")
+    guards.add_guard_args(p)
     a = p.parse_args()
-    rec = pretrain_trunk(a.seed, a.steps, a.out)
+    ctx = guards.enforce_cli(a, registered=a.registered,
+                             what="registered pre-training")
+    rec = pretrain_trunk(a.seed, a.steps, a.out, registration=ctx)
     print(json.dumps({k: v for k, v in asdict(rec).items()
                       if k not in ("liveness",)}))
 

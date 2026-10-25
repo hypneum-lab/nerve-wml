@@ -47,6 +47,12 @@ from .codes import (
     run_seed_sequence,
 )
 from .comm import eng_bits_from_window, plasticity_scale
+from .options import (  # noqa: F401 - re-exported for callers and tests
+    FROZEN_PRESET,
+    PRESETS,
+    TrainOptions,
+    options_for,
+)
 from .policy import PairPolicy
 from .rollout import RolloutBuffer
 from .vec_env import VecCoopEnv
@@ -72,67 +78,6 @@ LEFT_ACTIONS = (0, 1, 2)
 LIVENESS_MIN_FRAC = 0.01
 LIVENESS_STD_EPS = 1e-6
 LIVENESS_PROBE_PAIRS = 128  # pair-steps per probe (= 256 agent frames)
-FROZEN_PRESET = "frozen-20261024"
-
-
-@dataclass(frozen=True)
-class TrainOptions:
-    """Registered training options (amendment 2026-10-25).
-
-    The default is the configuration frozen by tag ``n10c-freeze-20261024``
-    (kept selectable for reproducibility of that tag). Only the named
-    ``PRESETS`` are valid; a registered run uses the preset fixed by the
-    freeze (``campaign.guards.REGISTERED_TRAIN_OPTIONS``).
-
-    * ``coin_reward``: per-agent reward for reaching its OWN coin, added to
-      the team reward (+1 when both coins fall within delta_t = 20 steps).
-      0 = team reward only (frozen).
-    * ``adam_eps``: Adam epsilon (1e-8 = MLX default, frozen; 1e-5 = the
-      usual PPO value).
-    * ``mask_finished``: exclude agents that were already finished (frozen,
-      action ignored) from the policy loss, the entropy bonus and the
-      advantage normalisation statistics. Their forward pass, and hence
-      the message they send to the live partner, and their value targets
-      (the team return) are kept.
-    * ``liveness``: trunk-liveness guard: ``off``, ``flag`` (record only)
-      or ``abort`` (stop the run at the first flagged probe). The probe
-      runs at step 0 and after the first update ending at or after every
-      ``liveness_every`` pair-steps; metrics are logged in every non-off
-      mode.
-    * ``pretrained_trunk``: the IMPALA trunk is initialised from a
-      single-agent CoinRun pre-training checkpoint (``harness/pretrain.py``)
-      instead of at random; the rest of the network is initialised as before.
-    """
-
-    preset: str = FROZEN_PRESET
-    coin_reward: float = 0.0
-    adam_eps: float = 1e-8
-    mask_finished: bool = False
-    liveness: str = "off"
-    liveness_every: int = 100_000
-    pretrained_trunk: bool = False
-
-
-_GUARDS = dict(adam_eps=1e-5, mask_finished=True, liveness="abort")
-PRESETS: dict[str, TrainOptions] = {
-    FROZEN_PRESET: TrainOptions(),
-    # (1) individual coin reward + guards
-    "fix-a-coin": TrainOptions(preset="fix-a-coin", coin_reward=0.5, **_GUARDS),
-    # (2) single-agent trunk pre-training, team reward only, + guards
-    "fix-b-pretrain": TrainOptions(preset="fix-b-pretrain",
-                                   pretrained_trunk=True, **_GUARDS),
-    # A + B (PI choice 2026-10-25)
-    "fix-c-coin-pretrain": TrainOptions(preset="fix-c-coin-pretrain",
-                                        coin_reward=0.5,
-                                        pretrained_trunk=True, **_GUARDS),
-}
-
-
-def options_for(preset: str) -> TrainOptions:
-    if preset not in PRESETS:
-        raise ValueError(f"unknown training preset {preset!r} "
-                         f"(known: {sorted(PRESETS)})")
-    return PRESETS[preset]
 
 
 @dataclass
@@ -495,6 +440,7 @@ def train_run(
                          + " an init_trunk checkpoint")
     if dev_kind not in ("dev_train", "gate_dev"):
         raise ValueError(f"unknown development kind {dev_kind!r}")
+    trunk_sha = None if init_trunk is None else file_sha256(init_trunk)
     reg_host = guards.check_train_boundary(
         registration, arm=arm, seed=seed, condition=condition,
         total_pair_steps=total_pair_steps,
@@ -505,7 +451,8 @@ def train_run(
                 "ckpt_every_pair_steps": ckpt_every_pair_steps,
                 "minibatch_pairs": minibatch_pairs},
         has_env_factory=env_factory is not None,
-        options_preset=options.preset)
+        options_preset=options.preset, init_trunk_sha256=trunk_sha,
+        pretrained_trunk=options.pretrained_trunk)
     own_res = None
     if registration is not None:
         if frozen_policy or dev_reservation is not None:
@@ -589,7 +536,11 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
     model = PairPolicy(arm, mx.random.key(init_key_int(seed, arm, condition)))
     mx.eval(model.parameters())
     if init_trunk is not None:
-        rec.init_trunk_sha256 = file_sha256(init_trunk)
+        rec.init_trunk_sha256 = file_sha256(init_trunk)  # re-read: must match
+        if registration is not None and (
+                rec.init_trunk_sha256
+                != guards.REGISTERED_TRUNK_SHA256.get(seed)):
+            raise guards.GuardError("pre-trained trunk changed after the guard")
         load_trunk(model, init_trunk)
     # frozen_policy (throughput measurements): learning rate 0 keeps the
     # policy at its random initialisation while the full update cost is paid

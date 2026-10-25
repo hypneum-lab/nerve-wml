@@ -10,10 +10,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 RANDOM_TEAM_SUCCESS_MAX = 0.025  # uniform-random pair, training levels 0-15
 GATE_MIN_TEAM_SUCCESS = 2 * RANDOM_TEAM_SUCCESS_MAX
+GATE_STEPS = 1_000_000
+GATE_WINDOW = 100  # completed episodes in the final success measurement
+GATE_MIN_PROBES = 10  # liveness probes after step 0 (every 100k up to 1M)
+GATE_PRESET = "fix-c-coin-pretrain"
+GATE_ARMS = ("gtm", "eng")
+
+
+def _finite(x) -> bool:
+    return isinstance(x, int | float) and math.isfinite(x)
 
 
 def _f(x, nd=3):
@@ -21,23 +31,50 @@ def _f(x, nd=3):
 
 
 def verdict(run: dict) -> tuple[bool, list[str]]:
+    """Per-run gate criterion (amendment 2026-10-25, section 4)."""
     why = []
-    late = [m for m in run.get("liveness", []) if m["step"] > 0]
-    if run.get("liveness_abort") or any(m["flagged"] for m in late):
+    if run.get("training_failure") or run.get("liveness_abort"):
+        why.append("training failure / liveness abort")
+    if not (run.get("total_pair_steps") == run.get("pair_steps_done")
+            == GATE_STEPS):
+        why.append(f"not a complete {GATE_STEPS:,}-step run")
+    late = [m for m in run.get("liveness", []) if m.get("step", 0) > 0]
+    if len(late) < GATE_MIN_PROBES:
+        why.append(f"{len(late)} liveness probes after step 0 "
+                   f"< {GATE_MIN_PROBES}")
+    if any(m.get("flagged") for m in late):
         why.append("liveness flagged")
-    sc = [r for _, r in run.get("success_curve", []) if r is not None]
-    if not sc or sc[-1] < GATE_MIN_TEAM_SUCCESS:
-        why.append(f"final team success {_f(sc[-1] if sc else None)} "
-                   f"< {GATE_MIN_TEAM_SUCCESS}")
+    sc = run.get("success_curve") or []
+    n = run.get("success_curve_n") or []
+    final = sc[-1] if sc else None
+    if (final is None or final[0] != GATE_STEPS or not _finite(final[1])
+            or not n or n[-1] != GATE_WINDOW):
+        why.append(f"no finite last-{GATE_WINDOW}-episode success at "
+                   f"{GATE_STEPS:,}")
+    elif final[1] < GATE_MIN_TEAM_SUCCESS:
+        why.append(f"final team success {_f(final[1])} < {GATE_MIN_TEAM_SUCCESS}")
     cc = [r for _, r in run.get("coin_rate_curve", []) if r is not None]
-    if len(cc) < 2 or cc[-1] <= cc[0]:
+    if len(cc) < 2 or not all(_finite(x) for x in cc) or cc[-1] <= cc[0]:
         why.append("coin rate did not rise")
-    if run.get("pair_steps_done", 0) < run.get("total_pair_steps", 1):
-        why.append("run incomplete")
     return not why, why
 
 
-def report(gate_dir: Path) -> str:
+def combined_verdict(gate_dir: Path, preset: str = GATE_PRESET,
+                     suffix: str = "") -> tuple[bool, list[str]]:
+    """The gate passes only if BOTH arms of ``preset`` pass on one host."""
+    why = []
+    for arm in GATE_ARMS:
+        f = Path(gate_dir) / f"{preset}-{arm}{suffix}" / "run.json"
+        if not f.exists():
+            why.append(f"{preset}-{arm}{suffix}: missing")
+            continue
+        ok, w = verdict(json.loads(f.read_text()))
+        if not ok:
+            why.append(f"{preset}-{arm}{suffix}: " + "; ".join(w))
+    return not why, why
+
+
+def report(gate_dir: Path, host: str = "") -> str:
     out = []
     pj = gate_dir / "pretrain" / "pretrain.json"
     if pj.exists():
@@ -55,10 +92,10 @@ def report(gate_dir: Path) -> str:
         out.append("")
     runs = sorted(d for d in gate_dir.iterdir()
                   if d.is_dir() and (d / "run.json").exists())
-    out.append("| Run | Steps | Wall | Team success (final, max) vs random ≤0.025 "
+    out.append("| Host | Run | Steps | Wall | Team success (final, max) vs random ≤0.025 "
                "| Own-coin rate first → final | Entropy mean (last) / min (all) "
                "| Liveness flagged | Gate |")
-    out.append("|---|---:|---:|---|---|---|---|---|")
+    out.append("|---|---|---:|---:|---|---|---|---|---|")
     detail = []
     for d in runs:
         r = json.loads((d / "run.json").read_text())
@@ -67,7 +104,7 @@ def report(gate_dir: Path) -> str:
         ec = r["entropy_curve"]
         ok, why = verdict(r)
         out.append(
-            f"| {d.name} | {r['pair_steps_done']:,} | "
+            f"| {host} | {d.name} | {r['pair_steps_done']:,} | "
             f"{r['wall_time_s'] / 60:.0f} min | "
             f"{_f(sc[-1] if sc else None)}, {_f(max(sc) if sc else None)} | "
             f"{_f(cc[0] if cc else None)} → {_f(cc[-1] if cc else None)} | "
@@ -82,13 +119,20 @@ def report(gate_dir: Path) -> str:
                           f"{m['value_std']:.3f}" for m in r["liveness"]))
         detail.append(f"- {d.name} team success every 40k: " + ", ".join(
             _f(x, 3) for _, x in r["success_curve"]))
+    ok, why = combined_verdict(gate_dir)
+    out.append("")
+    out.append(f"**Combined gate ({GATE_PRESET}, both arms, {host or 'this host'}):"
+               f" {'PASS' if ok else 'FAIL'}**" + ("" if ok else
+                                                   " — " + "; ".join(why)))
     return "\n".join(out + [""] + detail)
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("gate_dir", type=Path)
-    print(report(p.parse_args().gate_dir))
+    p.add_argument("--host", default="")
+    a = p.parse_args()
+    print(report(a.gate_dir, a.host))
 
 
 if __name__ == "__main__":

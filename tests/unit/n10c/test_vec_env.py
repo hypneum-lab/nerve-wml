@@ -175,7 +175,7 @@ def _trace(n_workers: int) -> list:
             a = rng.integers(0, 15, (6, 2)).astype(np.int32)
             s = vec.step(a)
             out += [s.obs, s.summary, s.team_reward, s.done, s.finished,
-                    *s.window, *vec.window()]
+                    *s.window, *vec.window(), s.coin]
         return out
     finally:
         vec.close()
@@ -186,10 +186,14 @@ def test_vec_env_identical_across_worker_counts() -> None:
     again = _trace(1)  # repeatable in-process: the complete trace
     assert len(again) == len(ref)
     assert all(np.array_equal(a, b) for a, b in zip(ref, again, strict=True))
-    # ref layout: 4 reset arrays, then 9 per step
-    steps = [ref[4 + 9 * i: 4 + 9 * (i + 1)] for i in range(50)]
+    # ref layout: 4 reset arrays, then 10 per step (last: own-coin flags,
+    # also through the worker / shared-memory path below)
+    steps = [ref[4 + 10 * i: 4 + 10 * (i + 1)] for i in range(50)]
     done = np.stack([x[3] for x in steps])
     finished = np.stack([x[4] for x in steps])
+    coin = np.stack([x[9] for x in steps])
+    assert coin.dtype == bool and coin.any() and (~coin).any()
+    assert not (coin & ~finished).any()  # a coin finishes the agent
     assert done.any()  # auto-resets happen
     assert (finished & ~done[..., None]).any()  # frozen agents occur
     for n_workers in (2, 4):

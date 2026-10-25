@@ -70,6 +70,18 @@ REGISTERED_TRAIN_CONFIG = {  # frozen rollout / measurement configuration
 # tag n10c-freeze-20261024 froze the original configuration; the 2026-10-25
 # amendment changes this only together with a NEW freeze tag.
 REGISTERED_TRAIN_OPTIONS = "frozen-20261024"
+# Pre-trained trunk of each registered seed (preset with pretrained_trunk):
+# SHA-256 of ``<campaign_dir>/trunks/seed-<seed>/trunk.safetensors``, written
+# by the registered pre-training run of that seed on its fixed host and
+# pinned by the new freeze's manifest. Empty until then: a registered run of
+# a pre-training preset is refused.
+REGISTERED_TRUNK_SHA256: dict[int, str] = {}
+PRETRAIN_BUDGET = 1_000_000  # single-agent steps per registered pre-training
+TRUNK_DIR = "trunks"
+
+
+def trunk_path(campaign_dir: Path, seed: int) -> Path:
+    return Path(campaign_dir) / TRUNK_DIR / f"seed-{seed}" / "trunk.safetensors"
 ARMS_BY_CONDITION = {
     "registered": ("gtm", "mlp", "atoc", "dial", "eng", "nocomm"),
     "closed": ("gtm", "dial", "eng", "nocomm"),
@@ -531,6 +543,8 @@ def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
                          total_pair_steps: int, settings: dict,
                          config: dict, has_env_factory: bool,
                          options_preset: str = REGISTERED_TRAIN_OPTIONS,
+                         init_trunk_sha256: str | None = None,
+                         pretrained_trunk: bool = False,
                          ) -> str | None:
     """Gate for ``train_run``. Returns the registered host, or None in the
     explicit development mode (budget <= 1M pair-steps, no context).
@@ -551,8 +565,38 @@ def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
     if options_preset != REGISTERED_TRAIN_OPTIONS:
         errs.append(f"training options {options_preset!r} != registered "
                     f"{REGISTERED_TRAIN_OPTIONS!r}")
+    if pretrained_trunk:
+        want = REGISTERED_TRUNK_SHA256.get(seed)
+        if want is None or init_trunk_sha256 != want:
+            errs.append(f"pre-trained trunk sha256 {init_trunk_sha256!r} != "
+                        f"registered {want!r} for seed {seed}")
     if errs:
         raise GuardError("registered training refused: " + "; ".join(errs))
+    host = SEED_HOST[seed]
+    assert_runtime_host(host)
+    return host
+
+
+def check_pretrain_boundary(ctx: Any, *, seed: int, total_steps: int,
+                            has_env: bool) -> str | None:
+    """Gate for ``harness.pretrain``. None = development pre-training
+    (ledgered, <= 1M steps); with a context, the registered pre-training
+    of a registered seed on its fixed host, with the exact budget."""
+    if ctx is None:
+        if total_steps > DEV_MAX_PAIR_STEPS:
+            raise GuardError(f"development pre-training is limited to "
+                             f"{DEV_MAX_PAIR_STEPS:,} steps")
+        return None
+    _need_ctx(ctx, "registered pre-training")
+    errs = []
+    if seed not in SEEDS:
+        errs.append(f"seed {seed} not in the registered seeds {list(SEEDS)}")
+    if total_steps != PRETRAIN_BUDGET:
+        errs.append(f"budget {total_steps:,} != registered {PRETRAIN_BUDGET:,}")
+    if has_env:
+        errs.append("registered pre-training uses the real Procgen")
+    if errs:
+        raise GuardError("registered pre-training refused: " + "; ".join(errs))
     host = SEED_HOST[seed]
     assert_runtime_host(host)
     return host
