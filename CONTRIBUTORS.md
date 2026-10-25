@@ -11,9 +11,9 @@ and the flagship repository at
 
 ## Authorship policy
 
-- **Byline** : publications resulting from this repository use the
-  byline `nerve-wml project contributors` with Clément Saillant as corresponding
-  author. Individual contributors are credited in §Acknowledgments
+- **Byline** : publications resulting from this repository use a
+  single-author byline, Clément Saillant (PI decision 2026-10-25, roadmap
+  S1). Individual contributors are credited in §Acknowledgments
   per project policy.
 - **No AI co-authorship** : large language models (Claude, GPT, Qwen,
   Mistral, etc.) are used as *tools* for drafting, review, and code

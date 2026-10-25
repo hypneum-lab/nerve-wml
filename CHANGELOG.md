@@ -4,6 +4,20 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Added
+
+- **N10-C-bis pre-registration addendum (DRAFT, 2026-10-25), documentation
+  only.** Three control arms the running N10-C campaign lacks: a
+  mismatched-message arm (content vs presence), a warm-started receiver
+  (optimisation vs representation, two stages) and an IB-VQ baseline with
+  GTM's K = 4 x A = 16 symbol structure (modern baseline, symbol-structure
+  control); directional hypotheses H-bis-1..3 with SESOI 0.10, estimation
+  plan in the N10-C format (6 seeds, Welch, adjusted intervals, pilot
+  categories), compute plan on KXKM-AI after the N10-C KXKM seeds, and the
+  binding rule "no positive reading of N10-C before N10-C-bis". N10-C
+  (tag `n10c-freeze-20261024`, 60 runs, started 2026-10-24) is not
+  modified. `docs/milestones/2026-10-25-n10c-bis-control-arms.md`.
+
 ### Corrections
 
 - **L1a gate did not pass as specified at seed 0, n=1024.** The spec
