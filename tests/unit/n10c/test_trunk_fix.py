@@ -582,3 +582,11 @@ def test_pretrain_ledger_survives_a_failing_close(tmp_path, monkeypatch):
                           dev_ledger=led)
     assert devledger.read(led)["runs"][-1]["outcome"] == "completed"
     assert json.loads((tmp_path / "o" / "pretrain.json").read_text())["usable"]
+
+
+def test_gate_report_thresholds_match_the_guard():
+    from experiments.procgen_multiagent_gtm_comm.harness import gate_report
+    assert gate_report.LIVENESS_MIN_FRAC == tr.LIVENESS_MIN_FRAC
+    assert gate_report.LIVENESS_STD_EPS == tr.LIVENESS_STD_EPS
+    assert gate_report.GATE_PROBE_EVERY == (
+        tr.PRESETS[gate_report.GATE_PRESET].liveness_every)

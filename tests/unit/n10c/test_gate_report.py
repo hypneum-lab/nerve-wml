@@ -1,5 +1,8 @@
 """Learnability-gate verdict (amendment 2026-10-25); numpy-free, runs in CI."""
+import copy
 import json
+
+import pytest
 
 from experiments.procgen_multiagent_gtm_comm.harness.gate_report import (
     combined_verdict,
@@ -11,14 +14,20 @@ M = 1_000_000
 
 
 def _run(final=0.10, coin=(0.1, 0.4), flagged_late=False, abort=False,
-         done=M, total=M, n_last=100, probes=10, last_step=M):
+         done=M, total=M, n_last=100, probes=10, last_step=M, arm="gtm",
+         preset="fix-c-coin-pretrain", seed=9101, condition="registered"):
     live = {"block3_pos_frac": 0.3, "live_h_frac": 0.6, "logit_std": 0.1,
             "value_std": 0.1, "flagged": False}
     probes_l = [live | {"step": 0, "flagged": True}]  # step 0 is ignored
-    probes_l += [live | {"step": 100_000 * (k + 1)} for k in range(probes)]
+    # first update ending at or after each 100k (8192-step updates)
+    probes_l += [live | {"step": min(M, -(-100_000 * (k + 1) // 8192) * 8192)}
+                 for k in range(probes)]
     if flagged_late:
         probes_l[-1]["flagged"] = True
     return {
+        "arm": arm, "seed": seed, "condition": condition,
+        "train_options": {"preset": preset, "liveness": "abort",
+                          "liveness_every": 100_000},
         "total_pair_steps": total, "pair_steps_done": done,
         "training_failure": abort, "liveness_abort": abort,
         "success_curve": [[40_000, 0.0], [last_step, final]],
@@ -30,14 +39,78 @@ def _run(final=0.10, coin=(0.1, 0.4), flagged_late=False, abort=False,
     }
 
 
+def _ok(r, **kw):
+    return verdict(r, **({"arm": "gtm"} | kw))[0]
+
+
 def test_gate_passes_only_when_all_criteria_hold():
-    assert verdict(_run()) == (True, [])
+    assert verdict(_run(), arm="gtm") == (True, [])
     for bad in (dict(final=0.04), dict(coin=(0.3, 0.3)), dict(flagged_late=True),
                 dict(abort=True), dict(done=400_000), dict(total=40_000, done=40_000,
                                                            last_step=40_000),
-                dict(n_last=37), dict(probes=0), dict(final=float("nan")),
-                dict(coin=(0.1, float("nan")))):
-        assert not verdict(_run(**bad))[0], bad
+                dict(n_last=37), dict(probes=0), dict(probes=9),
+                dict(final=float("nan")), dict(coin=(0.1, float("nan")))):
+        assert not _ok(_run(**bad)), bad
+
+
+@pytest.mark.parametrize("field,value", [
+    ("arm", "eng"), ("arm", "nocomm"), ("preset", "fix-a-coin"),
+    ("seed", 999), ("condition", "closed")])
+def test_identity_must_match_the_expectation(field, value):
+    assert not _ok(_run(**{field: value}))
+
+
+def test_codex_round2_counterexample_is_rejected():
+    """nocomm arm, preset A, seed 999, condition closed, ten duplicate
+    step-1 probes and a coin curve ending at 80k: per-run and combined FAIL."""
+    r = _run(arm="nocomm", preset="fix-a-coin", seed=999, condition="closed")
+    r["liveness"] = r["liveness"][:1] + [r["liveness"][1] | {"step": 1}
+                                         for _ in range(10)]
+    r["coin_rate_curve"] = [[40_000, 0.1], [80_000, 0.4]]
+    ok, why = verdict(r, arm="gtm")
+    assert not ok
+    text = "; ".join(why)
+    for needle in ("arm", "preset", "seed", "condition", "schedule",
+                   "coin-rate curve: ends at 80,000"):
+        assert needle in text, needle
+
+
+def test_probe_coverage_rejections():
+    r = _run()
+    dup = copy.deepcopy(r)
+    dup["liveness"][5] = dict(dup["liveness"][4])  # duplicate, one missing
+    gap = copy.deepcopy(r)
+    del gap["liveness"][3]
+    extra = copy.deepcopy(r)
+    extra["liveness"].insert(3, dict(extra["liveness"][2]) | {"step": 210_000})
+    no0 = copy.deepcopy(r)
+    no0["liveness"] = no0["liveness"][1:]
+    unsorted = copy.deepcopy(r)
+    unsorted["liveness"][1:] = unsorted["liveness"][:0:-1]
+    for bad in (dup, gap, extra, no0, unsorted):
+        assert not _ok(bad)
+
+
+def test_flag_is_recomputed_from_metrics():
+    for k, v in (("block3_pos_frac", 0.0), ("live_h_frac", 0.005),
+                 ("logit_std", 0.0), ("value_std", 1e-7),
+                 ("value_std", float("nan")), ("logit_std", None)):
+        r = _run()
+        r["liveness"][4][k] = v  # recorded flag stays False
+        assert not _ok(r), (k, v)
+
+
+def test_curves_must_be_increasing_and_end_at_1m():
+    r = _run()
+    r["coin_rate_curve"] = [[40_000, 0.1], [40_000, 0.2], [M, 0.4]]
+    assert not _ok(r)
+    r = _run()
+    r["success_curve"] = [[M, 0.1], [M, 0.1]]
+    r["success_curve_n"] = [100, 100]
+    assert not _ok(r)
+    r = _run()
+    r["success_curve_n"] = [100]  # length differs from the curve
+    assert not _ok(r)
 
 
 def test_combined_verdict_needs_both_arms(tmp_path):
@@ -48,9 +121,14 @@ def test_combined_verdict_needs_both_arms(tmp_path):
     assert not ok and "eng: missing" in why[0]
     e = tmp_path / "fix-c-coin-pretrain-eng"
     e.mkdir()
-    (e / "run.json").write_text(json.dumps(_run(final=0.01)))
+    (e / "run.json").write_text(json.dumps(_run(final=0.01, arm="eng")))
     assert not combined_verdict(tmp_path)[0]
-    (e / "run.json").write_text(json.dumps(_run()))
+    (e / "run.json").write_text(json.dumps(_run(arm="gtm")))  # wrong arm
+    assert not combined_verdict(tmp_path)[0]
+    (e / "run.json").write_text(json.dumps(_run(arm="eng")))
     assert combined_verdict(tmp_path) == (True, [])
+    assert not combined_verdict(tmp_path, seed=9102)[0]
     txt = report(tmp_path, "kxkm")
     assert "| kxkm | fix-c-coin-pretrain-gtm" in txt and "Combined gate" in txt
+    assert "FAIL" not in txt
+
