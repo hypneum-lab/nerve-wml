@@ -28,6 +28,15 @@ and trial flag. Before every run on Linux: nvidia-smi free memory >=
 infrastructure failures a run becomes a training failure (amendment:
 evaluated at the last finite checkpoint, else at initialisation; never
 replaced).
+
+``--registration n10c-bis`` (addendum 2026-10-25) runs the 48-run N10-C-bis
+queue (``queue.build_queue_bis``, every run on KXKM-AI, tag
+``n10c-bis-freeze-YYYYMMDD``) in a separate campaign directory; a
+``gtm_warm`` run is trained with ``warm_start_from`` = the status-selected
+checkpoint of its ``eng_gtmrx`` source (same seed and condition; the last
+finite checkpoint of a failed source, or None = initialisation, flagged).
+The existing STOP file pauses the runner between runs (N10-C evaluation
+windows). The N10-C campaign (default) is unchanged.
 """
 from __future__ import annotations
 
@@ -89,7 +98,8 @@ def gpu_free_gb(runner: Callable[..., Any] = subprocess.run) -> float | None:
 
 
 def estimate(throughput: dict, total: int = q.TOTAL_PAIR_STEPS,
-             host: str | None = None) -> dict:
+             host: str | None = None,
+             registration: str = q.DEFAULT_REGISTRATION) -> dict:
     """Duration estimate: gtm runs use the gtm rate, others the nocomm proxy
     (same convention as the manifest estimate); one 2x200 evaluation each."""
     res = throughput["results"]
@@ -99,7 +109,9 @@ def estimate(throughput: dict, total: int = q.TOTAL_PAIR_STEPS,
         return (total / r["pair_steps_per_s"]
                 + r["eval_proxy"]["seconds_per_model_2x200"]) / 3600
 
-    per_run = {s.run_id: hours(s.arm) for s in (q.runs_for_host(host) if host else q.build_queue())}
+    runs = (q.runs_for_host(host, registration) if host
+            else q.build_queue(registration))
+    per_run = {s.run_id: hours(s.arm) for s in runs}
     tot = sum(per_run.values())
     return {"per_run_hours": per_run, "total_hours": tot, "total_days": tot / 24}
 
@@ -118,6 +130,9 @@ class Options:
     env_factory: Callable[[int], Any] | None = None
     # context issued by campaign.guards (mandatory unless ``trial``)
     registration: RegistrationContext | None = None
+    # which frozen queue / cells: "n10c" (default) or "n10c-bis"; must agree
+    # with the context's registration when one is given
+    registration_name: str = q.DEFAULT_REGISTRATION
 
 
 def _default_train(registration=None, **kw):
@@ -170,6 +185,14 @@ class Campaign:
             raise GuardError(
                 f"a non-registered trial is limited to {DEV_MAX_PAIR_STEPS:,} "
                 "pair-steps (development mode)")
+        if opts.registration_name not in q.REGISTRATIONS:
+            raise GuardError(f"unknown registration {opts.registration_name!r}")
+        if (opts.registration is not None
+                and opts.registration.registration != opts.registration_name):
+            raise GuardError(
+                f"registration context is {opts.registration.registration!r} but "
+                f"the campaign is {opts.registration_name!r}")
+        self.reg_name = opts.registration_name
         self.o = opts
         self.dir = Path(opts.campaign_dir)
         self.store = q.StatusStore(self.dir / "status")
@@ -231,9 +254,39 @@ class Campaign:
                 return False, free
             time.sleep(min(30.0, max(1.0, deadline - time.time())))
 
+    # -- queue of this registration ----------------------------------
+    def queue_all(self) -> list[q.RunSpec]:
+        return q.build_queue(self.reg_name)
+
+    def queue_host(self) -> list[q.RunSpec]:
+        return q.runs_for_host(self.o.host, self.reg_name)
+
+    def cells(self) -> list[tuple[str, str]]:
+        return q.cross_cells(self.reg_name)
+
     # -- one run ----------------------------------------------------
     def run_dir(self, spec: q.RunSpec) -> Path:
         return self.dir / "runs" / spec.run_id
+
+    def warm_source(self, spec: q.RunSpec) -> tuple[Path | None, dict]:
+        """Status-selected checkpoint of ``spec``'s warm source (N10-C-bis
+        ``gtm_warm`` <- ``eng_gtmrx``, same seed and condition), digest
+        verified; (None, info) when the source has no finite checkpoint
+        (the warm run then starts from initialisation, flagged). A source
+        that has not finished is a refusal, never a silent cold start."""
+        src = spec.warm_source()
+        sst = self.store.load(src)
+        if sst["status"] not in (q.TRAINED, q.DONE, q.TRAINING_FAILURE):
+            raise GuardError(f"warm source {src.run_id} of {spec.run_id} has not "
+                             f"finished (status {sst['status']!r})")
+        ck = sst["last_checkpoint"]
+        rd = self.run_dir(src)
+        verify_checkpoint(rd, ck, sst.get("last_checkpoint_sha256"))
+        path = resolve_checkpoint(rd, ck)
+        info = {"run_id": src.run_id, "status": sst["status"], "checkpoint": ck,
+                "sha256": sst.get("last_checkpoint_sha256") if ck else None,
+                "untrained": path is None}
+        return path, info
 
     def train(self, spec: q.RunSpec, st: dict) -> None:
         attempt = len(st["attempts"]) + 1
@@ -251,6 +304,13 @@ class Campaign:
         st["train_settings"] = {k: kw[k] for k in settings}
         if self.o.env_factory is not None:
             kw["env_factory"] = self.o.env_factory
+        if spec.warm_from is not None:  # gtm_warm: resolved before training
+            path, info = self.warm_source(spec)
+            kw["warm_start_from"] = path
+            st["warm_source"] = info
+            self.store.save(st)
+            self.event(run=spec.run_id, attempt=attempt, phase="train",
+                       state="warm_source", warm_source=info)
         try:
             rec = self.train_fn(
                 arm=spec.arm, seed=spec.seed, condition=spec.condition,
@@ -370,7 +430,7 @@ class Campaign:
                              "(x86 Procgen build)")
         out = self.dir / "cross"
         self.cross_summary = {}
-        for arm, condition in q.cross_cells():
+        for arm, condition in self.cells():
             cell = q.cross_cell_id(arm, condition)
             state = self.cross_cell_state(arm, condition)
             if state != "ready":
@@ -413,7 +473,7 @@ class Campaign:
             self.cross_store.save(cs)
             self.cross_summary[cell] = "done" if cs["done"] else "pairs_failed"
         return all(v == "done" for v in self.cross_summary.values()) \
-            and len(self.cross_summary) == len(q.cross_cells())
+            and len(self.cross_summary) == len(self.cells())
 
     def archive(self, spec: q.RunSpec, st: dict) -> None:
         if not self.o.archive_to:
@@ -468,7 +528,7 @@ class Campaign:
         return (self.dir / "STOP").exists()
 
     def run(self) -> int:
-        queue = q.runs_for_host(self.o.host)
+        queue = self.queue_host()
         if not self._pinned:
             reg = self.o.registration
             if reg is None and not self.o.trial:
@@ -476,7 +536,7 @@ class Campaign:
                                  "its registration context (provenance)")
             self.pin({} if reg is None else reg.pins())
         can_eval = self.o.host == "kxkm"
-        for spec in q.build_queue():
+        for spec in self.queue_all():
             if self.stop_requested():
                 self.event(phase="campaign", state="stopped_by_STOP_file")
                 return EXIT_STOP
@@ -516,8 +576,9 @@ class Campaign:
             self.event(phase="campaign", state="finished", host=self.o.host,
                        summary=q.summarize(states))
             return EXIT_OK
-        # KXKM: completion needs ALL 60 evaluations and ALL 10 cross-play cells
-        everything = q.build_queue()
+        # KXKM: completion needs ALL evaluations and ALL cross-play cells of
+        # the registration (N10-C: 60 and 10; N10-C-bis: 48 and 8)
+        everything = self.queue_all()
         awaiting, unresolved = [], []
         for s in everything:
             if not self.store.path(s).exists():
@@ -538,7 +599,7 @@ class Campaign:
                    evaluations_required=len(everything),
                    awaiting_sync=awaiting, unresolved=unresolved,
                    cross_cells_done=sum(v == "done" for v in self.cross_summary.values()),
-                   cross_cells_required=len(q.cross_cells()),
+                   cross_cells_required=len(self.cells()),
                    cross_pending=cross_wait, cross_failed=cross_bad)
         if unresolved or cross_bad:
             return EXIT_PROBLEMS
@@ -818,7 +879,7 @@ def main(argv: list[str] | None = None) -> int:
     problems = guard_problems(
         repo=REPO, manifest=a.manifest, manifest_sha256=a.manifest_sha256,
         manifest_doi=a.manifest_doi, expect_commit=a.expect_commit,
-        freeze_tag=a.freeze_tag, swhid=a.swhid)
+        freeze_tag=a.freeze_tag, swhid=a.swhid, registration=a.registration)
     if not a.host and not a.dry_run:
         problems.append("--host {macm1,kxkm} is required")
     try:
@@ -843,7 +904,7 @@ def main(argv: list[str] | None = None) -> int:
         ctx = issue_context(
             repo=REPO, manifest=a.manifest, manifest_sha256=a.manifest_sha256,
             manifest_doi=a.manifest_doi, expect_commit=a.expect_commit,
-            freeze_tag=a.freeze_tag, swhid=a.swhid)
+            freeze_tag=a.freeze_tag, swhid=a.swhid, registration=a.registration)
     except GuardError as exc:
         print(str(exc), file=sys.stderr)
         return EXIT_GUARD
@@ -851,7 +912,8 @@ def main(argv: list[str] | None = None) -> int:
                    total_pair_steps=a.total_pair_steps,
                    min_free_gb=a.min_free_gb, gpu_wait_s=a.gpu_wait_s,
                    archive_to=a.archive_to, max_concurrent=a.max_concurrent,
-                   trial=a.non_registered_trial, registration=ctx)
+                   trial=a.non_registered_trial, registration=ctx,
+                   registration_name=a.registration)
     camp = Campaign(opts)
     camp.dir.mkdir(parents=True, exist_ok=True)
     with open(camp.dir / "campaign.lock", "w") as lock:
@@ -869,9 +931,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _dry_run(a, problems: list[str]) -> int:
-    queue = q.runs_for_host(a.host) if a.host else q.build_queue()
+    reg = getattr(a, "registration", q.DEFAULT_REGISTRATION)
+    queue = q.runs_for_host(a.host, reg) if a.host else q.build_queue(reg)
     store = q.StatusStore(a.campaign_dir / "status") if a.campaign_dir.exists() else None
-    print(f"DRY RUN: nothing is trained. {len(queue)} runs, "
+    print(f"DRY RUN ({reg}): nothing is trained. {len(queue)} runs, "
           f"{a.total_pair_steps:,} pair-steps each, max-concurrent 1"
           + (f", host {a.host}." if a.host else ", all hosts."))
     for i, s in enumerate(queue, 1):
@@ -890,7 +953,7 @@ def _dry_run(a, problems: list[str]) -> int:
         print(f"GPU guard: WOULD REFUSE ({exc})")
     if a.throughput_json:
         e = estimate(json.loads(a.throughput_json.read_text()), a.total_pair_steps,
-                     a.host)
+                     a.host, reg)
         print(f"Estimated duration: {e['total_hours']:.0f} h "
               f"({e['total_days']:.1f} days), nocomm rate used for non-gtm arms.")
     else:

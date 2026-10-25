@@ -126,6 +126,7 @@ Jonckheere wrong test, β-VAE confound, paper/JSON count mismatch).
 | **N10-A / N10-C** | **pre-reg locked ; N10-A deferred, N10-C campaign running** | ImageNet-100 + ResNet50 + GTM bottleneck (β-VAE β=1.0 fixed per critic) ; Procgen multi-agent GTM communication ; estimation/pilot reframing (no superiority verdict) ; [N10-A](docs/milestones/n10a-imagenet100-gtm-bottleneck-amendment-2026-10-23.md) DRAFT amendment 2026-10-23, not yet filed on OSF (+ oscillator-family comparator) ; [N10-C](docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-23.md) amendment **FROZEN by tag `n10c-freeze-20261024`** (+ engineered reference sender, side-channel control ; 60 runs on macM1 + KXKM-AI started 2026-10-24, OSF to follow) ; [N10-C-bis](docs/milestones/2026-10-25-n10c-bis-control-arms.md) **DRAFT addendum 2026-10-25** : three control arms (mismatched message, warm-started receiver, IB-VQ baseline) to run on KXKM-AI after N10-C, with the rule "no positive reading of N10-C before N10-C-bis" |
 | **N11-A / N11-C** | **pre-reg locked, deferred** | I-JEPA + GTM predictor on ImageNet self-supervised ; Dreamer V3 + GTM dynamics on Atari-100k ; **DRAFT amendments 2026-10-23, not yet filed on OSF** : estimation/pilot reframing (no superiority verdict at 5 seeds) ; [N11-A](docs/milestones/n11a-ijepa-gtm-predictor-amendment-2026-10-23.md) (frozen design options ; H-JEPA sub-study deferred), [N11-C](docs/milestones/n11c-dreamer-gtm-dynamics-atari100k-amendment-2026-10-23.md) (+ ITC full-agent comparator ; DreamerV3 rationale) |
 | **N13 / N14** | **pre-reg locked, deferred** | OFAT GTM internals (5 hyperparams × 4-5 levels × 5 seeds) ; Latin Hypercube 7-dim coverage (50 points × 5 seeds) |
+| **NH-01** Hopfield dreaming kernel vs uniform shrink (track M pilot, issue #68) | **L1 pre-reg 2026-10-25, tag `prereg-nh01-hopfield-dream-20261025` ; pilot run the same day on electron-server : confirmé** (C1 ratio 3.43 [3.26, 3.60] ≥ 3 ; C2 holds within tolerance ; C3 shrink ratio exactly 1.000) | Fachechi–Agliari–Barra dreamed kernel J(1+t)/(1+tJ) vs Frobenius-matched uniform shrink J·c, ±1 Hopfield N ∈ {64, 128, 256}, 10 seeds, 24 loads × 7 dreaming times, 28 080 cells in 26 min ; caveat : capacity peaks at t = 10 then declines (within the pre-registered tolerance) ; [pre-reg](docs/milestones/2026-10-25-nh01-hopfield-dream-vs-downscale.md), [results](docs/results/2026-10-25-nh01-pilot.md), artefacts `results/nh01/` |
 
 Cumulative on master HEAD `60d433d` : **295+ commits**, **v1.9.0** tagged
 (PyPI publish pending), 12 OSF-style pre-registrations across the Hypneum programme,
@@ -362,10 +363,25 @@ Python 3.12+, macOS arm64 (MLX-friendly) or Linux x86_64. No vendor SDK deps are
 ## Run the suite
 
 ```bash
-uv run pytest -m "not slow"    # 220+ tests under 80 s on commodity M-series
+uv run pytest -m "not slow"    # 808 tests selected (854 collected, 46 slow) at 1.9.4; CPU-host timing below
 uv run pytest                  # full suite incl. paper figure rendering
 uv run pytest --cov=nerve_core --cov=track_p --cov=track_w --cov=bridge --cov=harness --cov=interpret --cov=neuromorphic
 ```
+
+## Reproduce in one command
+
+- **Install** — `git clone https://github.com/hypneum-lab/nerve-wml.git && cd nerve-wml && uv sync --all-extras`
+  (Python ≥ 3.12 via uv; on Linux the lockfile pulls the CUDA build of torch 2.11 even without a GPU — it runs on CPU, ~5 GB venv).
+- **Run** (Gate W = Claim A, MLP/LIF polymorphism, spec §8.3):
+  `OMP_NUM_THREADS=1 uv run pytest tests/integration/track_w/test_gate_w.py`
+  — or the same aggregate as JSON: `OMP_NUM_THREADS=1 uv run python scripts/track_w_pilot.py`.
+- **Expected output** — `1 passed`; the JSON reads `w1_accuracy 1.0, w2_acc_mlp 1.0, w2_acc_lif 1.0,
+  w2_polymorphie_gap 0.0, w3_gain_over_baseline 0.3913, w4_forgetting 0.0, all_passed true` (`torch.manual_seed(0)`, CPU).
+- **Duration & host** — 24 s on Ubuntu 24.04, 8 vCPU, no GPU, Python 3.14, torch 2.11 CPU build, commit `a894f7b`.
+  Without `OMP_NUM_THREADS=1` the same test took 2.5–10.5 min on that shared host (torch intra-op thread
+  contention). The CI command `uv run pytest -m "not slow"` (808 tests selected) exceeded 15 min there — not a one-command target on CPU.
+- **Full reproduction** — all 11 gate pilots and the figure scripts: "Reproduce the gate numbers" and
+  "Reproduce the v1.1 / v1.2 findings" below; golden NPZs live in `tests/golden/` (see its `README.md`).
 
 ## Reproduce the gate numbers
 

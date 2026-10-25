@@ -62,6 +62,18 @@ class PolicyOut(NamedTuple):
     logits: mx.array  # [B, 2, 15]
     value: mx.array  # [B, 2]
     hard_bits: mx.array  # [B, 2, 16]
+    # auxiliary sender loss (N10-C-bis ``vq`` arm, training only); None for
+    # every other arm and at evaluation, so the N10-C loss is unchanged
+    aux_loss: mx.array | None = None
+
+
+class Encoded(NamedTuple):
+    """Trunk + sender output of ``PairPolicy.encode`` (row = 2 * pair + agent)."""
+
+    h: mx.array  # [2B, 256]
+    msg: mx.array  # [2B, 16], or the GTM ST one-hot (64) / VQ ST rows (32)
+    hard_bits: mx.array  # [B, 2, 16]
+    x_msg: mx.array  # [2B, 64] sender input (``to_msg(h)``)
 
 
 class PairPolicy(nn.Module):
@@ -87,6 +99,49 @@ class PairPolicy(nn.Module):
         nz = self.comm.sample_noise(b * 2, key)
         return None if nz is None else nz.reshape(b, 2, -1)
 
+    def encode(
+        self,
+        obs: mx.array,
+        eng_bits: mx.array | None,
+        *,
+        train: bool,
+        key: mx.array,
+        noise: mx.array | None = None,
+    ) -> Encoded:
+        """Trunk and sender for both agents (the first half of ``__call__``).
+
+        The ``gtm_mis`` rollout calls it alone, delivers the hard bits
+        deranged across pairs through the bus, then calls ``heads`` with
+        what each agent received: one trunk pass, as for every other arm.
+        """
+        b = obs.shape[0]
+        x = obs.reshape(b * 2, *obs.shape[2:]) / 255.0  # row = 2 * pair + agent
+        h = self.trunk(x)
+        eb = None if eng_bits is None else eng_bits.reshape(b * 2, N_BITS)
+        nz = None if noise is None else noise.reshape(b * 2, -1)
+        x_msg = self.to_msg(h)
+        msg, hard = self.comm.send(x_msg, train=train, key=key, eng_bits=eb, noise=nz)
+        return Encoded(h, msg, hard.reshape(b, 2, N_BITS), x_msg)
+
+    def heads(self, enc: Encoded, summary: mx.array, msg_in: mx.array, *,
+              train: bool) -> PolicyOut:
+        """Receive ``msg_in`` ([B, 2, ·], row i = what agent i receives) and
+        apply fuse, policy and value heads (the second half of ``__call__``)."""
+        b = enc.hard_bits.shape[0]
+        msg_in = msg_in.astype(enc.msg.dtype).reshape(b * 2, -1)
+        recv = self.comm.receive(msg_in, enc.h)
+        z = mx.concatenate([enc.h, recv, summary.reshape(b * 2, SUMMARY_DIM)], axis=-1)
+        z = nn.relu(self.fuse(z))
+        aux = None
+        if train and hasattr(self.comm, "aux_loss"):
+            aux = self.comm.aux_loss(enc.x_msg)
+        return PolicyOut(
+            self.pi(z).reshape(b, 2, N_ACTIONS),
+            self.v(z).reshape(b, 2),
+            enc.hard_bits,
+            aux,
+        )
+
     def __call__(
         self,
         obs: mx.array,
@@ -98,31 +153,19 @@ class PairPolicy(nn.Module):
         noise: mx.array | None = None,
         recv_bits: mx.array | None = None,
     ) -> PolicyOut:
-        """``recv_bits`` [B, 2, 16] (evaluation probe only) replaces the
-        message each agent receives (row i = what agent i receives);
-        default None keeps the partner swap, so training is unchanged."""
-        b = obs.shape[0]
-        x = obs.reshape(b * 2, *obs.shape[2:]) / 255.0  # row = 2 * pair + agent
-        h = self.trunk(x)
-        eb = None if eng_bits is None else eng_bits.reshape(b * 2, N_BITS)
-        nz = None if noise is None else noise.reshape(b * 2, -1)
-        msg, hard = self.comm.send(
-            self.to_msg(h), train=train, key=key, eng_bits=eb, noise=nz
-        )
-        msg_p = msg.reshape(b, 2, -1)  # 16 bits, or the GTM ST one-hot (64)
+        """``recv_bits`` [B, 2, 16] replaces the message each agent receives
+        (row i = what agent i receives): the evaluation probes, and the
+        ``gtm_mis`` PPO update replaying the deranged delivery stored in the
+        rollout; default None keeps the partner swap, so the N10-C arms
+        are unchanged."""
+        enc = self.encode(obs, eng_bits, train=train, key=key, noise=noise)
         if recv_bits is None:
+            b = obs.shape[0]
+            msg_p = enc.msg.reshape(b, 2, -1)  # 16 bits, or the GTM ST one-hot (64)
             msg_in = mx.stack([msg_p[:, 1], msg_p[:, 0]], axis=1)
         else:
-            msg_in = recv_bits.astype(msg_p.dtype)
-        msg_in = msg_in.reshape(b * 2, -1)
-        recv = self.comm.receive(msg_in, h)
-        z = mx.concatenate([h, recv, summary.reshape(b * 2, SUMMARY_DIM)], axis=-1)
-        z = nn.relu(self.fuse(z))
-        return PolicyOut(
-            self.pi(z).reshape(b, 2, N_ACTIONS),
-            self.v(z).reshape(b, 2),
-            hard.reshape(b, 2, N_BITS),
-        )
+            msg_in = recv_bits
+        return self.heads(enc, summary, msg_in, train=train)
 
 
 def param_count(module: nn.Module) -> int:

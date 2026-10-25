@@ -4,13 +4,13 @@ Guidance for AI coding agents (Claude Code, Aider, Cursor, etc.) working in this
 
 ## Project
 
-`nerve-wml` — substrate-agnostic nerve protocol for inter-WML (Weight-Memory-Language) communication. Research engine of **Hypneum Lab**, framework C. Master HEAD `75aaa17` (2026-05-21), v1.8.1 on PyPI. Design spec: `docs/superpowers/specs/2026-04-18-nerve-wml-design.md`.
+`nerve-wml` — substrate-agnostic nerve protocol for inter-WML (Weight-Memory-Language) communication. Research engine of **Hypneum Lab**, framework C. Current version: `pyproject.toml` (1.9.4 at the time of writing); run `git log --oneline -1` for the current master HEAD. Design spec: `docs/superpowers/specs/2026-04-18-nerve-wml-design.md`.
 
 ## Tech stack
 
 - Language: Python 3.12+ (>=3.12 required in `pyproject.toml`)
 - Runtime: `uv` (sync via `uv sync --all-extras`)
-- Test: `pytest` — 507 tests (458 fast L1-L2, 49 slow L3-L4)
+- Test: `pytest` — 854 tests collected at 1.9.4 on Linux (46 marked `slow`; `-m "not slow"` selects 808)
 - Build: `hatchling`; wheels packaged from `nerve_core/`, `track_p/`, `track_w/`, `bridge/`, `harness/`, `interpret/`, `neuromorphic/`, `nerve_wml/`
 - Core deps: `torch>=2.3`, `numpy>=1.26`, `scipy>=1.17.1`, `scikit-learn>=1.8.0`
 - Optional extras: `[mnist]` (torchvision), `[interpret]` (mne — moved out of core in N5 Task 9)

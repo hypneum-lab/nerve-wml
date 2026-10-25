@@ -6,6 +6,22 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ### Added
 
+- **NH-01 pilot: dreaming Hopfield kernel vs uniform shrink (track M,
+  issue #68).** L1 pre-registration
+  `docs/milestones/2026-10-25-nh01-hopfield-dream-vs-downscale.md` frozen
+  by tag `prereg-nh01-hopfield-dream-20261025` before any run; numpy-only
+  experiment `experiments/nh01_hopfield_dream/run.py` (Fachechi–Agliari–
+  Barra kernel J(1+t)/(1+tJ) by spectral decomposition, Frobenius-matched
+  shrink control, asynchronous dynamics from noisy cues, capacity
+  estimator, spurious-state classification, energy, seed-level bootstrap);
+  unit tests; results `results/nh01/` and note
+  `docs/results/2026-10-25-nh01-pilot.md`. Pilot run on electron-server
+  (28 080 cells, 26 min): **confirmé** under the pre-registered rule
+  (C1 ratio 3.43 [3.26, 3.60] at t = 10, N = 256; C2 holds within the
+  0.05 tolerance, capacity peaking at t = 10; C3 shrink ratio exactly
+  1.000 at T = 0, 0.980 at T = 0.2). The N = 1 000 run and the
+  VQ-codebook part of NH-01 remain untested.
+
 - **N10-C-bis pre-registration addendum (DRAFT, 2026-10-25), documentation
   only.** Three control arms the running N10-C campaign lacks: a
   mismatched-message arm (content vs presence), a warm-started receiver
@@ -17,6 +33,24 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
   binding rule "no positive reading of N10-C before N10-C-bis". N10-C
   (tag `n10c-freeze-20261024`, 60 runs, started 2026-10-24) is not
   modified. `docs/milestones/2026-10-25-n10c-bis-control-arms.md`.
+- **N10-C-bis control arms (stage 1, scripted stub only).** The three
+  control arms of the addendum are implemented beside the six frozen
+  N10-C arms, which are unchanged (invariance test: parameter counts of
+  the N10-C manifest table, bit-identical initialisation and forward pass
+  against the vendored tag `n10c-freeze-20261024` sources): `gtm_mis`
+  (hard messages delivered deranged across the 64 pairs at every rollout
+  step through the bus, replayed in the PPO update via `recv_bits`; the
+  shuffled pass is its in-distribution pass, `R_primary`), `eng_gtmrx` +
+  `gtm_warm` (engineered sender through the GTM receive path; warm start
+  of every parameter except `comm.encode_logits` and `to_msg`, cumulative
+  budget recorded) and `vq` (K = 4 x A = 16 plain VQ, d_e = 8,
+  beta = 0.25, lambda_VQ = 1.0, straight-through, auxiliary loss added to
+  the PPO loss, codebook usage reported). `ARM_CODES` gains `gtm_mis: 6,
+  eng_gtmrx: 7, gtm_warm: 8, vq: 9`; `campaign.queue.build_queue_bis` is
+  the 48-run bis-A queue (all seeds on KXKM-AI, `eng_gtmrx` before
+  `gtm_warm`); the guards and the runner take `--registration n10c-bis`
+  (tag prefix `n10c-bis-freeze-`). No N10-C-bis run, smoke run, manifest
+  or freeze tag exists yet (stage 2).
 
 ### Corrections
 

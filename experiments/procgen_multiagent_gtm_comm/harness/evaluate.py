@@ -21,6 +21,12 @@ S = R_intact - R_shuffled; bandwidth = plug-in entropy (bits) of the
 16-bit messages over all intact steps. A checkpoint of ``None`` (training
 failed before any finite checkpoint) evaluates the untrained policy built
 from the run's seed stream. No torch / track_p / nerve_wml import.
+
+N10-C-bis (addendum 2026-10-25, unchanged protocol): ``R_primary`` names
+the arm's team-reward outcome, the shuffled pass for ``gtm_mis`` (trained
+under deranged messages, so the shuffle is its in-distribution pass; the
+addendum's R_MIS) and the intact pass for every other arm; the ``vq``
+arm's codebook usage is reported descriptively.
 """
 from __future__ import annotations
 
@@ -39,12 +45,16 @@ from experiments.procgen_multiagent_gtm_comm.coop_env import ProcgenCoopEnv
 from ..campaign import guards
 from .bus import MessageBus
 from .codes import ARM_CODES, CONDITION_CODES, SEEDS, init_key_int
+from .comm import ENG_SENDER_ARMS, codebook_usage
 from .policy import PairPolicy
+from .rollout import derangement  # noqa: F401 - the registered derangement
 from .train import EngCounters
 
 EVAL_SEED = 20261023
 HELD_OUT = range(1000, 1200)
 MAX_EPISODE_STEPS = 5000  # safety net; procgen times out far earlier
+# arms whose in-distribution pass is the shuffled one (addendum, Arm 1)
+PRIMARY_SHUFFLED_ARMS: tuple[str, ...] = ("gtm_mis",)
 _WEIGHTS = (1 << np.arange(15, -1, -1)).astype(np.int64)
 
 
@@ -65,6 +75,10 @@ class EvalRecord:
     returns_shuffled: list[float]
     lengths_intact: list[int]
     lengths_shuffled: list[int]
+    # N10-C-bis designations (None / defaults in records written before)
+    R_primary: float | None = None  # R_shuffled for gtm_mis, R_intact otherwise
+    primary_pass: str = "intact"
+    codebook_usage: list[int] | None = None  # vq arm: counts per codeword
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), indent=2)
@@ -95,17 +109,6 @@ def cross_pairs(seeds: tuple[int, ...] = SEEDS) -> list[tuple[int, int]]:
 
 def level_rng(j: int) -> np.random.Generator:
     return np.random.default_rng([EVAL_SEED, j])
-
-
-def derangement(n: int, rng: np.random.Generator) -> np.ndarray:
-    """Random permutation of range(n) without fixed points (rejection)."""
-    if n < 2:
-        raise ValueError("a derangement needs at least 2 levels")
-    ident = np.arange(n)
-    while True:
-        p = rng.permutation(n)
-        if not (p == ident).any():
-            return p
 
 
 def donor_received(donor_msgs: np.ndarray, t: int) -> np.ndarray:
@@ -148,7 +151,7 @@ def _run_level(model, arm: str, team_summary: bool, j: int,
     )  # allow_stub stays False
     try:
         rng = level_rng(j)
-        use_eng = arm == "eng"
+        use_eng = arm in ENG_SENDER_ARMS
         counters = EngCounters(1)
         obs = np.stack(env._last_obs)[None]
         summ = np.zeros((1, 2, 2), np.float32)
@@ -216,7 +219,7 @@ def _run_level_cross(model0, model1, arm: str, team_summary: bool, j: int,
         t = 0
         while True:
             eng = None
-            if arm == "eng":
+            if arm in ENG_SENDER_ARMS:
                 w = [env.window_view(i) for i in range(2)]
                 eng = mx.array(counters.bits(
                     np.array([[w[0][0], w[1][0]]]),
@@ -337,14 +340,19 @@ def evaluate_policy(model, arm: str, condition: str, levels: range, *,
     l_s = [n for _, n, _ in shuffled]
     succ = [n for r, n in zip(r_i, l_i, strict=False) if r > 0.5]
     r_int, r_shu = float(np.mean(r_i)), float(np.mean(r_s))
+    msgs = np.concatenate([m for _, _, m in intact])
+    primary = "shuffled" if arm in PRIMARY_SHUFFLED_ARMS else "intact"
     return EvalRecord(
         arm=arm, condition=condition, seed=seed, ckpt=ckpt, untrained=untrained,
         levels=[levels[0], levels[-1] + 1], R_intact=r_int, R_shuffled=r_shu,
         S=r_int - r_shu,
         completion_time=float(np.mean(succ)) if succ else None,
-        bandwidth_bits=bandwidth_entropy(np.concatenate([m for _, _, m in intact])),
+        bandwidth_bits=bandwidth_entropy(msgs),
         returns_intact=r_i, returns_shuffled=r_s,
         lengths_intact=l_i, lengths_shuffled=l_s,
+        R_primary=r_shu if primary == "shuffled" else r_int,
+        primary_pass=primary,
+        codebook_usage=codebook_usage(msgs).tolist() if arm == "vq" else None,
     )
 
 
