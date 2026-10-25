@@ -35,6 +35,9 @@ class TrainOptions:
       runs at step 0 and after the first update ending at or after every
       ``liveness_every`` pair-steps; metrics are logged in every non-off
       mode.
+    * ``adam_bias_correction``: Adam bias correction (off = MLX default,
+      frozen and gate-validated; on = the usual PPO implementations).
+      Only the ``-bc`` comparison preset turns it on (PI 2026-10-25).
     * ``pretrained_trunk``: the IMPALA trunk is initialised from a
       single-agent CoinRun pre-training checkpoint (``harness/pretrain.py``)
       instead of at random; the rest of the network is initialised as before.
@@ -47,6 +50,7 @@ class TrainOptions:
     liveness: str = "off"
     liveness_every: int = 100_000
     pretrained_trunk: bool = False
+    adam_bias_correction: bool = False
 
 
 _GUARDS = dict(adam_eps=1e-5, mask_finished=True, liveness="abort")
@@ -61,6 +65,12 @@ PRESETS: dict[str, TrainOptions] = {
     "fix-c-coin-pretrain": TrainOptions(preset="fix-c-coin-pretrain",
                                         coin_reward=0.5,
                                         pretrained_trunk=True, **_GUARDS),
+    # C with Adam bias correction: gate comparison only (PI 2026-10-25 12:10)
+    "fix-c-coin-pretrain-bc": TrainOptions(preset="fix-c-coin-pretrain-bc",
+                                           coin_reward=0.5,
+                                           pretrained_trunk=True,
+                                           adam_bias_correction=True,
+                                           **_GUARDS),
 }
 
 

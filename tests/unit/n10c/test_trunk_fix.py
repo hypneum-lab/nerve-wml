@@ -128,6 +128,14 @@ def test_adam_eps_per_preset():
         assert tr.make_optimizer(tr.PRESETS[k]).eps == 1e-5
 
 
+def test_adam_bias_correction_only_in_bc_preset():
+    for k, o in tr.PRESETS.items():
+        assert tr.make_optimizer(o).bias_correction is k.endswith("-bc")
+    bc, c = tr.PRESETS["fix-c-coin-pretrain-bc"], tr.PRESETS["fix-c-coin-pretrain"]
+    assert dataclasses.replace(bc, preset=c.preset,
+                               adam_bias_correction=False) == c
+
+
 def test_adam_eps_bounds_the_first_step_on_tiny_gradients():
     # first MLX Adam step (no bias correction): lr*(1-b1)g / (sqrt(1-b2)|g| + eps)
     g = 1e-6

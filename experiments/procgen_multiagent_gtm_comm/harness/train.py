@@ -351,10 +351,11 @@ def liveness_probe(model: PairPolicy, obs: np.ndarray, summary: np.ndarray,
 
 def make_optimizer(options: TrainOptions,
                    frozen_policy: bool = False) -> optim.Adam:
-    """Adam with the preset's epsilon (bias correction stays at the MLX
-    default, off, as in the frozen tag)."""
+    """Adam with the preset's epsilon and bias correction (off, the MLX
+    default, in the frozen tag and every preset except the ``-bc`` one)."""
     return optim.Adam(learning_rate=0.0 if frozen_policy else LR,
-                      eps=options.adam_eps)
+                      eps=options.adam_eps,
+                      bias_correction=options.adam_bias_correction)
 
 
 def file_sha256(path: Path) -> str:

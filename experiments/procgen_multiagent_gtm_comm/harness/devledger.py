@@ -55,9 +55,13 @@ GATE_KINDS = ("gate_dev", "pretrain_dev")
 # gtm, PI decisions 2026-10-25 09:18 and 09:50: + the macM1 (Metal) C check
 # (stopped by hand under memory pressure), + its rerun with the day model
 # paused, + the B rerun after a crash caused by our own concurrent GPU test
-# = 7. pretrain_dev: in total (arm "trunk").
-GATE_DEV_ALLOWANCE = {"gtm": 7}
-GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 2}
+# = 7. PI decisions 2026-10-25 12:07-12:10, before the results: + a second
+# dev seed for C (both arms), + C with and without Adam bias correction on
+# the PR head code (both arms) = gtm 10, eng 7. pretrain_dev, in total (arm
+# "trunk"): + the second seed's pre-training (its CUDA attempt on KXKM-AI
+# crashed at 12:07, then macM1) = 4.
+GATE_DEV_ALLOWANCE = {"gtm": 10, "eng": 7}
+GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 4}
 
 
 def gate_allowance(kind: str, arm: str) -> int:
