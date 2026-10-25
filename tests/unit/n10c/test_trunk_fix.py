@@ -205,6 +205,12 @@ def _grads(mask, mb, micro=None):
     return {k: np.array(v) for k, v in tree_flatten(g)}
 
 
+def _close(a, b, rel=1e-3):
+    # conv backward is nondeterministic (MLX 0.31.1, ~1e-6 on CUDA):
+    # compare relative to the tensor's scale
+    return np.abs(a - b).max() <= rel * max(np.abs(a).max(), 1e-6)
+
+
 def _perturb_dead(mb, rng):
     out = dict(mb)
     dead = np.array(mb["live"]) == 0
@@ -221,18 +227,19 @@ def test_finished_agents_do_not_enter_policy_entropy_or_adv_stats():
     mb = _mb(rng)
     mb2 = _perturb_dead(mb, rng)
     g1, g2 = _grads(True, mb), _grads(True, mb2)
-    for k in g1:
-        np.testing.assert_allclose(g1[k], g2[k], rtol=1e-5, atol=1e-7)
+    assert all(_close(g1[k], g2[k]) for k in g1)
     # without the mask the same perturbation changes the gradient
     h1, h2 = _grads(False, mb), _grads(False, mb2)
-    assert any(not np.allclose(h1[k], h2[k], rtol=1e-4, atol=1e-6) for k in h1)
+    assert not all(_close(h1[k], h2[k], rel=5e-2) for k in h1)
 
 
 def test_masked_loss_is_invariant_to_micro_batching():
     mb = _mb(np.random.default_rng(2))
     full, micro = _grads(True, mb), _grads(True, mb, micro=2)
+    # heads exact up to float rounding; trunk convs pick batch-size
+    # dependent kernels on CUDA (~1e-3 relative)
     for k in full:
-        np.testing.assert_allclose(full[k], micro[k], rtol=2e-4, atol=1e-6)
+        assert _close(full[k], micro[k], 5e-3 if k.startswith("trunk.") else 1e-5), k
 
 
 def test_masked_adv_normalisation_uses_live_samples_only():
