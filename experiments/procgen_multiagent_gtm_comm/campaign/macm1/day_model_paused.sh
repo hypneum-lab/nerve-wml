@@ -9,8 +9,9 @@
 # it: the EXIT trap is installed BEFORE the flag is created, the flag is
 # created exclusively (an existing flag belongs to someone else: refuse and
 # leave it), and it is removed on every exit path after creation (refusal on
-# free memory, command exit, HUP / INT / TERM, which are forwarded to the
-# command first). With --detach the script re-runs itself under nohup and
+# free memory, command exit, HUP / INT / TERM: on any of these signals the
+# command is sent SIGTERM and waited for first; the original signal is not
+# forwarded as such). With --detach the script re-runs itself under nohup and
 # waits until the detached copy reports "running" or "refused" in STATE;
 # the caller never touches the flag, so there is no ownership to hand over.
 # STATE, LOG and CMD are positional arguments, never interpolated into shell

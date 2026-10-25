@@ -121,10 +121,11 @@ def verdict(run: dict, *, arm: str, preset: str = GATE_PRESET,
     ints = all(isinstance(s, int) and not isinstance(s, bool) for s in steps)
     buckets = [s // GATE_PROBE_EVERY for s in steps[1:]] if ints else None
     if (buckets != list(range(1, GATE_PROBES + 1))
-            or any(b <= a for a, b in pairwise(steps[1:]))):
+            or any(b <= a for a, b in pairwise(steps[1:]))
+            or steps[-1] != GATE_STEPS):
         why.append(f"liveness probes after step 0 do not cover the schedule "
-                   f"(need exactly one per {GATE_PROBE_EVERY:,}-step interval "
-                   f"up to {GATE_STEPS:,}, {GATE_PROBES} in all; got steps "
+                   f"(need exactly one per {GATE_PROBE_EVERY:,}-step interval, "
+                   f"the last at {GATE_STEPS:,}, {GATE_PROBES} in all; got steps "
                    f"{steps[1:]})")
     if any(probe_flagged(m) for m in late):
         why.append("liveness flagged")
@@ -245,10 +246,11 @@ def load_index(index_path: Path) -> tuple[dict, list[str]]:
         r = json.loads(f.read_text())
         if "arm" in e:
             got = (r.get("arm"), r.get("seed"),
-                   (r.get("train_options") or {}).get("preset"))
-            if got != (e["arm"], e["seed"], e["preset"]):
-                bad.append(f"{e['path']}: record {got} != index "
-                           f"{(e['arm'], e['seed'], e['preset'])}")
+                   (r.get("train_options") or {}).get("preset"),
+                   r.get("condition"))
+            want = (e["arm"], e["seed"], e["preset"], e["condition"])
+            if got != want:
+                bad.append(f"{e['path']}: record {got} != index {want}")
         elif r.get("seed") != e["seed"]:
             bad.append(f"{e['path']}: seed {r.get('seed')} != {e['seed']}")
     return idx, bad

@@ -24,7 +24,7 @@ which pauses the second-brain day model (`~/.mtplx/paused`, oMLX backend
 on :8081 stopped) for the whole life of the command. The wrapper creates
 the flag exclusively (it refuses if the flag already exists and leaves it),
 installs its cleanup before creating it, refuses below 40 % free memory,
-forwards HUP / INT / TERM to the command and lifts the pause on every exit
+stops the command (SIGTERM) on HUP / INT / TERM and lifts the pause on every exit
 path. Only SIGKILL of the wrapper leaves the flag behind: then remove
 `~/.mtplx/paused` by hand.
 

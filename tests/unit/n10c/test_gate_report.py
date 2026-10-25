@@ -95,7 +95,9 @@ def test_probe_coverage_rejections():
     no0["liveness"] = no0["liveness"][1:]
     unsorted = copy.deepcopy(r)
     unsorted["liveness"][1:] = unsorted["liveness"][:0:-1]
-    for bad in (dup, gap, extra, no0, unsorted):
+    beyond = copy.deepcopy(r)  # last probe past the completed 1M budget
+    beyond["liveness"][-1]["step"] = 1_099_999
+    for bad in (dup, gap, extra, no0, unsorted, beyond):
         assert not _ok(bad)
 
 
