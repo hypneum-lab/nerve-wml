@@ -1,0 +1,406 @@
+"""Amendment 2026-10-25 (trunk collapse): training options, finished-agent
+mask, trunk-liveness guard, Adam epsilon, individual coin reward, trunk
+pre-training, and a trivially learnable action-dependent task."""
+import dataclasses
+import json
+
+import numpy as np
+import pytest
+
+mx = pytest.importorskip("mlx.core")
+
+from experiments.procgen_multiagent_gtm_comm.campaign import guards  # noqa: E402
+from experiments.procgen_multiagent_gtm_comm.harness import devledger  # noqa: E402
+from experiments.procgen_multiagent_gtm_comm.harness import train as tr  # noqa: E402
+from experiments.procgen_multiagent_gtm_comm.harness.policy import (  # noqa: E402
+    PairPolicy,
+)
+from experiments.procgen_multiagent_gtm_comm.harness.pretrain import (  # noqa: E402
+    pretrain_trunk,
+)
+from experiments.procgen_multiagent_gtm_comm.harness.rollout import (  # noqa: E402
+    compute_gae,
+)
+
+GOOD = 7  # the rewarded action of the bandit task
+
+
+class _Coins:
+    """Agent A reaches its coin at step 0, agent B at step 1 (per episode)."""
+
+    def __init__(self, coin_step: int, rand_seed: int) -> None:
+        self.coin_step, self.t, self.seed = coin_step, -1, rand_seed
+
+    def act(self, actions) -> None:
+        self.t += 1
+
+    def observe(self):
+        coin = self.t == self.coin_step
+        img = np.random.default_rng([self.seed, self.t + 2]).integers(
+            0, 256, (1, 64, 64, 3), dtype=np.uint8)
+        return np.array([10.0 if coin else 0.0]), {"rgb": img}, np.array([coin])
+
+    def close(self) -> None:
+        pass
+
+
+def _coins_factory():
+    n = [0]
+
+    def f(rand_seed):
+        n[0] += 1
+        return _Coins(0 if n[0] % 2 else 1, rand_seed)
+
+    return f
+
+
+class _Bandit:
+    """One action per episode: GOOD reaches the coin, anything else dies."""
+
+    def __init__(self, rand_seed: int) -> None:
+        rng = np.random.default_rng(rand_seed)
+        self.img = rng.integers(0, 256, (1, 64, 64, 3), dtype=np.uint8)
+        self.a = None
+
+    def act(self, actions) -> None:
+        self.a = int(np.asarray(actions)[0])
+
+    def observe(self):
+        if self.a is None:
+            return np.array([0.0]), {"rgb": self.img}, np.array([False])
+        coin = self.a == GOOD
+        return (np.array([10.0 if coin else 0.0]), {"rgb": self.img},
+                np.array([True]))
+
+    def close(self) -> None:
+        pass
+
+
+# -- presets / options --------------------------------------------------------
+def test_frozen_preset_is_the_default_and_unchanged():
+    o = tr.PRESETS[tr.FROZEN_PRESET]
+    assert o == tr.TrainOptions()
+    assert (o.coin_reward, o.adam_eps, o.mask_finished, o.liveness,
+            o.pretrained_trunk) == (0.0, 1e-8, False, "off", False)
+    assert guards.REGISTERED_TRAIN_OPTIONS == tr.FROZEN_PRESET
+
+
+def test_fix_presets():
+    a, b, c = (tr.PRESETS[k] for k in
+               ("fix-a-coin", "fix-b-pretrain", "fix-c-coin-pretrain"))
+    for o in (a, b, c):
+        assert (o.adam_eps, o.mask_finished, o.liveness) == (1e-5, True, "abort")
+    assert (a.coin_reward, a.pretrained_trunk) == (0.5, False)
+    assert (b.coin_reward, b.pretrained_trunk) == (0.0, True)
+    assert (c.coin_reward, c.pretrained_trunk) == (0.5, True)
+
+
+def test_unregistered_options_and_trunk_mismatch_refused(tmp_path):
+    odd = dataclasses.replace(tr.PRESETS["fix-a-coin"], coin_reward=0.7)
+    with pytest.raises(ValueError, match="PRESETS"):
+        tr.train_run("mlp", 0, "registered", 8, tmp_path, n_pairs=2, horizon=4,
+                     env_factory=_coins_factory(), options=odd)
+    with pytest.raises(ValueError, match="needs"):
+        tr.train_run("mlp", 0, "registered", 8, tmp_path, n_pairs=2, horizon=4,
+                     env_factory=_coins_factory(),
+                     options=tr.PRESETS["fix-c-coin-pretrain"])
+
+
+def test_registered_run_must_use_registered_preset(monkeypatch):
+    ctx = guards.make_context_for_tests()
+    monkeypatch.setattr(guards, "_runtime_probe", lambda: {
+        "system": "Darwin", "machine": "arm64", "backend": "metal"})
+    kw = dict(arm="gtm", seed=0, condition="registered",
+              total_pair_steps=50_000_000,
+              settings=dict(tr.HOST_SETTINGS["macm1"]),
+              config=dict(guards.REGISTERED_TRAIN_CONFIG), has_env_factory=False)
+    with pytest.raises(guards.GuardError, match="training options"):
+        guards.check_train_boundary(ctx, **kw, options_preset="fix-a-coin")
+    # development mode: any preset
+    assert guards.check_train_boundary(
+        None, **(kw | {"total_pair_steps": 64}), options_preset="fix-a-coin") is None
+
+
+# -- Adam epsilon -------------------------------------------------------------
+def test_adam_eps_per_preset():
+    assert tr.make_optimizer(tr.PRESETS[tr.FROZEN_PRESET]).eps == 1e-8
+    for k in ("fix-a-coin", "fix-b-pretrain", "fix-c-coin-pretrain"):
+        assert tr.make_optimizer(tr.PRESETS[k]).eps == 1e-5
+
+
+def test_adam_eps_bounds_the_first_step_on_tiny_gradients():
+    # first MLX Adam step (no bias correction): lr*(1-b1)g / (sqrt(1-b2)|g| + eps)
+    g = 1e-6
+    steps = {}
+    for eps in (1e-8, 1e-5):
+        opt = tr.make_optimizer(dataclasses.replace(
+            tr.PRESETS[tr.FROZEN_PRESET], adam_eps=eps))
+        p = {"w": mx.zeros((1,))}
+        opt.init(p)
+        new = opt.apply_gradients({"w": mx.full((1,), g)}, p)
+        steps[eps] = abs(float(new["w"].item()))
+        want = tr.LR * 0.1 * g / (np.sqrt(0.001) * g + eps)
+        assert steps[eps] == pytest.approx(want, rel=1e-3)
+    assert steps[1e-5] < steps[1e-8] / 5
+
+
+# -- per-agent reward and live mask in the rollout ----------------------------
+def test_gae_accepts_per_agent_rewards():
+    rng = np.random.default_rng(0)
+    r = rng.random((5, 3, 2)).astype(np.float32)
+    v = rng.random((5, 3, 2)).astype(np.float32)
+    d = rng.random((5, 3)) < 0.3
+    last = rng.random((3, 2)).astype(np.float32)
+    adv, ret = compute_gae(r, v, d, last)
+    for i in range(2):
+        a_i, r_i = compute_gae(r[..., i], v[..., i:i + 1], d, last[:, i:i + 1])
+        np.testing.assert_allclose(adv[..., i], a_i[..., 0], rtol=1e-6)
+        np.testing.assert_allclose(ret[..., i], r_i[..., 0], rtol=1e-6)
+
+
+@pytest.mark.parametrize("preset,bonus", [("fix-a-coin", 0.5),
+                                          (tr.FROZEN_PRESET, 0.0)])
+def test_coin_reward_and_live_mask_recorded(tmp_path, preset, bonus):
+    bufs = []
+    rec = tr.train_run(
+        "mlp", 0, "registered", 8, tmp_path / preset, n_pairs=2, horizon=4,
+        env_factory=_coins_factory(), log_every_pair_steps=8,
+        ckpt_every_pair_steps=8, options=tr.PRESETS[preset],
+        _rollout_hook=lambda u, b: bufs.append(b))
+    b = bufs[0]
+    # episode = steps (0, 1): A coins at step 0 and is frozen at step 1
+    assert b.live[0].all() and b.live[2].all()
+    assert (~b.live[1, :, 0]).all() and b.live[1, :, 1].all()
+    np.testing.assert_array_equal(b.team_reward[:, 0], [0, 1, 0, 1])
+    np.testing.assert_array_equal(b.agent_reward[0, 0], [bonus, 0])
+    np.testing.assert_array_equal(b.agent_reward[1, 0], [0, bonus])
+    assert rec.coin_rate_curve == [[8, 1.0]]
+    assert rec.entropy_curve and rec.entropy_curve[0][2] > 0
+
+
+# -- finished-agent mask in the loss ------------------------------------------
+def _mb(rng, n=6, arm="nocomm", nd=0):
+    live = np.ones((n, 2), np.float32)
+    live[1, 0] = live[3, 1] = live[4, 0] = 0
+    return {
+        "obs": mx.array(rng.integers(0, 256, (n, 2, 64, 64, 3), dtype=np.uint8)),
+        "summary": mx.zeros((n, 2, 2)), "eng_bits": mx.zeros((n, 2, 16)),
+        "actions": mx.array(rng.integers(0, 15, (n, 2))),
+        "noise": mx.zeros((n, 2, nd)),
+        "logp": mx.array(np.full((n, 2), -np.log(15), np.float32)),
+        "advantages": mx.array(rng.normal(size=(n, 2)).astype(np.float32)),
+        "returns": mx.array(rng.normal(size=(n, 2)).astype(np.float32)),
+        "live": mx.array(live),
+    }
+
+
+def _grads(mask, mb, micro=None):
+    model = PairPolicy("nocomm", mx.random.key(3))
+    opt = tr.make_optimizer(tr.PRESETS["fix-a-coin"])
+    opt.init(model.trainable_parameters())
+    gs, _, _ = tr._make_steps(model, opt, False, plastic=False, mask_finished=mask)
+    _, g, ok = tr.accumulate_minibatch(gs, mb, micro, mx.random.key(0), mask=mask)
+    assert ok
+    from mlx.utils import tree_flatten
+    return {k: np.array(v) for k, v in tree_flatten(g)}
+
+
+def _perturb_dead(mb, rng):
+    out = dict(mb)
+    dead = np.array(mb["live"]) == 0
+    a = np.array(mb["actions"])
+    a[dead] = (a[dead] + 5) % 15
+    adv = np.array(mb["advantages"])
+    adv[dead] = 50.0
+    out["actions"], out["advantages"] = mx.array(a), mx.array(adv)
+    return out
+
+
+def test_finished_agents_do_not_enter_policy_entropy_or_adv_stats():
+    rng = np.random.default_rng(1)
+    mb = _mb(rng)
+    mb2 = _perturb_dead(mb, rng)
+    g1, g2 = _grads(True, mb), _grads(True, mb2)
+    for k in g1:
+        np.testing.assert_allclose(g1[k], g2[k], rtol=1e-5, atol=1e-7)
+    # without the mask the same perturbation changes the gradient
+    h1, h2 = _grads(False, mb), _grads(False, mb2)
+    assert any(not np.allclose(h1[k], h2[k], rtol=1e-4, atol=1e-6) for k in h1)
+
+
+def test_masked_loss_is_invariant_to_micro_batching():
+    mb = _mb(np.random.default_rng(2))
+    full, micro = _grads(True, mb), _grads(True, mb, micro=2)
+    for k in full:
+        np.testing.assert_allclose(full[k], micro[k], rtol=2e-4, atol=1e-6)
+
+
+def test_masked_adv_normalisation_uses_live_samples_only():
+    adv = mx.array([[1.0, 100.0], [3.0, -7.0]])
+    live = mx.array([[1.0, 0.0], [1.0, 0.0]])
+    out = np.array(tr.normalize_adv(adv, live))
+    np.testing.assert_allclose(out[:, 0], [-1.0, 1.0], rtol=1e-6)
+    np.testing.assert_array_equal(out[:, 1], [0.0, 0.0])
+    assert float(tr.live_scale(live).item()) == 2.0
+
+
+# -- trunk-liveness guard -----------------------------------------------------
+def _frames(n=16, seed=0):
+    rng = np.random.default_rng(seed)
+    return (rng.integers(0, 256, (n, 2, 64, 64, 3), dtype=np.uint8),
+            np.zeros((n, 2, 2), np.float32))
+
+
+def _kill_h(model):
+    model.trunk.fc.weight = mx.zeros(model.trunk.fc.weight.shape)
+    # far below zero: Adam momentum from earlier steps cannot revive it
+    model.trunk.fc.bias = mx.full(model.trunk.fc.bias.shape, -100.0)
+
+
+def test_liveness_probe_healthy_init_not_flagged():
+    obs, summ = _frames()
+    m = tr.liveness_probe(PairPolicy("nocomm", mx.random.key(0)), obs, summ,
+                          None, mx.random.key(1))
+    assert not m["flagged"]
+    assert m["block3_pos_frac"] > 0.05 and m["live_h_frac"] > 0.5
+    assert m["logit_std"] > 0 and m["value_std"] > 0
+
+
+def test_liveness_probe_flags_dead_h_and_dead_block3():
+    obs, summ = _frames()
+    model = PairPolicy("nocomm", mx.random.key(0))
+    _kill_h(model)
+    m = tr.liveness_probe(model, obs, summ, None, mx.random.key(1))
+    assert m["flagged"] and m["live_h_frac"] == 0.0
+    assert {"live_h_frac", "logit_std", "value_std"} <= set(m["reasons"])
+    model = PairPolicy("nocomm", mx.random.key(0))
+    c2 = model.trunk.blocks[2].r2.c2
+    c2.bias = mx.full(c2.bias.shape, -1e4)
+    m = tr.liveness_probe(model, obs, summ, None, mx.random.key(1))
+    assert m["flagged"] and "block3_pos_frac" in m["reasons"]
+
+
+def test_liveness_guard_aborts_the_run(tmp_path, monkeypatch):
+    fast = dataclasses.replace(tr.PRESETS["fix-a-coin"], liveness_every=8)
+    monkeypatch.setitem(tr.PRESETS, "fix-a-coin", fast)
+
+    def hook(update, model):
+        if update == 1:
+            _kill_h(model)
+
+    rec = tr.train_run(
+        "nocomm", 0, "registered", 32, tmp_path / "r", n_pairs=2, horizon=4,
+        env_factory=_coins_factory(), log_every_pair_steps=8,
+        ckpt_every_pair_steps=8, options=fast, _fault_hook=hook)
+    assert rec.liveness_abort and rec.training_failure
+    assert "liveness" in rec.failure_reason
+    # the run stops at the FIRST flagged probe (the in-place kill reaches
+    # the compiled optimizer state within one or two updates)
+    flags = [m["flagged"] for m in rec.liveness]
+    assert flags[0] is False and flags[-1] is True and not any(flags[:-1])
+    assert rec.liveness[-1]["step"] == rec.pair_steps_done < 32
+    assert rec.n_updates == rec.pair_steps_done // 8
+    data = json.loads((tmp_path / "r" / "run.json").read_text())
+    assert data["liveness_abort"] is True
+    assert data["train_options"]["preset"] == "fix-a-coin"
+
+
+def test_liveness_flag_mode_records_without_abort(tmp_path, monkeypatch):
+    flag = dataclasses.replace(tr.PRESETS["fix-a-coin"], liveness="flag",
+                               liveness_every=8)
+    monkeypatch.setitem(tr.PRESETS, "fix-a-coin", flag)
+    rec = tr.train_run(
+        "nocomm", 0, "registered", 32, tmp_path / "r", n_pairs=2, horizon=4,
+        env_factory=_coins_factory(), log_every_pair_steps=8,
+        ckpt_every_pair_steps=8, options=flag,
+        _fault_hook=lambda u, m: _kill_h(m) if u == 1 else None)
+    assert rec.liveness_flagged and not rec.liveness_abort
+    assert rec.pair_steps_done == 32 and not rec.training_failure
+
+
+# -- trivially learnable action-dependent task --------------------------------
+def test_coin_reward_learns_an_action_dependent_task(tmp_path):
+    """With +0.5 per own coin the policy must learn the rewarded action of a
+    one-step bandit (random: 1/15); a dead or inert learner cannot."""
+    bufs = []
+    n, h, upd = 16, 16, 10
+    rec = tr.train_run(
+        "nocomm", 0, "registered", n * h * upd, tmp_path / "b", n_pairs=n,
+        horizon=h, env_factory=_Bandit, log_every_pair_steps=n * h,
+        ckpt_every_pair_steps=n * h * upd, options=tr.PRESETS["fix-a-coin"],
+        _rollout_hook=lambda u, b: bufs.append((b.actions == GOOD).mean()))
+    assert not rec.training_failure
+    assert bufs[0] < 0.2  # first rollout: initial policy
+    assert np.mean(bufs[-3:]) > 0.8, bufs
+
+
+# -- trunk pre-training -------------------------------------------------------
+class _VecBandit:
+    def __init__(self, n):
+        self.n, self.a = n, None
+        self.img = np.random.default_rng(0).integers(0, 256, (n, 64, 64, 3),
+                                                     dtype=np.uint8)
+
+    def act(self, a):
+        self.a = np.asarray(a)
+
+    def observe(self):
+        if self.a is None:
+            return np.zeros(self.n), {"rgb": self.img}, np.zeros(self.n, bool)
+        return ((self.a == GOOD) * 10.0, {"rgb": self.img},
+                np.ones(self.n, bool))
+
+    def close(self):
+        pass
+
+
+def test_pretrain_writes_a_loadable_trunk(tmp_path):
+    rec = pretrain_trunk(5, 4 * 8 * 3, tmp_path, n_envs=4, horizon=8,
+                         liveness_every=32, env=_VecBandit(4))
+    assert rec.usable and rec.steps_done == 96 and rec.n_updates == 3
+    assert [m["step"] for m in rec.liveness] == [0, 32, 64, 96]
+    path = tmp_path / rec.trunk_file
+    model = PairPolicy("gtm", mx.random.key(0))
+    before = np.array(model.fuse.weight)
+    tr.load_trunk(model, path)
+    saved = mx.load(str(path))
+    np.testing.assert_array_equal(np.array(model.trunk.fc.weight),
+                                  np.array(saved["fc.weight"]))
+    np.testing.assert_array_equal(np.array(model.fuse.weight), before)
+    assert tr.file_sha256(path) == rec.trunk_sha256
+    assert json.loads((tmp_path / "pretrain.json").read_text())["usable"]
+
+
+def test_pretrained_preset_records_trunk_hash(tmp_path):
+    rec0 = pretrain_trunk(5, 32, tmp_path / "p", n_envs=4, horizon=8,
+                          env=_VecBandit(4))
+    trunk = tmp_path / "p" / rec0.trunk_file
+    rec = tr.train_run(
+        "mlp", 0, "registered", 8, tmp_path / "r", n_pairs=2, horizon=4,
+        env_factory=_coins_factory(), log_every_pair_steps=8,
+        ckpt_every_pair_steps=8, options=tr.PRESETS["fix-c-coin-pretrain"],
+        init_trunk=trunk)
+    assert rec.init_trunk_sha256 == rec0.trunk_sha256
+
+
+# -- development ledger -------------------------------------------------------
+def test_gate_ledger_kinds_are_separate_and_capped(tmp_path):
+    led = tmp_path / "ledger.json"
+    for _ in range(4):  # exhaust the smoke allowance of gtm
+        devledger.reserve("gtm", "registered", 10, path=led)
+    with pytest.raises(devledger.SmokeLimitError):
+        devledger.reserve("gtm", "registered", 10, path=led)
+    for _ in range(3):
+        devledger.reserve("gtm", "registered", 10, kind="gate_dev", path=led)
+    with pytest.raises(devledger.SmokeLimitError, match="gate_dev"):
+        devledger.reserve("gtm", "registered", 10, kind="gate_dev", path=led)
+    devledger.reserve("eng", "registered", 10, kind="gate_dev", path=led)
+    for _ in range(2):
+        devledger.reserve("trunk", "single", 10, kind="pretrain_dev", path=led)
+    with pytest.raises(devledger.SmokeLimitError):
+        devledger.reserve("trunk", "single", 10, kind="pretrain_dev", path=led)
+    with pytest.raises(ValueError):
+        devledger.reserve("gtm", "registered", 10, kind="pretrain_dev", path=led)
+    with pytest.raises(devledger.SmokeLimitError):
+        devledger.reserve("gtm", "registered", 1_000_001, kind="gate_dev",
+                          path=led)

@@ -46,8 +46,14 @@ def allowance(arm: str) -> int:
 
 
 COUNTED = ("smoke", "dev_train")
-KINDS = (*COUNTED, "throughput_learning", "measurement")
-LEARNING_KINDS = (*COUNTED, "throughput_learning")
+# Amendment 2026-10-25 (trunk-collapse fix): learnability-gate development
+# runs, a separate category with its own cap, and single-agent trunk
+# pre-training runs (arm "trunk", condition "single").
+GATE_KINDS = ("gate_dev", "pretrain_dev")
+GATE_ALLOWANCE = {"gate_dev": 3, "pretrain_dev": 2}  # per arm / in total
+PRETRAIN_ARM, PRETRAIN_CONDITION = "trunk", "single"
+KINDS = (*COUNTED, "throughput_learning", "measurement", *GATE_KINDS)
+LEARNING_KINDS = (*COUNTED, "throughput_learning", "gate_dev")
 SMOKE_SEED = 9001  # not a registered seed
 _TOKEN = object()
 
@@ -130,10 +136,14 @@ def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
     """Account one development run before it starts; raise if not allowed."""
     from .codes import ARM_CODES, CONDITION_CODES
 
-    if arm not in ARM_CODES or condition not in CONDITION_CODES:
-        raise ValueError(f"unknown arm/condition {arm!r}/{condition!r}")
     if kind not in KINDS:
         raise ValueError(f"unknown ledger kind {kind!r}")
+    if kind == "pretrain_dev":
+        if (arm, condition) != (PRETRAIN_ARM, PRETRAIN_CONDITION):
+            raise ValueError("pretrain_dev runs use arm 'trunk', condition "
+                             "'single'")
+    elif arm not in ARM_CODES or condition not in CONDITION_CODES:
+        raise ValueError(f"unknown arm/condition {arm!r}/{condition!r}")
     if kind == "throughput_learning" and not inspected:
         raise ValueError("a throughput_learning run must record what was "
                          "inspected (throughput, losses, success rate, ...)")
@@ -151,6 +161,13 @@ def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
             if used >= allowance(arm):
                 raise SmokeLimitError(
                     f"arm {arm!r} already used {used} of {allowance(arm)} smoke runs")
+        if kind in GATE_KINDS:
+            used = sum(1 for r in ledger["runs"]
+                       if r.get("kind") == kind and r["arm"] == arm)
+            if used >= GATE_ALLOWANCE[kind]:
+                raise SmokeLimitError(
+                    f"{kind} for {arm!r}: already used {used} of "
+                    f"{GATE_ALLOWANCE[kind]}")
         rid = uuid.uuid4().hex
         entry = {
             "id": rid, "claimed": False, "kind": kind, "arm": arm,

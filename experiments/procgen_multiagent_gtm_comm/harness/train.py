@@ -17,6 +17,7 @@ the last finite checkpoint is kept (registered failure rule).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
@@ -63,6 +64,76 @@ SUCCESS_WINDOW = 100
 RIGHT_ACTIONS = (6, 7, 8)
 LEFT_ACTIONS = (0, 1, 2)
 
+# Trunk-liveness guard (amendment 2026-10-25). A probe on frames of the
+# current rollout flags the trunk as dead when the positive fraction of the
+# last IMPALA block's residual stream, or the fraction of the 256 h units
+# active on at least one probe frame, falls below LIVENESS_MIN_FRAC, or
+# when the policy logits or the values do not vary across the probe batch.
+LIVENESS_MIN_FRAC = 0.01
+LIVENESS_STD_EPS = 1e-6
+LIVENESS_PROBE_PAIRS = 128  # pair-steps per probe (= 256 agent frames)
+FROZEN_PRESET = "frozen-20261024"
+
+
+@dataclass(frozen=True)
+class TrainOptions:
+    """Registered training options (amendment 2026-10-25).
+
+    The default is the configuration frozen by tag ``n10c-freeze-20261024``
+    (kept selectable for reproducibility of that tag). Only the named
+    ``PRESETS`` are valid; a registered run uses the preset fixed by the
+    freeze (``campaign.guards.REGISTERED_TRAIN_OPTIONS``).
+
+    * ``coin_reward``: per-agent reward for reaching its OWN coin, added to
+      the team reward (+1 when both coins fall within delta_t = 20 steps).
+      0 = team reward only (frozen).
+    * ``adam_eps``: Adam epsilon (1e-8 = MLX default, frozen; 1e-5 = the
+      usual PPO value).
+    * ``mask_finished``: exclude agents that were already finished (frozen,
+      action ignored) from the policy loss, the entropy bonus and the
+      advantage normalisation statistics. Their forward pass, and hence
+      the message they send to the live partner, and their value targets
+      (the team return) are kept.
+    * ``liveness``: trunk-liveness guard: ``off``, ``flag`` (record only)
+      or ``abort`` (stop the run at the first flagged probe). The probe
+      runs at step 0 and after the first update ending at or after every
+      ``liveness_every`` pair-steps; metrics are logged in every non-off
+      mode.
+    * ``pretrained_trunk``: the IMPALA trunk is initialised from a
+      single-agent CoinRun pre-training checkpoint (``harness/pretrain.py``)
+      instead of at random; the rest of the network is initialised as before.
+    """
+
+    preset: str = FROZEN_PRESET
+    coin_reward: float = 0.0
+    adam_eps: float = 1e-8
+    mask_finished: bool = False
+    liveness: str = "off"
+    liveness_every: int = 100_000
+    pretrained_trunk: bool = False
+
+
+_GUARDS = dict(adam_eps=1e-5, mask_finished=True, liveness="abort")
+PRESETS: dict[str, TrainOptions] = {
+    FROZEN_PRESET: TrainOptions(),
+    # (1) individual coin reward + guards
+    "fix-a-coin": TrainOptions(preset="fix-a-coin", coin_reward=0.5, **_GUARDS),
+    # (2) single-agent trunk pre-training, team reward only, + guards
+    "fix-b-pretrain": TrainOptions(preset="fix-b-pretrain",
+                                   pretrained_trunk=True, **_GUARDS),
+    # A + B (PI choice 2026-10-25)
+    "fix-c-coin-pretrain": TrainOptions(preset="fix-c-coin-pretrain",
+                                        coin_reward=0.5,
+                                        pretrained_trunk=True, **_GUARDS),
+}
+
+
+def options_for(preset: str) -> TrainOptions:
+    if preset not in PRESETS:
+        raise ValueError(f"unknown training preset {preset!r} "
+                         f"(known: {sorted(PRESETS)})")
+    return PRESETS[preset]
+
 
 @dataclass
 class RunRecord:
@@ -97,6 +168,14 @@ class RunRecord:
     # provenance of a registered run (None in the development mode)
     registration: dict | None = None
     runtime: dict | None = None
+    # amendment 2026-10-25: training options and diagnostics
+    train_options: dict | None = None
+    init_trunk_sha256: str | None = None
+    coin_rate_curve: list[list[float | None]] = field(default_factory=list)
+    entropy_curve: list[list[float]] = field(default_factory=list)  # [step, mean, min]
+    liveness: list[dict] = field(default_factory=list)
+    liveness_flagged: bool = False
+    liveness_abort: bool = False
 
 
 class EngCounters:
@@ -161,9 +240,24 @@ def _save_ckpt(model: nn.Module, out_dir: Path, step: int) -> str:
     return final.name
 
 
-def normalize_adv(adv: mx.array) -> mx.array:
-    """Advantage normalisation over the full minibatch (before splitting)."""
-    return (adv - adv.mean()) / (adv.std() + 1e-8)
+def normalize_adv(adv: mx.array, live: mx.array | None = None) -> mx.array:
+    """Advantage normalisation over the full minibatch (before splitting).
+
+    With ``live`` (1 = agent not yet finished), mean and std are taken over
+    live samples only and finished samples get advantage 0."""
+    if live is None:
+        return (adv - adv.mean()) / (adv.std() + 1e-8)
+    n = mx.maximum(live.sum(), 1.0)
+    mean = (adv * live).sum() / n
+    std = mx.sqrt((((adv - mean) ** 2) * live).sum() / n)
+    return (adv - mean) / (std + 1e-8) * live
+
+
+def live_scale(live: mx.array) -> mx.array:
+    """1 / (live fraction of the FULL minibatch): turns a micro-batch mean
+    of masked terms into the masked mean over the minibatch's live samples
+    (micro weights = micro size / minibatch size)."""
+    return live.size / mx.maximum(live.sum(), 1.0)
 
 
 def micro_slices(n: int, micro: int | None) -> list[tuple[int, int, float]]:
@@ -174,7 +268,8 @@ def micro_slices(n: int, micro: int | None) -> list[tuple[int, int, float]]:
             for a in range(0, n, micro)]
 
 
-def accumulate_minibatch(grad_step, mb: dict, micro: int | None, key):
+def accumulate_minibatch(grad_step, mb: dict, micro: int | None, key,
+                         mask: bool = False):
     """Weighted gradient of the mean loss over one registered minibatch.
 
     Returns ``(loss, grads, finite)``; ``grads`` is None (and ``finite``
@@ -182,13 +277,21 @@ def accumulate_minibatch(grad_step, mb: dict, micro: int | None, key):
     caller can stop before applying anything.
     """
     n = mb["actions"].shape[0]
-    adv = normalize_adv(mb["advantages"])  # full minibatch statistics
+    if mask:
+        live = mb["live"]
+        adv = normalize_adv(mb["advantages"], live)  # live samples only
+        inv = live_scale(live)
+    else:
+        live = mx.ones(mb["actions"].shape, dtype=mx.float32)
+        adv = normalize_adv(mb["advantages"])  # full minibatch statistics
+        inv = mx.array(1.0, dtype=mx.float32)
     acc, total = None, 0.0
     for a, b, w in micro_slices(n, micro):
         loss, norm, g = grad_step(
             mb["obs"][a:b], mb["summary"][a:b], mb["eng_bits"][a:b],
             mb["actions"][a:b], mb["noise"][a:b], mb["logp"][a:b], adv[a:b],
             mb["returns"][a:b], key, mx.array(w, dtype=mx.float32),
+            live[a:b], inv,
         )
         acc = g if acc is None else tree_map(lambda x, y: x + y, acc, g)
         mx.eval(loss, norm, acc)
@@ -206,7 +309,7 @@ def finalize_grads(grads, scale, plastic: bool = False):
 
 
 def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
-                plastic: bool):
+                plastic: bool, mask_finished: bool = False):
     def logp_value(model, obs, summary, eng, actions, noise, key):
         out = model(
             obs.astype(mx.float32), summary, eng if use_eng else None,
@@ -216,15 +319,22 @@ def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
         logp = mx.take_along_axis(logp_all, actions[..., None], axis=-1)[..., 0]
         return out, logp_all, logp
 
-    def loss_fn(model, obs, summary, eng, actions, noise, old_logp, adv, ret, key):
+    def loss_fn(model, obs, summary, eng, actions, noise, old_logp, adv, ret,
+                key, live, inv_live):
         out, logp_all, logp = logp_value(model, obs, summary, eng, actions,
                                          noise, key)
         ratio = mx.exp(logp - old_logp)
-        pg = -mx.minimum(
+        surr = mx.minimum(
             ratio * adv, mx.clip(ratio, 1.0 - CLIP, 1.0 + CLIP) * adv
-        ).mean()
+        )
+        ent_each = -(mx.softmax(out.logits, axis=-1) * logp_all).sum(-1)
         vf = ((out.value - ret) ** 2).mean()
-        ent = -(mx.softmax(out.logits, axis=-1) * logp_all).sum(-1).mean()
+        if mask_finished:  # finished agents: no policy / entropy term
+            pg = -(surr * live).mean() * inv_live
+            ent = (ent_each * live).mean() * inv_live
+        else:  # frozen-tag expression (live / inv_live unused)
+            pg = -surr.mean()
+            ent = ent_each.mean()
         return pg + VALUE_COEF * vf - ENTROPY_COEF * ent
 
     grad_fn = nn.value_and_grad(model, loss_fn)
@@ -237,9 +347,9 @@ def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
     # fixed per micro size; a smaller last micro recompiles once.
     @partial(mx.compile, inputs=[model.state], outputs=[model.state])
     def grad_step(obs, summary, eng, actions, noise, old_logp, adv, ret, key,
-                  weight):
+                  weight, live, inv_live):
         loss, grads = grad_fn(model, obs, summary, eng, actions, noise,
-                              old_logp, adv, ret, key)
+                              old_logp, adv, ret, key, live, inv_live)
         grads = tree_map(lambda g: g * weight, grads)
         sq = sum((g * g).sum() for _, g in tree_flatten(grads))
         return loss * weight, mx.sqrt(sq), grads
@@ -254,6 +364,63 @@ def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
         return mx.abs(mx.exp(logp - old_logp) - 1.0).max()
 
     return grad_step, apply_step, ratio_dev
+
+
+def trunk_activity(trunk, x: mx.array) -> dict[str, float]:
+    """Liveness of the IMPALA trunk on agent frames ``x`` [N, 64, 64, 3] in
+    [0, 1]: positive fraction of the last block's residual stream, fraction
+    of h units active on >= 1 frame, and overall h nonzero fraction."""
+    y = x
+    for block in trunk.blocks:
+        y = block(y)
+    h = nn.relu(trunk.fc(nn.relu(y).reshape(y.shape[0], -1)))
+    act = h > 0
+    out = (((y > 0).mean()), act.any(axis=0).mean(), act.mean())
+    mx.eval(*out)
+    return {"block3_pos_frac": float(out[0].item()),
+            "live_h_frac": float(out[1].item()),
+            "h_nonzero_frac": float(out[2].item())}
+
+
+def liveness_probe(model: PairPolicy, obs: np.ndarray, summary: np.ndarray,
+                   eng: np.ndarray | None, key: mx.array) -> dict:
+    """Trunk-liveness metrics on a batch of pair-steps (uint8 obs
+    [B, 2, 64, 64, 3]) and the flag of the guard (see LIVENESS_*)."""
+    o = mx.array(obs).astype(mx.float32)
+    m = trunk_activity(model.trunk, o.reshape(-1, *o.shape[2:]) / 255.0)
+    out = model(o, mx.array(summary), None if eng is None else mx.array(eng),
+                train=False, key=key)
+    logits = out.logits.reshape(-1, out.logits.shape[-1])
+    lstd = logits.std(axis=0).mean()
+    vstd = out.value.reshape(-1).std()
+    mx.eval(lstd, vstd)
+    m["logit_std"] = float(lstd.item())
+    m["value_std"] = float(vstd.item())
+    reasons = [k for k in ("block3_pos_frac", "live_h_frac")
+               if m[k] < LIVENESS_MIN_FRAC]
+    reasons += [k for k in ("logit_std", "value_std") if m[k] <= LIVENESS_STD_EPS]
+    m["flagged"] = bool(reasons)
+    m["reasons"] = reasons
+    return m
+
+
+def make_optimizer(options: TrainOptions,
+                   frozen_policy: bool = False) -> optim.Adam:
+    """Adam with the preset's epsilon (bias correction stays at the MLX
+    default, off, as in the frozen tag)."""
+    return optim.Adam(learning_rate=0.0 if frozen_policy else LR,
+                      eps=options.adam_eps)
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def load_trunk(model: PairPolicy, path: Path) -> None:
+    """Initialise ``model.trunk`` from a pre-training trunk checkpoint
+    (strict: every trunk parameter, nothing else)."""
+    model.trunk.load_weights(list(mx.load(str(path)).items()), strict=True)
+    mx.eval(model.trunk.parameters())
 
 
 def train_run(
@@ -277,6 +444,9 @@ def train_run(
     frozen_policy: bool = False,
     dev_reservation: devledger.Reservation | None = None,
     dev_ledger: Path = devledger.LEDGER,
+    options: TrainOptions | None = None,
+    init_trunk: Path | None = None,
+    dev_kind: str = "dev_train",
     _fault_hook: Callable[[int, PairPolicy], None] | None = None,
     _rollout_hook: Callable[[int, RolloutBuffer], None] | None = None,
 ) -> RunRecord:
@@ -309,7 +479,22 @@ def train_run(
     measurements) is ledgered as ``measurement`` and not counted. A
     ``dev_reservation`` made by the caller (smoke / throughput paths) is used
     instead of making a second entry; the caller then finishes it.
+
+    ``options`` (amendment 2026-10-25, default: the frozen-tag preset) selects
+    a registered ``TrainOptions`` preset; ``init_trunk`` is the pre-trained
+    trunk checkpoint, required exactly when the preset asks for one.
+    ``dev_kind`` is the ledger kind of a real-environment development run
+    (``dev_train``, or ``gate_dev`` for the learnability gate).
     """
+    options = PRESETS[FROZEN_PRESET] if options is None else options
+    if PRESETS.get(options.preset) != options:
+        raise ValueError("training options must be one of the named PRESETS")
+    if options.pretrained_trunk != (init_trunk is not None):
+        raise ValueError(f"preset {options.preset!r} "
+                         + ("needs" if options.pretrained_trunk else "refuses")
+                         + " an init_trunk checkpoint")
+    if dev_kind not in ("dev_train", "gate_dev"):
+        raise ValueError(f"unknown development kind {dev_kind!r}")
     reg_host = guards.check_train_boundary(
         registration, arm=arm, seed=seed, condition=condition,
         total_pair_steps=total_pair_steps,
@@ -319,7 +504,8 @@ def train_run(
                 "log_every_pair_steps": log_every_pair_steps,
                 "ckpt_every_pair_steps": ckpt_every_pair_steps,
                 "minibatch_pairs": minibatch_pairs},
-        has_env_factory=env_factory is not None)
+        has_env_factory=env_factory is not None,
+        options_preset=options.preset)
     own_res = None
     if registration is not None:
         if frozen_policy or dev_reservation is not None:
@@ -327,7 +513,7 @@ def train_run(
                 "a registered run cannot use frozen_policy or a development "
                 "reservation")
     elif env_factory is None:  # real Procgen development run: account it
-        kind = "measurement" if frozen_policy else "dev_train"
+        kind = "measurement" if frozen_policy else dev_kind
         if dev_reservation is None:
             own_res = devledger.reserve(arm, condition, total_pair_steps,
                                         kind=kind, path=dev_ledger, seed=seed)
@@ -368,9 +554,11 @@ def train_run(
             horizon, log_every_pair_steps, ckpt_every_pair_steps,
             minibatch_pairs, restarts, init_ss, shuf_rng, key_rng,
             _fault_hook, _rollout_hook, micro_batch_pairs, clear_cache,
-            n_workers, registration, reg_host, frozen_policy,
+            n_workers, registration, reg_host, frozen_policy, options,
+            init_trunk,
         )
-        outcome = "failed_non_finite" if rec.training_failure else "completed"
+        outcome = ("liveness_abort" if rec.liveness_abort else
+                   "failed_non_finite" if rec.training_failure else "completed")
         return rec
     finally:
         if vec is not None:
@@ -383,13 +571,15 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
            log_every, ckpt_every, minibatch_pairs, restarts, init_ss,
            shuf_rng, key_rng, fault_hook, rollout_hook, micro_pairs=None,
            clear_cache=False, n_workers=1, registration=None,
-           reg_host=None, frozen_policy=False) -> RunRecord:
+           reg_host=None, frozen_policy=False, options=None,
+           init_trunk=None) -> RunRecord:
+    options = PRESETS[FROZEN_PRESET] if options is None else options
     rec = RunRecord(
         arm=arm, seed=seed, condition=condition,
         codes={"arm": ARM_CODES[arm], "condition": CONDITION_CODES[condition]},
         total_pair_steps=total, restarts=restarts, using_stub=False,
         micro_batch_pairs=micro_pairs, clear_cache=clear_cache,
-        n_workers=n_workers,
+        n_workers=n_workers, train_options=asdict(options),
     )
     if registration is not None:
         rec.registration = {k: registration.pins()[k] for k in (
@@ -398,16 +588,23 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
         rec.runtime = guards._runtime_probe()
     model = PairPolicy(arm, mx.random.key(init_key_int(seed, arm, condition)))
     mx.eval(model.parameters())
+    if init_trunk is not None:
+        rec.init_trunk_sha256 = file_sha256(init_trunk)
+        load_trunk(model, init_trunk)
     # frozen_policy (throughput measurements): learning rate 0 keeps the
     # policy at its random initialisation while the full update cost is paid
-    opt = optim.Adam(learning_rate=0.0 if frozen_policy else LR)
+    opt = make_optimizer(options, frozen_policy)
     opt.init(model.trainable_parameters())
     mx.eval(opt.state)
     use_eng = arm == "eng"
     plastic = arm == "gtm"
     grad_step, apply_step, ratio_dev = _make_steps(
-        model, opt, use_eng, plastic=plastic
+        model, opt, use_eng, plastic=plastic,
+        mask_finished=options.mask_finished,
     )
+    mask = options.mask_finished
+    coin_r = np.float32(options.coin_reward)
+    probe_rng = np.random.default_rng(seed)  # probe subsampling only
 
     bus = MessageBus(arm)
     nd = model.noise_dim
@@ -432,11 +629,31 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
         return mx.array(e) if use_eng else None
 
     eng = eng_now()
+    fin_prev = np.zeros((n_pairs, 2), dtype=bool)  # finished BEFORE the action
+    ep_coin = np.zeros((n_pairs, 2), dtype=bool)
+    recent_coin: deque[float] = deque(maxlen=2 * SUCCESS_WINDOW)
+
+    def probe(obs_b, summ_b, eng_b) -> bool:
+        if options.liveness == "off":
+            return False
+        k = probe_rng.choice(obs_b.shape[0], min(LIVENESS_PROBE_PAIRS,
+                                                 obs_b.shape[0]), replace=False)
+        m = liveness_probe(model, obs_b[k], summ_b[k],
+                           eng_b[k] if use_eng else None,
+                           mx.random.key(int(probe_rng.integers(0, 2**31 - 1))))
+        m["step"] = step
+        rec.liveness.append(m)
+        if m["flagged"]:
+            rec.liveness_flagged = True
+        return m["flagged"] and options.liveness == "abort"
+
+    probe(obs, summ, eng)  # step 0 (initialisation) reference
     update = 0
     while env_steps < total_env_steps and not rec.training_failure:
         update += 1
         t_len = min(horizon, total_env_steps - env_steps)
         buf = RolloutBuffer(n_pairs, t_len, noise_dim=nd)
+        ent_sum, ent_n, ent_min = 0.0, 0, float("inf")
         for _ in range(t_len):
             k_pol, k_act, k_noise = _key(key_rng), _key(key_rng), _key(key_rng)
             noise = model.sample_noise(n_pairs, k_noise)
@@ -448,19 +665,33 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
             act = act.reshape(n_pairs, 2)
             logp_all = nn.log_softmax(out.logits, axis=-1)
             logp = mx.take_along_axis(logp_all, act[..., None], axis=-1)[..., 0]
-            to_eval = [act, logp, out.value, out.hard_bits]
+            ent = -(mx.exp(logp_all) * logp_all).sum(-1)
+            to_eval = [act, logp, out.value, out.hard_bits, ent]
             if noise is not None:
                 to_eval.append(noise)
             mx.eval(*to_eval)
             actions = np.array(act)
+            live = ~fin_prev
+            ent_np = np.array(ent)[live]
+            if ent_np.size:
+                ent_sum += float(ent_np.sum())
+                ent_n += int(ent_np.size)
+                ent_min = min(ent_min, float(ent_np.min()))
             bus.deliver(np.array(out.hard_bits), phase="train")  # enforce + log
             res = vec.step(actions.astype(np.int32))
+            coin = (np.zeros((n_pairs, 2), bool) if res.coin is None
+                    else np.asarray(res.coin, bool))
             buf.add(obs, summ, eng, actions, np.array(logp), np.array(out.value),
                     res.team_reward, res.done,
-                    noise=None if noise is None else np.array(noise))
+                    noise=None if noise is None else np.array(noise),
+                    agent_reward=coin_r * coin.astype(np.float32), live=live)
+            ep_coin |= coin
             for k in np.flatnonzero(res.done):
                 recent.append(float(res.team_reward[k]))
+                recent_coin.extend(float(c) for c in ep_coin[k])
                 rec.completed_episodes += 1
+            ep_coin[res.done] = False
+            fin_prev = np.asarray(res.finished, bool) & ~res.done[:, None]
             counters.update(actions, res.done, res.finished)
             obs, summ, win = res.obs, res.summary, res.window
             eng = eng_now()
@@ -470,6 +701,8 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
                 rate = float(np.mean(recent)) if recent else None
                 rec.success_curve.append([step, rate])
                 rec.success_curve_n.append(len(recent))
+                rec.coin_rate_curve.append(
+                    [step, float(np.mean(recent_coin)) if recent_coin else None])
                 if (rec.time_to_half is None and rate is not None
                         and len(recent) == SUCCESS_WINDOW and rate >= 0.5):
                     rec.time_to_half = step
@@ -480,6 +713,8 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
         )
         mx.eval(last.value)
         buf.finish(np.array(last.value), GAMMA, LAMBDA)
+        if ent_n:
+            rec.entropy_curve.append([step, ent_sum / ent_n, ent_min])
         if rollout_hook is not None:
             rollout_hook(update, buf)
 
@@ -502,7 +737,7 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
                     rec.first_mb_ratio_dev.append(max(devs))
                     first_mb = False
                 lv, acc, finite = accumulate_minibatch(
-                    grad_step, mb, micro_pairs, _key(key_rng)
+                    grad_step, mb, micro_pairs, _key(key_rng), mask=mask
                 )
                 if not finite:
                     rec.training_failure = True
@@ -535,6 +770,17 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
         prev = step - t_len * n_pairs
         if step // ckpt_every > prev // ckpt_every:
             rec.last_checkpoint = _save_ckpt(model, out_dir, step)
+        if step // options.liveness_every > prev // options.liveness_every:
+            t_obs = buf.obs.reshape(-1, 2, 64, 64, 3)
+            if probe(t_obs, buf.summary.reshape(-1, 2, 2),
+                     buf.eng_bits.reshape(-1, 2, 16)):
+                rec.liveness_abort = True
+                rec.training_failure = True
+                rec.failure_reason = (
+                    f"trunk liveness guard at update {update} (pair-step "
+                    f"{step}): {rec.liveness[-1]['reasons']}")
+                rec.last_checkpoint = _save_ckpt(model, out_dir, step)
+                break
         if fault_hook is not None:
             fault_hook(update, model)
 
@@ -574,8 +820,19 @@ def main() -> None:
                    help="registered-budget runs: the host whose registered "
                         "settings (codes.HOST_SETTINGS) apply; must be the "
                         "seed's fixed host")
+    p.add_argument("--preset", default=None, choices=sorted(PRESETS),
+                   help="training-options preset (amendment 2026-10-25); "
+                        "default: the registered preset "
+                        "(campaign.guards.REGISTERED_TRAIN_OPTIONS)")
+    p.add_argument("--init-trunk", type=Path, default=None,
+                   help="pre-trained trunk checkpoint (harness.pretrain), "
+                        "required by presets with pretrained_trunk")
+    p.add_argument("--dev-kind", default="dev_train",
+                   choices=["dev_train", "gate_dev"],
+                   help="development-ledger kind of a development run")
     guards.add_guard_args(p)
     a = p.parse_args()
+    preset = a.preset or guards.REGISTERED_TRAIN_OPTIONS
     registered = a.steps > guards.DEV_MAX_PAIR_STEPS
     if registered and a.steps != guards.REGISTERED_BUDGET:
         sys.exit(f"training refused: {a.steps:,} pair-steps is neither the "
@@ -612,9 +869,12 @@ def main() -> None:
     rec = train_run(
         a.arm, a.seed, a.condition, a.steps, a.out, n_pairs=a.n_pairs,
         horizon=a.horizon, log_every_pair_steps=a.log_every,
-        ckpt_every_pair_steps=a.ckpt_every, registration=ctx, **settings,
+        ckpt_every_pair_steps=a.ckpt_every, registration=ctx,
+        options=options_for(preset), init_trunk=a.init_trunk,
+        dev_kind=a.dev_kind, **settings,
     )
-    print(json.dumps({k: v for k, v in asdict(rec).items() if k != "losses"}))
+    print(json.dumps({k: v for k, v in asdict(rec).items()
+                      if k not in ("losses", "liveness", "entropy_curve")}))
 
 
 if __name__ == "__main__":

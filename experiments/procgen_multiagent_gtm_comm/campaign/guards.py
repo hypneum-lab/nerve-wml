@@ -66,6 +66,10 @@ REGISTERED_TRAIN_CONFIG = {  # frozen rollout / measurement configuration
     "n_pairs": 64, "horizon": 128, "log_every_pair_steps": 1_000_000,
     "ckpt_every_pair_steps": 1_000_000, "minibatch_pairs": 1024,
 }
+# Training-options preset of registered runs (harness.train.PRESETS). The
+# tag n10c-freeze-20261024 froze the original configuration; the 2026-10-25
+# amendment changes this only together with a NEW freeze tag.
+REGISTERED_TRAIN_OPTIONS = "frozen-20261024"
 ARMS_BY_CONDITION = {
     "registered": ("gtm", "mlp", "atoc", "dial", "eng", "nocomm"),
     "closed": ("gtm", "dial", "eng", "nocomm"),
@@ -525,9 +529,12 @@ def _need_ctx(ctx: Any, what: str) -> RegistrationContext:
 
 def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
                          total_pair_steps: int, settings: dict,
-                         config: dict, has_env_factory: bool) -> str | None:
+                         config: dict, has_env_factory: bool,
+                         options_preset: str = REGISTERED_TRAIN_OPTIONS,
+                         ) -> str | None:
     """Gate for ``train_run``. Returns the registered host, or None in the
-    explicit development mode (budget <= 1M pair-steps, no context)."""
+    explicit development mode (budget <= 1M pair-steps, no context).
+    A registered run must use the registered training-options preset."""
     if ctx is None:
         if total_pair_steps > DEV_MAX_PAIR_STEPS:
             raise GuardError(
@@ -541,6 +548,9 @@ def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
         settings=settings, config=config)
     if has_env_factory:
         errs.append("a registered run uses the real Procgen (no env_factory)")
+    if options_preset != REGISTERED_TRAIN_OPTIONS:
+        errs.append(f"training options {options_preset!r} != registered "
+                    f"{REGISTERED_TRAIN_OPTIONS!r}")
     if errs:
         raise GuardError("registered training refused: " + "; ".join(errs))
     host = SEED_HOST[seed]

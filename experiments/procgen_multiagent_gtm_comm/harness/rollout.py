@@ -7,6 +7,13 @@
 #
 # Advantages/returns are stored by ``finish(last_value, ...)`` (which calls
 # ``compute_gae``); ``minibatches`` raises until that was done.
+#
+# Amendment 2026-10-25 (training options, see train.TrainOptions):
+# ``agent_reward`` [T, n, 2] is an optional per-agent reward added to the
+# team reward (individual coin reward), and ``live`` [T, n, 2] marks the
+# agents that were NOT yet finished when the action was taken (a finished
+# agent is frozen and its action is ignored by the environment). Both
+# default to the frozen behaviour (no extra reward, every agent live).
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -26,7 +33,8 @@ def compute_gae(
     gamma: float = 0.999,
     lam: float = 0.95,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """GAE over [T, n] team rewards / [T, n, 2] per-agent values.
+    """GAE over [T, n] team rewards (or [T, n, 2] per-agent rewards) and
+    [T, n, 2] per-agent values.
 
     ``dones[t]`` means the episode ended at step t: no bootstrap from
     V(t+1) across it. ``last_value`` is V after the final step, [n, 2].
@@ -40,7 +48,8 @@ def compute_gae(
         [values[1:], np.asarray(last_value, np.float64)[None]], axis=0
     )
     nt = nonterm[..., None]
-    delta = rewards[..., None] + gamma * next_values * nt - values
+    r = rewards[..., None] if rewards.ndim == 2 else rewards
+    delta = r + gamma * next_values * nt - values
     adv = np.zeros_like(values)
     gae = np.zeros_like(values[0])
     for t in reversed(range(t_len)):
@@ -63,6 +72,8 @@ class RolloutBuffer:
         self.value = np.zeros((t_len, n, 2), np.float32)
         self.team_reward = np.zeros((t_len, n), np.float32)
         self.done = np.zeros((t_len, n), bool)
+        self.agent_reward = np.zeros((t_len, n, 2), np.float32)
+        self.live = np.ones((t_len, n, 2), bool)
         self.noise_dim = noise_dim
         self.noise = np.zeros((t_len, n, 2, noise_dim), np.float32)
         self.advantages: np.ndarray | None = None
@@ -70,7 +81,8 @@ class RolloutBuffer:
         self.t = 0
 
     def add(self, obs, summary, eng_bits, actions, logp, value,
-            team_reward, done, noise=None) -> None:
+            team_reward, done, noise=None, agent_reward=None,
+            live=None) -> None:
         if self.t >= self.horizon:
             raise RuntimeError("rollout buffer full")
         t = self.t
@@ -84,13 +96,18 @@ class RolloutBuffer:
         self.done[t] = done
         if noise is not None:
             self.noise[t] = noise
+        if agent_reward is not None:
+            self.agent_reward[t] = agent_reward
+        if live is not None:
+            self.live[t] = live
         self.t += 1
 
     def finish(self, last_value, gamma: float = 0.999, lam: float = 0.95):
         if self.t != self.horizon:
             raise RuntimeError("rollout not full")
+        rewards = self.team_reward[..., None] + self.agent_reward
         self.advantages, self.returns = compute_gae(
-            self.team_reward, self.value, self.done, last_value, gamma, lam
+            rewards, self.value, self.done, last_value, gamma, lam
         )
 
     def reset(self) -> None:
@@ -115,6 +132,7 @@ class RolloutBuffer:
             "advantages": self.advantages.reshape(n_total, 2),
             "returns": self.returns.reshape(n_total, 2),
             "noise": self.noise.reshape(n_total, 2, self.noise_dim),
+            "live": self.live.reshape(n_total, 2).astype(np.float32),
         }
         perm = rng.permutation(n_total)
         for s in range(0, n_total, size_pairs):
