@@ -1,6 +1,7 @@
 """NH-01 pilot: dreaming Hopfield kernel vs Frobenius-matched uniform shrink.
 
-Pre-registration (binding, L1): ``docs/milestones/2026-10-25-nh01-hopfield-dream-vs-downscale.md``
+Pre-registration (binding, L1):
+``docs/milestones/2026-10-25-nh01-hopfield-dream-vs-downscale.md``
 (tag ``prereg-nh01-hopfield-dream-20261025``). Every constant below is the
 pre-registered value; changing one requires an amendment tag.
 
@@ -73,15 +74,15 @@ def hebbian_kernel(xi: np.ndarray) -> np.ndarray:
     return xi.T @ xi / n
 
 
-def dreaming_kernel(J: np.ndarray, t: float) -> np.ndarray:
+def dreaming_kernel(j: np.ndarray, t: float) -> np.ndarray:
     """Fachechi–Agliari–Barra dreamed kernel J(t) = J (1+t) (1 + tJ)^-1.
 
     Computed by spectral decomposition of the symmetric Hebbian J: each
     eigenvalue lam >= 0 maps to lam (1+t) / (1 + t lam). ``t = 0`` returns J.
     """
     if t == 0.0:
-        return np.array(J, dtype=np.float64, copy=True)
-    w, v = np.linalg.eigh(np.asarray(J, dtype=np.float64))
+        return np.array(j, dtype=np.float64, copy=True)
+    w, v = np.linalg.eigh(np.asarray(j, dtype=np.float64))
     w = np.clip(w, 0.0, None)  # J is PSD; clip numerical negatives
     wt = w * (1.0 + t) / (1.0 + t * w)
     return (v * wt) @ v.T
@@ -99,21 +100,21 @@ def dreaming_kernel_pattern_space(xi: np.ndarray, t: float) -> np.ndarray:
     return xi.T @ m @ xi / n
 
 
-def offdiag(J: np.ndarray) -> np.ndarray:
+def offdiag(j: np.ndarray) -> np.ndarray:
     """Copy of J with a zero diagonal (no self-coupling in the dynamics)."""
-    out = np.array(J, dtype=np.float64, copy=True)
+    out = np.array(j, dtype=np.float64, copy=True)
     np.fill_diagonal(out, 0.0)
     return out
 
 
-def matched_shrink_factors(J0_off: np.ndarray, Jt_off: np.ndarray) -> tuple[float, float]:
+def matched_shrink_factors(j0_off: np.ndarray, jt_off: np.ndarray) -> tuple[float, float]:
     """Return (c_frobenius, c_spectral) such that c * J0 matches Jt.
 
     Frobenius matching is the pre-registered control; spectral is descriptive.
     """
-    c_fro = float(np.linalg.norm(Jt_off) / np.linalg.norm(J0_off))
-    s0 = float(np.max(np.abs(np.linalg.eigvalsh(J0_off))))
-    st = float(np.max(np.abs(np.linalg.eigvalsh(Jt_off))))
+    c_fro = float(np.linalg.norm(jt_off) / np.linalg.norm(j0_off))
+    s0 = float(np.max(np.abs(np.linalg.eigvalsh(j0_off))))
+    st = float(np.max(np.abs(np.linalg.eigvalsh(jt_off))))
     return c_fro, st / s0
 
 
@@ -122,7 +123,9 @@ def matched_shrink_factors(J0_off: np.ndarray, Jt_off: np.ndarray) -> tuple[floa
 # --------------------------------------------------------------------------- #
 
 
-def make_cues(xi: np.ndarray, probe_idx: np.ndarray, flips: float, rng: np.random.Generator) -> np.ndarray:
+def make_cues(
+    xi: np.ndarray, probe_idx: np.ndarray, flips: float, rng: np.random.Generator
+) -> np.ndarray:
     """Noisy cues: each probed pattern with exactly round(flips * N) bits flipped."""
     n = xi.shape[1]
     k = int(round(flips * n))
@@ -134,8 +137,12 @@ def make_cues(xi: np.ndarray, probe_idx: np.ndarray, flips: float, rng: np.rando
     return cues
 
 
-def run_zero_temperature(J_off: np.ndarray, S0: np.ndarray, rng: np.random.Generator,
-                         max_sweeps: int = MAX_SWEEPS_T0) -> tuple[np.ndarray, int, np.ndarray]:
+def run_zero_temperature(
+    j_off: np.ndarray,
+    s0: np.ndarray,
+    rng: np.random.Generator,
+    max_sweeps: int = MAX_SWEEPS_T0,
+) -> tuple[np.ndarray, int, np.ndarray]:
     """Asynchronous sign dynamics, random unit order per sweep (shared by the batch).
 
     Ties (h = 0) keep the current spin. An exact zero field is detected up
@@ -146,57 +153,63 @@ def run_zero_temperature(J_off: np.ndarray, S0: np.ndarray, rng: np.random.Gener
     flip in the whole batch. Returns (final states, sweeps run, per-probe
     converged).
     """
-    S = np.array(S0, dtype=np.float64, copy=True)
-    JT = np.ascontiguousarray(J_off.T)  # JT[i] = column i of J
-    n = S.shape[1]
-    tol = TIE_REL * n * float(np.abs(J_off).max())
-    flipped_in_sweep = np.zeros(S.shape[0], dtype=bool)
+    s = np.array(s0, dtype=np.float64, copy=True)
+    jt = np.ascontiguousarray(j_off.T)  # jt[i] = column i of J
+    n = s.shape[1]
+    tol = TIE_REL * n * float(np.abs(j_off).max())
+    flipped_in_sweep = np.zeros(s.shape[0], dtype=bool)
     sweeps = 0
     for sweeps in range(1, max_sweeps + 1):
         order = rng.permutation(n)
         flipped_in_sweep[:] = False
         for i in order:
-            h = S @ JT[i]
-            col = S[:, i]
+            h = s @ jt[i]
+            col = s[:, i]
             new = np.where(h > tol, 1.0, np.where(h < -tol, -1.0, col))
             changed = new != col
             if changed.any():
                 flipped_in_sweep |= changed
-                S[:, i] = new
+                s[:, i] = new
         if not flipped_in_sweep.any():
-            return S, sweeps, np.ones(S.shape[0], dtype=bool)
-    return S, sweeps, ~flipped_in_sweep
+            return s, sweeps, np.ones(s.shape[0], dtype=bool)
+    return s, sweeps, ~flipped_in_sweep
 
 
-def run_glauber(J_off: np.ndarray, S0: np.ndarray, beta: float, xi: np.ndarray,
-                rng: np.random.Generator, sweeps: int = SWEEPS_GLAUBER,
-                avg_last: int = AVG_LAST_GLAUBER) -> tuple[np.ndarray, np.ndarray]:
+def run_glauber(
+    j_off: np.ndarray,
+    s0: np.ndarray,
+    beta: float,
+    xi: np.ndarray,
+    rng: np.random.Generator,
+    sweeps: int = SWEEPS_GLAUBER,
+    avg_last: int = AVG_LAST_GLAUBER,
+) -> tuple[np.ndarray, np.ndarray]:
     """Glauber dynamics at inverse temperature beta, fixed number of sweeps.
 
     Returns (final states, time-averaged overlaps with all patterns over the
     last ``avg_last`` sweeps, shape (B, P)).
     """
-    S = np.array(S0, dtype=np.float64, copy=True)
-    JT = np.ascontiguousarray(J_off.T)
-    n = S.shape[1]
-    m_acc = np.zeros((S.shape[0], xi.shape[0]), dtype=np.float64)
+    s = np.array(s0, dtype=np.float64, copy=True)
+    jt = np.ascontiguousarray(j_off.T)
+    n = s.shape[1]
+    m_acc = np.zeros((s.shape[0], xi.shape[0]), dtype=np.float64)
     n_acc = 0
     for sweep in range(1, sweeps + 1):
         order = rng.permutation(n)
-        u = rng.random((n, S.shape[0]))
+        u = rng.random((n, s.shape[0]))
         for k, i in enumerate(order):
-            h = S @ JT[i]
+            h = s @ jt[i]
             p_up = 1.0 / (1.0 + np.exp(-2.0 * beta * h))
-            S[:, i] = np.where(u[k] < p_up, 1.0, -1.0)
+            s[:, i] = np.where(u[k] < p_up, 1.0, -1.0)
         if sweep > sweeps - avg_last:
-            m_acc += S @ xi.T / n
+            m_acc += s @ xi.T / n
             n_acc += 1
-    return S, m_acc / n_acc
+    return s, m_acc / n_acc
 
 
-def energy(J_off: np.ndarray, S: np.ndarray) -> np.ndarray:
+def energy(j_off: np.ndarray, s: np.ndarray) -> np.ndarray:
     """E(s) = -1/2 s^T J s / N per state (diagonal-free kernel)."""
-    return -0.5 * np.einsum("bi,ij,bj->b", S, J_off, S) / S.shape[1]
+    return -0.5 * np.einsum("bi,ij,bj->b", s, j_off, s) / s.shape[1]
 
 
 # --------------------------------------------------------------------------- #
@@ -208,7 +221,9 @@ def stream(seed: int, n: int, *ids: int) -> np.random.Generator:
     return np.random.default_rng([ROOT_SEED, seed, n, *ids])
 
 
-def classify(m_cued: np.ndarray, m_all: np.ndarray, cued_idx: np.ndarray, thresh: float) -> dict[str, float]:
+def classify(
+    m_cued: np.ndarray, m_all: np.ndarray, cued_idx: np.ndarray, thresh: float
+) -> dict[str, float]:
     """Fractions retrieved / other_stored / spurious from overlaps (B,) and (B, P)."""
     b = m_cued.shape[0]
     retrieved = m_cued >= thresh
@@ -234,25 +249,27 @@ def evaluate_task(args: tuple[int, int]) -> list[dict]:
     for ai, alpha in enumerate(ALPHA_GRID):
         p = max(1, int(round(alpha * n)))
         xi = xi_all[:p]
-        J_full = hebbian_kernel(xi)
-        J0_off = offdiag(J_full)
+        j_full = hebbian_kernel(xi)
+        j0_off = offdiag(j_full)
         # eigen-decomposition once per (N, seed, alpha); reused for all t
-        w, v = np.linalg.eigh(J_full)
+        w, v = np.linalg.eigh(j_full)
         w = np.clip(w, 0.0, None)
 
-        arms: list[tuple[str, float, np.ndarray, float, float]] = [("hebb", 0.0, J0_off, 1.0, 1.0)]
+        arms: list[tuple[str, float, np.ndarray, float, float]] = [
+            ("hebb", 0.0, j0_off, 1.0, 1.0)
+        ]
         for t in T_GRID[1:]:
             wt = w * (1.0 + t) / (1.0 + t * w)
-            Jt_off = offdiag((v * wt) @ v.T)
-            c_fro, c_spec = matched_shrink_factors(J0_off, Jt_off)
-            arms.append(("dream", t, Jt_off, c_fro, c_spec))
-            arms.append(("shrink", t, c_fro * J0_off, c_fro, c_spec))
+            jt_off = offdiag((v * wt) @ v.T)
+            c_fro, c_spec = matched_shrink_factors(j0_off, jt_off)
+            arms.append(("dream", t, jt_off, c_fro, c_spec))
+            arms.append(("shrink", t, c_fro * j0_off, c_fro, c_spec))
 
         probe_idx = np.arange(min(p, MAX_PROBES))
         for ci, (temp, flips) in enumerate(CONDITIONS):
             cues = make_cues(xi, probe_idx, flips, stream(seed, n, 2, ai, ci))
             m0 = float(np.mean(np.einsum("bi,bi->b", cues, xi[probe_idx]) / n))
-            for arm, t, J_arm, c_fro, c_spec in arms:
+            for arm, t, j_arm, c_fro, c_spec in arms:
                 rng_dyn = stream(seed, n, 3, ai, ci)  # identical across arms
                 rec = {
                     "N": n, "seed": seed, "alpha": alpha, "P": p, "arm": arm, "t": t,
@@ -260,22 +277,23 @@ def evaluate_task(args: tuple[int, int]) -> list[dict]:
                     "n_probes": int(probe_idx.size), "cue_overlap": m0,
                 }
                 if temp == 0.0:
-                    S, sweeps, conv = run_zero_temperature(J_arm, cues, rng_dyn)
-                    m_all = S @ xi.T / n
+                    s, sweeps, conv = run_zero_temperature(j_arm, cues, rng_dyn)
+                    m_all = s @ xi.T / n
                     m_cued = m_all[np.arange(probe_idx.size), probe_idx]
-                    m_cued_eff = np.where(conv, m_cued, -np.inf)  # non-converged = not retrieved
+                    # non-converged probes count as not retrieved
+                    m_cued_eff = np.where(conv, m_cued, -np.inf)
                     rec.update(classify(m_cued_eff, m_all, probe_idx, RETRIEVED_THRESH[0.0]))
                     rec["nonconverged_frac"] = float((~conv).mean())
                     rec["sweeps"] = int(sweeps)
                 else:
-                    S, m_avg = run_glauber(J_arm, cues, 1.0 / temp, xi, rng_dyn)
+                    s, m_avg = run_glauber(j_arm, cues, 1.0 / temp, xi, rng_dyn)
                     m_cued = m_avg[np.arange(probe_idx.size), probe_idx]
                     rec.update(classify(m_cued, m_avg, probe_idx, RETRIEVED_THRESH[temp]))
                     rec["nonconverged_frac"] = 0.0
                     rec["sweeps"] = SWEEPS_GLAUBER
                 rec["mean_overlap"] = float(np.mean(m_cued))
-                rec["energy_own"] = float(np.mean(energy(J_arm, S)))
-                rec["energy_hebb"] = float(np.mean(energy(J0_off, S)))
+                rec["energy_own"] = float(np.mean(energy(j_arm, s)))
+                rec["energy_hebb"] = float(np.mean(energy(j0_off, s)))
                 records.append(rec)
     for r in records:
         r["task_seconds"] = round(time.time() - t_start, 3)
@@ -304,7 +322,9 @@ def arm_key(rec: dict) -> str:
     return "hebb" if rec["arm"] == "hebb" else f"{rec['arm']}:{rec['t']:g}"
 
 
-def bootstrap_mean_ci(x: np.ndarray, n_boot: int = BOOT_N, seed: int = BOOT_SEED) -> tuple[float, float, float]:
+def bootstrap_mean_ci(
+    x: np.ndarray, n_boot: int = BOOT_N, seed: int = BOOT_SEED
+) -> tuple[float, float, float]:
     x = np.asarray(x, dtype=np.float64)
     x = x[np.isfinite(x)]
     if x.size == 0:
@@ -315,70 +335,78 @@ def bootstrap_mean_ci(x: np.ndarray, n_boot: int = BOOT_N, seed: int = BOOT_SEED
     return float(x.mean()), float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
-def analyze(records: list[dict]) -> dict:
+def _collect(records: list[dict]) -> tuple[dict, dict]:
+    """Capacities per (condition, arm, seed) and spurious fractions at SPURIOUS_ALPHAS."""
     alphas = np.array(ALPHA_GRID)
-    # capacities[(temp, flips, N)][arm_key][seed] = (alpha_c, flag)
-    caps: dict[tuple, dict[str, dict[int, tuple[float, str]]]] = {}
     curves: dict[tuple, dict[str, dict[int, np.ndarray]]] = {}
     spur: dict[tuple, dict[str, dict[int, dict[float, float]]]] = {}
     for rec in records:
         cond = (rec["temp"], rec["flips"], rec["N"])
         k = arm_key(rec)
-        curves.setdefault(cond, {}).setdefault(k, {}).setdefault(rec["seed"], np.full(len(alphas), np.nan))
-        ai = ALPHA_GRID.index(rec["alpha"])
-        curves[cond][k][rec["seed"]][ai] = rec["retrieved_frac"]
+        by_seed = curves.setdefault(cond, {}).setdefault(k, {})
+        curve = by_seed.setdefault(rec["seed"], np.full(len(alphas), np.nan))
+        curve[ALPHA_GRID.index(rec["alpha"])] = rec["retrieved_frac"]
         if rec["alpha"] in SPURIOUS_ALPHAS:
-            spur.setdefault(cond, {}).setdefault(k, {}).setdefault(rec["seed"], {})[rec["alpha"]] = rec["spurious_frac"]
+            sp_seed = spur.setdefault(cond, {}).setdefault(k, {}).setdefault(rec["seed"], {})
+            sp_seed[rec["alpha"]] = rec["spurious_frac"]
+    caps: dict[tuple, dict[str, dict[int, tuple[float, str]]]] = {}
     for cond, by_arm in curves.items():
         caps[cond] = {}
         for k, by_seed in by_arm.items():
             caps[cond][k] = {s: capacity_from_curve(alphas, r) for s, r in by_seed.items()}
+    return caps, spur
 
-    out: dict = {"conditions": {}}
-    for cond, by_arm in caps.items():
-        temp, flips, n = cond
-        seeds = sorted(by_arm["hebb"].keys())
-        hebb = np.array([by_arm["hebb"][s][0] for s in seeds])
-        entry: dict = {
-            "temp": temp, "flips": flips, "N": n, "seeds": seeds,
-            "hebb": {"alpha_c_per_seed": hebb.tolist(), "mean_ci": bootstrap_mean_ci(hebb),
-                     "flags": [by_arm["hebb"][s][1] for s in seeds]},
-            "dream": {}, "shrink": {},
-        }
-        for t in T_GRID[1:]:
-            for arm in ("dream", "shrink"):
-                k = f"{arm}:{t:g}"
-                vals = np.array([by_arm[k][s][0] for s in seeds])
-                with np.errstate(divide="ignore", invalid="ignore"):
-                    ratio = np.where(hebb > 0, vals / hebb, np.nan)
-                entry[arm][f"{t:g}"] = {
-                    "alpha_c_per_seed": vals.tolist(),
-                    "flags": [by_arm[k][s][1] for s in seeds],
-                    "mean_ci": bootstrap_mean_ci(vals),
-                    "median": float(np.median(vals)),
-                    "ratio_per_seed": ratio.tolist(),
-                    "ratio_mean_ci": bootstrap_mean_ci(ratio),
-                    "diff_mean_ci": bootstrap_mean_ci(vals - hebb),
-                    "ratio_of_means": float(vals.mean() / hebb.mean()) if hebb.mean() > 0 else math.nan,
-                }
-        # spurious fractions at the pre-registered loads
-        sp = spur.get(cond, {})
-        entry["spurious"] = {}
-        for a in SPURIOUS_ALPHAS:
-            h = np.array([sp["hebb"][s][a] for s in seeds]) if "hebb" in sp else np.array([])
-            d = np.array([sp[f"dream:{T_PRIMARY:g}"][s][a] for s in seeds]) if f"dream:{T_PRIMARY:g}" in sp else np.array([])
-            k_sh = f"shrink:{T_PRIMARY:g}"
-            s_ = np.array([sp[k_sh][s][a] for s in seeds]) if k_sh in sp else np.array([])
-            rel = (h.mean() - d.mean()) / h.mean() if h.size and h.mean() > 0 else math.nan
-            entry["spurious"][f"{a:g}"] = {
-                "hebb_mean_ci": bootstrap_mean_ci(h), "dream_t10_mean_ci": bootstrap_mean_ci(d),
-                "shrink_c10_mean_ci": bootstrap_mean_ci(s_), "relative_reduction_dream": float(rel),
+
+def _condition_entry(cond: tuple, by_arm: dict, sp: dict) -> dict:
+    temp, flips, n = cond
+    seeds = sorted(by_arm["hebb"].keys())
+    hebb = np.array([by_arm["hebb"][s][0] for s in seeds])
+    entry: dict = {
+        "temp": temp, "flips": flips, "N": n, "seeds": seeds,
+        "hebb": {
+            "alpha_c_per_seed": hebb.tolist(),
+            "mean_ci": bootstrap_mean_ci(hebb),
+            "flags": [by_arm["hebb"][s][1] for s in seeds],
+        },
+        "dream": {}, "shrink": {},
+    }
+    for t in T_GRID[1:]:
+        for arm in ("dream", "shrink"):
+            k = f"{arm}:{t:g}"
+            vals = np.array([by_arm[k][s][0] for s in seeds])
+            with np.errstate(divide="ignore", invalid="ignore"):
+                ratio = np.where(hebb > 0, vals / hebb, np.nan)
+            entry[arm][f"{t:g}"] = {
+                "alpha_c_per_seed": vals.tolist(),
+                "flags": [by_arm[k][s][1] for s in seeds],
+                "mean_ci": bootstrap_mean_ci(vals),
+                "median": float(np.median(vals)),
+                "ratio_per_seed": ratio.tolist(),
+                "ratio_mean_ci": bootstrap_mean_ci(ratio),
+                "diff_mean_ci": bootstrap_mean_ci(vals - hebb),
+                "ratio_of_means": (
+                    float(vals.mean() / hebb.mean()) if hebb.mean() > 0 else math.nan
+                ),
             }
-        out["conditions"][f"T{temp:g}_f{flips:g}_N{n}"] = entry
+    entry["spurious"] = {}
+    k_dr = f"dream:{T_PRIMARY:g}"
+    k_sh = f"shrink:{T_PRIMARY:g}"
+    for a in SPURIOUS_ALPHAS:
+        h = np.array([sp["hebb"][s][a] for s in seeds]) if "hebb" in sp else np.array([])
+        d = np.array([sp[k_dr][s][a] for s in seeds]) if k_dr in sp else np.array([])
+        s_ = np.array([sp[k_sh][s][a] for s in seeds]) if k_sh in sp else np.array([])
+        rel = (h.mean() - d.mean()) / h.mean() if h.size and h.mean() > 0 else math.nan
+        entry["spurious"][f"{a:g}"] = {
+            "hebb_mean_ci": bootstrap_mean_ci(h),
+            "dream_t10_mean_ci": bootstrap_mean_ci(d),
+            "shrink_c10_mean_ci": bootstrap_mean_ci(s_),
+            "relative_reduction_dream": float(rel),
+        }
+    return entry
 
-    # ---------------- verdict (binding cell) ----------------
-    key = f"T0_f{FLIPS_PRIMARY:g}_N{N_PRIMARY}"
-    e = out["conditions"][key]
+
+def _verdict(e: dict) -> dict:
+    """Binding decision rule C1 / C2 / C3 and the P4 label on the primary cell."""
     tk = f"{T_PRIMARY:g}"
     r_mean, r_lo, r_hi = e["dream"][tk]["ratio_mean_ci"]
     d_mean, d_lo, d_hi = e["dream"][tk]["diff_mean_ci"]
@@ -388,7 +416,8 @@ def analyze(records: list[dict]) -> dict:
         c1 = "refuted"
     else:
         c1 = "inconclusive"
-    medians = [float(np.median(e["hebb"]["alpha_c_per_seed"]))] + [e["dream"][f"{t:g}"]["median"] for t in T_GRID[1:]]
+    medians = [float(np.median(e["hebb"]["alpha_c_per_seed"]))]
+    medians += [e["dream"][f"{t:g}"]["median"] for t in T_GRID[1:]]
     drops = [medians[i] - medians[i + 1] for i in range(len(medians) - 1)]
     c2 = "holds" if max(drops) <= GRID_STEP_TOL else "violated"
     s_mean, s_lo, s_hi = e["shrink"][tk]["ratio_mean_ci"]
@@ -409,21 +438,59 @@ def analyze(records: list[dict]) -> dict:
     else:
         overall = "non_concluant"
     p4 = {a: e["spurious"][f"{a:g}"]["relative_reduction_dream"] for a in SPURIOUS_ALPHAS}
-    out["verdict"] = {
-        "cell": key, "t_primary": T_PRIMARY,
-        "C1_gain": {"label": c1, "ratio_mean_ci": [r_mean, r_lo, r_hi], "diff_mean_ci": [d_mean, d_lo, d_hi]},
-        "C2_monotone": {"label": c2, "median_alpha_c_by_t": dict(zip([f"{t:g}" for t in T_GRID], medians)), "max_drop": max(drops)},
-        "C3_shrink": {"label": c3, "ratio_mean_ci": [s_mean, s_lo, s_hi], "exact_one_at_T0": s_exact},
-        "P4_spurious": {"label": "holds" if all(v >= 0.5 for v in p4.values()) else "fails",
-                        "relative_reduction_by_alpha": {f"{a:g}": v for a, v in p4.items()}},
+    t_labels = [f"{t:g}" for t in T_GRID]
+    return {
+        "t_primary": T_PRIMARY,
+        "C1_gain": {
+            "label": c1,
+            "ratio_mean_ci": [r_mean, r_lo, r_hi],
+            "diff_mean_ci": [d_mean, d_lo, d_hi],
+        },
+        "C2_monotone": {
+            "label": c2,
+            "median_alpha_c_by_t": dict(zip(t_labels, medians, strict=True)),
+            "max_drop": max(drops),
+        },
+        "C3_shrink": {
+            "label": c3,
+            "ratio_mean_ci": [s_mean, s_lo, s_hi],
+            "exact_one_at_T0": s_exact,
+        },
+        "P4_spurious": {
+            "label": "holds" if all(v >= 0.5 for v in p4.values()) else "fails",
+            "relative_reduction_by_alpha": {f"{a:g}": v for a, v in p4.items()},
+        },
         "overall": overall,
     }
+
+
+def analyze(records: list[dict]) -> dict:
+    caps, spur = _collect(records)
+    out: dict = {"conditions": {}}
+    for cond, by_arm in caps.items():
+        temp, flips, n = cond
+        out["conditions"][f"T{temp:g}_f{flips:g}_N{n}"] = _condition_entry(
+            cond, by_arm, spur.get(cond, {})
+        )
+    key = f"T0_f{FLIPS_PRIMARY:g}_N{N_PRIMARY}"
+    out["verdict"] = {"cell": key, **_verdict(out["conditions"][key])}
     return out
 
 
 # --------------------------------------------------------------------------- #
 # Figure
 # --------------------------------------------------------------------------- #
+
+
+def _mean_curve(records: list[dict], arm: str, t: float, field: str) -> np.ndarray:
+    curve = np.zeros(len(ALPHA_GRID))
+    for r in records:
+        if (
+            r["N"] == N_PRIMARY and r["temp"] == 0.0 and r["flips"] == FLIPS_PRIMARY
+            and r["arm"] == arm and r["t"] == t
+        ):
+            curve[ALPHA_GRID.index(r["alpha"])] += r[field] / len(SEEDS)
+    return curve
 
 
 def make_figure(records: list[dict], summary: dict, path: Path) -> None:
@@ -436,15 +503,19 @@ def make_figure(records: list[dict], summary: dict, path: Path) -> None:
     fig, axes = plt.subplots(2, 2, figsize=(11, 8.5))
     ts = np.array(T_GRID[1:])
     x = np.log10(ts)
+    conds = summary["conditions"]
 
     # (a) alpha_c vs t, T = 0, f = 0.10, all N
     ax = axes[0, 0]
-    for n, color in zip(N_GRID, ("#8da0cb", "#66c2a5", "#fc8d62")):
-        e = summary["conditions"][f"T0_f{FLIPS_PRIMARY:g}_N{n}"]
+    for n, color in zip(N_GRID, ("#8da0cb", "#66c2a5", "#fc8d62"), strict=True):
+        e = conds[f"T0_f{FLIPS_PRIMARY:g}_N{n}"]
         d = np.array([e["dream"][f"{t:g}"]["mean_ci"] for t in ts])
         s = np.array([e["shrink"][f"{t:g}"]["mean_ci"] for t in ts])
         h = e["hebb"]["mean_ci"]
-        ax.errorbar(x, d[:, 0], yerr=[d[:, 0] - d[:, 1], d[:, 2] - d[:, 0]], color=color, marker="o", label=f"dream N={n}")
+        ax.errorbar(
+            x, d[:, 0], yerr=[d[:, 0] - d[:, 1], d[:, 2] - d[:, 0]],
+            color=color, marker="o", label=f"dream N={n}",
+        )
         ax.plot(x, s[:, 0], color=color, marker="s", ls="--", label=f"shrink c(t) N={n}")
         ax.axhline(h[0], color=color, ls=":", lw=1)
     ax.set_xlabel("log10 dreaming time t")
@@ -452,17 +523,17 @@ def make_figure(records: list[dict], summary: dict, path: Path) -> None:
     ax.set_title("(a) Capacity vs t, T=0, cue 10% flips (dotted: Hebb)")
     ax.legend(fontsize=7, ncol=2)
 
+    sel = {
+        ("hebb", 0.0): ("Hebb", "k"),
+        ("dream", T_PRIMARY): (f"dream t={T_PRIMARY:g}", "#1b9e77"),
+        ("shrink", T_PRIMARY): (f"shrink c({T_PRIMARY:g})", "#d95f02"),
+    }
     # (b) retrieval curves r(alpha) at N_PRIMARY
     ax = axes[0, 1]
-    sel = {("hebb", 0.0): ("Hebb", "k"), ("dream", T_PRIMARY): (f"dream t={T_PRIMARY:g}", "#1b9e77"),
-           ("shrink", T_PRIMARY): (f"shrink c({T_PRIMARY:g})", "#d95f02")}
     for (arm, t), (label, color) in sel.items():
-        rows = [r for r in records if r["N"] == N_PRIMARY and r["temp"] == 0.0 and r["flips"] == FLIPS_PRIMARY
-                and r["arm"] == arm and r["t"] == t]
-        curve = np.zeros(len(alphas))
-        for r in rows:
-            curve[ALPHA_GRID.index(r["alpha"])] += r["retrieved_frac"] / len(SEEDS)
-        ax.plot(alphas, curve, marker="o", ms=3, color=color, label=label, ls="--" if arm == "shrink" else "-")
+        curve = _mean_curve(records, arm, t, "retrieved_frac")
+        ax.plot(alphas, curve, marker="o", ms=3, color=color, label=label,
+                ls="--" if arm == "shrink" else "-")
     ax.axhline(0.5, color="grey", lw=0.8)
     ax.set_xlabel("load alpha = P/N")
     ax.set_ylabel("retrieved fraction (mean over seeds)")
@@ -472,25 +543,28 @@ def make_figure(records: list[dict], summary: dict, path: Path) -> None:
     # (c) spurious fraction vs alpha at N_PRIMARY
     ax = axes[1, 0]
     for (arm, t), (label, color) in sel.items():
-        rows = [r for r in records if r["N"] == N_PRIMARY and r["temp"] == 0.0 and r["flips"] == FLIPS_PRIMARY
-                and r["arm"] == arm and r["t"] == t]
-        curve = np.zeros(len(alphas))
-        for r in rows:
-            curve[ALPHA_GRID.index(r["alpha"])] += r["spurious_frac"] / len(SEEDS)
-        ax.plot(alphas, curve, marker="o", ms=3, color=color, label=label, ls="--" if arm == "shrink" else "-")
+        curve = _mean_curve(records, arm, t, "spurious_frac")
+        ax.plot(alphas, curve, marker="o", ms=3, color=color, label=label,
+                ls="--" if arm == "shrink" else "-")
     ax.set_xlabel("load alpha = P/N")
     ax.set_ylabel("spurious final states (fraction)")
     ax.set_title(f"(c) Spurious attractors, N={N_PRIMARY}, T=0")
     ax.legend(fontsize=8)
 
-    # (d) ratios vs t at T = 0.2 (descriptive) for N_PRIMARY
+    # (d) ratios vs t at T = 0 and T = 0.2 (descriptive) for N_PRIMARY
     ax = axes[1, 1]
     for temp, ls in ((0.0, "-"), (0.2, "--")):
-        e = summary["conditions"][f"T{temp:g}_f{FLIPS_PRIMARY:g}_N{N_PRIMARY}"]
+        e = conds[f"T{temp:g}_f{FLIPS_PRIMARY:g}_N{N_PRIMARY}"]
         d = np.array([e["dream"][f"{t:g}"]["ratio_mean_ci"] for t in ts])
         s = np.array([e["shrink"][f"{t:g}"]["ratio_mean_ci"] for t in ts])
-        ax.errorbar(x, d[:, 0], yerr=[d[:, 0] - d[:, 1], d[:, 2] - d[:, 0]], color="#1b9e77", ls=ls, marker="o", label=f"dream / Hebb, T={temp:g}")
-        ax.errorbar(x, s[:, 0], yerr=[s[:, 0] - s[:, 1], s[:, 2] - s[:, 0]], color="#d95f02", ls=ls, marker="s", label=f"shrink / Hebb, T={temp:g}")
+        ax.errorbar(
+            x, d[:, 0], yerr=[d[:, 0] - d[:, 1], d[:, 2] - d[:, 0]],
+            color="#1b9e77", ls=ls, marker="o", label=f"dream / Hebb, T={temp:g}",
+        )
+        ax.errorbar(
+            x, s[:, 0], yerr=[s[:, 0] - s[:, 1], s[:, 2] - s[:, 0]],
+            color="#d95f02", ls=ls, marker="s", label=f"shrink / Hebb, T={temp:g}",
+        )
     ax.axhline(3.0, color="grey", lw=0.8, ls=":")
     ax.axhline(1.1, color="grey", lw=0.8, ls=":")
     ax.set_xlabel("log10 dreaming time t")
@@ -499,7 +573,10 @@ def make_figure(records: list[dict], summary: dict, path: Path) -> None:
     ax.legend(fontsize=7)
 
     v = summary["verdict"]
-    fig.suptitle(f"NH-01 pilot — verdict {v['overall']} (C1 {v['C1_gain']['label']}, C2 {v['C2_monotone']['label']}, C3 {v['C3_shrink']['label']})")
+    fig.suptitle(
+        f"NH-01 pilot — verdict {v['overall']} (C1 {v['C1_gain']['label']}, "
+        f"C2 {v['C2_monotone']['label']}, C3 {v['C3_shrink']['label']})"
+    )
     fig.tight_layout()
     fig.savefig(path, dpi=130)
     plt.close(fig)
@@ -512,8 +589,12 @@ def make_figure(records: list[dict], summary: dict, path: Path) -> None:
 
 def git_commit() -> str:
     try:
-        return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2],
-                                       text=True, stderr=subprocess.DEVNULL).strip()
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(__file__).resolve().parents[2],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
     except Exception:  # noqa: BLE001
         return "unknown"
 
@@ -523,10 +604,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", type=Path, default=Path("results/nh01"))
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--analyze-only", action="store_true")
-    ap.add_argument("--smoke", action="store_true", help="tiny grid for implementation checks (not a run)")
+    ap.add_argument(
+        "--smoke", action="store_true", help="tiny grid for implementation checks (not a run)"
+    )
     args = ap.parse_args(argv)
     args.out.mkdir(parents=True, exist_ok=True)
     cells_path = args.out / "cells.jsonl"
+    meta_path = args.out / "run_meta.json"
 
     if not args.analyze_only:
         tasks = [(n, s) for n in N_GRID for s in SEEDS]
@@ -538,9 +622,13 @@ def main(argv: list[str] | None = None) -> int:
             for recs in pool.imap_unordered(evaluate_task, tasks):
                 records.extend(recs)
                 done = {(r["N"], r["seed"]) for r in records}
-                print(f"[{time.time() - t0:7.1f}s] {len(done)}/{len(tasks)} tasks, {len(records)} cells", flush=True)
+                print(
+                    f"[{time.time() - t0:7.1f}s] {len(done)}/{len(tasks)} tasks, "
+                    f"{len(records)} cells",
+                    flush=True,
+                )
                 if time.time() - t0 > WALL_CAP_SECONDS:
-                    print("wall-time cap reached: stopping (pre-registered stopping rule)", flush=True)
+                    print("wall-time cap reached: stopping (pre-registered rule)", flush=True)
                     pool.terminate()
                     break
         wall = time.time() - t0
@@ -548,20 +636,27 @@ def main(argv: list[str] | None = None) -> int:
             for r in records:
                 f.write(json.dumps(r) + "\n")
         meta = {
-            "host": platform.node(), "platform": platform.platform(), "python": sys.version.split()[0],
-            "numpy": np.__version__, "cpus": os.cpu_count(), "workers": args.workers,
-            "wall_seconds": round(wall, 1), "git_commit": git_commit(), "n_cells": len(records),
-            "tasks_done": sorted({(r["N"], r["seed"]) for r in records}), "smoke": args.smoke,
+            "host": platform.node(),
+            "platform": platform.platform(),
+            "python": sys.version.split()[0],
+            "numpy": np.__version__,
+            "cpus": os.cpu_count(),
+            "workers": args.workers,
+            "wall_seconds": round(wall, 1),
+            "git_commit": git_commit(),
+            "n_cells": len(records),
+            "tasks_done": sorted({(r["N"], r["seed"]) for r in records}),
+            "smoke": args.smoke,
             "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t0)),
         }
-        (args.out / "run_meta.json").write_text(json.dumps(meta, indent=2))
+        meta_path.write_text(json.dumps(meta, indent=2))
         print(json.dumps(meta, indent=2))
         if args.smoke:
             return 0
 
     records = [json.loads(line) for line in cells_path.read_text().splitlines() if line.strip()]
     summary = analyze(records)
-    summary["run_meta"] = json.loads((args.out / "run_meta.json").read_text()) if (args.out / "run_meta.json").exists() else {}
+    summary["run_meta"] = json.loads(meta_path.read_text()) if meta_path.exists() else {}
     (args.out / "summary.json").write_text(json.dumps(summary, indent=2))
     make_figure(records, summary, args.out / "figure.png")
     print(json.dumps(summary["verdict"], indent=2))
