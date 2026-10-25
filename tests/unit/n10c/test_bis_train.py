@@ -299,3 +299,42 @@ def test_bis_arms_evaluate_with_the_registered_designations(arm):
     d = json.loads(rec.to_json())
     assert d["R_primary"] == rec.R_primary and d["primary_pass"] == rec.primary_pass
     assert d["S"] == rec.R_intact - rec.R_shuffled
+
+
+# -- alignment with fix C (amendment 2026-10-25, PI decision 19:50) ----------
+def _trunk_file(path):
+    m = PairPolicy("gtm", mx.random.key(11))
+    mx.eval(m.parameters())
+    mx.save_safetensors(str(path), dict(tree_flatten(m.trunk.parameters())))
+    return path
+
+
+@pytest.mark.parametrize("arm", BIS_ARMS)
+def test_bis_arms_train_under_fix_c_from_the_seed_trunk(tmp_path, arm):
+    from experiments.procgen_multiagent_gtm_comm.harness.options import PRESETS
+
+    trunk = _trunk_file(tmp_path / "trunk.safetensors")
+    rec = _run(tmp_path, arm, updates=2, name=arm,
+               options=PRESETS["fix-c-coin-pretrain"], init_trunk=trunk)
+    assert rec.training_failure is False and not rec.liveness_abort
+    assert rec.train_options["preset"] == "fix-c-coin-pretrain"
+    assert rec.init_trunk_sha256 == hashlib.sha256(trunk.read_bytes()).hexdigest()
+    assert rec.trunk_mode == "shared"
+    assert rec.liveness and rec.liveness[0]["step"] == 0
+    assert max(rec.first_mb_ratio_dev) < 1e-4
+
+
+def test_gtm_warm_under_fix_c_records_the_warm_source_trunk(tmp_path):
+    from experiments.procgen_multiagent_gtm_comm.harness.options import PRESETS
+
+    opts = PRESETS["fix-c-coin-pretrain"]
+    trunk = _trunk_file(tmp_path / "trunk.safetensors")
+    src = _run(tmp_path, "eng_gtmrx", updates=2, seed=3, name="src",
+               options=opts, init_trunk=trunk)
+    ck = tmp_path / "src" / src.last_checkpoint
+    warm = _run(tmp_path, "gtm_warm", seed=3, name="warm", options=opts,
+                init_trunk=trunk, warm_start_from=ck)
+    assert warm.trunk_mode == "warm_source" and warm.warm_from is not None
+    cold = _run(tmp_path, "gtm_warm", seed=3, name="cold", options=opts,
+                init_trunk=trunk)
+    assert cold.trunk_mode == "shared" and cold.warm_source_untrained

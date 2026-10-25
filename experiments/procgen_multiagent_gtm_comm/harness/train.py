@@ -149,8 +149,10 @@ class RunRecord:
     warm_source_untrained: bool = False  # gtm_warm started from initialisation
     cumulative_pair_steps: int | None = None  # gtm_warm: source + own budget
     derangement_stream: dict | None = None  # gtm_mis: 5th SeedSequence child
-    # amendment 2026-10-25: "shared" (the seed's trunk) or "per_run" (the
-    # per-run-pretraining control); None without a pre-trained trunk
+    # amendment 2026-10-25: "shared" (the seed's trunk), "per_run" (the
+    # per-run-pretraining control) or "warm_source" (N10-C-bis gtm_warm: the
+    # trunk loaded from the warm source overwrites init_trunk); None without
+    # a pre-trained trunk
     trunk_mode: str | None = None
 
 
@@ -665,6 +667,9 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
         load_trunk(model, init_trunk)
     if warm_start_from is not None:  # gtm_warm: before opt.init (fresh Adam)
         info = load_warm_start(model, Path(warm_start_from), warm_exclude)
+        if init_trunk is not None:  # the warm source's trunk replaces it
+            # (that source run started from the same seed's shared trunk)
+            rec.trunk_mode = "warm_source"
         rec.warm_ckpt_sha256 = info.pop("sha256")
         rec.warm_from = info
         rec.cumulative_pair_steps = total + (info["source_pair_steps"] or 0)
