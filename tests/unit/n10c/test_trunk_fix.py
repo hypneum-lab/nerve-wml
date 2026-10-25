@@ -406,6 +406,33 @@ def test_pretrain_writes_a_loadable_trunk(tmp_path):
     assert json.loads((tmp_path / "pretrain.json").read_text())["usable"]
 
 
+def test_pretrain_micro_batches_match_the_full_minibatch(tmp_path):
+    # KXKM-AI pre-trains in micro-batches (HOST_SETTINGS): same update
+    recs = {}
+    for name, micro in (("full", None), ("micro", 4)):
+        recs[name] = pretrain_trunk(5, 4 * 8 * 2, tmp_path / name, n_envs=4,
+                                    horizon=8, liveness_every=32,
+                                    env=_VecBandit(4), micro_batch_pairs=micro,
+                                    clear_cache=micro is not None)
+    assert recs["micro"].settings == {"micro_batch_pairs": 4, "clear_cache": True}
+    assert recs["full"].settings == {"micro_batch_pairs": None, "clear_cache": False}
+    full = mx.load(str(tmp_path / "full" / recs["full"].trunk_file))
+    micro = mx.load(str(tmp_path / "micro" / recs["micro"].trunk_file))
+    assert full.keys() == micro.keys()
+    for k in full:
+        np.testing.assert_allclose(np.array(micro[k]), np.array(full[k]),
+                                   rtol=1e-4, atol=1e-6)
+
+
+def test_pretrain_micro_slices():
+    from experiments.procgen_multiagent_gtm_comm.harness.pretrain import micro_slices
+    assert micro_slices(10, None) == [(0, 10, 1.0)]
+    assert micro_slices(10, 16) == [(0, 10, 1.0)]
+    sl = micro_slices(10, 4)
+    assert [(a, b) for a, b, _ in sl] == [(0, 4), (4, 8), (8, 10)]
+    assert abs(sum(w for *_, w in sl) - 1.0) < 1e-12
+
+
 def test_pretrained_preset_records_trunk_hash(tmp_path):
     rec0 = pretrain_trunk(5, 32, tmp_path / "p", n_envs=4, horizon=8,
                           env=_VecBandit(4))
@@ -425,13 +452,13 @@ def test_gate_ledger_kinds_are_separate_and_capped(tmp_path):
         devledger.reserve("gtm", "registered", 10, path=led)
     with pytest.raises(devledger.SmokeLimitError):
         devledger.reserve("gtm", "registered", 10, path=led)
-    for arm, cap in (("gtm", 7), ("eng", 4)):
+    for arm, cap in (("gtm", 10), ("eng", 7), ("mlp", 4)):
         assert devledger.gate_allowance("gate_dev", arm) == cap
         for _ in range(cap):
             devledger.reserve(arm, "registered", 10, kind="gate_dev", path=led)
         with pytest.raises(devledger.SmokeLimitError, match="gate_dev"):
             devledger.reserve(arm, "registered", 10, kind="gate_dev", path=led)
-    for _ in range(2):
+    for _ in range(5):
         devledger.reserve("trunk", "single", 10, kind="pretrain_dev", path=led)
     with pytest.raises(devledger.SmokeLimitError):
         devledger.reserve("trunk", "single", 10, kind="pretrain_dev", path=led)

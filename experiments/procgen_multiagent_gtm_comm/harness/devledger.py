@@ -59,9 +59,10 @@ GATE_KINDS = ("gate_dev", "pretrain_dev")
 # dev seed for C (both arms), + C with and without Adam bias correction on
 # the PR head code (both arms) = gtm 10, eng 7. pretrain_dev, in total (arm
 # "trunk"): + the second seed's pre-training (its CUDA attempt on KXKM-AI
-# crashed at 12:07, then macM1) = 4.
+# crashed at 12:07, then macM1) = 4, + one KXKM-AI validation of the
+# micro-batched pre-training fix for that crash (PI 2026-10-25 12:16) = 5.
 GATE_DEV_ALLOWANCE = {"gtm": 10, "eng": 7}
-GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 4}
+GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 5}
 
 
 def gate_allowance(kind: str, arm: str) -> int:

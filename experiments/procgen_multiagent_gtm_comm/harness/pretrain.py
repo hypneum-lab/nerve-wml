@@ -17,6 +17,14 @@ the first update ending at or after every ``liveness_every`` steps; the run
 aborts at the first flagged probe (a dead trunk is never written as a
 usable checkpoint: ``pretrain.json`` then has ``usable: false``).
 
+Per-host implementation settings (``codes.HOST_SETTINGS``) apply as in the
+coop trainer: on KXKM-AI the PPO minibatch of 2048 agent-samples is split
+into gradient-accumulated micro-batches of ``2 x micro_batch_pairs`` samples
+and ``mx.clear_cache()`` runs once per rollout update (the full-minibatch
+update fails on MLX CUDA with ``cudaGraphAddKernelNode ... invalid
+argument``, 2026-10-25). The accumulated gradient equals the full-minibatch
+gradient; advantages are normalised over the full minibatch.
+
 Development runs (no registration context) are accounted in the
 development ledger (kind ``pretrain_dev``) and are limited to
 ``devledger.MAX_STEPS`` steps. A registered pre-training run (context issued
@@ -38,10 +46,11 @@ import mlx.core as mx
 import mlx.nn as nn
 import mlx.optimizers as optim
 import numpy as np
-from mlx.utils import tree_flatten
+from mlx.utils import tree_flatten, tree_map
 
 from ..campaign import guards
 from . import devledger
+from .codes import HOST_SETTINGS
 from .policy import N_ACTIONS, Impala
 from .rollout import compute_gae
 from .train import (
@@ -92,6 +101,7 @@ class PretrainRecord:
     trunk_file: str | None = None
     trunk_sha256: str | None = None
     registration: dict | None = None
+    settings: dict = field(default_factory=dict)
     levels: str = "training (start_level=0, num_levels=16, easy)"
 
 
@@ -112,14 +122,23 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
                    liveness_every: int = 100_000,
                    env: Any | None = None,
                    dev_ledger: Path = devledger.LEDGER,
-                   registration: Any = None) -> PretrainRecord:
+                   registration: Any = None,
+                   micro_batch_pairs: int | None = None,
+                   clear_cache: bool = False) -> PretrainRecord:
     """Pre-train the trunk for ``total_steps`` single-agent steps.
 
     ``env`` (tests only) replaces procgen: a gym3-style vector env with
-    ``act`` / ``observe`` / ``close`` over ``n_envs`` copies."""
+    ``act`` / ``observe`` / ``close`` over ``n_envs`` copies.
+    ``micro_batch_pairs`` / ``clear_cache``: per-host implementation
+    settings; a registered run always uses its host's ``HOST_SETTINGS``."""
     host = guards.check_pretrain_boundary(registration, seed=seed,
                                           total_steps=total_steps,
                                           has_env=env is not None)
+    if host is not None:
+        micro_batch_pairs = HOST_SETTINGS[host]["micro_batch_pairs"]
+        clear_cache = HOST_SETTINGS[host]["clear_cache"]
+    if micro_batch_pairs is not None and micro_batch_pairs < 1:
+        raise ValueError("micro_batch_pairs must be >= 1")
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     ss = np.random.SeedSequence([seed, PRETRAIN_CODE])
@@ -138,6 +157,8 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
         devledger.claim(res, devledger.PRETRAIN_ARM,
                         devledger.PRETRAIN_CONDITION, total_steps)
     rec = PretrainRecord(seed, total_steps, n_envs, horizon)
+    rec.settings = {"micro_batch_pairs": micro_batch_pairs,
+                    "clear_cache": clear_cache}
     if registration is not None:
         rec.registration = {k: registration.pins()[k] for k in (
             "freeze_tag", "freeze_commit", "swhid", "manifest_sha256")}
@@ -149,7 +170,7 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
                 env = make_env(n_envs,
                                int(env_ss.generate_state(1)[0] % (2**31 - 1)))
             _pretrain(rec, env, out_dir, init_ss, shuf_rng, key_rng, probe_rng,
-                      liveness_every)
+                      liveness_every, micro_batch_pairs, clear_cache)
             outcome = "completed" if rec.usable else "liveness_abort"
         finally:
             if env is not None:
@@ -164,8 +185,17 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
     return rec
 
 
+def micro_slices(n: int, micro: int | None) -> list[tuple[int, int, float]]:
+    """(start, stop, weight=size/n) micro-batches of a minibatch of n samples."""
+    if micro is None or micro >= n:
+        return [(0, n, 1.0)]
+    return [(a, min(a + micro, n), (min(a + micro, n) - a) / n)
+            for a in range(0, n, micro)]
+
+
 def _pretrain(rec, env, out_dir, init_ss, shuf_rng, key_rng, probe_rng,
-              liveness_every) -> None:
+              liveness_every, micro_batch_pairs=None, clear_cache=False) -> None:
+    micro = None if micro_batch_pairs is None else 2 * micro_batch_pairs
     mx.random.seed(int(init_ss.generate_state(1)[0] % (2**31 - 1)))
     model = SinglePolicy()
     mx.eval(model.parameters())
@@ -247,15 +277,24 @@ def _pretrain(rec, env, out_dir, init_ss, shuf_rng, key_rng, probe_rng,
             perm = shuf_rng.permutation(flat_obs.shape[0])
             for s in range(0, perm.size, MINIBATCH):
                 idx = perm[s:s + MINIBATCH]
-                ad = mx.array(flat[2][idx])
+                ad = mx.array(flat[2][idx])  # normalised over the FULL minibatch
                 ad = (ad - ad.mean()) / (ad.std() + 1e-8)
-                _, g = grad_fn(model, mx.array(flat_obs[idx]),
-                               mx.array(flat[0][idx]), mx.array(flat[1][idx]),
-                               ad, mx.array(flat[3][idx]))
+                g = None
+                for a, b, w in micro_slices(idx.size, micro):
+                    j = idx[a:b]
+                    _, gm = grad_fn(model, mx.array(flat_obs[j]),
+                                    mx.array(flat[0][j]), mx.array(flat[1][j]),
+                                    ad[a:b], mx.array(flat[3][j]))
+                    if w != 1.0:
+                        gm = tree_map(lambda x: x * w, gm)
+                    g = gm if g is None else tree_map(mx.add, g, gm)
+                    mx.eval(g)
                 g, _ = optim.clip_grad_norm(g, MAX_GRAD_NORM)
                 opt.update(model, g)
                 mx.eval(model.parameters(), opt.state)
         rec.n_updates += 1
+        if clear_cache:
+            mx.clear_cache()
         if rec.steps_done // liveness_every > prev // liveness_every:
             rec.coin_rate_curve.append(
                 [rec.steps_done, float(np.mean(recent)) if recent else None])
@@ -285,11 +324,22 @@ def main() -> None:
     p.add_argument("--registered", action="store_true",
                    help="registered pre-training of a registered seed "
                         "(requires the freeze-tag guards)")
+    p.add_argument("--micro-batch-pairs", type=int, default=None,
+                   help="development only: gradient-accumulation micro-batch "
+                        "(pairs; 2 agent-samples each); registered runs use "
+                        "their host's HOST_SETTINGS")
+    p.add_argument("--clear-cache", action="store_true",
+                   help="development only: mx.clear_cache() per update")
     guards.add_guard_args(p)
     a = p.parse_args()
     ctx = guards.enforce_cli(a, registered=a.registered,
                              what="registered pre-training")
-    rec = pretrain_trunk(a.seed, a.steps, a.out, registration=ctx)
+    if a.registered and (a.micro_batch_pairs is not None or a.clear_cache):
+        p.error("registered pre-training uses its host's HOST_SETTINGS; "
+                "do not pass --micro-batch-pairs / --clear-cache")
+    rec = pretrain_trunk(a.seed, a.steps, a.out, registration=ctx,
+                         micro_batch_pairs=a.micro_batch_pairs,
+                         clear_cache=a.clear_cache)
     print(json.dumps({k: v for k, v in asdict(rec).items()
                       if k not in ("liveness",)}))
 
