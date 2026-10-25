@@ -17,7 +17,8 @@ def test_bigger_arch_gap_is_measurable_and_bounded():
 
     Bounds: gap is non-trivial (> 10 %, not within seed variance)
     and bounded (< 50 %, both substrates still beat random).
-    Direction is LIF > MLP, consistent with v1.1's 15/15 finding.
+    Direction is LIF > MLP, consistent with the 19/20 direction-stability
+    recount (4/5 at N=2, 5/5 at N=16/32/64; v1.7.0).
     """
     r = run_hard_bigger_arch_multiseed(seeds=[0, 1, 2], steps=300)
     assert r["median_gap"] > 0.10, (

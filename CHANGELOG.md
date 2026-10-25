@@ -67,6 +67,38 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
   so the GitHub-Zenodo webhook never fired); the L1a claim was never
   archived on Zenodo. The correction must be carried in the
   description of the next published release.
+- **Erratum 2026-10-25 — N-3 ablations do not establish "type-checker,
+  not differential mechanism" (issue #71).** The three ablations behind
+  that reading ran on an inactive mechanism: `n_received: 0` in all 30
+  cells of `papers/paper1/figures/ablation_n3_guard.json` and
+  `apply_consolidation: false` (AttributeError on `MockNerve`) in all
+  six cells of `ablation_n3_predictive.json`, so Δ = 0 is
+  uninformative. Requalified in Paper 1 §Method and §Threats to
+  Validity, `docs/research-notes/n3-gate-role.md` and the README:
+  typing function established (the guard is exercised at send time,
+  `n_caught: 70` at v = 0.05, seed 0); causal utility for communication
+  and learning not established by these ablations. A differential test
+  needs `n_received > 0`, active consolidation and a pre-registered
+  matched null. JSONs unchanged.
+- **Erratum 2026-10-25 — stale facts in Paper 1 and metadata (issue
+  #64).** Residual "15/15" mentions in `main.tex` (figure caption,
+  Sleep-EDF paragraph) and in `scripts/render_scaling_figure.py` aligned
+  on the 19/20 recount (4/5 at N=2, 5/5 at N=16/32/64); the scaling
+  table's N=2 row now reports the 5-seed rerun
+  (`w2_hard_n2_multiseed.json`: median 10.71 %, max 16.91 %, 4/5)
+  instead of the 1-seed value; "all experiments use N=4" (§Experiments,
+  §Limitations) and "pool-scale multi-seed for TRF is future work"
+  replaced by the measured N ∈ {16, 32, 64} and triple-substrate
+  N ∈ {15, 30, 60} results. Intel Loihi 2 is no longer presented as a
+  deployment target: the `lava-nc` SDK is archived upstream (GitHub
+  `archived: true`, last push 2026-05-13); `neuromorphic/loihi_stub.py`,
+  `docs/neuromorphic/deployment-guide.md`, README and Paper 1 §Gate
+  Neuro requalified (the stub still raises `NotImplementedError`).
+  Bylines reduced to the single PI (Clément Saillant) in
+  `.zenodo.json`, `CITATION.cff`, `CONTRIBUTORS.md` and the design spec.
+  The committed `w2_hard_scaling.pdf/.png` still carry the old title and
+  must be re-rendered. Details:
+  `docs/superpowers/research/2026-10-25-phase0-truth-errata.md`.
 
 ## [1.9.4] — 2026-06-20
 

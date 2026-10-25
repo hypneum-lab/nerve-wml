@@ -86,7 +86,7 @@ def main() -> None:
     ax.set_xlabel("Pool size N (log scale)")
     ax.set_ylabel("Polymorphism gap |acc_MLP − acc_LIF| / max")
     ax.set_title("W2-hard polymorphism gap vs pool size\n"
-                 "HardFlowProxyTask, 5 seeds, LIF ≥ MLP in 15/15")
+                 "HardFlowProxyTask, 5 seeds, LIF ≥ MLP in 19/20")
     ax.legend(loc="upper right", fontsize=8, framealpha=0.95)
     ax.grid(True, alpha=0.3)
 

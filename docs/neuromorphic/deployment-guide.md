@@ -1,6 +1,6 @@
 # Neuromorphic deployment guide
 
-Plan 6 ships the **export layer** for `LifWML` → neuromorphic hardware (Intel Loihi 2, BrainChip Akida). No vendor SDK is a runtime dep of `nerve-wml` itself — the `loihi_stub` and `akida_stub` modules document the expected API surface and raise `NotImplementedError` until a user wires them up locally.
+Plan 6 ships the **export layer** for `LifWML` → INT8 artefact → pure-numpy mock runner. Two vendor stubs exist: `akida_stub` (BrainChip Akida; wiring possible once the SDK is installed) and `loihi_stub` (Intel Loihi 2; **historical interface only** — the `lava-nc` SDK is archived upstream, see below, and Loihi 2 is not a deployment target). No vendor SDK is a runtime dep of `nerve-wml` itself; both stubs raise `NotImplementedError`.
 
 ## Pipeline overview
 
@@ -15,20 +15,36 @@ LifWML (torch)
     │       │       │
     │       │       └─► compare_software_vs_neuromorphic (delta check)
     │       │
-    │       ├─► LoihiCompiler.compile() (→ lava-nc, not installed by default)
+    │       ├─► LoihiCompiler.compile() (always raises — lava-nc archived, no Loihi 2 path)
     │       │
     │       └─► AkidaCompiler.compile() (→ akida SDK, not installed by default)
 ```
 
 ## Install the vendor SDKs
 
-### Loihi 2 (Intel `lava-nc`)
+### Loihi 2 (Intel `lava-nc`) — not a supported target
+
+**Status (2026-10-25, phase 0 requalification, issue #64).** Intel's Lava
+repositories (`lava-nc/lava`, `lava-nc/lava-dl`) are archived on GitHub
+(`archived: true` via the GitHub API, checked 2026-10-25; last push
+2026-05-13). nerve-wml never compiled anything for Loihi 2, has no
+Loihi 2 hardware or Intel NRC access, and does not promise a Loihi 2
+deployment path. `neuromorphic/loihi_stub.py` is kept for import
+compatibility only; `LoihiCompiler.compile` always raises.
+
+The recipe this guide used to give is retained below for the record. It
+was never executed and is **not** a supported integration. Any future
+neuromorphic target (SpiNNaker2, a NIR-based export, …) is a new
+decision for the PI, not an extension of this stub.
+
+<details>
+<summary>Historical recipe (unsupported; archived SDK)</summary>
 
 ```bash
-pip install lava-nc
+pip install lava-nc   # archived upstream — not maintained
 ```
 
-Then edit `neuromorphic/loihi_stub.py::LoihiCompiler.compile` to replace the `NotImplementedError` body with a real call. Example (illustrative, subject to `lava-nc` API changes):
+Illustrative only, written against the pre-archive `lava-nc` API:
 
 ```python
 from lava.magma.compiler.compiler import Compiler
@@ -44,6 +60,8 @@ def compile(artefact: dict) -> "Executable":
     )
     return Compiler().compile(graph, board="Oheo Gulch")
 ```
+
+</details>
 
 ### Akida (BrainChip)
 
@@ -98,8 +116,8 @@ Gate `gate-neuro-passed` (see `scripts/neuro_pilot.py`) asserts:
 
 ## When hardware is procured
 
-1. Replace the `NotImplementedError` body in either `loihi_stub.py` or `akida_stub.py`.
-2. Extend `scripts/neuro_pilot.py` with a `run_loihi_gate()` or `run_akida_gate()` that exercises the real compiler.
+1. Replace the `NotImplementedError` body in `akida_stub.py` (the Loihi 2 stub has no supported SDK behind it — see above).
+2. Extend `scripts/neuro_pilot.py` with a `run_akida_gate()` that exercises the real compiler.
 3. Compare hardware accuracy vs `MockNeuromorphicRunner` — the mock is the repeatable CI reference; hardware deviations flag real-chip-specific quantization or timing effects.
 
 ## Follow-up

@@ -9,6 +9,35 @@ Citation : each release is archived on Zenodo (concept DOI [10.5281/zenodo.19656
 
 Research engine that validates a discrete-code communication layer between heterogeneous neural modules (World Model Languages, or WMLs). Modules exchange **neuroletters** over a sparse learned topology, multiplexed on gamma/theta rhythms, and converted between local codebooks by per-edge transducers. The paper draft is at [`papers/paper1/main.tex`](papers/paper1/main.tex); the full spec is at [`docs/superpowers/specs/2026-04-18-nerve-wml-design.md`](docs/superpowers/specs/2026-04-18-nerve-wml-design.md).
 
+## 2026-10-25 — Phase 0 "truth" errata (documentation only)
+
+Two dated errata from the Hypneum Lab hypothesis review of 2026-10-24
+(revised 2026-10-25); no new computation. Details, affected files and
+handling: `docs/superpowers/research/2026-10-25-phase0-truth-errata.md`.
+
+- **Erratum 2026-10-25 — N-3 ablations (issue #71).** The three N-3
+  ablations were read as establishing that N-3 is "a type-checker, not a
+  differential mechanism". Their JSONs carry `n_received: 0`
+  (`ablation_n3_guard.json`) and `apply_consolidation: false`
+  (`ablation_n3_predictive.json`): reception and consolidation were
+  inactive, so Δ = 0 is uninformative. Corrected status: **typing
+  function established** (the guard is exercised, `n_caught: 70` at
+  v = 0.05, seed 0); **causal utility for communication and learning not
+  established** by these ablations. Paper 1 §Method / §Threats,
+  `docs/research-notes/n3-gate-role.md` and `CHANGELOG.md` corrected.
+- **Erratum 2026-10-25 — stale facts in Paper 1 (issue #64).** Residual
+  "15/15" direction-stability mentions (figure caption, Sleep-EDF
+  paragraph) aligned on the 19/20 recount already in the abstract; the
+  scaling table's N=2 row updated from 1 seed to the 5-seed rerun
+  (`w2_hard_n2_multiseed.json`: median 10.71 %, max 16.91 %, 4/5);
+  "all experiments use N=4" and "pool-scale multi-seed for TRF is
+  future work" replaced by the measured N ∈ {16, 32, 64} and
+  triple-substrate N ∈ {15, 30, 60} results. Intel Loihi 2 is no longer
+  presented as a deployment target (`lava-nc` archived upstream, last
+  push 2026-05-13); `neuromorphic/loihi_stub.py` requalified as a
+  historical interface. Bylines reduced to the single PI in
+  `.zenodo.json`, `CITATION.cff`, `CONTRIBUTORS.md` and the design spec.
+
 ## 2026-06-04 — External-review response (MI bias + prior art)
 
 Two external-review items answered with merged work and two ADRs; the
@@ -268,7 +297,7 @@ The sister project `bouba_sens` (2026-04-21, `github.com/hypneum-lab/bouba_sens`
 | [`gate-m2-passed`](../../releases/tag/gate-m2-passed) | Four scientific shortcuts from §13.1 resolved with honest measurements |
 | [`gate-scale-passed`](../../releases/tag/gate-scale-passed) | Polymorphie + continual learning hold at N=16 pools; router stays connected to N=32 |
 | [`gate-interp-passed`](../../releases/tag/gate-interp-passed) | Per-WML `code → concept` semantics table rendered as HTML |
-| [`gate-neuro-passed`](../../releases/tag/gate-neuro-passed) | LifWML → INT8 artefact → pure-numpy mock runner (Loihi / Akida stubs documented) |
+| [`gate-neuro-passed`](../../releases/tag/gate-neuro-passed) | LifWML → INT8 artefact → pure-numpy mock runner (Akida stub documented; Loihi 2 stub historical only — Lava archived upstream, erratum 2026-10-25) |
 | [`gate-dream-passed`](../../releases/tag/gate-dream-passed) | ε-trace consolidation bridge to dream-of-kiki (schema v0; partial — awaits kiki_oniric v0.5+) |
 | [`gate-adaptive-passed`](../../releases/tag/gate-adaptive-passed) | Per-WML alphabet shrinks/grows via `active_mask` + transducer resize |
 | [`gate-llm-advisor-passed`](../../releases/tag/gate-llm-advisor-passed) | Env-gated, never-raising `NerveWmlAdvisor` for micro-kiki, < 50 ms warm latency |
@@ -329,7 +358,7 @@ cd nerve-wml
 uv sync --all-extras
 ```
 
-Python 3.12+, macOS arm64 (MLX-friendly) or Linux x86_64. No vendor SDK deps are pulled by default (Loihi, Akida, dream-of-kiki, sentence-transformers are all optional integrations).
+Python 3.12+, macOS arm64 (MLX-friendly) or Linux x86_64. No vendor SDK deps are pulled by default (Akida, dream-of-kiki, sentence-transformers are optional integrations; Intel Loihi 2 is not a target — the `lava-nc` SDK is archived upstream).
 
 ## Run the suite
 
@@ -391,7 +420,7 @@ cd papers/paper1 && tectonic main.tex           # or pdflatex, bibtex, pdflatex,
 
 - **Dream consolidation**: `DREAM_CONSOLIDATION_ENABLED=1` + install `dream-of-kiki` locally → `bridge.dream_bridge.DreamBridge`.
 - **LLM advisor (micro-kiki)**: `NERVE_WML_ENABLED=1` + `NERVE_WML_CHECKPOINT_PATH=/path/to/checkpoint` → `bridge.kiki_nerve_advisor.NerveWmlAdvisor`. Wiring recipe: [`docs/integration/micro-kiki-wiring.md`](docs/integration/micro-kiki-wiring.md).
-- **Neuromorphic hardware**: install `lava-nc` or `akida` → wire in `neuromorphic.loihi_stub` / `neuromorphic.akida_stub`. Schema v0: [`docs/neuromorphic/deployment-guide.md`](docs/neuromorphic/deployment-guide.md).
+- **Neuromorphic hardware**: install `akida` → wire in `neuromorphic.akida_stub`. Intel Loihi 2 is **not** a supported target: the `lava-nc` SDK is archived upstream (last push 2026-05-13) and `neuromorphic.loihi_stub` is a historical interface that always raises. Schema v0: [`docs/neuromorphic/deployment-guide.md`](docs/neuromorphic/deployment-guide.md).
 
 ## Cited in
 
