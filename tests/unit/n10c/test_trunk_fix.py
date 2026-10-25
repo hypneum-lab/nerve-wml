@@ -390,7 +390,7 @@ def test_gate_ledger_kinds_are_separate_and_capped(tmp_path):
         devledger.reserve("gtm", "registered", 10, path=led)
     with pytest.raises(devledger.SmokeLimitError):
         devledger.reserve("gtm", "registered", 10, path=led)
-    for _ in range(3):
+    for _ in range(4):
         devledger.reserve("gtm", "registered", 10, kind="gate_dev", path=led)
     with pytest.raises(devledger.SmokeLimitError, match="gate_dev"):
         devledger.reserve("gtm", "registered", 10, kind="gate_dev", path=led)

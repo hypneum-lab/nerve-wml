@@ -50,7 +50,9 @@ COUNTED = ("smoke", "dev_train")
 # runs, a separate category with its own cap, and single-agent trunk
 # pre-training runs (arm "trunk", condition "single").
 GATE_KINDS = ("gate_dev", "pretrain_dev")
-GATE_ALLOWANCE = {"gate_dev": 3, "pretrain_dev": 2}  # per arm / in total
+# gate_dev: 4 per arm = variants C, A, B (PI decision 2026-10-25 09:10:
+# all three on KXKM-AI) + the slot spent by the 0-step crash of 09:05.
+GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 2}  # per arm / in total
 PRETRAIN_ARM, PRETRAIN_CONDITION = "trunk", "single"
 KINDS = (*COUNTED, "throughput_learning", "measurement", *GATE_KINDS)
 LEARNING_KINDS = (*COUNTED, "throughput_learning", "gate_dev")
