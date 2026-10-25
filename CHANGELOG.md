@@ -17,6 +17,24 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
   binding rule "no positive reading of N10-C before N10-C-bis". N10-C
   (tag `n10c-freeze-20261024`, 60 runs, started 2026-10-24) is not
   modified. `docs/milestones/2026-10-25-n10c-bis-control-arms.md`.
+- **N10-C-bis control arms (stage 1, scripted stub only).** The three
+  control arms of the addendum are implemented beside the six frozen
+  N10-C arms, which are unchanged (invariance test: parameter counts of
+  the N10-C manifest table, bit-identical initialisation and forward pass
+  against the vendored tag `n10c-freeze-20261024` sources): `gtm_mis`
+  (hard messages delivered deranged across the 64 pairs at every rollout
+  step through the bus, replayed in the PPO update via `recv_bits`; the
+  shuffled pass is its in-distribution pass, `R_primary`), `eng_gtmrx` +
+  `gtm_warm` (engineered sender through the GTM receive path; warm start
+  of every parameter except `comm.encode_logits` and `to_msg`, cumulative
+  budget recorded) and `vq` (K = 4 x A = 16 plain VQ, d_e = 8,
+  beta = 0.25, lambda_VQ = 1.0, straight-through, auxiliary loss added to
+  the PPO loss, codebook usage reported). `ARM_CODES` gains `gtm_mis: 6,
+  eng_gtmrx: 7, gtm_warm: 8, vq: 9`; `campaign.queue.build_queue_bis` is
+  the 48-run bis-A queue (all seeds on KXKM-AI, `eng_gtmrx` before
+  `gtm_warm`); the guards and the runner take `--registration n10c-bis`
+  (tag prefix `n10c-bis-freeze-`). No N10-C-bis run, smoke run, manifest
+  or freeze tag exists yet (stage 2).
 
 ### Corrections
 

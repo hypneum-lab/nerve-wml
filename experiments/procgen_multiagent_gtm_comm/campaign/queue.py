@@ -13,6 +13,13 @@ Status files: one JSON per run, ``<status_dir>/<run_id>.json``, written
 atomically. Infrastructure failures restart the run from scratch, at
 most ``MAX_INFRA_RESTARTS`` times (so at most 3 attempts); a training
 failure (non-finite loss / parameter) is final and never retried.
+
+N10-C-bis (addendum 2026-10-25, scope option bis-A): ``build_queue_bis``
+is the frozen 48-run list of the second campaign (4 control arms x 2
+conditions x 6 seeds, every run on KXKM-AI): seed-major, the arm units
+rotated by the seed index, each arm's closed run directly after its
+registered run, and ``eng_gtmrx``(s, c) always before ``gtm_warm``(s, c),
+whose ``warm_from`` names that source run. The N10-C queue is untouched.
 """
 from __future__ import annotations
 
@@ -22,7 +29,12 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..harness.codes import HOSTS, SEED_HOST, SEEDS  # noqa: F401 - re-exported
+from ..harness.codes import (  # noqa: F401 - re-exported
+    HOSTS,
+    SEED_HOST,
+    SEED_HOST_BIS,
+    SEEDS,
+)
 
 ARMS_REGISTERED: tuple[str, ...] = ("gtm", "mlp", "atoc", "dial", "eng", "nocomm")
 ARMS_CLOSED: tuple[str, ...] = ("gtm", "dial", "eng", "nocomm")
@@ -31,6 +43,19 @@ TOTAL_PAIR_STEPS = 50_000_000
 MAX_INFRA_RESTARTS = 2
 MAX_EVAL_ATTEMPTS = 3
 N_RUNS = 60
+
+# -- N10-C-bis (addendum 2026-10-25) -----------------------------------------
+REGISTRATIONS: tuple[str, ...] = ("n10c", "n10c-bis")
+DEFAULT_REGISTRATION = "n10c"
+ARMS_BIS: tuple[str, ...] = ("gtm_mis", "eng_gtmrx", "gtm_warm", "vq")
+ARMS_BIS_REGISTERED = ARMS_BIS  # both conditions for every arm (bis-A)
+ARMS_BIS_CLOSED = ARMS_BIS
+# Order units: the (eng_gtmrx -> gtm_warm) dependency is one unit; the
+# units rotate by seed index so no arm is systematically last.
+ARM_UNITS_BIS: tuple[tuple[str, ...], ...] = (
+    ("eng_gtmrx", "gtm_warm"), ("gtm_mis",), ("vq",))
+WARM_SOURCE_ARM: dict[str, str] = {"gtm_warm": "eng_gtmrx"}
+N_RUNS_BIS = 48
 
 PENDING = "pending"
 RUNNING = "running"
@@ -45,6 +70,11 @@ class RunSpec:
     arm: str
     seed: int
     condition: str
+    # N10-C-bis fields (None for every N10-C run, so N10-C specs compare and
+    # serialise as before): the fixed host (KXKM for all bis runs) and the
+    # run_id of the warm-start source (``gtm_warm`` only).
+    host_fixed: str | None = None
+    warm_from: str | None = None
 
     @property
     def run_id(self) -> str:
@@ -52,11 +82,30 @@ class RunSpec:
 
     @property
     def host(self) -> str:
-        return SEED_HOST[self.seed]
+        return self.host_fixed or SEED_HOST[self.seed]
+
+    def warm_source(self) -> RunSpec | None:
+        """The run this one is warm-started from (same seed and condition)."""
+        if self.warm_from is None:
+            return None
+        src = RunSpec(WARM_SOURCE_ARM[self.arm], self.seed, self.condition,
+                      host_fixed=self.host_fixed)
+        assert src.run_id == self.warm_from
+        return src
 
 
-def build_queue() -> list[RunSpec]:
-    """The frozen 60-run list, deterministic order."""
+def _check_registration(registration: str) -> None:
+    if registration not in REGISTRATIONS:
+        raise ValueError(f"unknown registration {registration!r}, expected one "
+                         f"of {REGISTRATIONS}")
+
+
+def build_queue(registration: str = DEFAULT_REGISTRATION) -> list[RunSpec]:
+    """The frozen run list of a registration, deterministic order
+    (N10-C: 60 runs; N10-C-bis: 48 runs, ``build_queue_bis``)."""
+    _check_registration(registration)
+    if registration == "n10c-bis":
+        return build_queue_bis()
     out: list[RunSpec] = []
     for i, seed in enumerate(SEEDS):
         k = i % len(ARM_ORDER)
@@ -68,14 +117,43 @@ def build_queue() -> list[RunSpec]:
     return out
 
 
-def runs_for_host(host: str) -> list[RunSpec]:
+def build_queue_bis() -> list[RunSpec]:
+    """The frozen 48-run N10-C-bis list (scope option bis-A).
+
+    Seed-major; per seed the arm units of ``ARM_UNITS_BIS`` rotated by the
+    seed index; per arm the registered run then the closed run; so
+    ``eng_gtmrx``(s, c) precedes ``gtm_warm``(s, c) for every (s, c).
+    """
+    out: list[RunSpec] = []
+    for i, seed in enumerate(SEEDS):
+        host = SEED_HOST_BIS[seed]
+        k = i % len(ARM_UNITS_BIS)
+        for unit in ARM_UNITS_BIS[k:] + ARM_UNITS_BIS[:k]:
+            for arm in unit:
+                for cond in ("registered", "closed"):
+                    wf = None
+                    if arm in WARM_SOURCE_ARM:
+                        wf = RunSpec(WARM_SOURCE_ARM[arm], seed, cond,
+                                     host_fixed=host).run_id
+                    out.append(RunSpec(arm, seed, cond, host_fixed=host,
+                                       warm_from=wf))
+    ids = [r.run_id for r in out]
+    assert len(out) == N_RUNS_BIS and len(set(ids)) == N_RUNS_BIS
+    for r in out:  # the warm source always runs first
+        if r.warm_from is not None:
+            assert ids.index(r.warm_from) < ids.index(r.run_id)
+    return out
+
+
+def runs_for_host(host: str,
+                  registration: str = DEFAULT_REGISTRATION) -> list[RunSpec]:
     if host not in HOSTS:
         raise ValueError(f"unknown host {host!r}, expected one of {HOSTS}")
-    return [r for r in build_queue() if r.host == host]
+    return [r for r in build_queue(registration) if r.host == host]
 
 
 def new_state(spec: RunSpec) -> dict:
-    return {
+    st = {
         "run_id": spec.run_id, "arm": spec.arm, "seed": spec.seed,
         "condition": spec.condition, "host": spec.host, "status": PENDING,
         "infra_failures": 0, "eval_failures": 0, "eval_done": False,
@@ -83,6 +161,9 @@ def new_state(spec: RunSpec) -> dict:
         "failure_reason": None, "started_at": None, "finished_at": None,
         "infra_exhausted": False, "synced": False,
     }
+    if spec.warm_from is not None:
+        st["warm_from"] = spec.warm_from
+    return st
 
 
 class StatusStore:
@@ -163,10 +244,10 @@ def summarize(states: list[dict]) -> dict[str, int]:
 # ``evaluate.cross_pairs`` (role 0 = seed s, role 1 = next seed, wrapping)
 # and run only after all 6 seeds of the cell are trained AND evaluated.
 
-def cross_cells() -> list[tuple[str, str]]:
+def cross_cells(registration: str = DEFAULT_REGISTRATION) -> list[tuple[str, str]]:
     """(arm, condition) cells, in queue order of first appearance."""
     out: list[tuple[str, str]] = []
-    for r in build_queue():
+    for r in build_queue(registration):
         if (r.arm, r.condition) not in out:
             out.append((r.arm, r.condition))
     return out

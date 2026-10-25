@@ -7,6 +7,12 @@
 #
 # Advantages/returns are stored by ``finish(last_value, ...)`` (which calls
 # ``compute_gae``); ``minibatches`` raises until that was done.
+#
+# N10-C-bis (addendum 2026-10-25, arm ``gtm_mis``): ``recv_bits`` stores
+# the 16-bit message each agent actually received at each pair-step so the
+# PPO update replays it (``PairPolicy.__call__(recv_bits=...)``);
+# ``derangement`` / ``deranged_recv`` are the per-rollout derangement of
+# the pairs and the delivery it induces (also used by the message bus).
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -16,6 +22,32 @@ import numpy as np
 
 if TYPE_CHECKING:  # keep MLX lazy (absent on Linux CI)
     import mlx.core as mx
+
+
+def derangement(n: int, rng: np.random.Generator) -> np.ndarray:
+    """Random permutation of range(n) without fixed points (rejection).
+
+    Used by the evaluation shuffle probe (levels, ``evaluate.py``) and by
+    the ``gtm_mis`` training delivery (coop pairs, one draw per rollout).
+    """
+    if n < 2:
+        raise ValueError("a derangement needs at least 2 levels")
+    ident = np.arange(n)
+    while True:
+        p = rng.permutation(n)
+        if not (p == ident).any():
+            return p
+
+
+def deranged_recv(bits: np.ndarray, sigma: np.ndarray) -> np.ndarray:
+    """Deranged delivery: ``out[e, i] = bits[sigma[e], 1 - i]`` for hard
+    messages ``bits`` [n, 2, 16] (agent i of pair e receives what role
+    1 - i of pair sigma(e) emitted at the same step)."""
+    bits = np.asarray(bits)
+    out = np.empty_like(bits)
+    out[:, 0] = bits[sigma, 1]
+    out[:, 1] = bits[sigma, 0]
+    return out
 
 
 def compute_gae(
@@ -65,12 +97,14 @@ class RolloutBuffer:
         self.done = np.zeros((t_len, n), bool)
         self.noise_dim = noise_dim
         self.noise = np.zeros((t_len, n, 2, noise_dim), np.float32)
+        # message each agent received (gtm_mis replay; zeros for other arms)
+        self.recv_bits = np.zeros((t_len, n, 2, 16), np.float32)
         self.advantages: np.ndarray | None = None
         self.returns: np.ndarray | None = None
         self.t = 0
 
     def add(self, obs, summary, eng_bits, actions, logp, value,
-            team_reward, done, noise=None) -> None:
+            team_reward, done, noise=None, recv_bits=None) -> None:
         if self.t >= self.horizon:
             raise RuntimeError("rollout buffer full")
         t = self.t
@@ -84,6 +118,8 @@ class RolloutBuffer:
         self.done[t] = done
         if noise is not None:
             self.noise[t] = noise
+        if recv_bits is not None:
+            self.recv_bits[t] = recv_bits
         self.t += 1
 
     def finish(self, last_value, gamma: float = 0.999, lam: float = 0.95):
@@ -115,6 +151,7 @@ class RolloutBuffer:
             "advantages": self.advantages.reshape(n_total, 2),
             "returns": self.returns.reshape(n_total, 2),
             "noise": self.noise.reshape(n_total, 2, self.noise_dim),
+            "recv_bits": self.recv_bits.reshape(n_total, 2, 16),
         }
         perm = rng.permutation(n_total)
         for s in range(0, n_total, size_pairs):
