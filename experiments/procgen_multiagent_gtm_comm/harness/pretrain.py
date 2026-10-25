@@ -50,7 +50,7 @@ from mlx.utils import tree_flatten, tree_map
 
 from ..campaign import guards
 from . import devledger
-from .codes import HOST_SETTINGS
+from .codes import ARM_CODES, CONDITION_CODES, HOST_SETTINGS
 from .policy import N_ACTIONS, Impala
 from .rollout import compute_gae
 from .train import (
@@ -68,6 +68,19 @@ from .train import (
 )
 
 PRETRAIN_CODE = 99  # stream code of the pre-training run (not an arm code)
+
+
+def pretrain_seed_entropy(seed: int,
+                          unit: tuple[str, str] | None = None) -> list[int]:
+    """SeedSequence entropy of a pre-training run: ``[seed, 99]`` for the
+    seed's shared trunk, ``[seed, 99, arm_code, condition_code]`` for the
+    own trunk of one run of the per-run-pretraining control."""
+    if unit is None:
+        return [seed, PRETRAIN_CODE]
+    arm, cond = unit
+    if arm not in ARM_CODES or cond not in CONDITION_CODES:
+        raise ValueError(f"unknown arm/condition {arm!r}/{cond!r}")
+    return [seed, PRETRAIN_CODE, ARM_CODES[arm], CONDITION_CODES[cond]]
 ADAM_EPS = 1e-5
 MINIBATCH = 2048  # agent-samples, as in the coop trainer (1024 pairs x 2)
 
@@ -103,6 +116,10 @@ class PretrainRecord:
     registration: dict | None = None
     settings: dict = field(default_factory=dict)
     levels: str = "training (start_level=0, num_levels=16, easy)"
+    # per-run-pretraining control: the (arm, condition) whose own trunk
+    # this is, and the entropy of its SeedSequence (None = shared trunk)
+    unit: list[str] | None = None
+    seed_sequence: list[int] = field(default_factory=list)
 
 
 def make_env(n_envs: int, rand_seed: int) -> Any:
@@ -124,16 +141,23 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
                    dev_ledger: Path = devledger.LEDGER,
                    registration: Any = None,
                    micro_batch_pairs: int | None = None,
-                   clear_cache: bool = False) -> PretrainRecord:
+                   clear_cache: bool = False,
+                   unit: tuple[str, str] | None = None) -> PretrainRecord:
     """Pre-train the trunk for ``total_steps`` single-agent steps.
 
     ``env`` (tests only) replaces procgen: a gym3-style vector env with
     ``act`` / ``observe`` / ``close`` over ``n_envs`` copies.
     ``micro_batch_pairs`` / ``clear_cache``: per-host implementation
-    settings; a registered run always uses its host's ``HOST_SETTINGS``."""
+    settings; a registered run always uses its host's ``HOST_SETTINGS``.
+
+    ``unit`` = (arm, condition): pre-train the OWN trunk of that run of the
+    per-run-pretraining control, seeded ``SeedSequence([seed, PRETRAIN_CODE,
+    arm_code, condition_code])`` (``pretrain_seed_entropy``); None = the
+    seed's shared trunk, ``SeedSequence([seed, PRETRAIN_CODE])``."""
     host = guards.check_pretrain_boundary(registration, seed=seed,
                                           total_steps=total_steps,
-                                          has_env=env is not None)
+                                          has_env=env is not None,
+                                          unit=unit)
     if host is not None:
         micro_batch_pairs = HOST_SETTINGS[host]["micro_batch_pairs"]
         clear_cache = HOST_SETTINGS[host]["clear_cache"]
@@ -141,7 +165,8 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
         raise ValueError("micro_batch_pairs must be >= 1")
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    ss = np.random.SeedSequence([seed, PRETRAIN_CODE])
+    entropy = pretrain_seed_entropy(seed, unit)
+    ss = np.random.SeedSequence(entropy)
     env_ss, init_ss, shuf_ss, key_ss, probe_ss = ss.spawn(5)
     shuf_rng = np.random.default_rng(shuf_ss)
     key_rng = np.random.default_rng(key_ss)
@@ -157,6 +182,8 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
         devledger.claim(res, devledger.PRETRAIN_ARM,
                         devledger.PRETRAIN_CONDITION, total_steps)
     rec = PretrainRecord(seed, total_steps, n_envs, horizon)
+    rec.seed_sequence = entropy
+    rec.unit = None if unit is None else list(unit)
     rec.settings = {"micro_batch_pairs": micro_batch_pairs,
                     "clear_cache": clear_cache}
     if registration is not None:
@@ -330,6 +357,11 @@ def main() -> None:
                         "their host's HOST_SETTINGS")
     p.add_argument("--clear-cache", action="store_true",
                    help="development only: mx.clear_cache() per update")
+    p.add_argument("--per-run", nargs=2, metavar=("ARM", "CONDITION"),
+                   default=None,
+                   help="own trunk of one run of the per-run-pretraining "
+                        "control (seed 101): SeedSequence([seed, 99, "
+                        "arm_code, condition_code])")
     guards.add_guard_args(p)
     a = p.parse_args()
     ctx = guards.enforce_cli(a, registered=a.registered,
@@ -339,7 +371,8 @@ def main() -> None:
                 "do not pass --micro-batch-pairs / --clear-cache")
     rec = pretrain_trunk(a.seed, a.steps, a.out, registration=ctx,
                          micro_batch_pairs=a.micro_batch_pairs,
-                         clear_cache=a.clear_cache)
+                         clear_cache=a.clear_cache,
+                         unit=None if a.per_run is None else tuple(a.per_run))
     print(json.dumps({k: v for k, v in asdict(rec).items()
                       if k not in ("liveness",)}))
 

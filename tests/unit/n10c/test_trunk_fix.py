@@ -607,3 +607,45 @@ def test_gate_report_thresholds_match_the_guard():
     assert gate_report.LIVENESS_STD_EPS == tr.LIVENESS_STD_EPS
     assert gate_report.GATE_PROBE_EVERY == (
         tr.PRESETS[gate_report.GATE_PRESET].liveness_every)
+
+
+# -- per-run-pretraining control (PI 2026-10-25 19:12) ------------------------
+def test_per_run_pretraining_seeding_and_record(tmp_path):
+    from experiments.procgen_multiagent_gtm_comm.harness import pretrain as pt
+    from experiments.procgen_multiagent_gtm_comm.harness.codes import (
+        ARM_CODES,
+        CONDITION_CODES,
+    )
+
+    assert pt.pretrain_seed_entropy(101) == [101, 99]
+    assert pt.pretrain_seed_entropy(101, ("eng", "closed")) == [
+        101, 99, ARM_CODES["eng"], CONDITION_CODES["closed"]]
+    with pytest.raises(ValueError):
+        pt.pretrain_seed_entropy(101, ("nope", "closed"))
+    shared = pretrain_trunk(101, 32, tmp_path / "s", n_envs=4, horizon=8,
+                            env=_VecBandit(4))
+    own = pretrain_trunk(101, 32, tmp_path / "o", n_envs=4, horizon=8,
+                         env=_VecBandit(4), unit=("gtm", "registered"))
+    again = pretrain_trunk(101, 32, tmp_path / "a", n_envs=4, horizon=8,
+                           env=_VecBandit(4), unit=("gtm", "registered"))
+    other = pretrain_trunk(101, 32, tmp_path / "x", n_envs=4, horizon=8,
+                           env=_VecBandit(4), unit=("gtm", "closed"))
+    assert shared.unit is None and shared.seed_sequence == [101, 99]
+    assert own.unit == ["gtm", "registered"]
+    assert own.seed_sequence == pt.pretrain_seed_entropy(101, ("gtm", "registered"))
+    # (trunk bytes are not compared across runs: MLX training is not
+    # bit-reproducible; the seeding is what the control specifies)
+    assert again.seed_sequence == own.seed_sequence != other.seed_sequence
+    assert len({shared.trunk_sha256, own.trunk_sha256, other.trunk_sha256}) == 3
+    rec = tr.train_run(
+        "gtm", 101, "registered", 8, tmp_path / "r", n_pairs=2, horizon=4,
+        env_factory=_coins_factory(), log_every_pair_steps=8,
+        ckpt_every_pair_steps=8, options=tr.PRESETS["fix-c-coin-pretrain"],
+        init_trunk=tmp_path / "o" / own.trunk_file, per_run_trunk=True)
+    assert rec.trunk_mode == "per_run"
+    assert rec.init_trunk_sha256 == own.trunk_sha256
+    with pytest.raises(ValueError, match="own init_trunk"):
+        tr.train_run("gtm", 101, "registered", 8, tmp_path / "r2", n_pairs=2,
+                     horizon=4, env_factory=_coins_factory(),
+                     log_every_pair_steps=8, ckpt_every_pair_steps=8,
+                     per_run_trunk=True)

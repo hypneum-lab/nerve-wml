@@ -149,6 +149,9 @@ class RunRecord:
     warm_source_untrained: bool = False  # gtm_warm started from initialisation
     cumulative_pair_steps: int | None = None  # gtm_warm: source + own budget
     derangement_stream: dict | None = None  # gtm_mis: 5th SeedSequence child
+    # amendment 2026-10-25: "shared" (the seed's trunk) or "per_run" (the
+    # per-run-pretraining control); None without a pre-trained trunk
+    trunk_mode: str | None = None
 
 
 class EngCounters:
@@ -479,6 +482,7 @@ def train_run(
     options: TrainOptions | None = None,
     init_trunk: Path | None = None,
     dev_kind: str = "dev_train",
+    per_run_trunk: bool = False,
     warm_start_from: Path | None = None,
     warm_exclude: tuple[str, ...] = WARM_EXCLUDE_DEFAULT,
     _fault_hook: Callable[[int, PairPolicy], None] | None = None,
@@ -526,6 +530,9 @@ def train_run(
     ``options`` (amendment 2026-10-25, default: the frozen-tag preset) selects
     a registered ``TrainOptions`` preset; ``init_trunk`` is the pre-trained
     trunk checkpoint, required exactly when the preset asks for one.
+    ``per_run_trunk``: a run of the per-run-pretraining control, whose
+    ``init_trunk`` is its own trunk (pinned per (arm, condition), seed
+    ``codes.PER_RUN_TRUNK_SEED``) instead of the seed's shared trunk.
     ``dev_kind`` is the ledger kind of a real-environment development run
     (``dev_train``, or ``gate_dev`` for the learnability gate).
     """
@@ -538,6 +545,8 @@ def train_run(
                          + " an init_trunk checkpoint")
     if dev_kind not in ("dev_train", "gate_dev"):
         raise ValueError(f"unknown development kind {dev_kind!r}")
+    if per_run_trunk and init_trunk is None:
+        raise ValueError("per_run_trunk needs the run's own init_trunk")
     trunk_sha = None if init_trunk is None else file_sha256(init_trunk)
     reg_host = guards.check_train_boundary(
         registration, arm=arm, seed=seed, condition=condition,
@@ -550,7 +559,7 @@ def train_run(
                 "minibatch_pairs": minibatch_pairs},
         has_env_factory=env_factory is not None,
         options_preset=options.preset, init_trunk_sha256=trunk_sha,
-        pretrained_trunk=options.pretrained_trunk)
+        pretrained_trunk=options.pretrained_trunk, per_run_trunk=per_run_trunk)
     own_res = None
     if registration is not None:
         if frozen_policy or dev_reservation is not None:
@@ -609,7 +618,7 @@ def train_run(
             minibatch_pairs, restarts, init_ss, shuf_rng, key_rng,
             _fault_hook, _rollout_hook, micro_batch_pairs, clear_cache,
             n_workers, registration, reg_host, frozen_policy, options,
-            init_trunk,
+            init_trunk, per_run_trunk=per_run_trunk,
             mis_rng=mis_rng, warm_start_from=warm_start_from,
             warm_exclude=warm_exclude,
         )
@@ -628,7 +637,8 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
            shuf_rng, key_rng, fault_hook, rollout_hook, micro_pairs=None,
            clear_cache=False, n_workers=1, registration=None,
            reg_host=None, frozen_policy=False, options=None,
-           init_trunk=None, mis_rng=None, warm_start_from=None,
+           init_trunk=None, per_run_trunk=False, mis_rng=None,
+           warm_start_from=None,
            warm_exclude=WARM_EXCLUDE_DEFAULT) -> RunRecord:
     options = PRESETS[FROZEN_PRESET] if options is None else options
     rec = RunRecord(
@@ -647,9 +657,10 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
     mx.eval(model.parameters())
     if init_trunk is not None:
         rec.init_trunk_sha256 = file_sha256(init_trunk)  # re-read: must match
+        rec.trunk_mode = "per_run" if per_run_trunk else "shared"
         if registration is not None and (
-                rec.init_trunk_sha256
-                != guards.REGISTERED_TRUNK_SHA256.get(seed)):
+                rec.init_trunk_sha256 != guards.expected_trunk_sha256(
+                    seed, arm, condition, per_run_trunk)):
             raise guards.GuardError("pre-trained trunk changed after the guard")
         load_trunk(model, init_trunk)
     if warm_start_from is not None:  # gtm_warm: before opt.init (fresh Adam)
@@ -924,6 +935,9 @@ def main() -> None:
     p.add_argument("--init-trunk", type=Path, default=None,
                    help="pre-trained trunk checkpoint (harness.pretrain), "
                         "required by presets with pretrained_trunk")
+    p.add_argument("--per-run-trunk", action="store_true",
+                   help="a run of the per-run-pretraining control (seed 101): "
+                        "--init-trunk is that run's own trunk")
     p.add_argument("--dev-kind", default="dev_train",
                    choices=["dev_train", "gate_dev"],
                    help="development-ledger kind of a development run")
@@ -975,7 +989,8 @@ def main() -> None:
         horizon=a.horizon, log_every_pair_steps=a.log_every,
         ckpt_every_pair_steps=a.ckpt_every, registration=ctx,
         options=options_for(preset), init_trunk=a.init_trunk,
-        dev_kind=a.dev_kind, warm_start_from=a.warm_start_from, **settings,
+        dev_kind=a.dev_kind, warm_start_from=a.warm_start_from,
+        per_run_trunk=a.per_run_trunk, **settings,
     )
     print(json.dumps({k: v for k, v in asdict(rec).items()
                       if k not in ("losses", "liveness", "entropy_curve")}))

@@ -52,6 +52,11 @@ HOST_SETTINGS: dict[str, dict] = {
 }
 SEED_HOST: dict[int, str] = {0: "macm1", 17: "macm1", 42: "macm1",
                              73: "kxkm", 101: "kxkm", 131: "kxkm"}
+# Declared per-run-pretraining control (amendment 2026-10-25, PI decision
+# 19:12): every run of this seed (a KXKM-AI seed) is repeated with its OWN
+# pre-trained trunk, seeded SeedSequence([seed, 99, arm_code,
+# condition_code]); the registered runs share SeedSequence([seed, 99]).
+PER_RUN_TRUNK_SEED = 101
 # N10-C-bis: every run trains and evaluates on KXKM-AI (addendum, Seeds,
 # host and known deviations, item 1); the seed labels are the N10-C ones.
 SEED_HOST_BIS: dict[int, str] = {s: "kxkm" for s in SEEDS}

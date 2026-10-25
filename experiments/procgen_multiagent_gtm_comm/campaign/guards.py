@@ -53,6 +53,7 @@ from ..harness.codes import (
     BIS_ARMS,
     CROSS_PAIRS,
     HOST_SETTINGS,
+    PER_RUN_TRUNK_SEED,
     PROCGEN_VERSION,
     PROCGEN_X86_WHEEL,
     SEED_HOST,
@@ -100,6 +101,29 @@ TRUNK_DIR = "trunks"
 
 def trunk_path(campaign_dir: Path, seed: int) -> Path:
     return Path(campaign_dir) / TRUNK_DIR / f"seed-{seed}" / "trunk.safetensors"
+
+
+# Per-run-pretraining control (PI decision 2026-10-25 19:12): the trunk of
+# each (arm, condition) run of seed PER_RUN_TRUNK_SEED, written by its own
+# registered pre-training run and pinned by the new freeze manifest. Empty
+# until then: a control run is refused.
+REGISTERED_CONTROL_TRUNK_SHA256: dict[tuple[str, str], str] = {}
+
+
+def control_trunk_path(campaign_dir: Path, arm: str, condition: str) -> Path:
+    return (Path(campaign_dir) / TRUNK_DIR
+            / f"seed-{PER_RUN_TRUNK_SEED}-{condition}-{arm}" / "trunk.safetensors")
+
+
+def expected_trunk_sha256(seed: int, arm: str, condition: str,
+                          per_run_trunk: bool = False) -> str | None:
+    """Pinned SHA-256 of the trunk a registered run must start from: the
+    seed's shared trunk, or its own trunk for a per-run-control run."""
+    if per_run_trunk:
+        return REGISTERED_CONTROL_TRUNK_SHA256.get((arm, condition))
+    return REGISTERED_TRUNK_SHA256.get(seed)
+
+
 ARMS_BY_CONDITION = {
     "registered": ("gtm", "mlp", "atoc", "dial", "eng", "nocomm"),
     "closed": ("gtm", "dial", "eng", "nocomm"),
@@ -620,11 +644,15 @@ def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
                          init_trunk_sha256: str | None = None,
                          pretrained_trunk: bool = False,
                          dev_kind: str = "dev_train",
+                         per_run_trunk: bool = False,
                          ) -> str | None:
     """Gate for ``train_run``. Returns the registered host, or None in the
     explicit development mode (budget <= ``dev_max_pair_steps(dev_kind)``:
     1M, or 10M for gate_dev runs; no context).
-    A registered run must use the registered training-options preset."""
+    A registered run must use the registered training-options preset.
+    ``per_run_trunk``: a run of the per-run-pretraining control (N10-C,
+    seed ``PER_RUN_TRUNK_SEED`` only), whose trunk must be the one pinned
+    for its (arm, condition) instead of the seed's shared trunk."""
     if ctx is None:
         cap = dev_max_pair_steps(dev_kind)
         if total_pair_steps > cap:
@@ -643,11 +671,21 @@ def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
     if options_preset != REGISTERED_TRAIN_OPTIONS:
         errs.append(f"training options {options_preset!r} != registered "
                     f"{REGISTERED_TRAIN_OPTIONS!r}")
+    if per_run_trunk:
+        if reg.name != DEFAULT_REGISTRATION or seed != PER_RUN_TRUNK_SEED:
+            errs.append(f"the per-run-pretraining control is N10-C seed "
+                        f"{PER_RUN_TRUNK_SEED} only (got {reg.name!r}, seed "
+                        f"{seed})")
+        if not pretrained_trunk:
+            errs.append("the per-run-pretraining control needs a "
+                        "pre-trained-trunk preset")
     if pretrained_trunk:
-        want = REGISTERED_TRUNK_SHA256.get(seed)
+        want = expected_trunk_sha256(seed, arm, condition, per_run_trunk)
         if want is None or init_trunk_sha256 != want:
             errs.append(f"pre-trained trunk sha256 {init_trunk_sha256!r} != "
-                        f"registered {want!r} for seed {seed}")
+                        f"registered {want!r} for seed {seed}"
+                        + (f" ({condition}, {arm}, per-run)" if per_run_trunk
+                           else ""))
     if errs:
         raise GuardError("registered training refused: " + "; ".join(errs))
     host = reg.seed_host[seed]
@@ -656,10 +694,14 @@ def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
 
 
 def check_pretrain_boundary(ctx: Any, *, seed: int, total_steps: int,
-                            has_env: bool) -> str | None:
+                            has_env: bool,
+                            unit: tuple[str, str] | None = None) -> str | None:
     """Gate for ``harness.pretrain``. None = development pre-training
     (ledgered, <= 1M steps); with a context, the registered pre-training
-    of a registered seed on its fixed host, with the exact budget."""
+    of a registered seed on its fixed host, with the exact budget.
+    ``unit`` = (arm, condition): the own trunk of one run of the
+    per-run-pretraining control (seed ``PER_RUN_TRUNK_SEED`` only, an arm
+    and condition of the N10-C design)."""
     if ctx is None:
         if total_steps > DEV_MAX_PAIR_STEPS:
             raise GuardError(f"development pre-training is limited to "
@@ -673,6 +715,13 @@ def check_pretrain_boundary(ctx: Any, *, seed: int, total_steps: int,
         errs.append(f"budget {total_steps:,} != registered {PRETRAIN_BUDGET:,}")
     if has_env:
         errs.append("registered pre-training uses the real Procgen")
+    if unit is not None:
+        arm, cond = unit
+        if seed != PER_RUN_TRUNK_SEED:
+            errs.append(f"per-run pre-training is for the control seed "
+                        f"{PER_RUN_TRUNK_SEED} only (got {seed})")
+        if arm not in ARMS_BY_CONDITION.get(cond, ()):
+            errs.append(f"({arm}, {cond}) is not an N10-C run")
     if errs:
         raise GuardError("registered pre-training refused: " + "; ".join(errs))
     host = SEED_HOST[seed]
