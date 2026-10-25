@@ -1,16 +1,24 @@
 """Learnability-gate verdict (amendment 2026-10-25); numpy-free, runs in CI."""
 import copy
 import json
+from pathlib import Path
 
 import pytest
 
 from experiments.procgen_multiagent_gtm_comm.harness.gate_report import (
+    TABLE_HEADER,
     combined_verdict,
+    load_index,
     report,
+    table_rows,
     verdict,
 )
 
 M = 1_000_000
+REPO = Path(__file__).resolve().parents[3]
+CELLS = REPO / "docs" / "superpowers" / "research" / "2026-10-25-n10c-gate"
+AMENDMENT = (REPO / "docs" / "milestones"
+             / "n10c-procgen-multiagent-gtm-comm-amendment-2026-10-25.md")
 
 
 def _run(final=0.10, coin=(0.1, 0.4), flagged_late=False, abort=False,
@@ -132,3 +140,41 @@ def test_combined_verdict_needs_both_arms(tmp_path):
     assert "| kxkm | fix-c-coin-pretrain-gtm" in txt and "Combined gate" in txt
     assert "FAIL" not in txt
 
+
+def test_committed_gate_cells_match_index_and_amendment():
+    idx, bad = load_index(CELLS / "index.json")
+    assert bad == []
+    rows = table_rows(CELLS / "index.json")
+    assert len(rows) == len(idx["runs"])
+    text = AMENDMENT.read_text()
+    assert TABLE_HEADER in text
+    for row in rows:
+        assert row in text, row
+
+
+def test_index_detects_tampering(tmp_path):
+    import shutil
+    dst = tmp_path / "cells"
+    shutil.copytree(CELLS, dst)
+    e = json.loads((dst / "index.json").read_text())["runs"][0]
+    f = dst / e["path"]
+    f.write_text(f.read_text().replace('"arm": "', '"arm": "x', 1))
+    assert load_index(dst / "index.json")[1]
+    with pytest.raises(ValueError):
+        table_rows(dst / "index.json")
+
+
+def test_committed_records_are_ledgered_and_within_the_caps():
+    from experiments.procgen_multiagent_gtm_comm.harness import devledger
+    led = {r["id"]: r for r in devledger.read()["runs"]}
+    idx = json.loads((CELLS / "index.json").read_text())
+    for e in idx["runs"] + idx["pretrain"]:
+        r = led[e["ledger_id"]]
+        assert r["outcome"] == "completed" and r["seed"] == e["seed"]
+        assert r["arm"] == e.get("arm", "trunk")
+        assert e["host"] in r["note"]
+    by = devledger.counts_by_kind()
+    for arm, n in by.get("gate_dev", {}).items():
+        assert n <= devledger.gate_allowance("gate_dev", arm)
+    assert sum(by.get("pretrain_dev", {}).values()) <= (
+        devledger.gate_allowance("pretrain_dev", "trunk"))

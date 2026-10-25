@@ -3,8 +3,9 @@
 **Status:** DRAFT (not frozen, not filed). Needs a new freeze tag, Software Heritage snapshot and stage-2 manifest before any confirmatory run.
 **Amends:** `docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-23.md` (frozen by tag `n10c-freeze-20261024`, commit `2ce4214`), which amends `docs/milestones/n10c-procgen-multiagent-gtm-comm-2026-05-11.md`.
 **Date drafted:** 2026-10-25.
-**Code:** branch `fix/n10c-trunk-collapse` (`experiments/procgen_multiagent_gtm_comm/harness/{train,rollout,vec_env,pretrain,devledger}.py`, `campaign/guards.py`, tests `tests/unit/n10c/test_trunk_fix.py`).
-**Depends on it:** draft PR #61 (N10-C-bis control arms addendum) is written against the frozen 2026-10-23 configuration. It must be rebased on this amendment and its control arms must use the training options adopted here.
+**Code:** branch `fix/n10c-trunk-collapse` (`experiments/procgen_multiagent_gtm_comm/harness/{options,train,rollout,vec_env,pretrain,devledger,gate_report}.py`, `campaign/{guards.py,run_campaign.py}`, `campaign/macm1/{start,pretrain,day_model_paused}.sh`, tests `tests/unit/n10c/test_{trunk_fix,gate_report,macm1_launcher}.py`).
+**Records:** the gate and pre-training records of sections 4.1–4.2 are committed, byte-identical, in `docs/superpowers/research/2026-10-25-n10c-gate/` (`index.json`: SHA-256, ledger id, archive location and code of each record; checkpoints and console logs stay in the archive).
+**Depends on it:** the N10-C-bis control-arms addendum (`docs/milestones/2026-10-25-n10c-bis-control-arms.md`, PR #61) was merged into master on 2026-10-25 as a DRAFT, not frozen, with the PI decisions of that day recorded. It is written against the frozen 2026-10-23 configuration. Before its own freeze it must be brought in line with this amendment, and its control arms must use the training options adopted here.
 
 The frozen 2026-10-23 amendment and the locked 2026-05-11 file are not modified. This document is append-only. Where it conflicts with them, it governs once filed.
 
@@ -57,93 +58,134 @@ Every option is a named, registered preset of `harness.train.TrainOptions` (`PRE
 
 - `harness/pretrain.py`: the IMPALA trunk is trained by PPO on **single-agent CoinRun, training levels 0–15 only** (`num_levels=16`, `start_level=0`, `easy`), reward 1 for the coin, the registered PPO hyper-parameters and Adam eps 1e-5, with a temporary policy / value head that is discarded.
 - **Budget: 1,000,000 single-agent steps** per pre-training run (64 environments × horizon 128).
-- Seeding: `SeedSequence([seed, 99])`. The trunk depends on the run seed only: **all arms and both conditions of one seed start from the same pre-trained trunk** (common random numbers across arms). The other parameters (message encoder / decoder, fusion, heads) are initialised exactly as before from the run's own stream.
+- Seeding: `SeedSequence([seed, 99])`. The trunk depends on the run seed only: **all arms and both conditions of one seed start from the same pre-trained trunk** (common random numbers across arms). Because the GPU runs are not bit-reproducible and the hosts' settings differ (section 4.2), the registered trunk of a seed is the one produced by its registered pre-training run on the seed's fixed host, identified by its SHA-256. Exception (PI decision 2026-10-25, 12:07–12:16): the declared per-run-pretraining control of section 6, on one KXKM-AI seed, pre-trains one trunk per run, all arms; its seeding is fixed in the stage-2 manifest and is not implemented yet. The other parameters (message encoder / decoder, fusion, heads) are initialised exactly as before from the run's own stream.
 - The trunk file's SHA-256 is recorded in every run record (`init_trunk_sha256`) and must be listed in the new manifest. Held-out levels 1000–1199 are never used.
 - Pre-training adds no partner, no message and no team reward: it cannot by itself produce coordination or communication.
 
 ### 3.3 Guards
 
 - **Adam eps = 1e-5** (bias correction stays off, the MLX default, as in the frozen tag).
-- **Finished-agent mask.** The live mask is the agent's state *before* the action. Finished agents are excluded from the PPO policy loss, the entropy bonus and the advantage normalisation statistics (masked means over the full minibatch, invariant to micro-batching). Their forward pass is kept, so the message they send to a live partner still receives gradient through the partner's loss ; their value target (the team return) is kept.
-- **In-run trunk-liveness guard.** A probe on 128 pair-steps (256 agent frames) of the current rollout, at step 0 and after the first update ending at or after every 100,000 pair-steps, logs: the positive fraction of the last IMPALA block's residual stream ; the fraction of the 256 h units active on at least one frame ; the overall h nonzero fraction ; the across-batch std of the logits and of the value. The probe is **flagged** if the block-3 positive fraction or the live-h fraction is below 1 %, or a std is ≤ 1e-6. In `abort` mode (all fix presets) a flagged probe after step 0 stops the run, writes a checkpoint and records `liveness_abort` ; the step-0 probe is informational only.
-- **Outcome-blind rule for an in-run abort (proposed).** A liveness abort under the registered configuration is a **training failure**: the run is not restarted or replaced, it is evaluated at its last checkpoint (as for a non-finite loss, frozen rule). The pre-freeze gate (section 4) exists so that this should not happen.
+- **Finished-agent mask.** The live mask is the agent's state *before* the action. Finished agents are excluded from the PPO policy loss, the entropy bonus and the advantage normalisation statistics (masked means over the full minibatch, invariant to micro-batching). Their forward pass is kept, so the message they send to a live partner still receives gradient through the partner's loss. Their value loss is kept as well: the value target of every agent is its own GAE return of the shaped per-agent training reward (team reward plus that agent's own-coin reward, section 3.1), so after an agent has finished its later targets contain only team reward (its own-coin reward is then 0).
+- **In-run trunk-liveness guard.** A probe on 128 pair-steps (256 agent frames) of the current rollout, at step 0 and after the first update ending at or after every 100,000 pair-steps (for a 1M-step run: 10 probes after step 0, 11 including it), logs: the positive fraction of the last IMPALA block's residual stream ; the fraction of the 256 h units active on at least one frame ; the overall h nonzero fraction ; the across-batch std of the logits and of the value. The probe is **flagged** if the block-3 positive fraction or the live-h fraction is below 1 %, or a std is ≤ 1e-6. In `abort` mode (all fix presets) a flagged probe after step 0 stops the run, writes a checkpoint and records `liveness_abort` ; the step-0 probe is informational only.
+- **Outcome-blind rule for an in-run abort (PI decision 2026-10-25, 12:07–12:16; replaces the proposal of the first draft, which was "training failure, no restart").** A liveness abort under the registered configuration restarts the run **once from scratch**; if the restarted run aborts again, it is a **training failure**: it is not replaced and is evaluated at its last checkpoint (as for a non-finite loss, frozen rule). The restart is reported. The campaign runner does not implement this restart yet: it must do so before the new freeze. The pre-freeze gate (section 4) exists so that this should not happen.
 - Per-run logs added to `run.json`: `liveness` (every probe), `coin_rate_curve` (per-agent own-coin rate over the last 100 completed episodes, both agents), `entropy_curve` (mean and minimum policy entropy of live agents per rollout), `train_options`, `init_trunk_sha256`.
 
 ## 4. Pre-freeze learnability gate (new development rule)
 
 Before the new freeze tag, the adopted preset must pass a learnability gate:
 
-- **Runs:** arms `gtm` and `eng`, condition `registered`, development seed **9101** (not a registered seed), **≤ 1,000,000 pair-steps** each, training levels 0–15 only, logs every 40,000 pair-steps, liveness probe and checkpoint every ~100,000 pair-steps.
+- **Runs:** arms `gtm` and `eng`, condition `registered`, development seed **9101** (not a registered seed), **≤ 1,000,000 pair-steps** each, training levels 0–15 only, logs every 40,000 pair-steps, liveness probe and checkpoint every ~100,000 pair-steps. A **second development seed, 9102**, was added for C by the PI at 12:07 (see below), with its own pre-trained trunk.
 - **Hosts (PI decisions 2026-10-25, all made before the corresponding results):** the trunk pre-training ran on macM1. At 09:10 the PI moved the gate runs (C and the ablations A and B, both arms) to **KXKM-AI**, with the KXKM per-host settings (micro-batch 512 pairs, 8 workers, `--clear-cache`), one run at a time. At 09:18 the PI added **one C check on macM1** (arm `gtm`, macM1 per-host settings: no micro-batching), because the campaign uses both hosts and backends (CUDA, Metal). Rows are never compared across hosts.
-- **Pass criterion (to be ratified by the PI before the freeze; fixed here before the gate results were examined):** for both arms, (i) no liveness probe flagged after step 0 and no abort ; (ii) the team success over the last 100 completed episodes at 1M pair-steps is at least **5 %**, twice the upper end (2.5 %) of the uniform-random baseline ; (iii) the per-agent coin rate rises above its first logged value. A failure of C is **reported and the campaign is not frozen**; the PI decided that a failed C is **not** replaced by switching to A or B.
-- **Accounting:** development-ledger kind `gate_dev` (cap 4 per arm and 7 for `gtm`, see `harness/devledger.py`; separate from the exhausted smoke allowance) and `pretrain_dev` (cap 2 in total), in `manifest/smoke_ledger.json`. The two hosts kept separate working copies of the ledger during the gate; they were merged by run id into the committed file. Every gate run, including crashed ones, is ledgered and disclosed below. Gate runs never touch held-out levels or any result of a full-length run, and are excluded from all analyses.
+- **Pass criterion (fixed here before the gate results were examined; ratified by the PI at 12:07 on the condition of a second development seed, see section 6):** for both arms, (i) no liveness probe flagged after step 0 and no abort ; (ii) the team success over the last 100 completed episodes at 1M pair-steps is at least **5 %**, twice the upper end (2.5 %) of the uniform-random baseline ; (iii) the per-agent coin rate rises above its first logged value. A failure of C is **reported and the campaign is not frozen**; the PI decided that a failed C is **not** replaced by switching to A or B. The check is implemented by `harness/gate_report.py` (`verdict`), which also verifies the record's arm, seed, condition and preset, the probe schedule and the curve endpoints.
+- **Accounting:** development-ledger kinds `gate_dev` (per arm) and `pretrain_dev` (in total, arm `trunk`), separate from the exhausted smoke allowance, in `manifest/smoke_ledger.json` (`harness/devledger.py`). The caps were raised by successive PI decisions, each made before the results of the runs it allowed; none is retroactive:
+
+  | PI decision (2026-10-25) | `gate_dev` gtm | `gate_dev` eng | `pretrain_dev` | max steps per `gate_dev` run | runs it allowed |
+  |---|---:|---:|---:|---:|---|
+  | first draft (`a070f11`, 09:09) | 3 | 3 | 2 | 1M | C, A, B per arm (rows 1–6) |
+  | 09:10 (`06dd573`) | 4 | 4 | 2 | 1M | + the slot spent by the 0-step crash of 09:05 (rows 8–10, 12) |
+  | 09:18 and 09:50 (`f700935`) | 7 | 4 | 2 | 1M | macM1 C check (row 7), its rerun (11), B rerun (13) |
+  | 12:07–12:10 (`3ebc98f`) | 10 | 7 | 4 | 1M | second dev seed of C (rows 14, 15, 20, 21), C vs C-bc on seed 9101 (16–19) |
+  | 12:16 (`f4a4778`) | 10 | 7 | 5 | 1M | validation of the micro-batched pre-training (row 22) |
+  | 13:33 (`72e0890`) | 20 | 13 | 8 | 10M | the Adam bias-correction study of section 4.3 (in progress) |
+
+  The two hosts (and, on KXKM-AI, the working copies `repo`, `repo-head`, `repo-fix` and `repo-adam` of the successive code versions) kept separate copies of the ledger; they are merged by run id into the committed file, each entry tagged in its `note` with host and preset (from row 14 also the code). Every gate run, including crashed ones, is ledgered and disclosed below. Gate runs never touch held-out levels or any result of a full-length run, and are excluded from all analyses.
 
 ### 4.1 Development runs of this amendment (ledger)
 
-All times 2026-10-25 (CET), from `started_at` in `manifest/smoke_ledger.json`. The pass criterion above was committed at 09:09 (`f53d509`), before the first gate result (09:26).
+All times 2026-10-25 (CET), from `started_at` in `manifest/smoke_ledger.json`. The pass criterion above was committed at 09:09 (`f53d509`), before the first gate result (09:26). Rows 1–13 were listed in the first version of this table; rows 14–22 were started later the same day and are appended in start order.
 
-| # | start | host | kind | arm | preset | steps | outcome |
-|---|---|---|---|---|---|---:|---|
-| 1 | 09:05 | macM1 | pretrain_dev | trunk | — | 0 of 1,000,000 | infrastructure crash at 0 steps (`cmake` not on PATH for the Procgen build) |
-| 2 | 09:05 | macM1 | gate_dev | gtm | fix-a-coin | 0 of 1,000,000 | same crash |
-| 3 | 09:05 | macM1 | gate_dev | eng | fix-a-coin | 0 of 1,000,000 | same crash |
-| 4 | 09:06 | macM1 | pretrain_dev | trunk | — | 1,000,000 | completed (trunk shared by every gate run that uses one) |
-| 5 | 09:13 | KXKM-AI | gate_dev | gtm | fix-a-coin (ablation) | 1,000,000 | completed |
-| 6 | 09:26 | KXKM-AI | gate_dev | gtm | **fix-c-coin-pretrain** | 1,000,000 | completed |
-| 7 | 09:27 | macM1 | gate_dev | gtm | **fix-c-coin-pretrain** | 0 of 1,000,000 (no checkpoint) | stopped by hand (SIGTERM, 09:47): 19 GB footprint next to the resident second-brain day model, swap nearly exhausted, no step logged in 20 min |
-| 8 | 09:38 | KXKM-AI | gate_dev | gtm | fix-b-pretrain (ablation) | ~606,000 of 1,000,000 | infrastructure crash (CUDA illegal memory access), most likely caused by our own unit tests run on the same card at 09:46 (GPU OOM) |
-| 9 | 09:46 | KXKM-AI | gate_dev | eng | **fix-c-coin-pretrain** | 1,000,000 | completed |
-| 10 | 09:59 | KXKM-AI | gate_dev | eng | fix-a-coin (ablation) | 1,000,000 | completed |
-| 11 | 10:00 | macM1 | gate_dev | gtm | **fix-c-coin-pretrain** | 1,000,000 | completed (rerun of 7, day model paused 09:59–10:21, PI decision 09:50) |
-| 12 | 10:11 | KXKM-AI | gate_dev | eng | fix-b-pretrain (ablation) | 1,000,000 | completed |
-| 13 | 11:40 | KXKM-AI | gate_dev | gtm | fix-b-pretrain (ablation) | 1,000,000 | completed (rerun of 8, PI decision 09:50; no other process of ours on the card) |
+| # | start | host | kind | seed | arm | preset | steps | outcome |
+|---|---|---|---|---|---|---|---:|---|
+| 1 | 09:05 | macM1 | pretrain_dev | 9101 | trunk | — | 0 of 1,000,000 | infrastructure crash at 0 steps (`cmake` not on PATH for the Procgen build) |
+| 2 | 09:05 | macM1 | gate_dev | 9101 | gtm | fix-a-coin | 0 of 1,000,000 | same crash |
+| 3 | 09:05 | macM1 | gate_dev | 9101 | eng | fix-a-coin | 0 of 1,000,000 | same crash |
+| 4 | 09:06 | macM1 | pretrain_dev | 9101 | trunk | — | 1,000,000 | completed (trunk shared by every seed-9101 gate run that uses one) |
+| 5 | 09:13 | KXKM-AI | gate_dev | 9101 | gtm | fix-a-coin (ablation) | 1,000,000 | completed |
+| 6 | 09:26 | KXKM-AI | gate_dev | 9101 | gtm | **fix-c-coin-pretrain** | 1,000,000 | completed |
+| 7 | 09:27 | macM1 | gate_dev | 9101 | gtm | **fix-c-coin-pretrain** | 0 of 1,000,000 (no checkpoint) | stopped by hand (SIGTERM, 09:47): 19 GB footprint next to the resident second-brain day model, swap nearly exhausted, no step logged in 20 min |
+| 8 | 09:38 | KXKM-AI | gate_dev | 9101 | gtm | fix-b-pretrain (ablation) | ~606,000 of 1,000,000 | infrastructure crash (CUDA illegal memory access), most likely caused by our own unit tests run on the same card at 09:46 (GPU OOM) |
+| 9 | 09:46 | KXKM-AI | gate_dev | 9101 | eng | **fix-c-coin-pretrain** | 1,000,000 | completed |
+| 10 | 09:59 | KXKM-AI | gate_dev | 9101 | eng | fix-a-coin (ablation) | 1,000,000 | completed |
+| 11 | 10:00 | macM1 | gate_dev | 9101 | gtm | **fix-c-coin-pretrain** | 1,000,000 | completed (rerun of 7, day model paused 09:59–10:21, PI decision 09:50) |
+| 12 | 10:11 | KXKM-AI | gate_dev | 9101 | eng | fix-b-pretrain (ablation) | 1,000,000 | completed |
+| 13 | 11:40 | KXKM-AI | gate_dev | 9101 | gtm | fix-b-pretrain (ablation) | 1,000,000 | completed (rerun of 8, PI decision 09:50; no other process of ours on the card) |
+| 14 | 12:07 | KXKM-AI | pretrain_dev | 9102 | trunk | — | 0 of 1,000,000 | crashed at the first update: MLX CUDA `cudaGraphAddKernelNode ... invalid argument` on the full 2048-sample PPO minibatch (pre-training had no micro-batching then); led to the micro-batch fix `f4a4778` |
+| 15 | 12:08 | macM1 | pretrain_dev | 9102 | trunk | — | 1,000,000 | completed (616 s); trunk copied to KXKM-AI for rows 20–21 |
+| 16 | 12:14 | KXKM-AI | gate_dev | 9101 | gtm | **fix-c-coin-pretrain** | 1,000,000 | completed (Adam comparison, PI 12:10; code `3ebc98f`) |
+| 17 | 12:26 | KXKM-AI | gate_dev | 9101 | eng | **fix-c-coin-pretrain** | 1,000,000 | completed (same) |
+| 18 | 12:39 | KXKM-AI | gate_dev | 9101 | gtm | fix-c-coin-pretrain-bc (comparison) | 1,000,000 | completed (same) |
+| 19 | 12:51 | KXKM-AI | gate_dev | 9101 | eng | fix-c-coin-pretrain-bc (comparison) | 1,000,000 | completed (same) |
+| 20 | 13:04 | KXKM-AI | gate_dev | 9102 | gtm | **fix-c-coin-pretrain** | 1,000,000 | completed (second dev seed of C, PI 12:07; code `06dd573` + allowance patch) |
+| 21 | 13:16 | KXKM-AI | gate_dev | 9102 | eng | **fix-c-coin-pretrain** | 1,000,000 | completed (same) |
+| 22 | 13:28 | KXKM-AI | pretrain_dev | 9102 | trunk | — | 1,000,000 | completed (374 s; validation of the micro-batched pre-training `f4a4778`, PI 12:16; its trunk is used by no gate run) |
 
-Runs 1–3, 7 and 8 consumed ledger slots without a result (infrastructure). The gtm allowance of 7 covers rows 2, 5, 6, 7, 8, 11 and 13 (PI decisions 09:10, 09:18, 09:50, each before the result it allowed). The B rerun (13) used the gate code of commit `06dd573` plus the allowance change of `f700935`, as the other KXKM rows did.
+Runs 1–3, 7, 8 and 14 consumed ledger slots without a result (infrastructure). Under the caps of 12:07–12:16, `gate_dev` gtm used 10 of 10 (rows 2, 5, 6, 7, 8, 11, 13, 16, 18, 20), eng 7 of 7 (rows 3, 9, 10, 12, 17, 19, 21) and `pretrain_dev` 5 of 5 (rows 1, 4, 14, 15, 22). Code of each completed run: `index.json` of the records (KXKM-AI rows 5, 6, 9, 10, 12: `06dd573`; rows 13, 20, 21: `06dd573` plus the allowance change; rows 16–19: `3ebc98f`; row 22: `f4a4778`; macM1 rows 4, 11, 15: the branch files in an uncommitted working copy). Runs of the Adam study (section 4.3) started from 13:35 are ledgered under the caps of 13:33 and are reported with its results.
 
 ### 4.2 Gate results
 
-Team success = mean team return over the last 100 completed training episodes (the success curve); coin rate = per-agent own-coin rate over the last 100 completed episodes; liveness minima are over the probes after step 0 (11 probes per run). The uniform-random team success on these levels is 0.5–2.5 %.
+Generated from the committed records by `python -m experiments.procgen_multiagent_gtm_comm.harness.gate_report table docs/superpowers/research/2026-10-25-n10c-gate/index.json` (the test `test_committed_gate_cells_match_index_and_amendment` checks that every row below is what the records give). Team success = mean team return over the last 100 completed training episodes (the success curve); coin rate = per-agent own-coin rate over the last 100 completed episodes (3 decimals: the rate moves in steps of 0.005); liveness minima are over the 10 probes after step 0 (11 probes per run including step 0); "flagged" is recomputed from the probe metrics; "criterion" = (i)–(iii) of section 4 for that run's own arm, seed and preset. The uniform-random team success on these levels is 0.5–2.5 %.
 
-| Run (#) | host | arm | preset | team success at 1M (max) | coin rate first → 1M | min block-3 positive fraction | min live-h fraction | flagged / abort | wall time |
-|---|---|---|---|---|---|---:|---:|---|---:|
-| 6 | KXKM-AI | gtm | **C** | **0.54** (0.72) | 0.22 → 0.60 | 0.072 | 0.75 | no / no | 736 s |
-| 9 | KXKM-AI | eng | **C** | **0.76** (0.76) | 0.24 → 0.79 | 0.075 | 0.86 | no / no | 740 s |
-| 11 | macM1 | gtm | **C** | **0.39** (0.44) | 0.21 → 0.46 | 0.085 | 0.73 | no / no | 1,291 s |
-| 5 | KXKM-AI | gtm | A | 0.82 (0.82) | 0.19 → 0.86 | 0.115 | 0.57 | no / no | 747 s |
-| 10 | KXKM-AI | eng | A | 0.87 (0.88) | 0.22 → 0.88 | 0.099 | 0.67 | no / no | 741 s |
-| 12 | KXKM-AI | eng | B | 0.00 (0.01) | 0.21 → 0.005 | 0.037 | 0.92 | no / no | 730 s |
-| 13 | KXKM-AI | gtm | B | 0.00 (0.01) | 0.18 → 0.00 | 0.057 | 0.82 | no / no | 729 s |
+| # | host | seed | arm | preset | team success at 1M (max) | coin rate first → 1M | min block-3 positive fraction | min live-h fraction | flagged / abort | criterion | wall time |
+|---|---|---|---|---|---|---|---:|---:|---|---|---:|
+| 6 | KXKM-AI | 9101 | gtm | **C** | **0.54** (0.72) | 0.217 → 0.595 | 0.072 | 0.75 | no / no | PASS | 736 s |
+| 9 | KXKM-AI | 9101 | eng | **C** | **0.76** (0.76) | 0.235 → 0.785 | 0.075 | 0.86 | no / no | PASS | 740 s |
+| 11 | macM1 | 9101 | gtm | **C** | **0.39** (0.44) | 0.208 → 0.455 | 0.085 | 0.73 | no / no | PASS | 1,291 s |
+| 5 | KXKM-AI | 9101 | gtm | A | 0.82 (0.82) | 0.185 → 0.860 | 0.115 | 0.57 | no / no | PASS | 747 s |
+| 10 | KXKM-AI | 9101 | eng | A | 0.87 (0.88) | 0.219 → 0.880 | 0.099 | 0.67 | no / no | PASS | 741 s |
+| 12 | KXKM-AI | 9101 | eng | B | 0.00 (0.01) | 0.206 → 0.005 | 0.037 | 0.92 | no / no | FAIL | 730 s |
+| 13 | KXKM-AI | 9101 | gtm | B | 0.00 (0.01) | 0.181 → 0.000 | 0.057 | 0.82 | no / no | FAIL | 729 s |
+| 16 | KXKM-AI | 9101 | gtm | **C** | **0.64** (0.66) | 0.218 → 0.655 | 0.067 | 0.84 | no / no | PASS | 733 s |
+| 17 | KXKM-AI | 9101 | eng | **C** | **0.63** (0.66) | 0.275 → 0.705 | 0.076 | 0.83 | no / no | PASS | 739 s |
+| 18 | KXKM-AI | 9101 | gtm | C-bc | 0.61 (0.67) | 0.210 → 0.665 | 0.094 | 0.68 | no / no | PASS | 743 s |
+| 19 | KXKM-AI | 9101 | eng | C-bc | 0.70 (0.78) | 0.260 → 0.770 | 0.103 | 0.70 | no / no | PASS | 740 s |
+| 20 | KXKM-AI | 9102 | gtm | **C** | **0.73** (0.73) | 0.219 → 0.765 | 0.076 | 0.86 | no / no | PASS | 738 s |
+| 21 | KXKM-AI | 9102 | eng | **C** | **0.84** (0.86) | 0.175 → 0.865 | 0.067 | 0.83 | no / no | PASS | 737 s |
 
-Pre-training (row 4, macM1, 615 s, 5,302 episodes): single-agent coin rate 0.40 at the first log (106,496 steps) → 0.63 at 1M; trunk alive. Trunk SHA-256 prefix `0c27f2daa0a9`, recorded as `init_trunk_sha256` in rows 6, 9, 11, 12 and 13.
+Pre-training (all 1,000,000 single-agent steps, trunk alive by the probe thresholds; coin rate at the first log, 106,496 steps → 1M): row 4 (macM1, seed 9101, 615 s, 5,302 episodes) 0.40 → 0.63, trunk SHA-256 prefix `0c27f2daa0a9`, recorded as `init_trunk_sha256` in rows 6, 9, 11, 12, 13 and 16–19 ; row 15 (macM1, seed 9102, 616 s, 8,379 episodes) 0.46 → 0.85, prefix `b6805dee76c2`, rows 20–21 ; row 22 (KXKM-AI, seed 9102, micro-batch 512 pairs and `--clear-cache`, 374 s, 9,135 episodes) 0.51 → 0.88, prefix `b5955d1baffa`: the micro-batched pre-training runs on CUDA, where row 14 crashed. Rows 15 and 22 used the same seed on different hosts and settings and give different trunks.
 
-**Gate verdict for C (to be ratified by the PI): PASS.** Both arms on KXKM-AI and the gtm check on macM1 meet (i) no flagged probe after step 0 and no abort, (ii) team success at 1M ≥ 5 % (0.54, 0.76 and 0.39), and (iii) a rising coin rate.
+**Gate verdict for C: PASS.** On seed 9101, both arms on KXKM-AI (rows 6, 9, and again 16, 17) and the gtm check on macM1 (row 11) meet (i) no flagged probe after step 0 and no abort, (ii) team success at 1M ≥ 5 % and (iii) a rising coin rate; so do both arms of the second development seed 9102 on KXKM-AI (rows 20, 21), which the PI required at 12:07 for the ratification of the gate.
+
+**GPU non-determinism (reported, not a decision input).** The KXKM-AI runs are not bit-reproducible: MLX has no deterministic convolution backward on CUDA. Rows 16–17 repeat rows 6 and 9 (same seed, trunk, preset and host settings; code `3ebc98f` only adds the `-bc` preset) and do not reproduce their values: team success at 1M gtm 0.54 → 0.64, eng 0.76 → 0.63. Run-to-run noise of a single 1M-step run is therefore about ±0.1 in team success; single-run differences of that size between rows are not interpretable.
 
 Observations, not decision inputs:
 
-- **The own-coin reward is what unblocks learning.** B (pre-trained trunk, team-only reward) keeps the trunk alive by the probe thresholds but does not learn: on both arms the coin rate falls to about 0 (eng 0.21 → 0.005, gtm 0.18 → 0.00) and on `eng` the value is nearly constant across frames (std ≈ 0.001). The thresholds of the liveness guard do not detect this form of failure; the gate criterion (ii)–(iii) does.
-- A ablation exceeds C at 1M on both arms. This is one seed and 1M of 50M pair-steps; the PI's choice of C was made before these results and is not revisited.
-- **macM1 vs KXKM-AI for C/gtm (0.39 vs 0.54):** one seed per host, different per-host settings (no micro-batching on macM1) and backends; not interpretable as a host effect. Peak process memory on macM1 was 11.0 GB (KXKM-AI ≈ 7 GB). The first macM1 attempt (row 7) stalled at a 19 GB footprint next to the second-brain day model; the frozen campaign's macM1 run had trained 18 h next to the same service. The memory budget of macM1 with the pre-trained-trunk path is settled by the PI decision of section 6.
+- **In these runs, the own-coin reward is what separated learning from non-learning.** B (pre-trained trunk, team-only reward) keeps the trunk alive by the probe thresholds but did not learn in either of its two runs (one seed, 1M of 50M pair-steps): the coin rate falls to about 0 (eng 0.206 → 0.005, gtm 0.181 → 0.000) and on `eng` the value is nearly constant across frames (std ≈ 0.001), whereas every run with the own-coin reward (A, C, C-bc) learned. This does not establish that B cannot learn with more steps or other seeds. The thresholds of the liveness guard do not detect this form of failure; the gate criterion (ii)–(iii) does.
+- A ablation exceeds C at 1M on both arms of seed 9101 (one run each, within about twice the run-to-run noise above). The PI's choice of C was made before these results and is not revisited.
+- **C vs C-bc (Adam bias correction, rows 16–19):** gtm 0.64 vs 0.61, eng 0.63 vs 0.70 at 1M; both pass. The differences are within the run-to-run noise; **the question is not decided**: the PI asked for a deeper verification (section 4.3).
+- **macM1 vs KXKM-AI for C/gtm (0.39 vs 0.54 and 0.64):** one run on macM1, different per-host settings (no micro-batching on macM1) and backends; not interpretable as a host effect. Peak process memory on macM1 was 11.0 GB (KXKM-AI ≈ 7 GB). The first macM1 attempt (row 7) stalled at a 19 GB footprint next to the second-brain day model; the frozen campaign's macM1 run had trained 18 h next to the same service. The memory budget of macM1 with the pre-trained-trunk path is settled by the PI decision of section 6.
+
+### 4.3 Adam bias-correction study (PI decision 2026-10-25 13:33, before its results; planned / in progress)
+
+Development runs on KXKM-AI (KXKM per-host settings, `gate_dev` / `pretrain_dev`, code `f4a4778` with the allowance change of 13:33, working copy `repo-adam`), C (`fix-c-coin-pretrain`) vs C-bc (`fix-c-coin-pretrain-bc`), training levels 0–15 only:
+
+- **(C) mechanism:** seed 9101, arm gtm, C and C-bc, 200,000 pair-steps each, a checkpoint every 10,000 pair-steps, for an offline analysis of the update magnitudes and of trunk liveness early in training.
+- **(A) seeds:** three more development seeds 9103, 9104 and 9105, each pre-trained on KXKM-AI with the micro-batched pre-training, then C and C-bc on gtm and eng at 1M pair-steps (12 runs, 3 pre-trainings).
+- **(B) length:** seed 9101, arm gtm, C and C-bc at 10,000,000 pair-steps (the 13:33 cap for `gate_dev` runs).
+
+Its results will be added to this section; until then the registered presets are unchanged (bias correction off, as in the frozen tag).
 
 ## 5. New freeze, archive and manifest
 
 This amendment cannot reuse tag `n10c-freeze-20261024`. Before any run of the new configuration:
 
-1. the PI ratifies the gate criterion and the gate result of C ;
-2. `campaign.guards.REGISTERED_TRAIN_OPTIONS` is set to `fix-c-coin-pretrain` ;
-3. a new stage-2 manifest records the presets, the pre-training budget and seeding, the trunk files' SHA-256 (one per registered seed, produced by registered pre-training runs on the seed's fixed host), the gate results and this ledger, and the per-host throughput including pre-training ;
+1. the PI's ratification of the gate criterion and of the gate result of C (12:07, on the condition of a second development seed, met by rows 20–21) is recorded in the stage-2 manifest ;
+2. `campaign.guards.REGISTERED_TRAIN_OPTIONS` is set to `fix-c-coin-pretrain` (or to the bias-correction variant, only if the PI so decides after section 4.3 and before the freeze) ;
+3. a new stage-2 manifest records the presets, the pre-training budget and seeding, the trunk files' SHA-256 (one per registered seed, produced by registered pre-training runs on the seed's fixed host, plus the per-run trunks of the declared control of section 6), the gate results and this ledger, and the per-host throughput including pre-training ;
 4. a **new annotated freeze tag** (`n10c-freeze-<date>`), a **new Software Heritage snapshot (SWHID)** and the manifest SHA-256 in the tag message, under the 2026-10-23 commitment rules ; the campaign launcher's pins (`campaign.json`) are regenerated ;
 5. runs started before the new tag's GitHub push time are excluded and reported.
 
-All other provisions of the 2026-10-23 amendment (arms, conditions, seeds and hosts, 50M pair-steps, evaluation, estimands, failure and exclusion rules) are unchanged, except that the pre-training adds compute per seed (one 1M-step pre-training per registered seed, small next to 10 runs × 50M pair-steps).
+All other provisions of the 2026-10-23 amendment (arms, conditions, seeds and hosts, 50M pair-steps, evaluation, estimands, failure and exclusion rules) are unchanged, except the in-run abort rule of section 3.3 and the pre-training compute (one 1M-step pre-training per registered seed, plus one per run of the control seed, small next to 10 runs × 50M pair-steps).
 
 ## 6. Decided by the PI (2026-10-25)
 
-- **macM1 memory (11:54):** during every macM1 run of the new configuration (pre-training and training), the second-brain day model is paused (`touch ~/.mtplx/paused`, oMLX backend on :8081 stopped) and resumed when the run ends. The registered macM1 per-host settings (no micro-batching) are unchanged. The macM1 launcher does the pause, checks free memory before the runner starts and lifts the pause afterwards (`campaign/macm1/start.sh`).
+- **macM1 memory (11:54):** during every macM1 run of the new configuration (pre-training and training), the second-brain day model is paused (`touch ~/.mtplx/paused`, oMLX backend on :8081 stopped) and resumed when the run ends. The registered macM1 per-host settings (no micro-batching) are unchanged. `campaign/macm1/day_model_paused.sh` owns the pause (it refuses if the flag already exists, checks free memory before the command starts and lifts the pause on every exit path); `campaign/macm1/start.sh` (campaign runner) and `campaign/macm1/pretrain.sh` (pre-training) run through it.
+- **Gate (12:07):** the gate criterion and the gate result of C are ratified, on the condition of a second development seed of C on both arms. Done: seed 9102, rows 15, 20 and 21, PASS (section 4.2).
+- **In-run abort (12:07–12:16):** a liveness abort restarts the run once from scratch; a second abort is a training failure (section 3.3).
+- **Pre-training (12:07–12:16):** registered runs use one pre-training per registered seed, shared by all arms and conditions of that seed (common random numbers, section 3.2). In addition, a **declared control** on one KXKM-AI seed: every run of that seed, all arms, gets its own pre-training (one per run) instead of the shared trunk. The control seed is fixed in the stage-2 manifest; the control is reported and is not an estimand.
+- **Adam bias correction (12:10, 13:33):** first a C vs C-bc comparison on seed 9101 (rows 16–19, not conclusive), then the deeper study of section 4.3, before any of its results. Not decided.
 
 ## 7. Open decisions for the PI
 
-1. Ratify the gate pass criterion (section 4) and the gate outcome of C.
-2. Ratify the in-run abort rule (liveness abort = training failure, not replaced).
-3. Pre-trained trunk shared by all arms of a seed (common random numbers) vs. one pre-training per run.
-4. Whether to also enable Adam bias correction (off in MLX by default and in the frozen tag ; not changed here).
-5. Rebase of draft PR #61 (N10-C-bis) on this amendment.
+1. Adam bias correction for the registered preset, after the study of section 4.3.
+2. The control seed of the per-run pre-training control (section 6).
+3. Alignment of the N10-C-bis addendum (merged as a draft, #61) with this amendment before its freeze.

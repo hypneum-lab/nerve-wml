@@ -1,0 +1,141 @@
+{
+  "seed": 9102,
+  "total_steps": 1000000,
+  "n_envs": 64,
+  "horizon": 128,
+  "steps_done": 1000000,
+  "n_updates": 123,
+  "wall_time_s": 373.76268100738525,
+  "episodes": 9135,
+  "coin_rate_curve": [
+    [
+      106496,
+      0.51
+    ],
+    [
+      204800,
+      0.55
+    ],
+    [
+      303104,
+      0.62
+    ],
+    [
+      401408,
+      0.7
+    ],
+    [
+      507904,
+      0.8
+    ],
+    [
+      606208,
+      0.84
+    ],
+    [
+      704512,
+      0.88
+    ],
+    [
+      802816,
+      0.77
+    ],
+    [
+      901120,
+      0.86
+    ],
+    [
+      1000000,
+      0.88
+    ]
+  ],
+  "liveness": [
+    {
+      "block3_pos_frac": 0.6920318603515625,
+      "live_h_frac": 0.58203125,
+      "h_nonzero_frac": 0.54071044921875,
+      "step": 0,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.11017036437988281,
+      "live_h_frac": 0.40625,
+      "h_nonzero_frac": 0.17559814453125,
+      "step": 106496,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.10797500610351562,
+      "live_h_frac": 0.52734375,
+      "h_nonzero_frac": 0.1678619384765625,
+      "step": 204800,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.10080528259277344,
+      "live_h_frac": 0.6015625,
+      "h_nonzero_frac": 0.170623779296875,
+      "step": 303104,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.11235809326171875,
+      "live_h_frac": 0.60546875,
+      "h_nonzero_frac": 0.1458892822265625,
+      "step": 401408,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.10758590698242188,
+      "live_h_frac": 0.6484375,
+      "h_nonzero_frac": 0.1864471435546875,
+      "step": 507904,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.10376167297363281,
+      "live_h_frac": 0.69140625,
+      "h_nonzero_frac": 0.1829681396484375,
+      "step": 606208,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.11763763427734375,
+      "live_h_frac": 0.69921875,
+      "h_nonzero_frac": 0.2003021240234375,
+      "step": 704512,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.10359954833984375,
+      "live_h_frac": 0.71484375,
+      "h_nonzero_frac": 0.215240478515625,
+      "step": 802816,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.09012603759765625,
+      "live_h_frac": 0.7265625,
+      "h_nonzero_frac": 0.2059478759765625,
+      "step": 901120,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.08787918090820312,
+      "live_h_frac": 0.75390625,
+      "h_nonzero_frac": 0.22906494140625,
+      "step": 1000000,
+      "flagged": false
+    }
+  ],
+  "usable": true,
+  "failure_reason": null,
+  "trunk_file": "trunk.safetensors",
+  "trunk_sha256": "b5955d1baffa2c22b236eb68a077c95efe2b86649469e31afe2e0a1325eaada6",
+  "registration": null,
+  "settings": {
+    "micro_batch_pairs": 512,
+    "clear_cache": true
+  },
+  "levels": "training (start_level=0, num_levels=16, easy)"
+}
