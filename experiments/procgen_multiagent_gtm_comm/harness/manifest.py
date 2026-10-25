@@ -25,6 +25,7 @@ from .codes import (
     ARM_CODES,
     CONDITION_CODES,
     HOST_SETTINGS,
+    N10C_ARMS,
     PROCGEN_X86_WHEEL,
     PROCGEN_X86_WHEEL_SHA256,
     SEED_HOST,
@@ -204,9 +205,11 @@ def _pc(m) -> int:
     return param_count(m)
 
 
-def arm_params() -> dict[str, dict]:
+def arm_params(arms: tuple[str, ...] = N10C_ARMS) -> dict[str, dict]:
+    """Parameter counts per arm (the N10-C six by default; the N10-C-bis
+    stage-2 manifest passes ``codes.BIS_ARMS``)."""
     out = {}
-    for arm in ARM_CODES:
+    for arm in arms:
         model = PairPolicy(arm, mx.random.key(0))
         out[arm] = {
             "total": _pc(model),

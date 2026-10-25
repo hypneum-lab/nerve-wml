@@ -10,8 +10,18 @@ ARM_CODES: dict[str, int] = {
     "dial": 3,
     "eng": 4,
     "nocomm": 5,
+    # N10-C-bis control arms (addendum 2026-10-25): appended, never
+    # renumbered, so every N10-C seed stream is unchanged.
+    "gtm_mis": 6,
+    "eng_gtmrx": 7,
+    "gtm_warm": 8,
+    "vq": 9,
 }
 CONDITION_CODES: dict[str, int] = {"registered": 0, "closed": 1}
+# The six N10-C arms (frozen, tag n10c-freeze-20261024) and the four
+# N10-C-bis control arms (addendum 2026-10-25), in code order.
+N10C_ARMS: tuple[str, ...] = ("gtm", "mlp", "atoc", "dial", "eng", "nocomm")
+BIS_ARMS: tuple[str, ...] = ("gtm_mis", "eng_gtmrx", "gtm_warm", "vq")
 
 
 def run_seed_sequence(seed: int, arm: str, condition: str) -> np.random.SeedSequence:
@@ -42,6 +52,9 @@ HOST_SETTINGS: dict[str, dict] = {
 }
 SEED_HOST: dict[int, str] = {0: "macm1", 17: "macm1", 42: "macm1",
                              73: "kxkm", 101: "kxkm", 131: "kxkm"}
+# N10-C-bis: every run trains and evaluates on KXKM-AI (addendum, Seeds,
+# host and known deviations, item 1); the seed labels are the N10-C ones.
+SEED_HOST_BIS: dict[int, str] = {s: "kxkm" for s in SEEDS}
 # Fixed cross-seed cross-play pairing (role-0 seed, role-1 seed), wrapping.
 CROSS_PAIRS: tuple[tuple[int, int], ...] = tuple(
     (s, SEEDS[(k + 1) % len(SEEDS)]) for k, s in enumerate(SEEDS))
