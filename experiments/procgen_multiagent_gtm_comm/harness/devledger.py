@@ -61,8 +61,14 @@ GATE_KINDS = ("gate_dev", "pretrain_dev")
 # "trunk"): + the second seed's pre-training (its CUDA attempt on KXKM-AI
 # crashed at 12:07, then macM1) = 4, + one KXKM-AI validation of the
 # micro-batched pre-training fix for that crash (PI 2026-10-25 12:16) = 5.
-GATE_DEV_ALLOWANCE = {"gtm": 10, "eng": 7}
-GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 5}
+# PI decision 2026-10-25 13:33, before the results: deeper Adam bias-
+# correction study (C vs C-bc): mechanism runs (gtm, 2 x 200k), 3 more dev
+# seeds x 2 arms x 2 presets at 1M (+3 pre-trainings on KXKM-AI) and
+# 2 long gtm runs (10M) = gtm 20, eng 13, pretrain_dev 8. gate_dev runs may
+# then reach GATE_MAX_STEPS.
+GATE_DEV_ALLOWANCE = {"gtm": 20, "eng": 13}
+GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 8}
+GATE_MAX_STEPS = {"gate_dev": 10_000_000}
 
 
 def gate_allowance(kind: str, arm: str) -> int:
@@ -167,9 +173,10 @@ def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
                          "inspected (throughput, losses, success rate, ...)")
     if steps < 1:
         raise ValueError("steps must be >= 1")
-    if steps > MAX_STEPS:
+    limit = GATE_MAX_STEPS.get(kind, MAX_STEPS)
+    if steps > limit:
         raise SmokeLimitError(
-            f"development runs are limited to {MAX_STEPS:,} pair-steps "
+            f"development runs are limited to {limit:,} pair-steps "
             f"(requested {steps:,}); larger runs only via the registered path")
     with _locked(path):
         ledger = read(path)

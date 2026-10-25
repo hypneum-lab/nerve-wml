@@ -452,21 +452,29 @@ def test_gate_ledger_kinds_are_separate_and_capped(tmp_path):
         devledger.reserve("gtm", "registered", 10, path=led)
     with pytest.raises(devledger.SmokeLimitError):
         devledger.reserve("gtm", "registered", 10, path=led)
-    for arm, cap in (("gtm", 10), ("eng", 7), ("mlp", 4)):
+    for arm, cap in (("gtm", 20), ("eng", 13), ("mlp", 4)):
         assert devledger.gate_allowance("gate_dev", arm) == cap
         for _ in range(cap):
             devledger.reserve(arm, "registered", 10, kind="gate_dev", path=led)
         with pytest.raises(devledger.SmokeLimitError, match="gate_dev"):
             devledger.reserve(arm, "registered", 10, kind="gate_dev", path=led)
-    for _ in range(5):
+    for _ in range(8):
         devledger.reserve("trunk", "single", 10, kind="pretrain_dev", path=led)
     with pytest.raises(devledger.SmokeLimitError):
         devledger.reserve("trunk", "single", 10, kind="pretrain_dev", path=led)
     with pytest.raises(ValueError):
         devledger.reserve("gtm", "registered", 10, kind="pretrain_dev", path=led)
     with pytest.raises(devledger.SmokeLimitError):
-        devledger.reserve("gtm", "registered", 1_000_001, kind="gate_dev",
+        devledger.reserve("eng", "registered", 10_000_001, kind="gate_dev",
                           path=led)
+    with pytest.raises(devledger.SmokeLimitError):  # smoke cap unchanged
+        devledger.reserve("eng", "registered", 1_000_001, path=led)
+    with pytest.raises(devledger.SmokeLimitError):  # pretrain_dev cap 1M
+        devledger.reserve("trunk", "single", 1_000_001, kind="pretrain_dev",
+                          path=led)
+    long = devledger.reserve("gtm", "registered", 10_000_000, kind="gate_dev",
+                             path=tmp_path / "long.json")  # PI 13:33
+    assert long.steps == 10_000_000
 
 
 # -- registered paths: launcher preset / trunk, trunk hash, pre-training -----
