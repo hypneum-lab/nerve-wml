@@ -17,6 +17,12 @@ campaign.json (host pinned).
 Files: `queue.py` (frozen list, status files), `run_campaign.py` (runner
 and guards), `kxkm/deploy.sh`, `kxkm/start.sh`.
 
+`macm1/start.sh` (amendment 2026-10-25) starts the macM1 runner the same
+way and pauses the second-brain day model (`~/.mtplx/paused`, oMLX
+backend on :8081 stopped) for the whole life of the runner; it refuses
+below 40 % free memory and lifts the pause when the runner exits. If the
+wrapper itself is killed, remove `~/.mtplx/paused` by hand.
+
 ## Pre-flight checklist (all must be ticked)
 
 - [ ] Stage-2 manifest frozen by an annotated git tag (the commitment

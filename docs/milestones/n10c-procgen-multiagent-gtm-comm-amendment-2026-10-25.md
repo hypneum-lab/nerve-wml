@@ -138,7 +138,7 @@ All other provisions of the 2026-10-23 amendment (arms, conditions, seeds and ho
 
 ## 6. Decided by the PI (2026-10-25)
 
-- **macM1 memory (11:54):** during every macM1 run of the new configuration (pre-training and training), the second-brain day model is paused (`touch ~/.mtplx/paused`, oMLX backend on :8081 stopped) and resumed when the run ends. The registered macM1 per-host settings (no micro-batching) are unchanged. Before the new freeze, the macM1 launcher must do the pause, check free memory before each run and lift the pause afterwards (not yet implemented).
+- **macM1 memory (11:54):** during every macM1 run of the new configuration (pre-training and training), the second-brain day model is paused (`touch ~/.mtplx/paused`, oMLX backend on :8081 stopped) and resumed when the run ends. The registered macM1 per-host settings (no micro-batching) are unchanged. The macM1 launcher does the pause, checks free memory before the runner starts and lifts the pause afterwards (`campaign/macm1/start.sh`).
 
 ## 7. Open decisions for the PI
 
