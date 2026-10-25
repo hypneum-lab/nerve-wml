@@ -11,10 +11,12 @@ and the flagship repository at
 
 ## Authorship policy
 
-- **Byline** : publications resulting from this repository use the
-  byline `nerve-wml project contributors` with Clément Saillant as corresponding
-  author. Individual contributors are credited in §Acknowledgments
-  per project policy.
+- **Byline** : publications resulting from this repository carry the
+  single byline `Clément Saillant` (PI, Hypneum Lab), who is also the
+  corresponding author. Plural bylines such as `nerve-wml project
+  contributors` are no longer used (single-PI policy, 2026-10-25).
+  Individual contributors are credited in §Acknowledgments per
+  project policy.
 - **No AI co-authorship** : large language models (Claude, GPT, Qwen,
   Mistral, etc.) are used as *tools* for drafting, review, and code
   generation. They are **not** listed as co-authors on any
@@ -53,4 +55,4 @@ for the current reviewer and co-author outreach status.
 
 ---
 
-Last updated : 2026-04-19.
+Last updated : 2026-10-25 (byline policy).

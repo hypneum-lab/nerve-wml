@@ -46,7 +46,6 @@ preferred-citation:
   type: unpublished
   title: "dreamOfkiki: A Substrate-Agnostic Formal Framework for Dream-Based Knowledge Consolidation in Artificial Cognitive Systems"
   authors:
-    - name: "dreamOfkiki project contributors"
     - family-names: Saillant
       given-names: Clément
       email: clement@saillant.cc
