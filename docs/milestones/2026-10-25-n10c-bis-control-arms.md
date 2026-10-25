@@ -66,16 +66,16 @@ All new arms use the N10-C CoinRun-coop environment, the per-agent network (IMPA
 
 - **Initialisation.** Every parameter of the final checkpoint of the `eng_gtmrx` run **of the same seed and condition** is loaded (trunk, fuse, policy and value heads, GTM constellation and `decode`), **except** the GTM sender head `comm.encode_logits` and `to_msg`, which keep the `gtm_warm` run's own seed-stream initialisation (`to_msg` is untrained in `eng_gtmrx`, whose sender ignores it). Adam state is fresh. Then training is the registered GTM-comm training, 50,000,000 pair-steps, unchanged.
 - This is the transposition of Chauhan & Bera's warm start : a receiver (and policy) that already reads a 4-symbol protocol with known content, and a sender that must discover, by PPO alone, a protocol the receiver can exploit.
-- **Plasticity schedule :** restarts at 1.0 for the warm run (the unchanged GTM code path). *TBD by PI :* keep the schedule at its floor 0.1 instead, so the warm constellation is not washed out ; default = restart, flagged.
+- **Plasticity schedule :** restarts at 1.0 for the warm run (the unchanged GTM code path). *PI decision 2026-10-25 : restart at 1.0 (default kept).* Alternative considered and not adopted : keep the schedule at its floor 0.1 so the warm constellation is not washed out.
 - **Dependency :** `gtm_warm`(s, c) runs only after `eng_gtmrx`(s, c) has finished. If that run is a training failure, `gtm_warm` starts from the last finite `eng_gtmrx` checkpoint ; if there is none, from initialisation, with the flag `warm_source_untrained` (reported, never dropped or replaced).
 - **Sample efficiency.** The time-to-threshold endpoint of `gtm_warm` counts stage-2b pair-steps only and is **not comparable** with a cold-started arm ; the cumulative budget (50M + 50M) is stated next to it.
 - Implementation : `train_run(..., warm_start_from: Path | None = None, warm_exclude=("comm.encode_logits", "to_msg"))` in `harness/train.py`, loading the safetensors checkpoint by parameter name after `PairPolicy` construction and before `opt.init` ; `run.json` records the source run id, checkpoint file and its SHA-256 ; `campaign/queue.py` `RunSpec.warm_from`.
 
 ### Arm 3 — `vq` : IB-VQ discrete baseline with GTM's symbol structure
 
-- **Sender :** encoder Linear(64 → 4 · d_e) reshaped to [4, d_e], d_e = 8 (TBD by PI) ; each of the 4 slots is quantised to the nearest of 16 codebook vectors of dimension d_e (one codebook shared by the 4 slots, as GTM shares one alphabet). The 4 indices are mapped to the bus as 4-bit nibbles (ruling R2, `CODE_TABLE`), so the message is exactly 16 hard bits. Straight-through estimator ; VQ loss = codebook loss + β · commitment loss with β = 0.25 (van den Oord, Vinyals & Kavukcuoglu, 2017), weighted by λ_VQ = 1.0 (TBD by PI) and added to the PPO loss on the sender rows. Training messages are hard (the bus asserts {0, 1} in training, unlike DIAL).
+- **Sender :** encoder Linear(64 → 4 · d_e) reshaped to [4, d_e], d_e = 8 (PI decision 2026-10-25) ; each of the 4 slots is quantised to the nearest of 16 codebook vectors of dimension d_e (one codebook shared by the 4 slots, as GTM shares one alphabet). The 4 indices are mapped to the bus as 4-bit nibbles (ruling R2, `CODE_TABLE`), so the message is exactly 16 hard bits. Straight-through estimator ; VQ loss = codebook loss + β · commitment loss with β = 0.25 (van den Oord, Vinyals & Kavukcuoglu, 2017), weighted by λ_VQ = 1.0 (PI decision 2026-10-25 ; β = 0.25 likewise) and added to the PPO loss on the sender rows. Training messages are hard (the bus asserts {0, 1} in training, unlike DIAL).
 - **Receiver :** codebook lookup of the 4 received indices → [4, d_e] → Linear(4 · d_e → 64). This is GTM's `iq` path without the γ/θ carrier. **The arm is GTM-comm's symbol structure with VQ discretisation and no multiplexer**, so the GTM − VQ contrast isolates the γ/θ receive path plus the Gumbel-softmax sender from the discrete K = 4 × A = 16 structure.
-- **Information-bottleneck term (Farooq & Iqbal) :** *TBD by PI* from the paper's formulation ; if it cannot be reproduced from the paper before the freeze, the arm is plain VQ and the manifest says so.
+- **Information-bottleneck term (Farooq & Iqbal) :** *PI decision 2026-10-25 : not implemented ; the arm is plain VQ and the manifest says so.* The paper's formulation was not reproduced before the decision.
 - **Gate (Farooq & Iqbal) : not implemented by default.** N10-C's bus is fixed-rate (16 bits every step for every arm) and the registered question is team reward at fixed bandwidth, not bandwidth saving ; a closed gate would need an all-zero code that collides with symbol index 0 in every slot. *TBD by PI :* a gated variant.
 - **Decoupled pathway (SLIM) :** not implemented ; the `vq` sender, like every N10-C arm, reads `to_msg(h)`. The SLIM mechanism is cited as motivation only ; a decoupled variant would be a separate arm and is not part of this addendum. **Learned precision (DDCL) :** not applicable at fixed 16 bits ; cited as motivation only.
 - **Bandwidth utilisation :** plug-in entropy of the 16-bit messages, as for every arm ; the codebook usage is reported in addition (descriptive).
@@ -179,7 +179,7 @@ Unchanged from N10-C in every respect (Evaluation protocol and randomness, Messa
 5. **Throughput of the new arms is unmeasured** at drafting ; planning uses the N10-C KXKM figure of about 10.8 h per run (1,290 pair-steps/s). The stage-2 manifest records the measured rates (frozen-policy or ledgered `throughput_learning` runs, as allowed by N10-C).
 6. **`eng_gtmrx` nibble misalignment** (see Arm 2a) ; **`gtm_warm` cumulative budget** 100M pair-steps across its two stages, sample efficiency not comparable.
 7. **Code on master.** N10-C-bis harness code will be merged to master while N10-C runs ; the N10-C clones are pinned to `n10c-freeze-20261024` and are never updated (What is not modified). After the merge, master no longer satisfies the N10-C launch guard (file digests differ from the N10-C manifest) ; this is expected and only the frozen clones launch or evaluate N10-C.
-8. **KXKM GPU services** (`gpu-worker`, `whisper-dex`) stay stopped through N10-C-bis instead of being restored after N10-C (TBD by PI).
+8. **KXKM GPU services** (`gpu-worker`, `whisper-dex`) stay stopped through N10-C-bis instead of being restored after N10-C (PI decision 2026-10-25 : confirmed).
 
 ## Compute plan
 
@@ -187,12 +187,12 @@ Unchanged from N10-C in every respect (Evaluation protocol and randomness, Messa
 
 **Sequence for N10-C-bis on KXKM-AI :**
 
-1. During N10-C : implementation and unit tests on the scripted stub only (no GPU, no host of N10-C touched) ; review ; this stage-1 text finalised except for TBD items decided by the PI.
+1. During N10-C : implementation and unit tests on the scripted stub only (no GPU, no host of N10-C touched) ; review ; this stage-1 text finalised ; the six TBD items were decided by the PI on 2026-10-25 (defaults adopted, see « PI decisions »).
 2. After the 30 KXKM N10-C training runs are done (about 2026-11-07) and only while no N10-C evaluation or cross-play pass is pending : development runs for the four new arms on KXKM under the N10-C allowance (smoke ≤ 1,000,000 pair-steps each, ≤ 3 per new arm, training levels 0–15, ledgered in `manifest/smoke_ledger.json` ; throughput measurement) ; stage-2 manifest ; freeze tag ; Software Heritage ; start.
 3. N10-C-bis training on KXKM, one run at a time (`--max-concurrent 1`, GPU guard `--min-free-gb 8`). **N10-C has priority :** when the macM1 N10-C runs are synced (about 2026-11-15), the N10-C-bis runner is paused between runs (`STOP` file) until the N10-C evaluations and cross-play passes are done (about 7 h), then resumed. N10-C-bis never evaluates or trains while an N10-C evaluation is running.
 4. N10-C-bis evaluations (same protocol) and cross-play for the 8 new cells ; analysis ; joint report.
 
-**Scope options (TBD by PI ; this draft is written for bis-A).** Runs at about 10.8 h each on KXKM-AI, evaluation about 6.7 min per model, cross-play about 3.35 min per pass, 6 pairs per cell :
+**Scope options (PI decision 2026-10-25 : bis-A, without bis-H).** Runs at about 10.8 h each on KXKM-AI, evaluation about 6.7 min per model, cross-play about 3.35 min per pass, 6 pairs per cell :
 
 | Option | Cells | Runs | Training | Evaluation + cross-play | Wall time on KXKM | Indicative end (start about 2026-11-07, plus the 7 h N10-C pause) |
 |---|---|---:|---:|---:|---:|---|
@@ -221,16 +221,18 @@ Development before the N10-C-bis tag may use only the scripted stub (unit tests)
 - The N10-C-bis freeze commit **must not touch** the N10-C tagged documents or the N10-C manifest ; the N10-C guards' allowance for later `docs/` commits is thereby respected on master as well.
 - **Confirmatory follow-up :** any superiority claim about any arm requires a separate confirmatory pre-registration with a powered N ; the pilot data of N10-C and N10-C-bis are not reused in its test.
 
-## PI decisions required before the freeze (TBD by PI)
+## PI decisions (taken 2026-10-25, before the freeze)
 
-1. Scope option : bis-A (default of this draft), bis-B or bis-C ; bis-H add-on yes / no (default no).
-2. `gtm_mis` sender gradient : replay only (default) or donor-row recomputation with gradient.
-3. `gtm_warm` plasticity schedule : restart at 1.0 (default) or hold at the floor 0.1.
-4. `vq` : d_e (default 8), λ_VQ (default 1.0), β (default 0.25), IB term (formulation or none), gate (default none).
-5. KXKM GPU services stay stopped through N10-C-bis.
-6. Whether a concurrent N10-C-bis training run may overlap an N10-C evaluation window (default : no, strict serialisation).
+All six items were decided by the PI on 2026-10-25 (multiple-choice decision log of the 25/10 session) ; the defaults of this draft are adopted :
 
-If the PI changes any item, this text is edited before the tag, never after data are seen.
+1. Scope option : **bis-A** (4 arms × both conditions, 48 runs) ; bis-H add-on : **no**.
+2. `gtm_mis` sender gradient : **replay only**.
+3. `gtm_warm` plasticity schedule : **restart at 1.0**.
+4. `vq` : **d_e = 8, λ_VQ = 1.0, β = 0.25, no IB term (plain VQ), no gate**.
+5. KXKM GPU services : **stay stopped through N10-C-bis**.
+6. Overlap of an N10-C-bis training run with an N10-C evaluation window : **no, strict serialisation**.
+
+Any later change is edited into this text before the tag, never after data are seen.
 
 ## References
 
