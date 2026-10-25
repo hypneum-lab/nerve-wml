@@ -6,6 +6,17 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ### Added
 
+- **NH-01 pilot: dreaming Hopfield kernel vs uniform shrink (track M,
+  issue #68).** L1 pre-registration
+  `docs/milestones/2026-10-25-nh01-hopfield-dream-vs-downscale.md` frozen
+  by tag `prereg-nh01-hopfield-dream-20261025` before any run; numpy-only
+  experiment `experiments/nh01_hopfield_dream/run.py` (Fachechi–Agliari–
+  Barra kernel J(1+t)/(1+tJ) by spectral decomposition, Frobenius-matched
+  shrink control, asynchronous dynamics from noisy cues, capacity
+  estimator, spurious-state classification, energy, seed-level bootstrap);
+  unit tests; results `results/nh01/` and note
+  `docs/results/2026-10-25-nh01-pilot.md`.
+
 - **N10-C-bis pre-registration addendum (DRAFT, 2026-10-25), documentation
   only.** Three control arms the running N10-C campaign lacks: a
   mismatched-message arm (content vs presence), a warm-started receiver
