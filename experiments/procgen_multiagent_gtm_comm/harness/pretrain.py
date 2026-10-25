@@ -286,7 +286,7 @@ def _pretrain(rec, env, out_dir, init_ss, shuf_rng, key_rng, probe_rng,
                                     mx.array(flat[0][j]), mx.array(flat[1][j]),
                                     ad[a:b], mx.array(flat[3][j]))
                     if w != 1.0:
-                        gm = tree_map(lambda x: x * w, gm)
+                        gm = tree_map(lambda x, w=w: x * w, gm)
                     g = gm if g is None else tree_map(mx.add, g, gm)
                     mx.eval(g)
                 g, _ = optim.clip_grad_norm(g, MAX_GRAD_NORM)
