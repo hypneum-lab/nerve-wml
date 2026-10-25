@@ -6,6 +6,22 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ### Added
 
+- **NH-01 pilot: dreaming Hopfield kernel vs uniform shrink (track M,
+  issue #68).** L1 pre-registration
+  `docs/milestones/2026-10-25-nh01-hopfield-dream-vs-downscale.md` frozen
+  by tag `prereg-nh01-hopfield-dream-20261025` before any run; numpy-only
+  experiment `experiments/nh01_hopfield_dream/run.py` (Fachechi–Agliari–
+  Barra kernel J(1+t)/(1+tJ) by spectral decomposition, Frobenius-matched
+  shrink control, asynchronous dynamics from noisy cues, capacity
+  estimator, spurious-state classification, energy, seed-level bootstrap);
+  unit tests; results `results/nh01/` and note
+  `docs/results/2026-10-25-nh01-pilot.md`. Pilot run on electron-server
+  (28 080 cells, 26 min): **confirmé** under the pre-registered rule
+  (C1 ratio 3.43 [3.26, 3.60] at t = 10, N = 256; C2 holds within the
+  0.05 tolerance, capacity peaking at t = 10; C3 shrink ratio exactly
+  1.000 at T = 0, 0.980 at T = 0.2). The N = 1 000 run and the
+  VQ-codebook part of NH-01 remain untested.
+
 - **N10-C-bis pre-registration addendum (DRAFT, 2026-10-25), documentation
   only.** Three control arms the running N10-C campaign lacks: a
   mismatched-message arm (content vs presence), a warm-started receiver
@@ -17,6 +33,24 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
   binding rule "no positive reading of N10-C before N10-C-bis". N10-C
   (tag `n10c-freeze-20261024`, 60 runs, started 2026-10-24) is not
   modified. `docs/milestones/2026-10-25-n10c-bis-control-arms.md`.
+- **N10-C-bis control arms (stage 1, scripted stub only).** The three
+  control arms of the addendum are implemented beside the six frozen
+  N10-C arms, which are unchanged (invariance test: parameter counts of
+  the N10-C manifest table, bit-identical initialisation and forward pass
+  against the vendored tag `n10c-freeze-20261024` sources): `gtm_mis`
+  (hard messages delivered deranged across the 64 pairs at every rollout
+  step through the bus, replayed in the PPO update via `recv_bits`; the
+  shuffled pass is its in-distribution pass, `R_primary`), `eng_gtmrx` +
+  `gtm_warm` (engineered sender through the GTM receive path; warm start
+  of every parameter except `comm.encode_logits` and `to_msg`, cumulative
+  budget recorded) and `vq` (K = 4 x A = 16 plain VQ, d_e = 8,
+  beta = 0.25, lambda_VQ = 1.0, straight-through, auxiliary loss added to
+  the PPO loss, codebook usage reported). `ARM_CODES` gains `gtm_mis: 6,
+  eng_gtmrx: 7, gtm_warm: 8, vq: 9`; `campaign.queue.build_queue_bis` is
+  the 48-run bis-A queue (all seeds on KXKM-AI, `eng_gtmrx` before
+  `gtm_warm`); the guards and the runner take `--registration n10c-bis`
+  (tag prefix `n10c-bis-freeze-`). No N10-C-bis run, smoke run, manifest
+  or freeze tag exists yet (stage 2).
 
 ### Corrections
 
@@ -33,6 +67,38 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
   so the GitHub-Zenodo webhook never fired); the L1a claim was never
   archived on Zenodo. The correction must be carried in the
   description of the next published release.
+- **Erratum 2026-10-25 — N-3 ablations do not establish "type-checker,
+  not differential mechanism" (issue #71).** The three ablations behind
+  that reading ran on an inactive mechanism: `n_received: 0` in all 30
+  cells of `papers/paper1/figures/ablation_n3_guard.json` and
+  `apply_consolidation: false` (AttributeError on `MockNerve`) in all
+  six cells of `ablation_n3_predictive.json`, so Δ = 0 is
+  uninformative. Requalified in Paper 1 §Method and §Threats to
+  Validity, `docs/research-notes/n3-gate-role.md` and the README:
+  typing function established (the guard is exercised at send time,
+  `n_caught: 70` at v = 0.05, seed 0); causal utility for communication
+  and learning not established by these ablations. A differential test
+  needs `n_received > 0`, active consolidation and a pre-registered
+  matched null. JSONs unchanged.
+- **Erratum 2026-10-25 — stale facts in Paper 1 and metadata (issue
+  #64).** Residual "15/15" mentions in `main.tex` (figure caption,
+  Sleep-EDF paragraph) and in `scripts/render_scaling_figure.py` aligned
+  on the 19/20 recount (4/5 at N=2, 5/5 at N=16/32/64); the scaling
+  table's N=2 row now reports the 5-seed rerun
+  (`w2_hard_n2_multiseed.json`: median 10.71 %, max 16.91 %, 4/5)
+  instead of the 1-seed value; "all experiments use N=4" (§Experiments,
+  §Limitations) and "pool-scale multi-seed for TRF is future work"
+  replaced by the measured N ∈ {16, 32, 64} and triple-substrate
+  N ∈ {15, 30, 60} results. Intel Loihi 2 is no longer presented as a
+  deployment target: the `lava-nc` SDK is archived upstream (GitHub
+  `archived: true`, last push 2026-05-13); `neuromorphic/loihi_stub.py`,
+  `docs/neuromorphic/deployment-guide.md`, README and Paper 1 §Gate
+  Neuro requalified (the stub still raises `NotImplementedError`).
+  Bylines reduced to the single PI (Clément Saillant) in
+  `.zenodo.json`, `CITATION.cff`, `CONTRIBUTORS.md` and the design spec.
+  The committed `w2_hard_scaling.pdf/.png` still carry the old title and
+  must be re-rendered. Details:
+  `docs/superpowers/research/2026-10-25-phase0-truth-errata.md`.
 
 ## [1.9.4] — 2026-06-20
 

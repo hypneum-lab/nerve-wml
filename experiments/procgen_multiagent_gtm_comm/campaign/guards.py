@@ -26,6 +26,14 @@ explicit development mode only (<= 1M pair-steps, training levels 0-15).
 The tag's server-recorded GitHub push time is recorded when obtainable;
 otherwise the record states it must be taken from GitHub / Software
 Heritage (git author and committer dates are not evidence of time).
+
+Registrations (N10-C-bis addendum 2026-10-25): every guard takes a
+``registration`` name, ``n10c`` by default (unchanged behaviour: tag
+prefix ``n10c-freeze-``, the N10-C amendment, manifest and cells) or
+``n10c-bis`` (tag prefix ``n10c-bis-freeze-``, the addendum, the
+``stage2-manifest-bis.md`` manifest, the four control arms in both
+conditions, every seed on KXKM-AI). The issued ``RegistrationContext``
+carries the name, so the execution boundary checks the right cells.
 """
 from __future__ import annotations
 
@@ -42,11 +50,13 @@ from pathlib import Path
 from typing import Any
 
 from ..harness.codes import (
+    BIS_ARMS,
     CROSS_PAIRS,
     HOST_SETTINGS,
     PROCGEN_VERSION,
     PROCGEN_X86_WHEEL,
     SEED_HOST,
+    SEED_HOST_BIS,
     SEEDS,
 )
 
@@ -116,6 +126,41 @@ def amendment_status_problem(text: str, tag: str) -> str | None:
                 f"'**Status:** FROZEN by tag {tag} ...', got {line.strip()[:80]!r}")
     return None
 TAG_PREFIX = "n10c-freeze-"
+
+
+@dataclass(frozen=True)
+class Registration:
+    """What differs between the N10-C and N10-C-bis registrations."""
+
+    name: str
+    tag_prefix: str
+    amendment_path: str
+    manifest_name: str
+    arms_by_condition: dict[str, tuple[str, ...]]
+    seed_host: dict[int, str]
+
+
+ADDENDUM_PATH = "docs/milestones/2026-10-25-n10c-bis-control-arms.md"
+ARMS_BY_CONDITION_BIS = {"registered": BIS_ARMS, "closed": BIS_ARMS}
+REGISTRATIONS: dict[str, Registration] = {
+    "n10c": Registration("n10c", TAG_PREFIX, AMENDMENT_PATH, "stage2-manifest.md",
+                         ARMS_BY_CONDITION, SEED_HOST),
+    "n10c-bis": Registration("n10c-bis", "n10c-bis-freeze-", ADDENDUM_PATH,
+                             "stage2-manifest-bis.md", ARMS_BY_CONDITION_BIS,
+                             SEED_HOST_BIS),
+}
+DEFAULT_REGISTRATION = "n10c"
+
+
+def registration(name: str | None = None) -> Registration:
+    """The registration record for ``name`` (``n10c`` when None)."""
+    name = name or DEFAULT_REGISTRATION
+    if name not in REGISTRATIONS:
+        raise GuardError(f"unknown registration {name!r}; expected one of "
+                         f"{sorted(REGISTRATIONS)}")
+    return REGISTRATIONS[name]
+
+
 SWHID_RE = re.compile(
     r"^swh:1:(snp|rev|dir):[0-9a-f]{40}(;[a-z]+=[^;\s]+)*$")
 PUSH_TIME_NOTE = ("GitHub server-recorded push time of the tag not obtained "
@@ -154,9 +199,12 @@ def normalize_doi(doi: str | None) -> str | None:
     return d
 
 
-def valid_tag_name(tag: str | None) -> bool:
-    """``n10c-freeze-YYYYMMDD`` with a real calendar date."""
-    m = re.fullmatch(re.escape(TAG_PREFIX) + r"(\d{8})", tag or "")
+def valid_tag_name(tag: str | None,
+                   registration_name: str = DEFAULT_REGISTRATION) -> bool:
+    """``<prefix>YYYYMMDD`` with a real calendar date (``n10c-freeze-`` for
+    N10-C, ``n10c-bis-freeze-`` for N10-C-bis)."""
+    prefix = registration(registration_name).tag_prefix
+    m = re.fullmatch(re.escape(prefix) + r"(\d{8})", tag or "")
     if not m:
         return False
     try:
@@ -182,7 +230,9 @@ def _head_vs_commit(repo: Path, head: str, expect: str) -> list[str]:
     return []
 
 
-def freeze_tag_info(repo: Path, tag: str) -> tuple[str | None, list[str]]:
+def freeze_tag_info(repo: Path, tag: str,
+                    registration_name: str = DEFAULT_REGISTRATION,
+                    ) -> tuple[str | None, list[str]]:
     """Resolve a freeze tag: (peeled commit or None, problems).
 
     The tag must have the registered name, exist on ``origin`` (git
@@ -190,9 +240,10 @@ def freeze_tag_info(repo: Path, tag: str) -> tuple[str | None, list[str]]:
     exist locally as the same tag object (so its message can be read).
     """
     bad: list[str] = []
-    if not valid_tag_name(tag):
+    if not valid_tag_name(tag, registration_name):
+        prefix = registration(registration_name).tag_prefix
         return None, [f"--freeze-tag {tag!r} is not a valid freeze tag name "
-                      f"({TAG_PREFIX}YYYYMMDD)"]
+                      f"({prefix}YYYYMMDD)"]
     r = subprocess.run(
         ["git", "-C", str(repo), "ls-remote", "--tags", ORIGIN,
          f"refs/tags/{tag}", f"refs/tags/{tag}^{{}}"],
@@ -226,13 +277,16 @@ def _tag_message_fields(repo: Path, tag: str) -> tuple[str | None, str | None]:
 def _freeze_problems(*, repo: Path, manifest: Path | None,
                      manifest_sha256: str | None, manifest_doi: str | None,
                      expect_commit: str | None, freeze_tag: str | None,
-                     swhid: str | None) -> list[str]:
+                     swhid: str | None,
+                     registration_name: str = DEFAULT_REGISTRATION) -> list[str]:
     repo = Path(repo)
+    reg = registration(registration_name)
+    amendment_path = reg.amendment_path
     bad: list[str] = []
     if not freeze_tag:
         return ["--freeze-tag missing: the annotated freeze tag is mandatory "
                 "for every registered launch and held-out evaluation"]
-    commit, probs = freeze_tag_info(repo, freeze_tag)
+    commit, probs = freeze_tag_info(repo, freeze_tag, registration_name)
     bad += probs
     if manifest_doi and normalize_doi(manifest_doi) is None:
         bad.append("--manifest-doi (optional supplementary metadata) is not a "
@@ -277,9 +331,9 @@ def _freeze_problems(*, repo: Path, manifest: Path | None,
                         re.MULTILINE)
     if not frozen.search(text):
         bad.append(f"tagged manifest has no 'Status: FROZEN (tag {freeze_tag})' line")
-    amend = _git_bytes(repo, "show", f"{commit}:{AMENDMENT_PATH}")
+    amend = _git_bytes(repo, "show", f"{commit}:{amendment_path}")
     if not amend:
-        bad.append(f"amendment {AMENDMENT_PATH} is not in the tagged commit")
+        bad.append(f"amendment {amendment_path} is not in the tagged commit")
     else:
         prob = amendment_status_problem(amend.decode("utf-8", "replace"), freeze_tag)
         if prob:
@@ -293,7 +347,7 @@ def _freeze_problems(*, repo: Path, manifest: Path | None,
             bad.append(f"--manifest {manifest} is not the tagged manifest path {rel}")
     if not wt.is_file() or wt.read_bytes() != tagged:
         bad.append("working-tree manifest differs from the tagged manifest")
-    wa = repo / AMENDMENT_PATH
+    wa = repo / amendment_path
     if amend and (not wa.is_file() or wa.read_bytes() != amend):
         bad.append("working-tree amendment differs from the tagged amendment")
     try:
@@ -316,7 +370,8 @@ def guard_problems(*, repo: Path, manifest: Path | None = None,
                    manifest_doi: str | None = None,
                    expect_commit: str | None = None,
                    freeze_tag: str | None = None,
-                   swhid: str | None = None) -> list[str]:
+                   swhid: str | None = None,
+                   registration: str = DEFAULT_REGISTRATION) -> list[str]:
     """All reasons the registered start must be refused (empty list = go).
 
     The freeze tag is mandatory; ``manifest_doi`` is optional metadata.
@@ -324,7 +379,7 @@ def guard_problems(*, repo: Path, manifest: Path | None = None,
     return _freeze_problems(
         repo=repo, manifest=manifest, manifest_sha256=manifest_sha256,
         manifest_doi=manifest_doi, expect_commit=expect_commit,
-        freeze_tag=freeze_tag, swhid=swhid)
+        freeze_tag=freeze_tag, swhid=swhid, registration_name=registration)
 
 
 # -- registration context ---------------------------------------------------
@@ -348,23 +403,26 @@ class RegistrationContext:
     doi: str | None = None
     tag_push_time: str | None = None
     tag_push_time_note: str | None = None
+    registration: str = DEFAULT_REGISTRATION  # "n10c" | "n10c-bis"
     _token: Any = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if self._token is not _TOKEN:
             raise GuardError("a RegistrationContext can only be issued by "
                              "campaign.guards.require_guards")
+        registration(self.registration)  # known name
 
     def pins(self) -> dict:
         return {
             "freeze_tag": self.tag, "freeze_commit": self.commit,
             "swhid": self.swhid, "manifest_path": self.manifest_path,
             "manifest_sha256": self.manifest_sha256,
-            "amendment_path": AMENDMENT_PATH,
+            "amendment_path": registration(self.registration).amendment_path,
             "amendment_sha256": self.amendment_sha256,
             "manifest_doi": self.doi,
             "tag_push_time": self.tag_push_time,
             "tag_push_time_note": self.tag_push_time_note,
+            "registration": self.registration,
         }
 
 
@@ -403,24 +461,27 @@ def issue_context(*, repo: Path, manifest: Path | None = None,
                   manifest_doi: str | None = None,
                   expect_commit: str | None = None,
                   freeze_tag: str | None = None, swhid: str | None = None,
-                  push_time_fn=github_push_time) -> RegistrationContext:
+                  push_time_fn=github_push_time,
+                  registration: str = DEFAULT_REGISTRATION) -> RegistrationContext:
     """Run every guard; return the context or raise GuardError."""
     bad = guard_problems(
         repo=repo, manifest=manifest, manifest_sha256=manifest_sha256,
         manifest_doi=manifest_doi, expect_commit=expect_commit,
-        freeze_tag=freeze_tag, swhid=swhid)
+        freeze_tag=freeze_tag, swhid=swhid, registration=registration)
     if bad:
         raise GuardError("REFUSED:\n- " + "\n- ".join(bad))
     repo = Path(repo)
-    commit, _ = freeze_tag_info(repo, freeze_tag)
+    reg = REGISTRATIONS[registration]
+    commit, _ = freeze_tag_info(repo, freeze_tag, registration)
     rel, msg_sha = _tag_message_fields(repo, freeze_tag)
-    amend = _git_bytes(repo, "show", f"{commit}:{AMENDMENT_PATH}") or b""
+    amend = _git_bytes(repo, "show", f"{commit}:{reg.amendment_path}") or b""
     pt = push_time_fn(repo, freeze_tag)
     return RegistrationContext(
         tag=freeze_tag, commit=commit, swhid=swhid, manifest_path=rel,
         manifest_sha256=msg_sha, amendment_sha256=hashlib.sha256(amend).hexdigest(),
         doi=normalize_doi(manifest_doi), tag_push_time=pt,
-        tag_push_time_note=None if pt else PUSH_TIME_NOTE, _token=_TOKEN)
+        tag_push_time_note=None if pt else PUSH_TIME_NOTE,
+        registration=registration, _token=_TOKEN)
 
 
 def make_context_for_tests(**kw) -> RegistrationContext:
@@ -448,6 +509,10 @@ def add_guard_args(p: argparse.ArgumentParser) -> None:
                         "(mandatory for registered runs)")
     p.add_argument("--swhid", help="Software Heritage id of the tagged state "
                    "(mandatory for registered runs)")
+    p.add_argument("--registration", choices=sorted(REGISTRATIONS),
+                   default=DEFAULT_REGISTRATION,
+                   help="n10c (default; tag n10c-freeze-YYYYMMDD) or n10c-bis "
+                        "(tag n10c-bis-freeze-YYYYMMDD, addendum 2026-10-25)")
 
 
 def require_guards(args: argparse.Namespace,
@@ -459,7 +524,8 @@ def require_guards(args: argparse.Namespace,
         manifest_doi=getattr(args, "manifest_doi", None),
         expect_commit=getattr(args, "expect_commit", None),
         freeze_tag=getattr(args, "freeze_tag", None),
-        swhid=getattr(args, "swhid", None))
+        swhid=getattr(args, "swhid", None),
+        registration=getattr(args, "registration", None) or DEFAULT_REGISTRATION)
 
 
 def enforce_cli(args: argparse.Namespace, *, registered: bool,
@@ -568,9 +634,10 @@ def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
                 "larger runs need the registered path (freeze-tag context)")
         return None
     _need_ctx(ctx, "registered training")
+    reg = registration(ctx.registration)
     errs = registered_run_problems(
         arm=arm, seed=seed, condition=condition, total_pair_steps=total_pair_steps,
-        settings=settings, config=config)
+        settings=settings, config=config, registration=reg.name)
     if has_env_factory:
         errs.append("a registered run uses the real Procgen (no env_factory)")
     if options_preset != REGISTERED_TRAIN_OPTIONS:
@@ -583,7 +650,7 @@ def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
                         f"registered {want!r} for seed {seed}")
     if errs:
         raise GuardError("registered training refused: " + "; ".join(errs))
-    host = SEED_HOST[seed]
+    host = reg.seed_host[seed]
     assert_runtime_host(host)
     return host
 
@@ -615,28 +682,34 @@ def check_pretrain_boundary(ctx: Any, *, seed: int, total_steps: int,
 
 def registered_run_problems(*, arm: str, seed: int, condition: str,
                             total_pair_steps: int, settings: dict,
-                            config: dict) -> list[str]:
+                            config: dict,
+                            registration: str = DEFAULT_REGISTRATION) -> list[str]:
     """Registered run tuple, exact budget, frozen configuration and the
-    per-host implementation settings (codes.HOST_SETTINGS)."""
+    per-host implementation settings (codes.HOST_SETTINGS) of the named
+    registration (N10-C cells and seed hosts by default)."""
+    reg = REGISTRATIONS[registration] if registration in REGISTRATIONS else None
+    if reg is None:
+        return [f"unknown registration {registration!r}"]
+    arms_by_condition, seed_host = reg.arms_by_condition, reg.seed_host
     errs: list[str] = []
     if seed not in SEEDS:
         errs.append(f"seed {seed} not in the registered seeds {list(SEEDS)}")
-    if condition not in ARMS_BY_CONDITION:
+    if condition not in arms_by_condition:
         errs.append(f"unknown condition {condition!r}")
-    elif arm not in ARMS_BY_CONDITION[condition]:
+    elif arm not in arms_by_condition[condition]:
         errs.append(f"arm {arm!r} is not run in condition {condition!r} "
-                    f"(allowed: {ARMS_BY_CONDITION[condition]})")
+                    f"(allowed: {arms_by_condition[condition]})")
     if total_pair_steps != REGISTERED_BUDGET:
         errs.append(f"budget {total_pair_steps:,} != registered {REGISTERED_BUDGET:,}")
     for k, v in REGISTERED_TRAIN_CONFIG.items():
         if config.get(k) != v:
             errs.append(f"{k}={config.get(k)!r} != registered {v!r}")
-    if seed in SEED_HOST:
-        want = HOST_SETTINGS[SEED_HOST[seed]]
+    if seed in seed_host:
+        want = HOST_SETTINGS[seed_host[seed]]
         got = {k: settings.get(k) for k in want}
         if got != want:
             errs.append(f"per-host settings {got} != registered "
-                        f"{want} for host {SEED_HOST[seed]!r}")
+                        f"{want} for host {seed_host[seed]!r}")
     return errs
 
 
@@ -655,11 +728,12 @@ def check_eval_boundary(ctx: Any, levels: Any, *, arm: str, condition: str,
                 f"{DEV_LEVELS.start}-{DEV_LEVELS.stop - 1}")
         return False
     _need_ctx(ctx, "held-out evaluation")
+    cells = registration(ctx.registration).arms_by_condition
     errs: list[str] = []
     if lv != list(HELD_OUT_RANGE):
         errs.append(f"levels must be exactly {HELD_OUT_RANGE.start}-"
                     f"{HELD_OUT_RANGE.stop - 1}")
-    if condition not in ARMS_BY_CONDITION or arm not in ARMS_BY_CONDITION.get(condition, ()):
+    if condition not in cells or arm not in cells.get(condition, ()):
         errs.append(f"arm/condition {arm!r}/{condition!r} is not a registered cell")
     for s in seeds:
         if s is not None and s not in SEEDS:

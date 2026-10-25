@@ -53,4 +53,4 @@ for the current reviewer and co-author outreach status.
 
 ---
 
-Last updated : 2026-04-19.
+Last updated : 2026-10-25 (byline policy).

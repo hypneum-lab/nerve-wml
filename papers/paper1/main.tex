@@ -163,21 +163,23 @@ The topology is a learned directed graph with $K \ll N$ active
 out-edges per WML, sampled via Gumbel-softmax top-K during training
 and frozen to $\{0, 1\}$ at inference. The $\gamma / \theta$ multiplex
 invariant (N-3: $\text{role}{=}\varepsilon \Leftrightarrow
-\text{phase}{=}\theta$) functions as a \emph{formal correctness
-contract} --- a type-checker for letter well-formedness at
-composition time --- rather than a differential computational
-mechanism. In the experiments reported in this paper all substrates emit $\pi$
-letters in the $\gamma$ phase exclusively (\S Threats to Validity), so
-the invariant is satisfied by construction; its value is catching
-composition bugs when downstream modules inadvertently emit malformed
-letters (\S\,(7) guard-injection test). The structural inspiration is
+\text{phase}{=}\theta$) is exercised in this paper as a \emph{typing
+guard} on letter well-formedness at send time. Whether it has a
+causal utility for communication or learning is \emph{not
+established} by the ablations reported here: all substrates emit
+$\pi$ letters in the $\gamma$ phase exclusively, and in the dedicated
+ablations reception and consolidation were inactive (\S Threats to
+Validity, erratum of 2026-10-25), so the $\Delta = 0$ they return is
+uninformative. What is established is the guard function: strict mode
+catches malformed letters that a downstream module inadvertently
+emits (\S\,(7) guard-injection test). The structural inspiration is
 the predictive-routing account of Bastos et
 al.~\cite{bastos2020routing} and the 2025 cognitive-process framing by Gabhart et al.~\cite{gabhart2025predictive}, in
 which prediction and error occupy rhythm-specific channels; the earlier
 canonical-microcircuit formulation~\cite{bastos2012canonical} is the
 precursor of that account. We cite this lineage as design inspiration,
 not as a claim of empirical neural mechanism --- the N-3 invariant is a
-formal correctness contract, and the Ruffini et
+typing guard whose mechanistic role is untested, and the Ruffini et
 al.~\cite{ruffini2025comparator} Comparator circuit is named as the
 closest biophysical model should a future version seek a mechanistic
 grounding.
@@ -340,7 +342,7 @@ Our experiments use synthetic tasks and small WML pools. Three threats deserve m
 \begin{tabular}{lrrr}
 \textbf{Scale} & \textbf{Median gap} & \textbf{Max gap} & \textbf{LIF $\geq$ MLP} \\
 \hline
-$N=2$  (1 seed)  & $10.71\%$ & $10.71\%$ & 1/1 \\
+$N=2$  (5 seeds) & $10.71\%$ & $16.91\%$ & 4/5 \\
 $N=16$ (5 seeds) & $6.71\%$  & $10.35\%$ & 5/5 \\
 $N=32$ (5 seeds) & $2.39\%$  & $4.75\%$  & 5/5 \\
 $N=64$ (5 seeds) & $2.73\%$  & $3.71\%$  & 5/5 \\
@@ -350,13 +352,13 @@ $N=64$ (5 seeds) & $2.73\%$  & $3.71\%$  & 5/5 \\
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.95\linewidth]{figures/w2_hard_scaling.pdf}
-\caption{W2-hard polymorphism gap vs pool size $N$. Median $\pm$ IQR over 5 seeds; worst-case overlay. The $5\%$ contract band is satisfied for every seed at $N \geq 32$; the gap plateaus at $\sim 2\text{--}3\%$ rather than decaying to zero. Direction of substrate asymmetry (LIF $\geq$ MLP) is preserved in 15/15 multi-seed measurements.}
+\caption{W2-hard polymorphism gap vs pool size $N$. Median $\pm$ IQR over 5 seeds; worst-case overlay. The $5\%$ contract band is satisfied for every seed at $N \geq 32$; the gap plateaus at $\sim 2\text{--}3\%$ rather than decaying to zero. Direction of substrate asymmetry (LIF $\geq$ MLP) is preserved in 19/20 multi-seed measurements (4/5 at $N=2$, 5/5 at $N \in \{16, 32, 64\}$).}
 \label{fig:w2-scaling-law}
 \end{figure}
 
 \textbf{v0.7 update (plateau at N=64).} The fourth scaling point rules out an asymptotic decay to zero: $\text{mean} = 2.50\%$, $\text{median} = 2.73\%$, $\text{p25} = 1.70\%$, $\text{p75} = 3.31\%$, $\text{max} = 3.71\%$. Comparing to $N=32$'s $2.39\%$ median, we observe a \emph{plateau} in the $\sim 2\text{--}3\%$ band rather than further monotonic decrease. Our honest reading, finalized across four scales and 16 independent runs: (a) on individual instances, spike expressivity adds a measurable $\sim 5\text{--}10\%$ edge over a matched-capacity MLP on non-linear tasks --- this is a real substrate difference, not a bug; (b) pool averaging compresses the difference rapidly between $N=2$ and $N=32$ but then \emph{plateaus} at $\sim 2\text{--}3\%$ --- a substrate-intrinsic floor that cannot be averaged out; (c) the $5\%$ symmetric-gap contract holds distributionally for every seed at $N \geq 32$, so the paper's substrate-agnostic claim is empirically defensible at realistic pool sizes even though a small, stable $\sim 2\text{--}3\%$ LIF edge exists. The tests \texttt{test\_w2\_hard\_n16\_multiseed\_distribution}, \texttt{test\_w2\_hard\_n32\_multiseed\_closes\_under\_5pct}, \texttt{test\_w2\_hard\_n64\_multiseed\_reaches\_plateau}, and \texttt{test\_w2\_hard\_scaling\_law\_is\_monotonic} pin these claims; Figure~\ref{fig:w2-scaling-law} visualizes them.
 
-\textit{Scale.} All experiments use $N=4$ WMLs with $K=1$--2 fan-out. Whether the 5\% polymorphie gap holds at $N=16$ or $N=32$ is an open question tracked in a separate scaling plan; the router's sparsity and the $\gamma$-priority rule may interact non-trivially at scale.
+\textit{Scale.} The Gate-W pilots (W1--W4) use $N=4$ WMLs with $K=1$--2 fan-out. The polymorphism gap has since been measured at $N \in \{16, 32, 64\}$ (\S\ref{sec:scaling}, 5 seeds each): the 5\% contract holds distributionally at $N \geq 32$ and the gap plateaus at $\sim 2$--$3\%$. Whether the router's sparsity and the $\gamma$-priority rule interact non-trivially at larger scale remains open.
 
 \textit{Single-seed artefacts.} The Gate P and Gate M pilots in this draft run on a single seed. Where multi-seed data exists (W2, W4, P1), we report it; elsewhere the reader should treat numbers as suggestive rather than statistically validated.
 
@@ -409,7 +411,7 @@ is trained by fine-tuning only the two transducers $T_{M \to L}, T_{L \to M} \in
 \label{fig:temporal-tx}
 \end{figure}
 
-\textbf{(5) Triple-substrate reality check.} \texttt{TransformerWML} (attention-based, third substrate) joins the polymorphism matrix. On \texttt{FlowProxyTask}, MLP, LIF, and Transformer all converge to $1.000$ accuracy (triple-gap $0\%$); on \texttt{HardFlowProxyTask} at $N=1$, MLP $= 0.547$, LIF $= 0.605$, Transformer $= 0.529$ (triple-gap $12.6\%$), with the LIF edge consistent with the two-substrate finding. Pool-scale multi-seed for TRF is future work.
+\textbf{(5) Triple-substrate reality check.} \texttt{TransformerWML} (attention-based, third substrate) joins the polymorphism matrix. On \texttt{FlowProxyTask}, MLP, LIF, and Transformer all converge to $1.000$ accuracy (triple-gap $0\%$); on \texttt{HardFlowProxyTask} at $N=1$, MLP $= 0.547$, LIF $= 0.605$, Transformer $= 0.529$ (triple-gap $12.6\%$), with the LIF edge consistent with the two-substrate finding. Pool-scale multi-seed for TRF was measured in v1.1.4 (\texttt{run\_triple\_pool\_hard\_multiseed}: 5 MLP + 5 LIF + 5 TRF per 15-WML pool, 5 seeds per scale); the triple-gap closes from $8.2\%$ at $N=15$ to $4.3\%$ at $N=60$ (abstract). Unlike the pairwise law, the per-seed data of that run are not archived under \texttt{papers/paper1/figures/}; the pinned regression test is \texttt{test\_triple\_pool\_hard\_multiseed\_distribution}.
 
 \textbf{(6) Post-hoc validation via mutual-kNN alignment (v1.5.2).}
 To relate Claim B to Huh et al.'s Platonic Representation Hypothesis~\cite{huh2024platonic},
@@ -645,7 +647,7 @@ $p < 10^{-5}$; the substrate-agnostic information-transmission
 principle generalises from synthetic XOR-on-noise and MNIST to
 spontaneous brain activity. (ii) The direction-stability
 signature (LIF $\geq$ MLP) is preserved on real neural data with
-a $+3.6$ pp accuracy advantage, consistent with the $15/15$-seed
+a $+3.6$ pp accuracy advantage, consistent with the 19/20-seed
 HardFlowProxyTask finding. (iii) The cross-domain
 $\mathrm{MI}/H(a)$ ladder (HardFlowProxyTask $0.93 \to$ MNIST
 $0.88 \to$ MoonsTask $0.74 \to$ Sleep-EDF $0.66$) is monotone in
@@ -875,8 +877,11 @@ without the alphabet collapsing below 4 codes.
 
 \textit{Neuromorphic export (Gate Neuro).} LifWML $\to$ INT8 artefact
 (\texttt{neuromorphic.export.quantize\_lif\_wml}) $\to$ pure-numpy
-replay (\texttt{MockNeuromorphicRunner}) $\to$ vendor stubs for
-Intel Loihi~2 and BrainChip Akida. On an untrained LifWML the
+replay (\texttt{MockNeuromorphicRunner}) $\to$ vendor stub for
+BrainChip Akida (the Intel Loihi~2 stub is kept as a historical
+interface only: the \texttt{lava-nc} SDK is archived upstream, last
+push 2026-05-13, and Loihi~2 is not a deployment target). On an
+untrained LifWML the
 PyTorch-to-mock delta is $\sim 19\%$ (INT8 quantization of binary-like
 codebooks is coarse); trained LIFs are expected to tighten this.
 The vendor SDKs are not runtime deps; see
@@ -922,9 +927,13 @@ backward-compatible with the v1.2.3 scientific baseline
 
 \section{Limitations and Future Work}
 \label{sec:limitations}
-The experiments in this draft use toy signals and small WML pools
-($N=4$). Scaling to larger pools, LLM-backed WMLs, and hardware
-neuromorphic deployment is left for follow-up work. The $\gamma$
+The experiments in this draft use toy signals; the Gate-W pilots
+run on $N=4$ WML pools, the polymorphism law on
+$N \in \{16, 32, 64\}$ and the triple-substrate pool on
+$N \in \{15, 30, 60\}$ (\S\ref{sec:scaling}). Larger pools,
+LLM-backed WMLs, and hardware neuromorphic deployment are left for
+follow-up work (Loihi~2 is no longer a candidate target,
+\S\ref{sec:integrations}). The $\gamma$
 priority rule suffices in simulation; a phase-locked oscillator
 regime would give the same invariant without the rule and is a
 natural next step.
@@ -967,25 +976,37 @@ throughout training --- only the $\gamma$ pathway is stressed. An ablation
 of the \texttt{strict\_n3} flag on this pipeline therefore yields
 $\Delta = 0$ at four significant figures across $N \in \{16, 32, 64\}$
 over 5 seeds (\texttt{scripts/ablation\_n3.py}): there are simply no
-$\varepsilon$-letters to validate. Two complementary follow-up experiments confirm this interpretation.
-A full $\gamma \to \theta \to$ consolidate loop where MLP WMLs emit
-$\varepsilon$ naturally via \texttt{emit\_head\_eps} (surprise $>$ 0.30)
-over 3 seeds yields $\Delta = 0$ exactly
-(\texttt{scripts/ablation\_n3\_predictive.py}) --- the invariant is
-satisfied by construction since WMLs hard-code \texttt{phase=Phase.THETA}
-when emitting $\varepsilon$. A violation-injection guard test
+$\varepsilon$-letters to validate. Two complementary follow-up
+experiments were run. A $\gamma \to \theta \to$ consolidate loop
+where MLP WMLs emit $\varepsilon$ naturally via
+\texttt{emit\_head\_eps} (surprise $>$ 0.30) over 3 seeds yields
+$\Delta = 0$ exactly (\texttt{scripts/ablation\_n3\_predictive.py});
+the 200 $\varepsilon$-letters per run are collected, but the
+consolidation step never executes (\texttt{apply\_consolidation:
+false} in all six cells of \texttt{ablation\_n3\_predictive.json},
+an \texttt{AttributeError} on \texttt{MockNerve}), so no learning
+signal could depend on the flag. A violation-injection guard test
 (\texttt{scripts/ablation\_n3\_guard.py}) confirms that strict\_n3=True
 catches $N \cdot v$ injected violations within binomial noise at
-$v \in \{0.05, 0.10, 0.25, 0.50\}$ (3 seeds, $N{=}1000$ letters)
-while strict\_n3=False lets them pass silently. Together, these three
-ablations establish that N-3 is a formal correctness contract --- a
-type-checker for the protocol --- rather than a differential mechanism:
-measurable impact requires deliberate violation injection rather than
-emerging from a correct pipeline. This does not invalidate the predictive-routing ancestry
+$v \in \{0.05, 0.10, 0.25, 0.50\}$ (3 seeds, $N{=}1000$ letters;
+e.g.\ 70 caught at $v = 0.05$, seed 0, mean 57.0 for an expected
+50) while strict\_n3=False lets them pass silently; in all thirty
+cells, however, \texttt{n\_received} is 0: no receiver ever consumed
+a letter. \textbf{Erratum (2026-10-25).} Earlier versions of this
+paragraph concluded that these three ablations ``establish that N-3
+is a formal correctness contract --- a type-checker for the protocol
+--- rather than a differential mechanism''. That reading
+over-interpreted a $\Delta = 0$ measured on an inactive mechanism.
+Corrected status: the typing function of N-3 is established (the
+guard is exercised and catches violations at send time); its causal
+utility for communication and learning is \emph{not established} by
+these ablations, because reception and consolidation were inactive
+and $\Delta = 0$ is therefore uninformative. Testing the differential
+question requires an ablation with \texttt{n\_received} $> 0$ and
+active consolidation, pre-registered with a matched null. This does
+not touch the predictive-routing ancestry
 (\cite{bastos2012canonical, bastos2020routing, gabhart2025predictive}),
-since biological $\gamma / \theta$ rhythm-specific routing is itself a
-gating constraint that determines \emph{when} error channels open, not
-a free parameter that tunes computational behaviour.
+which we cite as design inspiration only (\S\ref{sec:method}).
 
 \textbf{Carrier-spectrum metric — applying the standard effective-rank diagnostic.}
 A pilot run of the GTM (gamma-theta multiplex) ablation reported a

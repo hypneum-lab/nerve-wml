@@ -3,7 +3,7 @@
 **Design spec — v0.1**
 
 - **Date** : 2026-04-18
-- **Author** : Clément Saillant (L'Electron Rare) and nerve-wml contributors
+- **Author** : Clément Saillant (Hypneum Lab — L'Electron Rare); single-PI byline (plural byline removed 2026-10-25)
 - **Status** : brainstorm complete, awaiting implementation plan
 - **Source** : interactive brainstorm session 2026-04-18, artifacts in `.superpowers/brainstorm/72309-1776509772/`
 - **License** : MIT (code) + CC-BY-4.0 (docs)

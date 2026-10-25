@@ -20,6 +20,19 @@ ALPHABET = 16
 N_BITS = 16
 MSG_DIM = 64
 HID_DIM = 256
+# VQ arm (N10-C-bis addendum 2026-10-25, Arm 3; PI decisions): d_e = 8,
+# beta = 0.25 (van den Oord et al. 2017), lambda_VQ = 1.0, plain VQ (no
+# information-bottleneck term, no gate).
+VQ_D_E = 8
+VQ_BETA = 0.25
+VQ_LAMBDA = 1.0
+
+# Arm families (N10-C-bis addendum, Arm 2a implementation note): arms whose
+# sender is the engineered reference (``eng_bits`` required) and arms whose
+# GTM constellation gradient follows the cosine plasticity schedule.
+ENG_SENDER_ARMS: tuple[str, ...] = ("eng", "eng_gtmrx")
+PLASTIC_ARMS: tuple[str, ...] = ("gtm", "eng_gtmrx", "gtm_warm", "gtm_mis")
+GTM_SENDER_ARMS: tuple[str, ...] = ("gtm", "gtm_mis", "gtm_warm")
 
 # CODE_TABLE[a] = 4-bit binary of a, MSB first (ruling R2). [16, 4]
 CODE_TABLE = mx.array(
@@ -247,19 +260,116 @@ class GTMComm(Comm):
         return self.decode(mx.concatenate([pooled, iq], axis=-1))
 
 
+class EngGTMRxComm(GTMComm):
+    """N10-C-bis Arm 2a ``eng_gtmrx``: engineered sender, GTM receive path.
+
+    The sender returns the N10-C engineered 16-bit message bit for bit (as
+    ``EngComm.send``); the receiver is ``GTMComm.receive`` (one-hot rebuilt
+    from the 16 bits, gamma/theta carrier, pooled samples + IQ coordinates,
+    ``decode``), with the trainable constellation. The engineered field
+    boundaries (1 + 5 + 10 bits) do not align with the four 4-bit symbols
+    (disclosed in the addendum). ``encode_logits`` is inherited and stays
+    untrained (no sender gradient): its checkpoint entry is what
+    ``gtm_warm`` excludes when warm-starting.
+    """
+
+    noise_dim = 0  # deterministic sender: no Gumbel noise to store
+
+    def sample_noise(self, rows, key):
+        return None
+
+    def send(self, x, *, train, key, eng_bits, noise=None):
+        if eng_bits is None:
+            raise ValueError("EngGTMRxComm requires eng_bits")
+        bits = eng_bits.astype(mx.float32)
+        return bits, bits
+
+
+class VQComm(Comm):
+    """N10-C-bis Arm 3 ``vq``: plain VQ baseline with GTM's symbol structure.
+
+    Sender: Linear(64 -> K * d_e) reshaped to [K=4, d_e=8]; each slot is
+    quantised to the nearest of A = 16 codebook vectors (one codebook shared
+    by the 4 slots); the 4 indices go on the bus as 4-bit nibbles
+    (``CODE_TABLE``, ruling R2): exactly 16 hard bits, in training too.
+    Straight-through estimator: the receiver gets ``sg(q) + (z - sg(z))``
+    (value exactly the codebook rows, gradient to the encoder only, as in
+    van den Oord et al. 2017). Receiver: codebook lookup of the 4 received
+    indices -> [4, d_e] -> Linear(K * d_e -> 64); no gamma/theta carrier.
+    ``aux_loss(x)`` = lambda_VQ * (codebook loss + beta * commitment loss),
+    recomputed from the sender input ``x`` (no cached state).
+    """
+
+    noise_dim = 0  # deterministic sender
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.encode = nn.Linear(MSG_DIM, K_SYMBOLS * VQ_D_E)
+        # uniform(-1/A, 1/A) codebook initialisation (VQ-VAE reference
+        # implementations); drawn from the global RNG seeded by make_comm
+        self.codebook = mx.random.uniform(
+            -1.0 / ALPHABET, 1.0 / ALPHABET, (ALPHABET, VQ_D_E))
+        self.decode = nn.Linear(K_SYMBOLS * VQ_D_E, MSG_DIM)
+
+    def _quantize(self, x):
+        """x [B, 64] -> (z [B, K, d_e], indices [B, K] int32, q [B, K, d_e])."""
+        z = self.encode(x).reshape(x.shape[0], K_SYMBOLS, VQ_D_E)
+        d = ((z[:, :, None, :] - self.codebook[None, None, :, :]) ** 2).sum(-1)
+        idx = mx.argmin(d, axis=-1).astype(mx.int32)  # [B, K]
+        return z, idx, self.codebook[idx]
+
+    def send(self, x, *, train, key, eng_bits, noise=None):
+        z, idx, q = self._quantize(x)
+        hard_bits = (mx.eye(ALPHABET, dtype=mx.float32)[idx] @ CODE_TABLE)
+        hard_bits = hard_bits.reshape(x.shape[0], N_BITS)
+        if not train:
+            return hard_bits, hard_bits
+        st = mx.stop_gradient(q) + (z - mx.stop_gradient(z))  # value == q
+        return st.reshape(x.shape[0], K_SYMBOLS * VQ_D_E), hard_bits
+
+    def aux_loss(self, x):
+        """VQ loss on the sender rows: codebook + beta * commitment, * lambda."""
+        z, _, q = self._quantize(x)
+        codebook = ((mx.stop_gradient(z) - q) ** 2).sum(-1).mean()
+        commitment = ((z - mx.stop_gradient(q)) ** 2).sum(-1).mean()
+        return VQ_LAMBDA * (codebook + VQ_BETA * commitment)
+
+    def receive(self, msg, h):
+        if msg.shape[-1] == K_SYMBOLS * VQ_D_E:  # training: ST codebook rows
+            q = msg.reshape(msg.shape[0], K_SYMBOLS, VQ_D_E)
+        else:  # evaluation / probes: look the 4 received indices up
+            q = self.codebook[bits_to_indices(msg)]
+        return self.decode(q.reshape(msg.shape[0], K_SYMBOLS * VQ_D_E))
+
+
+def codebook_usage(bits) -> np.ndarray:
+    """Per-codeword counts [16] of the symbol indices carried by 16-bit
+    messages ``bits`` [..., 16] (descriptive VQ codebook usage)."""
+    b = (np.asarray(bits, dtype=np.float32) > 0.5).reshape(-1, K_SYMBOLS, 4)
+    idx = (b * np.array([8, 4, 2, 1], dtype=np.float32)).sum(-1).astype(np.int64)
+    return np.bincount(idx.reshape(-1), minlength=ALPHABET)
+
+
 def make_comm(arm: str, key: mx.array) -> Comm:
     """Build an arm. `key` (mx.random.key) fixes init: it seeds the global MLX
-    RNG used by layer initialisers and, for GTM, the constellation noise."""
+    RNG used by layer initialisers and, for GTM, the constellation noise.
+
+    The seeding path is identical for every arm (N10-C arms unchanged by
+    the N10-C-bis additions; see ``tests/unit/n10c/test_bis_invariance.py``).
+    """
     k_init, k_noise = mx.random.split(key)
     mx.random.seed(int(mx.random.randint(0, 2**31 - 1, (1,), key=k_init).item()))
-    if arm == "gtm":
+    if arm in GTM_SENDER_ARMS:  # gtm, gtm_mis, gtm_warm: the GTMComm module
         return GTMComm(k_noise)
+    if arm == "eng_gtmrx":
+        return EngGTMRxComm(k_noise)
     table = {
         "mlp": MLPComm,
         "atoc": ATOCComm,
         "dial": DIALComm,
         "eng": EngComm,
         "nocomm": NoComm,
+        "vq": VQComm,
     }
     if arm not in table:
         raise ValueError(f"unknown arm {arm!r}")

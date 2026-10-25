@@ -13,12 +13,22 @@ logged here feeds a registered endpoint:
 Checkpoints are safetensors, written only if every parameter is finite.
 A non-finite loss or parameter stops the run (``training_failure``) and
 the last finite checkpoint is kept (registered failure rule).
+
+N10-C-bis control arms (addendum 2026-10-25; the six N10-C arms are
+unchanged): ``gtm_mis`` delivers the hard messages deranged across the
+coop pairs at every rollout step (one derangement per rollout from a
+fifth ``SeedSequence`` child) and replays the delivered bits in the PPO
+update (the sender head gets no gradient, disclosed); ``gtm_warm`` loads
+the ``eng_gtmrx`` checkpoint of the same seed and condition except the
+GTM sender head and ``to_msg`` (``warm_start_from`` / ``warm_exclude``);
+``vq`` adds its VQ auxiliary loss to the PPO loss.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import re
 import sys
 import time
 from collections import deque
@@ -42,11 +52,15 @@ from .codes import (
     CONDITION_CODES,
     HOST_SETTINGS,
     HOSTS,
-    SEED_HOST,
     init_key_int,
     run_seed_sequence,
 )
-from .comm import eng_bits_from_window, plasticity_scale
+from .comm import (
+    ENG_SENDER_ARMS,
+    PLASTIC_ARMS,
+    eng_bits_from_window,
+    plasticity_scale,
+)
 from .options import (  # noqa: F401 - re-exported for callers and tests
     FROZEN_PRESET,
     PRESETS,
@@ -54,7 +68,7 @@ from .options import (  # noqa: F401 - re-exported for callers and tests
     options_for,
 )
 from .policy import PairPolicy
-from .rollout import RolloutBuffer
+from .rollout import RolloutBuffer, deranged_recv, derangement
 from .vec_env import VecCoopEnv
 
 LR = 5e-4
@@ -69,6 +83,14 @@ MINIBATCH_PAIRS = 1024  # = 2048 agent-samples
 SUCCESS_WINDOW = 100
 RIGHT_ACTIONS = (6, 7, 8)
 LEFT_ACTIONS = (0, 1, 2)
+# N10-C-bis: parameters of the warm source NOT loaded by ``gtm_warm``
+# (addendum, Arm 2b): the GTM sender head and the message projection keep
+# the warm run's own seed-stream initialisation (``to_msg`` is untrained in
+# ``eng_gtmrx``, whose sender ignores it).
+WARM_EXCLUDE_DEFAULT: tuple[str, ...] = ("comm.encode_logits", "to_msg")
+WARM_ARMS: tuple[str, ...] = ("gtm_warm",)
+MIS_ARMS: tuple[str, ...] = ("gtm_mis",)
+CKPT_STEP_RE = re.compile(r"^ckpt_(\d+)\.safetensors$")
 
 # Trunk-liveness guard (amendment 2026-10-25). A probe on frames of the
 # current rollout flags the trunk as dead when the positive fraction of the
@@ -121,6 +143,12 @@ class RunRecord:
     liveness: list[dict] = field(default_factory=list)
     liveness_flagged: bool = False
     liveness_abort: bool = False
+    # N10-C-bis (addendum 2026-10-25)
+    warm_from: dict | None = None  # gtm_warm: source checkpoint and sizes
+    warm_ckpt_sha256: str | None = None
+    warm_source_untrained: bool = False  # gtm_warm started from initialisation
+    cumulative_pair_steps: int | None = None  # gtm_warm: source + own budget
+    derangement_stream: dict | None = None  # gtm_mis: 5th SeedSequence child
 
 
 class EngCounters:
@@ -205,6 +233,54 @@ def live_scale(live: mx.array) -> mx.array:
     return live.size / mx.maximum(live.sum(), 1.0)
 
 
+def _recv_bits(mb: dict) -> mx.array:
+    """The replayed received messages of a minibatch ([n, 2, 16]); zeros
+    when the buffer did not store any (N10-C arms, test minibatches)."""
+    r = mb.get("recv_bits")
+    if r is None:
+        r = mx.zeros((mb["actions"].shape[0], 2, 16), dtype=mx.float32)
+    return r
+
+
+def _warm_excluded(name: str, exclude: tuple[str, ...]) -> bool:
+    return any(name == e or name.startswith(e + ".") for e in exclude)
+
+
+def load_warm_start(model: PairPolicy, path: Path,
+                    exclude: tuple[str, ...] = WARM_EXCLUDE_DEFAULT) -> dict:
+    """Load every parameter of the safetensors checkpoint ``path`` into
+    ``model`` by name, except those under the ``exclude`` prefixes, which
+    keep the model's own initialisation (N10-C-bis ``gtm_warm``).
+
+    The checkpoint must hold every non-excluded parameter of the model
+    with the same shape and nothing else (an ``eng_gtmrx`` checkpoint has
+    exactly the ``gtm`` parameter set). Returns the provenance record
+    written to ``run.json`` (``warm_from``).
+    """
+    path = Path(path)
+    ck = mx.load(str(path))
+    own = dict(tree_flatten(model.parameters()))
+    keep = {k: v for k, v in ck.items() if not _warm_excluded(k, exclude)}
+    missing = sorted(k for k in own if not _warm_excluded(k, exclude) and k not in keep)
+    extra = sorted(k for k in keep if k not in own)
+    bad = sorted(k for k, v in keep.items()
+                 if k in own and tuple(v.shape) != tuple(own[k].shape))
+    if missing or extra or bad:
+        raise ValueError(
+            f"warm start {path.name} does not match the model: missing "
+            f"{missing[:4]}, unexpected {extra[:4]}, shape mismatch {bad[:4]}")
+    model.load_weights(list(keep.items()), strict=False)
+    mx.eval(model.parameters())
+    m = CKPT_STEP_RE.match(path.name)
+    return {
+        "path": str(path), "file": path.name,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "loaded": len(keep), "excluded": sorted(k for k in ck if k not in keep),
+        "exclude_prefixes": list(exclude),
+        "source_pair_steps": int(m.group(1)) if m else None,
+    }
+
+
 def micro_slices(n: int, micro: int | None) -> list[tuple[int, int, float]]:
     """(start, stop, weight=size/n) micro-batches of a minibatch of n pairs."""
     if micro is None or micro >= n:
@@ -230,12 +306,13 @@ def accumulate_minibatch(grad_step, mb: dict, micro: int | None, key,
         live = mx.ones(mb["actions"].shape, dtype=mx.float32)
         adv = normalize_adv(mb["advantages"])  # full minibatch statistics
         inv = mx.array(1.0, dtype=mx.float32)
+    recv = _recv_bits(mb)
     acc, total = None, 0.0
     for a, b, w in micro_slices(n, micro):
         loss, norm, g = grad_step(
             mb["obs"][a:b], mb["summary"][a:b], mb["eng_bits"][a:b],
-            mb["actions"][a:b], mb["noise"][a:b], mb["logp"][a:b], adv[a:b],
-            mb["returns"][a:b], key, mx.array(w, dtype=mx.float32),
+            mb["actions"][a:b], mb["noise"][a:b], recv[a:b], mb["logp"][a:b],
+            adv[a:b], mb["returns"][a:b], key, mx.array(w, dtype=mx.float32),
             live[a:b], inv,
         )
         acc = g if acc is None else tree_map(lambda x, y: x + y, acc, g)
@@ -254,20 +331,25 @@ def finalize_grads(grads, scale, plastic: bool = False):
 
 
 def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
-                plastic: bool, mask_finished: bool = False):
-    def logp_value(model, obs, summary, eng, actions, noise, key):
+                plastic: bool, mask_finished: bool = False,
+                use_recv: bool = False):
+    """``use_recv`` (gtm_mis): the update replays the stored received
+    messages through ``recv_bits``; otherwise the partner swap applies and
+    the ``recv`` input is ignored (N10-C arms unchanged)."""
+    def logp_value(model, obs, summary, eng, actions, noise, recv, key):
         out = model(
             obs.astype(mx.float32), summary, eng if use_eng else None,
             train=True, key=key, noise=noise if model.noise_dim else None,
+            recv_bits=recv if use_recv else None,
         )
         logp_all = nn.log_softmax(out.logits, axis=-1)  # [B, 2, 15]
         logp = mx.take_along_axis(logp_all, actions[..., None], axis=-1)[..., 0]
         return out, logp_all, logp
 
-    def loss_fn(model, obs, summary, eng, actions, noise, old_logp, adv, ret,
-                key, live, inv_live):
+    def loss_fn(model, obs, summary, eng, actions, noise, recv, old_logp, adv,
+                ret, key, live, inv_live):
         out, logp_all, logp = logp_value(model, obs, summary, eng, actions,
-                                         noise, key)
+                                         noise, recv, key)
         ratio = mx.exp(logp - old_logp)
         surr = mx.minimum(
             ratio * adv, mx.clip(ratio, 1.0 - CLIP, 1.0 + CLIP) * adv
@@ -280,7 +362,10 @@ def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
         else:  # frozen-tag expression (live / inv_live unused)
             pg = -surr.mean()
             ent = ent_each.mean()
-        return pg + VALUE_COEF * vf - ENTROPY_COEF * ent
+        loss = pg + VALUE_COEF * vf - ENTROPY_COEF * ent
+        if out.aux_loss is not None:  # vq: lambda_VQ * (codebook + beta * commit)
+            loss = loss + out.aux_loss
+        return loss
 
     grad_fn = nn.value_and_grad(model, loss_fn)
     state = [model.state, opt.state]
@@ -291,9 +376,9 @@ def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
     # act on the accumulated gradient in ``finalize_grads``). Shapes are
     # fixed per micro size; a smaller last micro recompiles once.
     @partial(mx.compile, inputs=[model.state], outputs=[model.state])
-    def grad_step(obs, summary, eng, actions, noise, old_logp, adv, ret, key,
-                  weight, live, inv_live):
-        loss, grads = grad_fn(model, obs, summary, eng, actions, noise,
+    def grad_step(obs, summary, eng, actions, noise, recv, old_logp, adv, ret,
+                  key, weight, live, inv_live):
+        loss, grads = grad_fn(model, obs, summary, eng, actions, noise, recv,
                               old_logp, adv, ret, key, live, inv_live)
         grads = tree_map(lambda g: g * weight, grads)
         sq = sum((g * g).sum() for _, g in tree_flatten(grads))
@@ -304,8 +389,9 @@ def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
         opt.update(model, grads)
         return grads
 
-    def ratio_dev(obs, summary, eng, actions, noise, old_logp, key):
-        _, _, logp = logp_value(model, obs, summary, eng, actions, noise, key)
+    def ratio_dev(obs, summary, eng, actions, noise, recv, old_logp, key):
+        _, _, logp = logp_value(model, obs, summary, eng, actions, noise, recv,
+                                key)
         return mx.abs(mx.exp(logp - old_logp) - 1.0).max()
 
     return grad_step, apply_step, ratio_dev
@@ -393,10 +479,21 @@ def train_run(
     options: TrainOptions | None = None,
     init_trunk: Path | None = None,
     dev_kind: str = "dev_train",
+    warm_start_from: Path | None = None,
+    warm_exclude: tuple[str, ...] = WARM_EXCLUDE_DEFAULT,
     _fault_hook: Callable[[int, PairPolicy], None] | None = None,
     _rollout_hook: Callable[[int, RolloutBuffer], None] | None = None,
 ) -> RunRecord:
     """Train one (arm, seed, condition) run; write ``out_dir/run.json``.
+
+    ``warm_start_from`` (N10-C-bis ``gtm_warm`` only): safetensors
+    checkpoint of the ``eng_gtmrx`` run of the same seed and condition,
+    loaded by parameter name after ``PairPolicy`` construction and before
+    the optimizer is initialised, except the ``warm_exclude`` prefixes
+    (fresh Adam state). A ``gtm_warm`` run without a source is flagged
+    ``warm_source_untrained`` (addendum: last finite checkpoint, else the
+    initialisation, never dropped). ``run.json`` records the source file,
+    its SHA-256 and the cumulative budget (source + own pair-steps).
 
     Trains exactly ``total_pair_steps`` pair-steps (the last rollout is
     truncated). Success is measured at the exact boundaries
@@ -482,10 +579,19 @@ def train_run(
         raise ValueError("micro_batch_pairs must be >= 1")
     if total_pair_steps % n_pairs or log_every_pair_steps % n_pairs:
         raise ValueError("total and log interval must be multiples of n_pairs")
+    if warm_start_from is not None and arm not in WARM_ARMS:
+        raise ValueError(f"warm_start_from is only for the arms {WARM_ARMS}")
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     ss = run_seed_sequence(seed, arm, condition)
-    env_ss, init_ss, shuf_ss, key_ss = ss.spawn(4)
+    mis_rng = None
+    if arm in MIS_ARMS:
+        # fifth child for the pair derangement; the first four children are
+        # identical to a 4-child spawn (SeedSequence.spawn is prefix-stable)
+        env_ss, init_ss, shuf_ss, key_ss, mis_ss = ss.spawn(5)
+        mis_rng = np.random.default_rng(mis_ss)
+    else:
+        env_ss, init_ss, shuf_ss, key_ss = ss.spawn(4)
     shuf_rng = np.random.default_rng(shuf_ss)
     key_rng = np.random.default_rng(key_ss)
 
@@ -504,6 +610,8 @@ def train_run(
             _fault_hook, _rollout_hook, micro_batch_pairs, clear_cache,
             n_workers, registration, reg_host, frozen_policy, options,
             init_trunk,
+            mis_rng=mis_rng, warm_start_from=warm_start_from,
+            warm_exclude=warm_exclude,
         )
         outcome = ("liveness_abort" if rec.liveness_abort else
                    "failed_non_finite" if rec.training_failure else "completed")
@@ -520,7 +628,8 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
            shuf_rng, key_rng, fault_hook, rollout_hook, micro_pairs=None,
            clear_cache=False, n_workers=1, registration=None,
            reg_host=None, frozen_policy=False, options=None,
-           init_trunk=None) -> RunRecord:
+           init_trunk=None, mis_rng=None, warm_start_from=None,
+           warm_exclude=WARM_EXCLUDE_DEFAULT) -> RunRecord:
     options = PRESETS[FROZEN_PRESET] if options is None else options
     rec = RunRecord(
         arm=arm, seed=seed, condition=condition,
@@ -543,16 +652,29 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
                 != guards.REGISTERED_TRUNK_SHA256.get(seed)):
             raise guards.GuardError("pre-trained trunk changed after the guard")
         load_trunk(model, init_trunk)
+    if warm_start_from is not None:  # gtm_warm: before opt.init (fresh Adam)
+        info = load_warm_start(model, Path(warm_start_from), warm_exclude)
+        rec.warm_ckpt_sha256 = info.pop("sha256")
+        rec.warm_from = info
+        rec.cumulative_pair_steps = total + (info["source_pair_steps"] or 0)
+    elif arm in WARM_ARMS:
+        rec.warm_source_untrained = True  # kept and flagged, never replaced
+        rec.cumulative_pair_steps = total
+    mis = arm in MIS_ARMS
+    if mis:
+        rec.derangement_stream = {
+            "seed_sequence": [seed, ARM_CODES[arm], CONDITION_CODES[condition]],
+            "spawn_index": 4, "draws": "one derangement of the pairs per rollout"}
     # frozen_policy (throughput measurements): learning rate 0 keeps the
     # policy at its random initialisation while the full update cost is paid
     opt = make_optimizer(options, frozen_policy)
     opt.init(model.trainable_parameters())
     mx.eval(opt.state)
-    use_eng = arm == "eng"
-    plastic = arm == "gtm"
+    use_eng = arm in ENG_SENDER_ARMS
+    plastic = arm in PLASTIC_ARMS
     grad_step, apply_step, ratio_dev = _make_steps(
         model, opt, use_eng, plastic=plastic,
-        mask_finished=options.mask_finished,
+        mask_finished=options.mask_finished, use_recv=mis,
     )
     mask = options.mask_finished
     coin_r = np.float32(options.coin_reward)
@@ -606,13 +728,25 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
         t_len = min(horizon, total_env_steps - env_steps)
         buf = RolloutBuffer(n_pairs, t_len, noise_dim=nd)
         ent_sum, ent_n, ent_min = 0.0, 0, float("inf")
+        sigma = derangement(n_pairs, mis_rng) if mis else None  # per rollout
         for _ in range(t_len):
             k_pol, k_act, k_noise = _key(key_rng), _key(key_rng), _key(key_rng)
             noise = model.sample_noise(n_pairs, k_noise)
-            out = model(
-                mx.array(obs).astype(mx.float32), mx.array(summ), mx_eng(eng),
-                train=True, key=k_pol, noise=noise,
-            )
+            obs_mx, summ_mx = mx.array(obs).astype(mx.float32), mx.array(summ)
+            if mis:
+                # one trunk pass: send, deliver the hard bits deranged across
+                # pairs through the bus (same assertions and bit count), then
+                # receive what the bus delivered
+                enc = model.encode(obs_mx, mx_eng(eng), train=True, key=k_pol,
+                                   noise=noise)
+                mx.eval(enc.hard_bits)
+                recv = bus.deliver(np.array(enc.hard_bits), phase="train",
+                                   pairs=sigma)
+                out = model.heads(enc, summ_mx, mx.array(recv), train=True)
+            else:
+                recv = None
+                out = model(obs_mx, summ_mx, mx_eng(eng), train=True, key=k_pol,
+                            noise=noise)
             act = mx.random.categorical(out.logits.reshape(-1, 15), key=k_act)
             act = act.reshape(n_pairs, 2)
             logp_all = nn.log_softmax(out.logits, axis=-1)
@@ -629,14 +763,16 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
                 ent_sum += float(ent_np.sum())
                 ent_n += int(ent_np.size)
                 ent_min = min(ent_min, float(ent_np.min()))
-            bus.deliver(np.array(out.hard_bits), phase="train")  # enforce + log
+            if not mis:
+                bus.deliver(np.array(out.hard_bits), phase="train")  # enforce + log
             res = vec.step(actions.astype(np.int32))
             coin = (np.zeros((n_pairs, 2), bool) if res.coin is None
                     else np.asarray(res.coin, bool))
             buf.add(obs, summ, eng, actions, np.array(logp), np.array(out.value),
                     res.team_reward, res.done,
                     noise=None if noise is None else np.array(noise),
-                    agent_reward=coin_r * coin.astype(np.float32), live=live)
+                    agent_reward=coin_r * coin.astype(np.float32), live=live,
+                    recv_bits=recv)
             ep_coin |= coin
             for k in np.flatnonzero(res.done):
                 recent.append(float(res.team_reward[k]))
@@ -659,10 +795,17 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
                         and len(recent) == SUCCESS_WINDOW and rate >= 0.5):
                     rec.time_to_half = step
         k_last, k_lnoise = _key(key_rng), _key(key_rng)
-        last = model(
-            mx.array(obs).astype(mx.float32), mx.array(summ), mx_eng(eng),
-            train=True, key=k_last, noise=model.sample_noise(n_pairs, k_lnoise),
-        )
+        nz_last = model.sample_noise(n_pairs, k_lnoise)
+        obs_mx, summ_mx = mx.array(obs).astype(mx.float32), mx.array(summ)
+        if mis:  # bootstrap value under the same deranged delivery (no bus log)
+            enc = model.encode(obs_mx, mx_eng(eng), train=True, key=k_last,
+                               noise=nz_last)
+            mx.eval(enc.hard_bits)
+            recv = deranged_recv(np.array(enc.hard_bits), sigma)
+            last = model.heads(enc, summ_mx, mx.array(recv), train=True)
+        else:
+            last = model(obs_mx, summ_mx, mx_eng(eng), train=True, key=k_last,
+                         noise=nz_last)
         mx.eval(last.value)
         buf.finish(np.array(last.value), GAMMA, LAMBDA)
         if ent_n:
@@ -679,11 +822,13 @@ def _train(vec, arm, seed, condition, total, out_dir, n_pairs, horizon,
                     n_mb = mb["actions"].shape[0]
                     devs = []
                     k_dev = _key(key_rng)
+                    recv_mb = _recv_bits(mb)
                     for a, b, _ in micro_slices(n_mb, micro_pairs):
                         d = ratio_dev(
                             mb["obs"][a:b], mb["summary"][a:b],
                             mb["eng_bits"][a:b], mb["actions"][a:b],
-                            mb["noise"][a:b], mb["logp"][a:b], k_dev,
+                            mb["noise"][a:b], recv_mb[a:b], mb["logp"][a:b],
+                            k_dev,
                         )
                         devs.append(float(d.item()))
                     rec.first_mb_ratio_dev.append(max(devs))
@@ -782,6 +927,9 @@ def main() -> None:
     p.add_argument("--dev-kind", default="dev_train",
                    choices=["dev_train", "gate_dev"],
                    help="development-ledger kind of a development run")
+    p.add_argument("--warm-start-from", type=Path, default=None,
+                   help="gtm_warm only: eng_gtmrx checkpoint (same seed and "
+                        "condition) loaded except comm.encode_logits / to_msg")
     guards.add_guard_args(p)
     a = p.parse_args()
     preset = a.preset or guards.REGISTERED_TRAIN_OPTIONS
@@ -805,16 +953,19 @@ def main() -> None:
             sys.exit("registered-budget training refused: --host is needed to "
                      "select the registered per-host settings")
         settings = dict(HOST_SETTINGS[a.host])
+        reg = guards.registration(a.registration)
         errs = guards.registered_run_problems(
             arm=a.arm, seed=a.seed, condition=a.condition,
             total_pair_steps=a.steps, settings=settings,
             config={"n_pairs": a.n_pairs, "horizon": a.horizon,
                     "log_every_pair_steps": a.log_every,
                     "ckpt_every_pair_steps": a.ckpt_every,
-                    "minibatch_pairs": MINIBATCH_PAIRS})
-        if a.seed in SEED_HOST and SEED_HOST[a.seed] != a.host:
+                    "minibatch_pairs": MINIBATCH_PAIRS},
+            registration=a.registration)
+        seed_host = reg.seed_host
+        if a.seed in seed_host and seed_host[a.seed] != a.host:
             errs.append(f"--host {a.host} is not seed {a.seed}'s fixed host "
-                        f"{SEED_HOST[a.seed]}")
+                        f"{seed_host[a.seed]}")
         if errs:
             sys.exit("registered-budget training refused: " + "; ".join(errs))
         ctx = guards.enforce_cli(a, registered=True,
@@ -824,7 +975,7 @@ def main() -> None:
         horizon=a.horizon, log_every_pair_steps=a.log_every,
         ckpt_every_pair_steps=a.ckpt_every, registration=ctx,
         options=options_for(preset), init_trunk=a.init_trunk,
-        dev_kind=a.dev_kind, **settings,
+        dev_kind=a.dev_kind, warm_start_from=a.warm_start_from, **settings,
     )
     print(json.dumps({k: v for k, v in asdict(rec).items()
                       if k not in ("losses", "liveness", "entropy_curve")}))
