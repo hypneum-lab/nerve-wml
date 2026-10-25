@@ -50,9 +50,20 @@ COUNTED = ("smoke", "dev_train")
 # runs, a separate category with its own cap, and single-agent trunk
 # pre-training runs (arm "trunk", condition "single").
 GATE_KINDS = ("gate_dev", "pretrain_dev")
-# gate_dev: 4 per arm = variants C, A, B (PI decision 2026-10-25 09:10:
-# all three on KXKM-AI) + the slot spent by the 0-step crash of 09:05.
-GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 2}  # per arm / in total
+# gate_dev, per arm: variants C, A, B (PI decision 2026-10-25 09:10: all
+# three on KXKM-AI) + the slot spent by the 0-step crash of 09:05 = 4.
+# gtm, PI decisions 2026-10-25 09:18 and 09:50: + the macM1 (Metal) C check
+# (stopped by hand under memory pressure), + its rerun with the day model
+# paused, + the B rerun after a crash caused by our own concurrent GPU test
+# = 7. pretrain_dev: in total (arm "trunk").
+GATE_DEV_ALLOWANCE = {"gtm": 7}
+GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 2}
+
+
+def gate_allowance(kind: str, arm: str) -> int:
+    if kind == "gate_dev":
+        return GATE_DEV_ALLOWANCE.get(arm, GATE_ALLOWANCE["gate_dev"])
+    return GATE_ALLOWANCE[kind]
 PRETRAIN_ARM, PRETRAIN_CONDITION = "trunk", "single"
 KINDS = (*COUNTED, "throughput_learning", "measurement", *GATE_KINDS)
 LEARNING_KINDS = (*COUNTED, "throughput_learning", "gate_dev")
@@ -166,10 +177,10 @@ def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
         if kind in GATE_KINDS:
             used = sum(1 for r in ledger["runs"]
                        if r.get("kind") == kind and r["arm"] == arm)
-            if used >= GATE_ALLOWANCE[kind]:
+            if used >= gate_allowance(kind, arm):
                 raise SmokeLimitError(
                     f"{kind} for {arm!r}: already used {used} of "
-                    f"{GATE_ALLOWANCE[kind]}")
+                    f"{gate_allowance(kind, arm)}")
         rid = uuid.uuid4().hex
         entry = {
             "id": rid, "claimed": False, "kind": kind, "arm": arm,
