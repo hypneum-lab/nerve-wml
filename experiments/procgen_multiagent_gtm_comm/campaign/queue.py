@@ -187,6 +187,13 @@ def control_queue(registration: str = DEFAULT_REGISTRATION,
     return out
 
 
+def control_partner(spec: RunSpec) -> RunSpec:
+    """The shared-trunk registered run a control run is paired with."""
+    if spec.trunk != PER_RUN:
+        raise ValueError(f"{spec.run_id} is not a per-run-pretraining control run")
+    return RunSpec(spec.arm, spec.seed, spec.condition)
+
+
 def runs_for_host(host: str,
                   registration: str = DEFAULT_REGISTRATION) -> list[RunSpec]:
     if host not in HOSTS:

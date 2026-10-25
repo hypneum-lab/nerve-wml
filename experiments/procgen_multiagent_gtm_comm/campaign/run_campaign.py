@@ -40,9 +40,10 @@ windows). The N10-C campaign (default) is unchanged.
 
 Amendment 2026-10-25: a liveness abort restarts a run once from scratch,
 a second abort is a training failure (``queue``). When the registered
-preset uses a pre-trained trunk, KXKM-AI then trains and evaluates the
-per-run-pretraining control (``queue.control_queue``) after all its
-registered runs, each run with ``init_trunk`` = its own pinned trunk
+preset uses a pre-trained trunk, KXKM-AI also trains and evaluates the
+per-run-pretraining control (``queue.control_queue``), each control run
+right after its shared-trunk registered run of seed 101 (paired in time,
+PI 2026-10-25 19:50), each run with ``init_trunk`` = its own pinned trunk
 (``guards.control_trunk_path``) and ``per_run_trunk=True``; campaign
 completion requires them, cross-play and the estimands never use them.
 """
@@ -677,6 +678,7 @@ class Campaign:
                                  "its registration context (provenance)")
             self.pin({} if reg is None else reg.pins())
         can_eval = self.o.host == "kxkm"
+        twins = {q.control_partner(c).run_id: c for c in self.control_host()}
         for spec in self.queue_all():
             if self.stop_requested():
                 self.event(phase="campaign", state="stopped_by_STOP_file")
@@ -693,15 +695,16 @@ class Campaign:
             rc = self._process(spec, can_eval)
             if rc is not None:
                 return rc
-        # declared per-run-pretraining control (amendment 2026-10-25): after
-        # every registered run of this host; never part of the estimands
-        for spec in self.control_host():
-            if self.stop_requested():
-                self.event(phase="campaign", state="stopped_by_STOP_file")
-                return EXIT_STOP
-            rc = self._process(spec, can_eval)
-            if rc is not None:
-                return rc
+            # declared per-run-pretraining control (PI 2026-10-25 19:50):
+            # paired in time, right after its shared-trunk registered run
+            twin = twins.get(spec.run_id)
+            if twin is not None:
+                if self.stop_requested():
+                    self.event(phase="campaign", state="stopped_by_STOP_file")
+                    return EXIT_STOP
+                rc = self._process(twin, can_eval)
+                if rc is not None:
+                    return rc
         queue = queue + self.control_host()
         states = [self.store.load(s) for s in queue]
         if not can_eval:  # macM1: trains only; evaluation happens on KXKM

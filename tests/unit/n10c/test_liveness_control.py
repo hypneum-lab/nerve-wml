@@ -175,23 +175,32 @@ def test_frozen_preset_has_no_control_runs(tmp_path):
     assert len(calls) == 30 and not any(x.get("per_run_trunk") for x in calls)
 
 
-def test_control_runs_follow_the_registered_kxkm_runs(tmp_path, monkeypatch):
+def test_control_runs_are_paired_with_their_shared_trunk_run(tmp_path, monkeypatch):
     c, calls, evals = _campaign(tmp_path, lambda tag, n, kw: _rec(),
                                 preset="fix-c-coin-pretrain",
                                 monkeypatch=monkeypatch)
     assert c.run() == rc.EXIT_AWAITING_SYNC  # macM1 runs still to sync
     tags = [x["tag"] for x in calls]
     assert len(tags) == 40
-    assert tags[:30] == [s.run_id for s in KX]
-    assert tags[30:] == [s.run_id for s in q.control_queue()]
-    for x in calls[:30]:
-        assert x["init_trunk"] == guards.trunk_path(c.dir, x["seed"])
-        assert "per_run_trunk" not in x
-    for x in calls[30:]:
-        assert x["per_run_trunk"] is True
-        assert x["init_trunk"] == guards.control_trunk_path(
-            c.dir, x["arm"], x["condition"])
-    assert len({x["init_trunk"] for x in calls[30:]}) == 10
+    want = []
+    for s in KX:  # PI 19:50: each control run right after its partner
+        want.append(s.run_id)
+        if s.seed == q.PER_RUN_TRUNK_SEED:
+            want.append(q.CONTROL_PREFIX + s.run_id)
+    assert tags == want
+    assert [t for t in tags if t.startswith("prc-")] == [
+        s.run_id for s in q.control_queue()]
+    ctl = [x for x in calls if x.get("per_run_trunk")]
+    for x in calls:
+        if x.get("per_run_trunk"):
+            assert x["per_run_trunk"] is True
+            assert x["init_trunk"] == guards.control_trunk_path(
+                c.dir, x["arm"], x["condition"])
+        else:
+            assert x["init_trunk"] == guards.trunk_path(c.dir, x["seed"])
+    assert len({x["init_trunk"] for x in ctl}) == 10
+    for t in q.control_queue():
+        assert q.control_partner(t).run_id == t.run_id.removeprefix("prc-")
     for s in q.control_queue():
         assert c.store.load(s)["status"] == q.DONE
         assert c.store.load(s)["trunk"] == q.PER_RUN
