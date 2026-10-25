@@ -122,7 +122,7 @@ Observations, not decision inputs:
 
 - **The own-coin reward is what unblocks learning.** B (pre-trained trunk, team-only reward) keeps the trunk alive by the probe thresholds but does not learn: on both arms the coin rate falls to about 0 (eng 0.21 → 0.005, gtm 0.18 → 0.00) and on `eng` the value is nearly constant across frames (std ≈ 0.001). The thresholds of the liveness guard do not detect this form of failure; the gate criterion (ii)–(iii) does.
 - A ablation exceeds C at 1M on both arms. This is one seed and 1M of 50M pair-steps; the PI's choice of C was made before these results and is not revisited.
-- **macM1 vs KXKM-AI for C/gtm (0.39 vs 0.54):** one seed per host, different per-host settings (no micro-batching on macM1) and backends; not interpretable as a host effect. Peak process memory on macM1 was 11.0 GB (KXKM-AI ≈ 7 GB). The first macM1 attempt (row 7) stalled at a 19 GB footprint next to the second-brain day model; the frozen campaign's macM1 run had trained 18 h next to the same service. The memory budget of macM1 with the pre-trained-trunk path must be settled before the freeze (open decision 6).
+- **macM1 vs KXKM-AI for C/gtm (0.39 vs 0.54):** one seed per host, different per-host settings (no micro-batching on macM1) and backends; not interpretable as a host effect. Peak process memory on macM1 was 11.0 GB (KXKM-AI ≈ 7 GB). The first macM1 attempt (row 7) stalled at a 19 GB footprint next to the second-brain day model; the frozen campaign's macM1 run had trained 18 h next to the same service. The memory budget of macM1 with the pre-trained-trunk path is settled by the PI decision of section 6.
 
 ## 5. New freeze, archive and manifest
 
@@ -136,11 +136,14 @@ This amendment cannot reuse tag `n10c-freeze-20261024`. Before any run of the ne
 
 All other provisions of the 2026-10-23 amendment (arms, conditions, seeds and hosts, 50M pair-steps, evaluation, estimands, failure and exclusion rules) are unchanged, except that the pre-training adds compute per seed (one 1M-step pre-training per registered seed, small next to 10 runs × 50M pair-steps).
 
-## 6. Open decisions for the PI
+## 6. Decided by the PI (2026-10-25)
+
+- **macM1 memory (11:54):** during every macM1 run of the new configuration (pre-training and training), the second-brain day model is paused (`touch ~/.mtplx/paused`, oMLX backend on :8081 stopped) and resumed when the run ends. The registered macM1 per-host settings (no micro-batching) are unchanged. Before the new freeze, the macM1 launcher must do the pause, check free memory before each run and lift the pause afterwards (not yet implemented).
+
+## 7. Open decisions for the PI
 
 1. Ratify the gate pass criterion (section 4) and the gate outcome of C.
 2. Ratify the in-run abort rule (liveness abort = training failure, not replaced).
 3. Pre-trained trunk shared by all arms of a seed (common random numbers) vs. one pre-training per run.
 4. Whether to also enable Adam bias correction (off in MLX by default and in the frozen tag ; not changed here).
 5. Rebase of draft PR #61 (N10-C-bis) on this amendment.
-6. macM1 memory budget: pause the second-brain day model during macM1 runs, cap macM1 runs with micro-batching (then a registered per-host setting change), or move macM1 seeds to KXKM-AI.
