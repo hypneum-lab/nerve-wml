@@ -15,7 +15,12 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
   shrink control, asynchronous dynamics from noisy cues, capacity
   estimator, spurious-state classification, energy, seed-level bootstrap);
   unit tests; results `results/nh01/` and note
-  `docs/results/2026-10-25-nh01-pilot.md`.
+  `docs/results/2026-10-25-nh01-pilot.md`. Pilot run on electron-server
+  (28 080 cells, 26 min): **confirmé** under the pre-registered rule
+  (C1 ratio 3.43 [3.26, 3.60] at t = 10, N = 256; C2 holds within the
+  0.05 tolerance, capacity peaking at t = 10; C3 shrink ratio exactly
+  1.000 at T = 0, 0.980 at T = 0.2). The N = 1 000 run and the
+  VQ-codebook part of NH-01 remain untested.
 
 - **N10-C-bis pre-registration addendum (DRAFT, 2026-10-25), documentation
   only.** Three control arms the running N10-C campaign lacks: a
