@@ -235,7 +235,8 @@ def load_index(index_path: Path) -> tuple[dict, list[str]]:
     index_path = Path(index_path)
     idx = json.loads(index_path.read_text())
     bad = []
-    for e in idx["runs"] + idx.get("pretrain", []):
+    for e in (idx["runs"] + idx.get("pretrain", [])
+              + idx.get("adam_study", [])):
         f = index_path.parent / e["path"]
         if not f.exists():
             bad.append(f"{e['path']}: missing")
@@ -294,11 +295,69 @@ TABLE_HEADER = (
     "|---|---|---|---|---|---|---|---:|---:|---|---|---:|")
 
 
+
+# -- Adam bias-correction study, part A (amendment section 4.3) -------------
+ADAM_PRESETS = ("fix-c-coin-pretrain", "fix-c-coin-pretrain-bc")
+LAST_WINDOW = 200_000  # "last 200k": success-curve points after 800k
+
+
+def _last_mean(run: dict) -> float:
+    pts = [v for s, v in run["success_curve"] if s > GATE_STEPS - LAST_WINDOW]
+    return sum(pts) / len(pts)
+
+
+def _mean_block3(run: dict) -> float:
+    late = run["liveness"][1:]
+    return sum(m["block3_pos_frac"] for m in late) / len(late)
+
+
+ADAM_HEADER = (
+    "| seed | arm | C at 1M | C-bc at 1M | C last-200k mean "
+    "| C-bc last-200k mean | C-bc − C | mean block-3 positive fraction "
+    "C / C-bc | criterion C / C-bc |\n"
+    "|---|---|---:|---:|---:|---:|---:|---|---|")
+
+
+def adam_rows(index_path: Path) -> tuple[list[str], str]:
+    """Rows of the part-A table (C vs C-bc per seed and arm, 1M runs) and a
+    one-line summary, from the ``adam_study`` records of the index."""
+    idx, bad = load_index(index_path)
+    if bad:
+        raise ValueError("gate-cell index check failed: " + "; ".join(bad))
+    cells: dict[tuple[int, str], dict[str, dict]] = {}
+    for e in idx.get("adam_study", []):
+        if e.get("part") != "A" or e.get("kind") != "gate_dev":
+            continue
+        r = json.loads((Path(index_path).parent / e["path"]).read_text())
+        cells.setdefault((e["seed"], e["arm"]), {})[e["preset"]] = r
+    rows, diffs, b3_up = [], [], 0
+    for (seed, arm) in sorted(cells):
+        c, bc = (cells[(seed, arm)][p] for p in ADAM_PRESETS)
+        lc, lb = _last_mean(c), _last_mean(bc)
+        bc3, bb3 = _mean_block3(c), _mean_block3(bc)
+        diffs.append(lb - lc)
+        b3_up += bb3 > bc3
+        ok = [verdict(r, arm=arm, preset=p, seed=seed)[0]
+              for r, p in ((c, ADAM_PRESETS[0]), (bc, ADAM_PRESETS[1]))]
+        rows.append(
+            f"| {seed} | {arm} | {c['success_curve'][-1][1]:.2f} | "
+            f"{bc['success_curve'][-1][1]:.2f} | {lc:.3f} | {lb:.3f} | "
+            f"{lb - lc:+.3f} | {bc3:.3f} / {bb3:.3f} | "
+            f"{'PASS' if ok[0] else 'FAIL'} / {'PASS' if ok[1] else 'FAIL'} |")
+    n = len(diffs)
+    summary = (f"C-bc >= C on the last-200k mean in {sum(d >= 0 for d in diffs)} "
+               f"of {n} cells, mean difference {sum(diffs) / n:+.3f}; mean "
+               f"block-3 positive fraction higher with bias correction in "
+               f"{b3_up} of {n}.")
+    return rows, summary
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = p.add_subparsers(dest="cmd")
     t = sub.add_parser("table", help="amendment gate table from a cell index")
     t.add_argument("index", type=Path)
+    t2 = sub.add_parser("adam", help="Adam study part-A table from a cell index")
+    t2.add_argument("index", type=Path)
     r = sub.add_parser("report", help="report on one host's gate directory")
     r.add_argument("gate_dir", type=Path)
     r.add_argument("--host", default="")
@@ -307,10 +366,16 @@ def main() -> None:
     if a.cmd == "table":
         print(TABLE_HEADER)
         print("\n".join(table_rows(a.index)))
+    elif a.cmd == "adam":
+        rows, summary = adam_rows(a.index)
+        print(ADAM_HEADER)
+        print("\n".join(rows))
+        print()
+        print(summary)
     elif a.cmd == "report":
         print(report(a.gate_dir, a.host, a.seed))
     else:
-        p.error("choose a command: report or table")
+        p.error("choose a command: report, table or adam")
 
 
 if __name__ == "__main__":

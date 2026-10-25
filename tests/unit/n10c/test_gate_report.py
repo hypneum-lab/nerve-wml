@@ -170,13 +170,28 @@ def test_committed_records_are_ledgered_and_within_the_caps():
     from experiments.procgen_multiagent_gtm_comm.harness import devledger
     led = {r["id"]: r for r in devledger.read()["runs"]}
     idx = json.loads((CELLS / "index.json").read_text())
-    for e in idx["runs"] + idx["pretrain"]:
+    for e in idx["runs"] + idx["pretrain"] + idx["adam_study"]:
         r = led[e["ledger_id"]]
         assert r["outcome"] == "completed" and r["seed"] == e["seed"]
         assert r["arm"] == e.get("arm", "trunk")
-        assert e["host"] in r["note"]
+        assert e.get("host", "KXKM-AI") in r["note"]
     by = devledger.counts_by_kind()
     for arm, n in by.get("gate_dev", {}).items():
         assert n <= devledger.gate_allowance("gate_dev", arm)
     assert sum(by.get("pretrain_dev", {}).values()) <= (
         devledger.gate_allowance("pretrain_dev", "trunk"))
+
+
+def test_committed_adam_rows_match_amendment():
+    from experiments.procgen_multiagent_gtm_comm.harness.gate_report import (
+        ADAM_HEADER,
+        adam_rows,
+    )
+    rows, summary = adam_rows(CELLS / "index.json")
+    assert len(rows) == 6  # 3 seeds x 2 arms, C vs C-bc
+    text = AMENDMENT.read_text()
+    for line in ADAM_HEADER.splitlines():
+        assert "  " + line in text
+    for row in rows:
+        assert "  " + row in text, row
+    assert summary in text
