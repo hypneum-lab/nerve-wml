@@ -333,10 +333,25 @@ Python 3.12+, macOS arm64 (MLX-friendly) or Linux x86_64. No vendor SDK deps are
 ## Run the suite
 
 ```bash
-uv run pytest -m "not slow"    # 220+ tests under 80 s on commodity M-series
+uv run pytest -m "not slow"    # 808 tests selected (854 collected, 46 slow) at 1.9.4; CPU-host timing below
 uv run pytest                  # full suite incl. paper figure rendering
 uv run pytest --cov=nerve_core --cov=track_p --cov=track_w --cov=bridge --cov=harness --cov=interpret --cov=neuromorphic
 ```
+
+## Reproduce in one command
+
+- **Install** — `git clone https://github.com/hypneum-lab/nerve-wml.git && cd nerve-wml && uv sync --all-extras`
+  (Python ≥ 3.12 via uv; on Linux the lockfile pulls the CUDA build of torch 2.11 even without a GPU — it runs on CPU, ~5 GB venv).
+- **Run** (Gate W = Claim A, MLP/LIF polymorphism, spec §8.3):
+  `OMP_NUM_THREADS=1 uv run pytest tests/integration/track_w/test_gate_w.py`
+  — or the same aggregate as JSON: `OMP_NUM_THREADS=1 uv run python scripts/track_w_pilot.py`.
+- **Expected output** — `1 passed`; the JSON reads `w1_accuracy 1.0, w2_acc_mlp 1.0, w2_acc_lif 1.0,
+  w2_polymorphie_gap 0.0, w3_gain_over_baseline 0.3913, w4_forgetting 0.0, all_passed true` (`torch.manual_seed(0)`, CPU).
+- **Duration & host** — 24 s on Ubuntu 24.04, 8 vCPU, no GPU, Python 3.14, torch 2.11 CPU build, commit `a894f7b`.
+  Without `OMP_NUM_THREADS=1` the same test took 2.5–10.5 min on that shared host (torch intra-op thread
+  contention). The CI command `uv run pytest -m "not slow"` (808 tests selected) exceeded 15 min there — not a one-command target on CPU.
+- **Full reproduction** — all 11 gate pilots and the figure scripts: "Reproduce the gate numbers" and
+  "Reproduce the v1.1 / v1.2 findings" below; golden NPZs live in `tests/golden/` (see its `README.md`).
 
 ## Reproduce the gate numbers
 
