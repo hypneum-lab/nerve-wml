@@ -121,6 +121,23 @@ def test_registered_run_must_use_registered_preset(monkeypatch):
         None, **(kw | {"total_pair_steps": 64}), options_preset="fix-a-coin") is None
 
 
+def test_gate_dev_runs_may_reach_ten_million_steps():
+    kw = dict(arm="gtm", seed=9101, condition="registered",
+              settings=dict(tr.HOST_SETTINGS["kxkm"]),
+              config=dict(guards.REGISTERED_TRAIN_CONFIG), has_env_factory=False,
+              options_preset="fix-c-coin-pretrain")
+    assert guards.dev_max_pair_steps("gate_dev") == 10_000_000
+    assert guards.dev_max_pair_steps("dev_train") == guards.DEV_MAX_PAIR_STEPS
+    assert guards.check_train_boundary(
+        None, total_pair_steps=10_000_000, dev_kind="gate_dev", **kw) is None
+    with pytest.raises(guards.GuardError, match="gate_dev"):
+        guards.check_train_boundary(
+            None, total_pair_steps=10_000_001, dev_kind="gate_dev", **kw)
+    with pytest.raises(guards.GuardError, match="dev_train"):
+        guards.check_train_boundary(
+            None, total_pair_steps=1_000_001, dev_kind="dev_train", **kw)
+
+
 # -- Adam epsilon -------------------------------------------------------------
 def test_adam_eps_per_preset():
     assert tr.make_optimizer(tr.PRESETS[tr.FROZEN_PRESET]).eps == 1e-8

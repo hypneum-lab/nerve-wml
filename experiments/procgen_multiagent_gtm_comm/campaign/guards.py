@@ -61,6 +61,14 @@ REGISTERED_BUDGET = 50_000_000
 HELD_OUT_START = 1000
 HELD_OUT_RANGE = range(1000, 1200)
 DEV_MAX_PAIR_STEPS = 1_000_000  # development / smoke cap (amendment: <= 1M)
+# Learnability-gate dev runs (kind gate_dev) may run longer: the Adam study's
+# 10M runs (PI decision 2026-10-25 13:33), matching devledger.GATE_MAX_STEPS.
+GATE_DEV_MAX_PAIR_STEPS = 10_000_000
+
+
+def dev_max_pair_steps(dev_kind: str = "dev_train") -> int:
+    """Development cap of a training run of this ledger kind."""
+    return GATE_DEV_MAX_PAIR_STEPS if dev_kind == "gate_dev" else DEV_MAX_PAIR_STEPS
 DEV_LEVELS = range(0, 16)  # training levels only
 REGISTERED_TRAIN_CONFIG = {  # frozen rollout / measurement configuration
     "n_pairs": 64, "horizon": 128, "log_every_pair_steps": 1_000_000,
@@ -545,15 +553,18 @@ def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
                          options_preset: str = REGISTERED_TRAIN_OPTIONS,
                          init_trunk_sha256: str | None = None,
                          pretrained_trunk: bool = False,
+                         dev_kind: str = "dev_train",
                          ) -> str | None:
     """Gate for ``train_run``. Returns the registered host, or None in the
-    explicit development mode (budget <= 1M pair-steps, no context).
+    explicit development mode (budget <= ``dev_max_pair_steps(dev_kind)``:
+    1M, or 10M for gate_dev runs; no context).
     A registered run must use the registered training-options preset."""
     if ctx is None:
-        if total_pair_steps > DEV_MAX_PAIR_STEPS:
+        cap = dev_max_pair_steps(dev_kind)
+        if total_pair_steps > cap:
             raise GuardError(
                 f"training with {total_pair_steps:,} pair-steps refused: the "
-                f"development mode is limited to {DEV_MAX_PAIR_STEPS:,}; "
+                f"development mode ({dev_kind}) is limited to {cap:,}; "
                 "larger runs need the registered path (freeze-tag context)")
         return None
     _need_ctx(ctx, "registered training")

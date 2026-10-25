@@ -444,7 +444,7 @@ def train_run(
     trunk_sha = None if init_trunk is None else file_sha256(init_trunk)
     reg_host = guards.check_train_boundary(
         registration, arm=arm, seed=seed, condition=condition,
-        total_pair_steps=total_pair_steps,
+        total_pair_steps=total_pair_steps, dev_kind=dev_kind,
         settings={"micro_batch_pairs": micro_batch_pairs,
                   "clear_cache": clear_cache, "n_workers": n_workers},
         config={"n_pairs": n_pairs, "horizon": horizon,
@@ -785,10 +785,11 @@ def main() -> None:
     guards.add_guard_args(p)
     a = p.parse_args()
     preset = a.preset or guards.REGISTERED_TRAIN_OPTIONS
-    registered = a.steps > guards.DEV_MAX_PAIR_STEPS
+    dev_cap = guards.dev_max_pair_steps(a.dev_kind)
+    registered = a.steps > dev_cap
     if registered and a.steps != guards.REGISTERED_BUDGET:
         sys.exit(f"training refused: {a.steps:,} pair-steps is neither the "
-                 f"development mode (<= {guards.DEV_MAX_PAIR_STEPS:,}) nor the "
+                 f"development mode (<= {dev_cap:,} for {a.dev_kind}) nor the "
                  f"exact registered budget ({guards.REGISTERED_BUDGET:,})")
     settings = {"micro_batch_pairs": a.micro_batch_pairs,
                 "clear_cache": a.clear_cache, "n_workers": a.n_workers or 1}
