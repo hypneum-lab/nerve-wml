@@ -329,7 +329,15 @@ def adam_rows(index_path: Path) -> tuple[list[str], str]:
         if e.get("part") != "A" or e.get("kind") != "gate_dev":
             continue
         r = json.loads((Path(index_path).parent / e["path"]).read_text())
-        cells.setdefault((e["seed"], e["arm"]), {})[e["preset"]] = r
+        cell = cells.setdefault((e["seed"], e["arm"]), {})
+        if e["preset"] in cell or e["preset"] not in ADAM_PRESETS:
+            raise ValueError(f"adam_study: duplicate or unknown entry {e['path']}")
+        cell[e["preset"]] = r
+    seeds = {s for s, _ in cells}
+    want = {(s, a) for s in seeds for a in GATE_ARMS}
+    if set(cells) != want or any(len(v) != 2 for v in cells.values()):
+        raise ValueError("adam_study part A must hold C and C-bc for both "
+                         "arms of every seed")
     rows, diffs, b3_up = [], [], 0
     for (seed, arm) in sorted(cells):
         c, bc = (cells[(seed, arm)][p] for p in ADAM_PRESETS)

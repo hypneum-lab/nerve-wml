@@ -62,6 +62,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from ..harness.codes import HOST_SETTINGS
@@ -301,6 +302,7 @@ class Campaign:
     def train(self, spec: q.RunSpec, st: dict) -> None:
         attempt = len(st["attempts"]) + 1
         rd = self.run_dir(spec)
+        self._settle_liveness_aside(spec, st)  # an interrupted transition
         if rd.exists():  # restart from scratch; keep the failed partial aside
             aside = rd.with_name(f"{spec.run_id}.failed-{st['infra_failures']}")
             shutil.move(str(rd), str(aside))
@@ -351,26 +353,16 @@ class Campaign:
                        state="infra_failed", reason=st["failure_reason"],
                        infra_failures=st["infra_failures"])
             return
+        self._finish_attempt(spec, st, attempt, rec)
+
+    def _finish_attempt(self, spec: q.RunSpec, st: dict, attempt: int,
+                        rec: Any) -> None:
+        """Record a finished training attempt (``rec``: the RunRecord, or
+        its run.json when recovering an interrupted liveness abort)."""
+        rd = self.run_dir(spec)
         n_live = st.get("liveness_restarts", 0)
         if getattr(rec, "liveness_abort", False) and n_live < q.MAX_LIVENESS_RESTARTS:
-            # amendment 2026-10-25 (outcome-blind: the trunk-liveness probe
-            # only): first abort -> one restart from scratch, counted apart
-            # from infrastructure restarts; the aborted attempt is kept aside
-            # and never evaluated
-            st["liveness_restarts"] = n_live + 1
-            aside = rd.with_name(f"{spec.run_id}.liveness-abort-{n_live + 1}")
-            shutil.move(str(rd), str(aside))
-            st["attempts"].append({
-                "n": attempt, "outcome": "liveness_abort", "at": _now(),
-                "reason": rec.failure_reason, "kept_aside": aside.name,
-                "wall_time_s": rec.wall_time_s,
-                "pair_steps_done": rec.pair_steps_done})
-            st.update(status=q.LIVENESS_RESTART, failure_reason=rec.failure_reason,
-                      last_checkpoint=None, last_checkpoint_sha256=None)
-            self.store.save(st)
-            self.event(run=spec.run_id, attempt=attempt, phase="train",
-                       state="liveness_abort_restart", reason=rec.failure_reason,
-                       liveness_restarts=st["liveness_restarts"])
+            self._liveness_restart(spec, st, attempt, rec)
             return
         st["last_checkpoint"] = rec.last_checkpoint
         st["last_checkpoint_sha256"] = checkpoint_sha256(rd, rec.last_checkpoint)
@@ -399,6 +391,65 @@ class Campaign:
         self.store.save(st)
         self.event(run=spec.run_id, attempt=attempt, phase="train", state=outcome,
                    wall_time_s=rec.wall_time_s)
+
+    # -- liveness-abort restart (amendment 2026-10-25) -------------------
+    def _liveness_restart(self, spec: q.RunSpec, st: dict, attempt: int,
+                          rec: Any) -> None:
+        """First liveness abort (outcome-blind: the trunk-liveness flag of
+        the training record only): one restart from scratch, counted apart
+        from infrastructure restarts. The transition is persisted BEFORE
+        the aborted attempt is moved aside (idempotent, see
+        ``_settle_liveness_aside``), so an interruption can never grant a
+        second liveness restart."""
+        n = st.get("liveness_restarts", 0) + 1
+        aside = f"{spec.run_id}.liveness-abort-{n}"
+        st["liveness_restarts"] = n
+        st["attempts"].append({
+            "n": attempt, "outcome": "liveness_abort", "at": _now(),
+            "reason": rec.failure_reason, "kept_aside": aside,
+            "wall_time_s": rec.wall_time_s,
+            "pair_steps_done": rec.pair_steps_done})
+        st.update(status=q.LIVENESS_RESTART, failure_reason=rec.failure_reason,
+                  last_checkpoint=None, last_checkpoint_sha256=None,
+                  liveness_aside=aside)
+        self.store.save(st)
+        self._settle_liveness_aside(spec, st)
+        self.event(run=spec.run_id, attempt=attempt, phase="train",
+                   state="liveness_abort_restart", reason=rec.failure_reason,
+                   liveness_restarts=n, kept_aside=aside)
+
+    def _settle_liveness_aside(self, spec: q.RunSpec, st: dict) -> None:
+        """Move the aborted attempt's run directory to its recorded aside
+        name if that has not happened yet (no-op otherwise)."""
+        name = st.get("liveness_aside")
+        if st.get("status") != q.LIVENESS_RESTART or not name:
+            return
+        rd, dst = self.run_dir(spec), self.run_dir(spec).with_name(name)
+        if rd.exists() and not dst.exists():
+            shutil.move(str(rd), str(dst))
+
+    def recover_interrupted_abort(self, spec: q.RunSpec, st: dict) -> dict:
+        """A ``running`` status whose run directory already holds the
+        run.json of a liveness-aborted attempt was interrupted between the
+        end of training and the status update: record that abort (restart
+        or final training failure, as in ``train``) instead of counting an
+        infrastructure failure."""
+        f = self.run_dir(spec) / "run.json"
+        if st["status"] != q.RUNNING or not f.exists():
+            return st
+        try:
+            d = json.loads(f.read_text())
+        except (OSError, ValueError):
+            return st
+        if not d.get("liveness_abort"):
+            return st
+        rec = SimpleNamespace(**{k: d.get(k) for k in (
+            "training_failure", "liveness_abort", "pair_steps_done",
+            "last_checkpoint", "wall_time_s", "failure_reason")})
+        self.event(run=spec.run_id, phase="train",
+                   state="recovered_interrupted_liveness_abort")
+        self._finish_attempt(spec, st, len(st["attempts"]) + 1, rec)
+        return st
 
     def evaluate(self, spec: q.RunSpec, st: dict) -> None:
         if self.o.host != "kxkm":
@@ -590,7 +641,8 @@ class Campaign:
     def _process(self, spec: q.RunSpec, can_eval: bool) -> int | None:
         """Train (with infrastructure and liveness restarts), evaluate and
         archive one run of this host; an exit code stops the campaign."""
-        st = self.store.recover_stale(spec)
+        st = self.recover_interrupted_abort(spec, self.store.load(spec))
+        st = self.store.recover_stale(spec) if st["status"] == q.RUNNING else st
         self.finalize_exhausted(spec, st)
         if q.needs_training(st):
             ok, free = self.gpu_ok()

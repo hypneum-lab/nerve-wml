@@ -248,3 +248,67 @@ def test_control_trunk_paths_are_distinct_from_the_shared_one(tmp_path):
     paths = {guards.control_trunk_path(tmp_path, r.arm, r.condition)
              for r in q.control_queue()}
     assert len(paths) == 10 and guards.trunk_path(tmp_path, 101) not in paths
+
+
+# -- interruption windows of the liveness transition (review round 5) -------
+def test_interruption_after_persisting_the_abort_never_grants_a_second(
+        tmp_path, monkeypatch):
+    c, calls, _ = _campaign(tmp_path, _abort_first_once)
+    c.pin({})
+    real_move = rc.shutil.move
+    boom = {"armed": True}
+
+    def flaky_move(src, dst):
+        if boom["armed"] and ".liveness-abort-" in str(dst):
+            boom["armed"] = False
+            raise KeyboardInterrupt  # killed right after the status save
+        return real_move(src, dst)
+
+    monkeypatch.setattr(rc.shutil, "move", flaky_move)
+    with pytest.raises(KeyboardInterrupt):
+        c._process(FIRST, can_eval=True)
+    st = c.store.load(FIRST)
+    assert st["status"] == q.LIVENESS_RESTART and st["liveness_restarts"] == 1
+    assert (c.dir / "runs" / FIRST.run_id).exists()  # not moved yet
+    c2, calls2, _ = _campaign(tmp_path, lambda tag, n, kw: _rec(abort=True))
+    c2._process(FIRST, can_eval=True)  # resume: the restart already counted
+    st = c2.store.load(FIRST)
+    assert (c2.dir / "runs" / f"{FIRST.run_id}.liveness-abort-1").exists()
+    assert st["infra_failures"] == 0 and len(calls2) == 1
+    assert st["status"] == q.TRAINING_FAILURE and st["liveness_abort"] is True
+
+
+def _interrupted_running(c, restarts):
+    st = c.store.load(FIRST)
+    st.update(status=q.RUNNING, liveness_restarts=restarts)
+    c.store.save(st)
+    rd = c.dir / "runs" / FIRST.run_id
+    rd.mkdir(parents=True)
+    (rd / f"ckpt_{TOTAL // 2}.safetensors").write_text("aborted")
+    (rd / "run.json").write_text(json.dumps({
+        "training_failure": True, "liveness_abort": True,
+        "pair_steps_done": TOTAL // 2,
+        "last_checkpoint": f"ckpt_{TOTAL // 2}.safetensors",
+        "wall_time_s": 1.0, "failure_reason": "trunk liveness guard"}))
+
+
+def test_abort_interrupted_before_the_status_save_is_recovered(tmp_path):
+    c, calls, _ = _campaign(tmp_path, lambda tag, n, kw: _rec())
+    c.pin({})
+    _interrupted_running(c, restarts=0)
+    c._process(FIRST, can_eval=True)
+    st = c.store.load(FIRST)
+    assert st["status"] == q.DONE and st["infra_failures"] == 0
+    assert st["liveness_restarts"] == 1 and len(calls) == 1
+    assert [a["outcome"] for a in st["attempts"]] == ["liveness_abort", "trained"]
+
+
+def test_second_abort_interrupted_before_the_save_stays_final(tmp_path):
+    c, calls, evals = _campaign(tmp_path, lambda tag, n, kw: _rec())
+    c.pin({})
+    _interrupted_running(c, restarts=1)
+    c._process(FIRST, can_eval=True)
+    st = c.store.load(FIRST)
+    assert st["status"] == q.TRAINING_FAILURE and calls == []  # no 3rd attempt
+    assert st["infra_failures"] == 0 and st["eval_done"]
+    assert evals[0].read_text() == "aborted"
