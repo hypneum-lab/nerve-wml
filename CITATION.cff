@@ -21,7 +21,7 @@ repository-code: "https://github.com/hypneum-lab/nerve-wml"
 url: "https://github.com/hypneum-lab/nerve-wml"
 license: MIT
 license-url: "https://github.com/hypneum-lab/nerve-wml/blob/master/LICENSE"
-version: "1.9.0"
+version: "1.9.4"
 keywords:
   - substrate-agnostic protocol
   - World Model Language

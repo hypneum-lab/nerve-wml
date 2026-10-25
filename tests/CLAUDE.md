@@ -2,7 +2,7 @@
 
 ## Framework
 
-pytest — 605 tests: 44 marked slow (L3–L4 integration/golden); remainder run unlabelled.
+pytest — 854 tests collected at 1.9.4 (Linux): 46 marked slow (L3–L4 integration/golden); remainder run unlabelled.
 
 ## Running
 
