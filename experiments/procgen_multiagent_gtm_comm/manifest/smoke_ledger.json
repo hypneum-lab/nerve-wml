@@ -819,9 +819,24 @@
       "levels": "training (start_level=0, num_levels=16)",
       "policy_updates": true,
       "started_at": "2026-10-25T18:24:39+0100",
-      "outcome": "started",
+      "outcome": "completed",
       "claimed_at": "2026-10-25T18:24:39+0100",
-      "note": "host KXKM-AI; preset fix-c-coin-pretrain; part (B) 10M; tree also with the 10M guard patch (committed as b5d76a9); outcome \"started\" = still running when merged (2026-10-25 19:26); code f4a4778 + allowance change of 13:33 (working copy repo-adam); Adam study (PI 13:33, section 4.3)"
+      "note": "host KXKM-AI; preset fix-c-coin-pretrain; part (B) 10M; tree also with the 10M guard patch (committed as b5d76a9); code f4a4778 + allowance change of 13:33 (working copy repo-adam); Adam study (PI 13:33, section 4.3)"
+    },
+    {
+      "id": "e8c9f1c2dfd44d80a958a29e1f9d3a53",
+      "claimed": true,
+      "kind": "gate_dev",
+      "arm": "gtm",
+      "condition": "registered",
+      "seed": 9101,
+      "steps": 10000000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "policy_updates": true,
+      "started_at": "2026-10-25T20:28:39+0100",
+      "outcome": "completed",
+      "claimed_at": "2026-10-25T20:28:39+0100",
+      "note": "host KXKM-AI; preset fix-c-coin-pretrain-bc; part (B) 10M; tree also with the 10M guard patch (committed as b5d76a9); code f4a4778 + allowance change of 13:33 (working copy repo-adam); Adam study (PI 13:33, section 4.3)"
     }
   ],
   "arm_allowance": {
