@@ -29,13 +29,16 @@ busy() {  # another GPU job of ours alive, or a non-tolerated GPU process
   if pgrep -f 'procgen_multiagent_gtm_comm\.(harness|campaign)\.' \
       | grep -vx "$$" >/dev/null; then return 0; fi
   local pids
-  pids=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null)
+  pids=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null) \
+    || return 0
   for p in $pids; do
     case " $TOLERATED_PIDS " in *" $p "*) ;; *) return 0 ;; esac
   done
   local free
-  free=$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits)
-  [ "${free:-0}" -lt "$MIN_FREE_MIB" ]
+  free=$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits 2>/dev/null) \
+    || return 0  # query failed: treat as busy
+  [[ "$free" =~ ^[0-9]+$ ]] || return 0  # N/A or garbage: busy
+  [ "$free" -lt "$MIN_FREE_MIB" ]
 }
 
 wait_free() {
@@ -63,7 +66,9 @@ log "lane start, code $(git -C "$REPO" rev-parse --short HEAD), trunk $(sha256su
 run eng_gtmrx
 # warm source: the last checkpoint of the eng_gtmrx gate run (addendum:
 # the last finite checkpoint of a failed source, else initialisation)
-SRC=$(ls -v "$OUT/$PRESET-eng_gtmrx"/ckpt_*.safetensors 2>/dev/null | tail -1)
+SRC=$(ls -v "$OUT/$PRESET-eng_gtmrx" 2>/dev/null \
+      | grep -E '^ckpt_[0-9]+\.safetensors$' | tail -1)  # never a .tmp file
+[ -n "$SRC" ] && SRC="$OUT/$PRESET-eng_gtmrx/$SRC"
 if [ -n "$SRC" ] && [ -f "$SRC" ]; then
   run gtm_warm --warm-start-from "$SRC"
 else  # rule of the addendum: no finite source -> initialisation, flagged

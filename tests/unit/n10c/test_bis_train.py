@@ -365,3 +365,33 @@ def test_vq_aux_loss_is_masked_for_finished_agents_under_fix_c():
     assert codebook_grad(True, none_live) == 0.0  # every sender finished
     assert codebook_grad(True, np.ones((6, 2))) > 0.0
     assert codebook_grad(False, none_live) > 0.0  # frozen path: unmasked
+
+
+def test_vq_mask_is_per_agent_row_and_micro_batch_invariant():
+    model = PairPolicy("vq", mx.random.key(2))
+    mb = _mb(6, model, seed=3)
+    live = np.ones((6, 2), np.float32)
+    live[:, 1] = 0.0  # agent 1 finished in every pair
+    live[4, 0] = 0.0  # and agent 0 of pair 4
+
+    def grads(m, micro):
+        opt = optim.Adam(learning_rate=5e-4)
+        opt.init(model.trainable_parameters())
+        gs = _make_steps(model, opt, False, plastic=False, mask_finished=True)[0]
+        _, g, ok = accumulate_minibatch(gs, m, micro, mx.random.key(0), mask=True)
+        assert ok
+        return {k: np.array(v) for k, v in tree_flatten(g)}
+
+    m = dict(mb, live=mx.array(live))
+    full, micro = grads(m, None), grads(m, 2)  # 2 + 2 + 2 pairs
+    for k in full:
+        np.testing.assert_allclose(micro[k], full[k], rtol=2e-4, atol=1e-7)
+    # the codebook gets gradient only from the (masked) VQ loss: changing the
+    # observations of finished rows leaves it unchanged
+    obs = np.array(mb["obs"])
+    obs[:, 1] = 255 - obs[:, 1]
+    obs[4, 0] = 255 - obs[4, 0]
+    other = grads(dict(m, obs=mx.array(obs)), None)
+    np.testing.assert_allclose(other["comm.codebook"], full["comm.codebook"],
+                               rtol=1e-5, atol=1e-8)
+    assert np.abs(full["comm.codebook"]).max() > 0.0
