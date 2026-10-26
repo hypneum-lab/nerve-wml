@@ -65,6 +65,9 @@ class PolicyOut(NamedTuple):
     # auxiliary sender loss (N10-C-bis ``vq`` arm, training only); None for
     # every other arm and at evaluation, so the N10-C loss is unchanged
     aux_loss: mx.array | None = None
+    # the same loss per sender row [B, 2] (amendment 2026-10-25: masked for
+    # finished agents under mask_finished, as the policy and entropy terms)
+    aux_rows: mx.array | None = None
 
 
 class Encoded(NamedTuple):
@@ -132,14 +135,16 @@ class PairPolicy(nn.Module):
         recv = self.comm.receive(msg_in, enc.h)
         z = mx.concatenate([enc.h, recv, summary.reshape(b * 2, SUMMARY_DIM)], axis=-1)
         z = nn.relu(self.fuse(z))
-        aux = None
+        aux = aux_rows = None
         if train and hasattr(self.comm, "aux_loss"):
             aux = self.comm.aux_loss(enc.x_msg)
+            aux_rows = self.comm.aux_loss_rows(enc.x_msg).reshape(b, 2)
         return PolicyOut(
             self.pi(z).reshape(b, 2, N_ACTIONS),
             self.v(z).reshape(b, 2),
             enc.hard_bits,
             aux,
+            aux_rows,
         )
 
     def __call__(

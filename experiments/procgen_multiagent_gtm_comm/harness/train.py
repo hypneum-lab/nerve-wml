@@ -369,7 +369,12 @@ def _make_steps(model: PairPolicy, opt: optim.Optimizer, use_eng: bool,
             ent = ent_each.mean()
         loss = pg + VALUE_COEF * vf - ENTROPY_COEF * ent
         if out.aux_loss is not None:  # vq: lambda_VQ * (codebook + beta * commit)
-            loss = loss + out.aux_loss
+            if mask_finished and out.aux_rows is not None:
+                # finished senders excluded, as the policy / entropy terms
+                # (masked mean over the full minibatch; PI 2026-10-26)
+                loss = loss + (out.aux_rows * live).mean() * inv_live
+            else:  # frozen-tag expression
+                loss = loss + out.aux_loss
         return loss
 
     grad_fn = nn.value_and_grad(model, loss_fn)

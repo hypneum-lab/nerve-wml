@@ -338,3 +338,30 @@ def test_gtm_warm_under_fix_c_records_the_warm_source_trunk(tmp_path):
     cold = _run(tmp_path, "gtm_warm", seed=3, name="cold", options=opts,
                 init_trunk=trunk)
     assert cold.trunk_mode == "shared" and cold.warm_source_untrained
+
+
+def test_vq_aux_loss_is_masked_for_finished_agents_under_fix_c():
+    """PI decision 2026-10-26: with mask_finished the VQ loss of finished
+    senders is excluded (masked mean over the full minibatch), as the
+    policy and entropy terms; the frozen expression is unchanged."""
+    model = PairPolicy("vq", mx.random.key(1))
+    mb = _mb(6, model)
+    enc = model.encode(mb["obs"].astype(mx.float32), None, train=True,
+                       key=mx.random.key(0))
+    rows = model.comm.aux_loss_rows(enc.x_msg)
+    assert float(rows.mean()) == pytest.approx(
+        float(model.comm.aux_loss(enc.x_msg)), rel=1e-6)
+
+    def codebook_grad(mask, live):
+        opt = optim.Adam(learning_rate=5e-4)
+        opt.init(model.trainable_parameters())
+        gs = _make_steps(model, opt, False, plastic=False, mask_finished=mask)[0]
+        m = dict(mb, live=mx.array(live.astype(np.float32)))
+        _, g, ok = accumulate_minibatch(gs, m, None, mx.random.key(0), mask=mask)
+        assert ok
+        return np.abs(np.array(dict(tree_flatten(g))["comm.codebook"])).max()
+
+    none_live = np.zeros((6, 2))
+    assert codebook_grad(True, none_live) == 0.0  # every sender finished
+    assert codebook_grad(True, np.ones((6, 2))) > 0.0
+    assert codebook_grad(False, none_live) > 0.0  # frozen path: unmasked
