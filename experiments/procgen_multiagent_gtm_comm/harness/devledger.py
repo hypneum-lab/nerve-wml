@@ -66,7 +66,12 @@ GATE_KINDS = ("gate_dev", "pretrain_dev")
 # seeds x 2 arms x 2 presets at 1M (+3 pre-trainings on KXKM-AI) and
 # 2 long gtm runs (10M) = gtm 20, eng 13, pretrain_dev 8. gate_dev runs may
 # then reach GATE_MAX_STEPS.
-GATE_DEV_ALLOWANCE = {"gtm": 20, "eng": 13}
+# PI decision 2026-10-26 22:02, before any result: every N10-C-bis arm
+# must pass the learnability gate under fix C before the N10-C-bis tag;
+# 3 gate_dev runs per new arm (one gate run + up to 2 infrastructure
+# reruns), dev seed 9101, 1M pair-steps, the seed-9101 trunk.
+GATE_DEV_ALLOWANCE = {"gtm": 20, "eng": 13, "gtm_mis": 3, "eng_gtmrx": 3,
+                      "gtm_warm": 3, "vq": 3}
 GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 8}
 GATE_MAX_STEPS = {"gate_dev": 10_000_000}
 

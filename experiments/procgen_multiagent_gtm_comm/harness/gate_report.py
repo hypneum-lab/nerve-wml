@@ -42,7 +42,8 @@ GATE_CONDITION = "registered"
 # equality is asserted in tests/unit/n10c/test_trunk_fix.py).
 LIVENESS_MIN_FRAC = 0.01
 LIVENESS_STD_EPS = 1e-6
-_DIR = re.compile(r"^(?P<preset>.+?)-(?P<arm>gtm|eng)(?P<suffix>-.+)?$")
+_DIR = re.compile(r"^(?P<preset>.+?)-(?P<arm>gtm_mis|gtm_warm|eng_gtmrx|vq|gtm|eng)"
+                  r"(?P<suffix>-.+)?$")
 
 
 def _finite(x) -> bool:

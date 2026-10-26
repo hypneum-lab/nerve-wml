@@ -195,3 +195,19 @@ def test_committed_adam_rows_match_amendment():
     for row in rows:
         assert "  " + row in text, row
     assert summary in text
+
+
+def test_bis_gate_runs_parse_and_have_their_allowance():
+    from experiments.procgen_multiagent_gtm_comm.harness import devledger
+    from experiments.procgen_multiagent_gtm_comm.harness.gate_report import (
+        parse_run_dir,
+    )
+    for arm in ("gtm_mis", "gtm_warm", "eng_gtmrx", "vq"):
+        assert parse_run_dir(f"fix-c-coin-pretrain-{arm}") == (
+            "fix-c-coin-pretrain", arm, "")
+        assert devledger.gate_allowance("gate_dev", arm) == 3  # PI 2026-10-26
+        assert verdict(_run(arm=arm), arm=arm)[0]
+    assert parse_run_dir("fix-c-coin-pretrain-bc-eng") == (
+        "fix-c-coin-pretrain-bc", "eng", "")
+    assert parse_run_dir("fix-c-coin-pretrain-gtm-macm1-r2") == (
+        "fix-c-coin-pretrain", "gtm", "-macm1-r2")
