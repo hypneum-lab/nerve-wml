@@ -9,7 +9,9 @@
 # (ComfyUI, pid 712018 by default, is tolerated and never touched).
 #   REPO=/ai/saisail/n10c-dev/repo-bis OUT=/ai/saisail/n10c-dev/gate-bis \
 #   TRUNK=/ai/saisail/n10c-dev/gate/pretrain/trunk.safetensors \
-#   [ARMS="vq"] nohup bash gate_bis_lane.sh &   (no tmux session: the E1-small
+#   ARMS=vq nohup bash gate_bis_lane.sh </dev/null >/dev/null 2>&1 &
+#   (ARMS optional, default all four; a rerun needs a NEW OUT: the lane
+#   refuses to reuse a run directory. No tmux session: the E1-small
 #   GPU wait helper waits on gatebis / n10c-dev-* sessions, which would
 #   deadlock against this lane's own wait)
 set -u
@@ -22,6 +24,9 @@ MIN_FREE_MIB="${MIN_FREE_MIB:-9500}"
 SEED=9101
 ARMS="${ARMS:-eng_gtmrx gtm_warm gtm_mis vq}"
 want() { case " $ARMS " in *" $1 "*) return 0 ;; esac; return 1; }
+for a in $ARMS; do
+  case $a in eng_gtmrx|gtm_warm|gtm_mis|vq) ;; *) echo "unknown arm $a in ARMS" >&2; exit 64 ;; esac
+done
 PRESET=fix-c-coin-pretrain
 export CUDA_HOME="${CUDA_HOME:-/ai/saisail/n10c-bench/cuda_home}" PYTHONPATH=.
 mkdir -p "$OUT"
@@ -57,6 +62,9 @@ wait_free() {
 
 run() {  # arm [extra args...]
   local arm=$1; shift
+  if [ -e "$OUT/$PRESET-$arm" ]; then  # never overwrite an earlier attempt
+    log "refused $arm: $OUT/$PRESET-$arm exists (use a new OUT)"; return 1
+  fi
   wait_free
   log "start $PRESET $arm seed $SEED $*"
   (cd "$REPO" && nice -n 10 "$PY" -m experiments.procgen_multiagent_gtm_comm.harness.train \
