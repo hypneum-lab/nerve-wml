@@ -1,0 +1,74 @@
+[  2330.8s] 1/30 tasks
+[  2340.1s] 2/30 tasks
+[  4112.3s] 3/30 tasks
+[  4124.5s] 4/30 tasks
+[  5854.8s] 5/30 tasks
+[  5857.0s] 6/30 tasks
+[  7593.6s] 7/30 tasks
+[  7594.7s] 8/30 tasks
+[  9350.1s] 9/30 tasks
+[  9366.8s] 10/30 tasks
+[ 10706.7s] 11/30 tasks
+[ 10733.0s] 12/30 tasks
+[ 12064.2s] 13/30 tasks
+[ 12093.4s] 14/30 tasks
+[ 13427.4s] 15/30 tasks
+[ 13458.8s] 16/30 tasks
+[ 14780.8s] 17/30 tasks
+[ 14808.2s] 18/30 tasks
+[ 16142.0s] 19/30 tasks
+[ 16170.2s] 20/30 tasks
+/home/electron/scratch/nh01/nerve-wml/experiments/nh01_hopfield_dream/run.py:219: RuntimeWarning: overflow encountered in exp
+  p_up = 1.0 / (1.0 + np.exp(-2.0 * beta * h))
+/home/electron/scratch/nh01/nerve-wml/experiments/nh01_hopfield_dream/run.py:219: RuntimeWarning: overflow encountered in exp
+  p_up = 1.0 / (1.0 + np.exp(-2.0 * beta * h))
+[ 17469.1s] 21/30 tasks
+[ 17499.0s] 22/30 tasks
+[ 18803.0s] 23/30 tasks
+[ 18842.0s] 24/30 tasks
+[ 20141.5s] 25/30 tasks
+[ 20182.4s] 26/30 tasks
+[ 21488.7s] 27/30 tasks
+[ 21529.1s] 28/30 tasks
+[ 22834.1s] 29/30 tasks
+[ 22866.3s] 30/30 tasks
+{
+  "host": "electron-server",
+  "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.39",
+  "python": "3.12.15",
+  "numpy": "2.5.4",
+  "cpus": 8,
+  "workers": 2,
+  "wall_seconds": 22866.4,
+  "git_commit": "8a13a33c1c8057cf6014c50096b0596369728973",
+  "tasks_done": 30,
+  "tasks_total": 30,
+  "started_utc": "2026-10-27T16:48:06Z"
+}
+{"0": "confirme", "0.15": "confirme", "0.3": "confirme"}
+{
+  "label": "gain_increases",
+  "diff_high_minus_zero_mean_ci": [
+    40.56108559434095,
+    38.72331475853729,
+    43.16403864361387
+  ],
+  "ratio_by_level": {
+    "0": [
+      3.8236737164732597,
+      3.7674306915627245,
+      3.876689332374463
+    ],
+    "0.15": [
+      9.055163827387052,
+      8.839494276593662,
+      9.293185110550748
+    ],
+    "0.3": [
+      44.38475931081421,
+      42.557542014158955,
+      46.973280553290486
+    ]
+  },
+  "prediction_met": true
+}

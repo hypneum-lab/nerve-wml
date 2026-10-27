@@ -6,6 +6,15 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ### Added
 
+- **NH-01 correlated patterns at N = 1 000 (issue #68).** L1 pre-reg
+  `docs/milestones/2026-10-27-nh01-correlated-patterns.md` (tag
+  `prereg-nh01-correlated-20261027`, before the run); runner
+  `experiments/nh01_hopfield_dream/correlated.py`; results
+  `results/nh01_correlated/`, note `docs/results/2026-10-27-nh01-correlated.md`.
+  Confirmé at m = 0, 0.15, 0.30; C4: the dreaming gain increases with
+  correlation (3.82 -> 9.06 -> 44.4). C3' at m = 0.30 is formally met
+  but uninformative (Hebbian retrieval at the grid floor at T = 0.2).
+
 - **NH-01 confirmatory run at N = 1 000 (issue #68).** L1 amendment
   `docs/milestones/2026-10-25-nh01-confirmatory-n1000.md` frozen by tag
   `prereg-nh01-confirmatory-20261025` before the run (C2 re-stated as
