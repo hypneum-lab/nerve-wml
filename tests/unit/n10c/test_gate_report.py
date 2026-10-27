@@ -227,4 +227,4 @@ def test_committed_bis_gate_records_and_verdicts():
         ok, _ = verdict(r, arm=e["arm"], preset=e["preset"], seed=e["seed"])
         got.setdefault(e["arm"], []).append(ok)
     assert got["eng_gtmrx"][0] and got["gtm_warm"][0] and got["gtm_mis"][0]
-    assert got["vq"][0] is False  # liveness abort at the first probe
+    assert got["vq"] == [False, True]  # slot 1 abort; slot 2 with the B5 fix

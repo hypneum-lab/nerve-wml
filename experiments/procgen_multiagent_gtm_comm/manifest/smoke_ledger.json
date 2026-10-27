@@ -897,6 +897,21 @@
       "outcome": "liveness_abort",
       "claimed_at": "2026-10-27T01:53:34+0100",
       "note": "host KXKM-AI; preset fix-c-coin-pretrain; liveness abort at the first probe (106,496 pair-steps), slot 1 of 3; code 1df6d6a (working copy repo-bis); N10-C-bis learnability gate (PI 2026-10-26 22:02), lane gate_bis_lane.sh, trunk 0c27f2daa0a9"
+    },
+    {
+      "id": "cc6437e1efde4dbca9957ae0daf05832",
+      "claimed": true,
+      "kind": "gate_dev",
+      "arm": "vq",
+      "condition": "registered",
+      "seed": 9101,
+      "steps": 1000000,
+      "levels": "training (start_level=0, num_levels=16)",
+      "policy_updates": true,
+      "started_at": "2026-10-27T08:25:44+0100",
+      "outcome": "completed",
+      "claimed_at": "2026-10-27T08:25:44+0100",
+      "note": "host KXKM-AI; preset fix-c-coin-pretrain; vq rerun with the trunk stop-gradient of the VQ loss (B5), slot 2 of 3; code aff2812 (working copy repo-bis); N10-C-bis learnability gate, lane gate_bis_lane.sh ARMS=vq, trunk 0c27f2daa0a9"
     }
   ],
   "arm_allowance": {

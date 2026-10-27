@@ -529,6 +529,19 @@
       "arm": "vq",
       "preset": "fix-c-coin-pretrain",
       "condition": "registered"
+    },
+    {
+      "kind": "gate_dev",
+      "ledger_id": "cc6437e1efde4dbca9957ae0daf05832",
+      "started_at": "2026-10-27T08:25:44+0100",
+      "path": "kxkm/gate-bis-vq2/fix-c-coin-pretrain-vq/run.json",
+      "sha256": "ba9070c42265d16f6e76cd4f20b23c88835cc336115c6178ee8205bd44b8ec84",
+      "archive": "KXKM-AI:/ai/saisail/n10c-dev/gate-bis-vq2/fix-c-coin-pretrain-vq/run.json",
+      "code": "aff2812 (working copy repo-bis): vq loss stop-gradient at the trunk",
+      "seed": 9101,
+      "arm": "vq",
+      "preset": "fix-c-coin-pretrain",
+      "condition": "registered"
     }
   ],
   "bis_gate_diagnosis": {
