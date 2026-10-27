@@ -211,3 +211,20 @@ def test_bis_gate_runs_parse_and_have_their_allowance():
         "fix-c-coin-pretrain-bc", "eng", "")
     assert parse_run_dir("fix-c-coin-pretrain-gtm-macm1-r2") == (
         "fix-c-coin-pretrain", "gtm", "-macm1-r2")
+
+
+def test_committed_bis_gate_records_and_verdicts():
+    """N10-C-bis gate under fix C (2026-10-27): the committed records, their
+    ledger entries and the verdict of each new arm."""
+    from experiments.procgen_multiagent_gtm_comm.harness import devledger
+    idx, bad = load_index(CELLS / "index.json")
+    assert bad == []
+    led = {r["id"]: r for r in devledger.read()["runs"]}
+    got = {}
+    for e in idx["bis_gate"]:
+        r = json.loads((CELLS / e["path"]).read_text())
+        assert led[e["ledger_id"]]["arm"] == e["arm"] == r["arm"]
+        ok, _ = verdict(r, arm=e["arm"], preset=e["preset"], seed=e["seed"])
+        got.setdefault(e["arm"], []).append(ok)
+    assert got["eng_gtmrx"][0] and got["gtm_warm"][0] and got["gtm_mis"][0]
+    assert got["vq"][0] is False  # liveness abort at the first probe

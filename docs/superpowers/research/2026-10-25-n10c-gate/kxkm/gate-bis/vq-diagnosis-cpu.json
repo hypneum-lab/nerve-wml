@@ -1,0 +1,38 @@
+{
+ "frames": 256,
+ "lr": 0.0005,
+ "beta": 0.25,
+ "lambda": 1.0,
+ "init": {
+  "tag": "init",
+  "block3_pos_frac": 0.07587242126464844,
+  "live_h_frac": 0.5625,
+  "h_nonzero_frac": 0.1661529541015625,
+  "codebook_loss": 0.2802214026451111,
+  "commitment_loss": 0.2802214026451111,
+  "aux_loss": 0.35027676820755005,
+  "z_rms": 0.20474223792552948,
+  "q_rms": 0.03826506435871124,
+  "codebook_rms": 0.03573482483625412,
+  "grad_norm_trunk_commitment": 0.6975515579881849,
+  "grad_norm_trunk_codebook_term": 0.0,
+  "cos_commitment_vs_mean_block3": -0.3657745310467541,
+  "descent_effect_on_mean_block3_per_unit_lr": 1.9131292179562887
+ },
+ "abort_ckpt": {
+  "tag": "ckpt_106496",
+  "block3_pos_frac": 0.00485992431640625,
+  "live_h_frac": 0.58203125,
+  "h_nonzero_frac": 0.238800048828125,
+  "codebook_loss": 0.00044014863669872284,
+  "commitment_loss": 0.00044014863669872284,
+  "aux_loss": 0.0005501857958734035,
+  "z_rms": 0.04097253084182739,
+  "q_rms": 0.04421913996338844,
+  "codebook_rms": 0.04461062327027321,
+  "grad_norm_trunk_commitment": 0.0019460432986735244,
+  "grad_norm_trunk_codebook_term": 0.0,
+  "cos_commitment_vs_mean_block3": -0.49043752668679036,
+  "descent_effect_on_mean_block3_per_unit_lr": 0.02046384343273633
+ }
+}

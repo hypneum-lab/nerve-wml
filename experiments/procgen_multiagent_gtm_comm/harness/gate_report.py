@@ -237,7 +237,7 @@ def load_index(index_path: Path) -> tuple[dict, list[str]]:
     idx = json.loads(index_path.read_text())
     bad = []
     for e in (idx["runs"] + idx.get("pretrain", [])
-              + idx.get("adam_study", [])):
+              + idx.get("adam_study", []) + idx.get("bis_gate", [])):
         f = index_path.parent / e["path"]
         if not f.exists():
             bad.append(f"{e['path']}: missing")

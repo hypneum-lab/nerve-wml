@@ -476,5 +476,65 @@
     "archive": "KXKM-AI:/ai/saisail/n10c-dev/mech.py",
     "sha256": "886ba83fe65db0263894945653588af7e77e5586029d3d9c1a5cfdb9d8a82483",
     "what": "relative parameter change between consecutive checkpoints (trunk and other parameters), read with numpy from the safetensors checkpoints of the part-C runs"
+  },
+  "bis_gate": [
+    {
+      "kind": "gate_dev",
+      "ledger_id": "87aff952e27f49df8c9bf8755c564241",
+      "started_at": "2026-10-27T01:16:09+0100",
+      "path": "kxkm/gate-bis/fix-c-coin-pretrain-eng_gtmrx/run.json",
+      "sha256": "698a475440c35328f31a1d96b63e06899db9b67ff27028e445d8026e783c0f3f",
+      "archive": "KXKM-AI:/ai/saisail/n10c-dev/gate-bis/fix-c-coin-pretrain-eng_gtmrx/run.json",
+      "code": "1df6d6a (working copy repo-bis)",
+      "seed": 9101,
+      "arm": "eng_gtmrx",
+      "preset": "fix-c-coin-pretrain",
+      "condition": "registered"
+    },
+    {
+      "kind": "gate_dev",
+      "ledger_id": "0fb9b0b0065f4a639bc9bf648683dc03",
+      "started_at": "2026-10-27T01:28:39+0100",
+      "path": "kxkm/gate-bis/fix-c-coin-pretrain-gtm_warm/run.json",
+      "sha256": "aa0137e35f93ffced38a883936e8f01a45cc22953666dbcef29b57fb2f4cfb80",
+      "archive": "KXKM-AI:/ai/saisail/n10c-dev/gate-bis/fix-c-coin-pretrain-gtm_warm/run.json",
+      "code": "1df6d6a (working copy repo-bis)",
+      "seed": 9101,
+      "arm": "gtm_warm",
+      "preset": "fix-c-coin-pretrain",
+      "condition": "registered"
+    },
+    {
+      "kind": "gate_dev",
+      "ledger_id": "3934837439614895b5fecc04b5673ff1",
+      "started_at": "2026-10-27T01:41:06+0100",
+      "path": "kxkm/gate-bis/fix-c-coin-pretrain-gtm_mis/run.json",
+      "sha256": "d7ded5837df1e31cb5b5bf10e8da872cef8f0b8139f0654ab4f5deac23462207",
+      "archive": "KXKM-AI:/ai/saisail/n10c-dev/gate-bis/fix-c-coin-pretrain-gtm_mis/run.json",
+      "code": "1df6d6a (working copy repo-bis)",
+      "seed": 9101,
+      "arm": "gtm_mis",
+      "preset": "fix-c-coin-pretrain",
+      "condition": "registered"
+    },
+    {
+      "kind": "gate_dev",
+      "ledger_id": "a4a6b41ba9ad4625b395a89172eae15c",
+      "started_at": "2026-10-27T01:53:34+0100",
+      "path": "kxkm/gate-bis/fix-c-coin-pretrain-vq/run.json",
+      "sha256": "5f8ba8f8a34bc3c0ae7018c709dfe1ebbde4be0002a055c6193045e279dfc772",
+      "archive": "KXKM-AI:/ai/saisail/n10c-dev/gate-bis/fix-c-coin-pretrain-vq/run.json",
+      "code": "1df6d6a (working copy repo-bis)",
+      "seed": 9101,
+      "arm": "vq",
+      "preset": "fix-c-coin-pretrain",
+      "condition": "registered"
+    }
+  ],
+  "bis_gate_diagnosis": {
+    "path": "kxkm/gate-bis/vq-diagnosis-cpu.json",
+    "sha256": "be6f3ec9b84f5720dda9db654774a2ef56f6693be7310204ec4c3d3752a341eb",
+    "script": "kxkm/gate-bis/vq-diagnosis.py.txt",
+    "what": "read-only CPU analysis of the failed vq gate run: initial model vs abort checkpoint on 256 real CoinRun-coop training-level frames"
   }
 }

@@ -1,0 +1,194 @@
+{
+  "arm": "vq",
+  "seed": 9101,
+  "condition": "registered",
+  "codes": {
+    "arm": 9,
+    "condition": 0
+  },
+  "total_pair_steps": 1000000,
+  "pair_steps_done": 106496,
+  "n_updates": 13,
+  "wall_time_s": 89.02782917022705,
+  "pair_steps_per_s": 1196.2102299088149,
+  "samples_per_s": 2392.4204598176298,
+  "restarts": 0,
+  "using_stub": false,
+  "training_failure": true,
+  "failure_reason": "trunk liveness guard at update 13 (pair-step 106496): ['block3_pos_frac']",
+  "success_curve": [
+    [
+      40000,
+      0.03125
+    ],
+    [
+      80000,
+      0.06
+    ]
+  ],
+  "success_curve_n": [
+    64,
+    100
+  ],
+  "time_to_half": null,
+  "bits_logged": 3407872,
+  "last_checkpoint": "ckpt_106496.safetensors",
+  "completed_episodes": 590,
+  "losses": [
+    -0.0029568714768781015,
+    -0.026895841156753402,
+    -0.026897030916908687,
+    -0.027737892902223393,
+    -0.02594059898425864,
+    -0.02733789496414829,
+    -0.02444148420257382,
+    -0.024163281962197896,
+    -0.02459589463978773,
+    -0.022380759546649642,
+    -0.018999415311554912,
+    -0.01269675048145776,
+    -0.008638139574334977
+  ],
+  "optimizer_steps": 312,
+  "first_mb_ratio_dev": [
+    0.00023740530014038086,
+    2.5272369384765625e-05,
+    2.765655517578125e-05,
+    2.9802322387695312e-05,
+    4.1961669921875e-05,
+    4.982948303222656e-05,
+    9.578466415405273e-05,
+    8.988380432128906e-05,
+    0.00010442733764648438,
+    0.0001087188720703125,
+    0.00011658668518066406,
+    0.00018328428268432617,
+    0.0002014636993408203
+  ],
+  "micro_batch_pairs": 512,
+  "clear_cache": true,
+  "n_workers": 8,
+  "peak_memory_bytes": 6752967600,
+  "registration": null,
+  "runtime": null,
+  "train_options": {
+    "preset": "fix-c-coin-pretrain",
+    "coin_reward": 0.5,
+    "adam_eps": 1e-05,
+    "mask_finished": true,
+    "liveness": "abort",
+    "liveness_every": 100000,
+    "pretrained_trunk": true,
+    "adam_bias_correction": false
+  },
+  "init_trunk_sha256": "0c27f2daa0a976e6407a85d6dfa6eafe20a6285c6324795b2194366b1a9aa704",
+  "coin_rate_curve": [
+    [
+      40000,
+      0.2109375
+    ],
+    [
+      80000,
+      0.255
+    ]
+  ],
+  "entropy_curve": [
+    [
+      8192,
+      2.701895258431332,
+      2.673884391784668
+    ],
+    [
+      16384,
+      2.7030145333507867,
+      2.701505661010742
+    ],
+    [
+      24576,
+      2.7033016183334833,
+      2.702414035797119
+    ],
+    [
+      32768,
+      2.701585672860393,
+      2.6973390579223633
+    ],
+    [
+      40960,
+      2.6980640024617197,
+      2.6810529232025146
+    ],
+    [
+      49152,
+      2.690655002860114,
+      2.6593503952026367
+    ],
+    [
+      57344,
+      2.680375476965293,
+      2.6243743896484375
+    ],
+    [
+      65536,
+      2.665703344847649,
+      2.5658164024353027
+    ],
+    [
+      73728,
+      2.657445911185669,
+      2.5500028133392334
+    ],
+    [
+      81920,
+      2.6239808175245276,
+      2.4889378547668457
+    ],
+    [
+      90112,
+      2.5989992897543486,
+      2.417586326599121
+    ],
+    [
+      98304,
+      2.5507178938708543,
+      2.362839698791504
+    ],
+    [
+      106496,
+      2.4920134498136366,
+      2.271646499633789
+    ]
+  ],
+  "liveness": [
+    {
+      "block3_pos_frac": 0.06261444091796875,
+      "live_h_frac": 0.359375,
+      "h_nonzero_frac": 0.20001220703125,
+      "logit_std": 0.08108930289745331,
+      "value_std": 0.05591883510351181,
+      "flagged": false,
+      "reasons": [],
+      "step": 0
+    },
+    {
+      "block3_pos_frac": 0.005237579345703125,
+      "live_h_frac": 0.7421875,
+      "h_nonzero_frac": 0.25897216796875,
+      "logit_std": 0.13995276391506195,
+      "value_std": 0.23409587144851685,
+      "flagged": true,
+      "reasons": [
+        "block3_pos_frac"
+      ],
+      "step": 106496
+    }
+  ],
+  "liveness_flagged": true,
+  "liveness_abort": true,
+  "warm_from": null,
+  "warm_ckpt_sha256": null,
+  "warm_source_untrained": false,
+  "cumulative_pair_steps": null,
+  "derangement_stream": null,
+  "trunk_mode": "shared"
+}
