@@ -395,3 +395,29 @@ def test_vq_mask_is_per_agent_row_and_micro_batch_invariant():
     np.testing.assert_allclose(other["comm.codebook"], full["comm.codebook"],
                                rtol=1e-5, atol=1e-8)
     assert np.abs(full["comm.codebook"]).max() > 0.0
+
+
+def test_vq_aux_loss_does_not_reach_the_trunk():
+    """N10-C-bis vq fix (2026-10-27): the VQ loss trains to_msg, the VQ
+    encoder and the codebook, never the shared IMPALA trunk."""
+    import mlx.nn as nn
+
+    model = PairPolicy("vq", mx.random.key(1))
+    mb = _mb(4, model)
+    summ = mx.zeros((4, 2, 2))
+
+    def aux(m):
+        return m(mb["obs"].astype(mx.float32), summ, None, train=True,
+                 key=mx.random.key(0)).aux_loss
+
+    val, g = nn.value_and_grad(model, aux)(model)
+    flat = {k: np.abs(np.array(v)).max() for k, v in tree_flatten(g)}
+    assert float(val) > 0.0
+    assert all(v == 0.0 for k, v in flat.items() if k.startswith("trunk."))
+    for k in ("to_msg.weight", "comm.encode.weight", "comm.codebook"):
+        assert flat[k] > 0.0, k
+    # the value of the loss is unchanged (same x_msg = to_msg(h))
+    enc = model.encode(mb["obs"].astype(mx.float32), None, train=True,
+                       key=mx.random.key(0))
+    assert float(val) == pytest.approx(float(model.comm.aux_loss(enc.x_msg)),
+                                       rel=1e-6)

@@ -137,8 +137,14 @@ class PairPolicy(nn.Module):
         z = nn.relu(self.fuse(z))
         aux = aux_rows = None
         if train and hasattr(self.comm, "aux_loss"):
-            aux = self.comm.aux_loss(enc.x_msg)
-            aux_rows = self.comm.aux_loss_rows(enc.x_msg).reshape(b, 2)
+            # N10-C-bis vq fix (2026-10-27, after the failed gate run): the
+            # VQ loss trains to_msg, the VQ encoder and the codebook but
+            # does not reach the shared trunk (stop-gradient at h); the
+            # message itself still carries the PPO gradient into the trunk
+            # through the straight-through path, as for every arm.
+            x_aux = self.to_msg(mx.stop_gradient(enc.h))
+            aux = self.comm.aux_loss(x_aux)
+            aux_rows = self.comm.aux_loss_rows(x_aux).reshape(b, 2)
         return PolicyOut(
             self.pi(z).reshape(b, 2, N_ACTIONS),
             self.v(z).reshape(b, 2),
