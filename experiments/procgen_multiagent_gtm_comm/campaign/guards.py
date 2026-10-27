@@ -53,6 +53,7 @@ from ..harness.codes import (
     BIS_ARMS,
     CROSS_PAIRS,
     HOST_SETTINGS,
+    PER_RUN_TRUNK_SEED,
     PROCGEN_VERSION,
     PROCGEN_X86_WHEEL,
     SEED_HOST,
@@ -71,11 +72,58 @@ REGISTERED_BUDGET = 50_000_000
 HELD_OUT_START = 1000
 HELD_OUT_RANGE = range(1000, 1200)
 DEV_MAX_PAIR_STEPS = 1_000_000  # development / smoke cap (amendment: <= 1M)
+# Learnability-gate dev runs (kind gate_dev) may run longer: the Adam study's
+# 10M runs (PI decision 2026-10-25 13:33), matching devledger.GATE_MAX_STEPS.
+GATE_DEV_MAX_PAIR_STEPS = 10_000_000
+
+
+def dev_max_pair_steps(dev_kind: str = "dev_train") -> int:
+    """Development cap of a training run of this ledger kind."""
+    return GATE_DEV_MAX_PAIR_STEPS if dev_kind == "gate_dev" else DEV_MAX_PAIR_STEPS
 DEV_LEVELS = range(0, 16)  # training levels only
 REGISTERED_TRAIN_CONFIG = {  # frozen rollout / measurement configuration
     "n_pairs": 64, "horizon": 128, "log_every_pair_steps": 1_000_000,
     "ckpt_every_pair_steps": 1_000_000, "minibatch_pairs": 1024,
 }
+# Training-options preset of registered runs (harness.train.PRESETS). The
+# tag n10c-freeze-20261024 froze the original configuration; the 2026-10-25
+# amendment changes this only together with a NEW freeze tag.
+REGISTERED_TRAIN_OPTIONS = "frozen-20261024"
+# Pre-trained trunk of each registered seed (preset with pretrained_trunk):
+# SHA-256 of ``<campaign_dir>/trunks/seed-<seed>/trunk.safetensors``, written
+# by the registered pre-training run of that seed on its fixed host and
+# pinned by the new freeze's manifest. Empty until then: a registered run of
+# a pre-training preset is refused.
+REGISTERED_TRUNK_SHA256: dict[int, str] = {}
+PRETRAIN_BUDGET = 1_000_000  # single-agent steps per registered pre-training
+TRUNK_DIR = "trunks"
+
+
+def trunk_path(campaign_dir: Path, seed: int) -> Path:
+    return Path(campaign_dir) / TRUNK_DIR / f"seed-{seed}" / "trunk.safetensors"
+
+
+# Per-run-pretraining control (PI decision 2026-10-25 19:12): the trunk of
+# each (arm, condition) run of seed PER_RUN_TRUNK_SEED, written by its own
+# registered pre-training run and pinned by the new freeze manifest. Empty
+# until then: a control run is refused.
+REGISTERED_CONTROL_TRUNK_SHA256: dict[tuple[str, str], str] = {}
+
+
+def control_trunk_path(campaign_dir: Path, arm: str, condition: str) -> Path:
+    return (Path(campaign_dir) / TRUNK_DIR
+            / f"seed-{PER_RUN_TRUNK_SEED}-{condition}-{arm}" / "trunk.safetensors")
+
+
+def expected_trunk_sha256(seed: int, arm: str, condition: str,
+                          per_run_trunk: bool = False) -> str | None:
+    """Pinned SHA-256 of the trunk a registered run must start from: the
+    seed's shared trunk, or its own trunk for a per-run-control run."""
+    if per_run_trunk:
+        return REGISTERED_CONTROL_TRUNK_SHA256.get((arm, condition))
+    return REGISTERED_TRUNK_SHA256.get(seed)
+
+
 ARMS_BY_CONDITION = {
     "registered": ("gtm", "mlp", "atoc", "dial", "eng", "nocomm"),
     "closed": ("gtm", "dial", "eng", "nocomm"),
@@ -591,14 +639,26 @@ def _need_ctx(ctx: Any, what: str) -> RegistrationContext:
 
 def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
                          total_pair_steps: int, settings: dict,
-                         config: dict, has_env_factory: bool) -> str | None:
+                         config: dict, has_env_factory: bool,
+                         options_preset: str = REGISTERED_TRAIN_OPTIONS,
+                         init_trunk_sha256: str | None = None,
+                         pretrained_trunk: bool = False,
+                         dev_kind: str = "dev_train",
+                         per_run_trunk: bool = False,
+                         ) -> str | None:
     """Gate for ``train_run``. Returns the registered host, or None in the
-    explicit development mode (budget <= 1M pair-steps, no context)."""
+    explicit development mode (budget <= ``dev_max_pair_steps(dev_kind)``:
+    1M, or 10M for gate_dev runs; no context).
+    A registered run must use the registered training-options preset.
+    ``per_run_trunk``: a run of the per-run-pretraining control (N10-C,
+    seed ``PER_RUN_TRUNK_SEED`` only), whose trunk must be the one pinned
+    for its (arm, condition) instead of the seed's shared trunk."""
     if ctx is None:
-        if total_pair_steps > DEV_MAX_PAIR_STEPS:
+        cap = dev_max_pair_steps(dev_kind)
+        if total_pair_steps > cap:
             raise GuardError(
                 f"training with {total_pair_steps:,} pair-steps refused: the "
-                f"development mode is limited to {DEV_MAX_PAIR_STEPS:,}; "
+                f"development mode ({dev_kind}) is limited to {cap:,}; "
                 "larger runs need the registered path (freeze-tag context)")
         return None
     _need_ctx(ctx, "registered training")
@@ -608,9 +668,63 @@ def check_train_boundary(ctx: Any, *, arm: str, seed: int, condition: str,
         settings=settings, config=config, registration=reg.name)
     if has_env_factory:
         errs.append("a registered run uses the real Procgen (no env_factory)")
+    if options_preset != REGISTERED_TRAIN_OPTIONS:
+        errs.append(f"training options {options_preset!r} != registered "
+                    f"{REGISTERED_TRAIN_OPTIONS!r}")
+    if per_run_trunk:
+        if reg.name != DEFAULT_REGISTRATION or seed != PER_RUN_TRUNK_SEED:
+            errs.append(f"the per-run-pretraining control is N10-C seed "
+                        f"{PER_RUN_TRUNK_SEED} only (got {reg.name!r}, seed "
+                        f"{seed})")
+        if not pretrained_trunk:
+            errs.append("the per-run-pretraining control needs a "
+                        "pre-trained-trunk preset")
+    if pretrained_trunk:
+        want = expected_trunk_sha256(seed, arm, condition, per_run_trunk)
+        if want is None or init_trunk_sha256 != want:
+            errs.append(f"pre-trained trunk sha256 {init_trunk_sha256!r} != "
+                        f"registered {want!r} for seed {seed}"
+                        + (f" ({condition}, {arm}, per-run)" if per_run_trunk
+                           else ""))
     if errs:
         raise GuardError("registered training refused: " + "; ".join(errs))
     host = reg.seed_host[seed]
+    assert_runtime_host(host)
+    return host
+
+
+def check_pretrain_boundary(ctx: Any, *, seed: int, total_steps: int,
+                            has_env: bool,
+                            unit: tuple[str, str] | None = None) -> str | None:
+    """Gate for ``harness.pretrain``. None = development pre-training
+    (ledgered, <= 1M steps); with a context, the registered pre-training
+    of a registered seed on its fixed host, with the exact budget.
+    ``unit`` = (arm, condition): the own trunk of one run of the
+    per-run-pretraining control (seed ``PER_RUN_TRUNK_SEED`` only, an arm
+    and condition of the N10-C design)."""
+    if ctx is None:
+        if total_steps > DEV_MAX_PAIR_STEPS:
+            raise GuardError(f"development pre-training is limited to "
+                             f"{DEV_MAX_PAIR_STEPS:,} steps")
+        return None
+    _need_ctx(ctx, "registered pre-training")
+    errs = []
+    if seed not in SEEDS:
+        errs.append(f"seed {seed} not in the registered seeds {list(SEEDS)}")
+    if total_steps != PRETRAIN_BUDGET:
+        errs.append(f"budget {total_steps:,} != registered {PRETRAIN_BUDGET:,}")
+    if has_env:
+        errs.append("registered pre-training uses the real Procgen")
+    if unit is not None:
+        arm, cond = unit
+        if seed != PER_RUN_TRUNK_SEED:
+            errs.append(f"per-run pre-training is for the control seed "
+                        f"{PER_RUN_TRUNK_SEED} only (got {seed})")
+        if arm not in ARMS_BY_CONDITION.get(cond, ()):
+            errs.append(f"({arm}, {cond}) is not an N10-C run")
+    if errs:
+        raise GuardError("registered pre-training refused: " + "; ".join(errs))
+    host = SEED_HOST[seed]
     assert_runtime_host(host)
     return host
 

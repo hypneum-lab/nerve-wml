@@ -1,0 +1,156 @@
+"""Read-only CPU diagnosis of the failed vq gate run (N10-C-bis, 2026-10-27).
+
+No training run, no ledger entry, no GPU: MLX on the CPU device.
+1. real CoinRun-coop frames (training levels, random actions);
+2. the run's initial model (seed-stream init + seed-9101 trunk) and its
+   abort checkpoint (ckpt_106496): block-3 positive fraction, VQ loss terms;
+3. gradients into the trunk of each VQ term and their alignment with the
+   gradient of the mean block-3 residual output (first-order effect of a
+   descent step on that output);
+4. simulation: Adam steps (registered LR, eps 1e-5, no bias correction) on
+   the VQ auxiliary loss ALONE from the initial model, with and without a
+   stop-gradient into the trunk, tracking the block-3 positive fraction.
+"""
+import json
+import sys
+import time
+
+import mlx.core as mx
+import mlx.nn as nn
+import mlx.optimizers as optim
+import numpy as np
+from mlx.utils import tree_flatten
+
+if "--cpu" in sys.argv:  # the CPU JIT does not build on KXKM-AI (g++ _Float128)
+    mx.set_default_device(mx.cpu)
+    mx.disable_compile()
+
+from experiments.procgen_multiagent_gtm_comm.harness.codes import init_key_int  # noqa: E402
+from experiments.procgen_multiagent_gtm_comm.harness.comm import (  # noqa: E402
+    VQ_BETA,
+    VQ_LAMBDA,
+)
+from experiments.procgen_multiagent_gtm_comm.harness.policy import PairPolicy  # noqa: E402
+from experiments.procgen_multiagent_gtm_comm.harness.train import (  # noqa: E402
+    LR,
+    load_trunk,
+    trunk_activity,
+)
+from experiments.procgen_multiagent_gtm_comm.harness.vec_env import VecCoopEnv  # noqa: E402
+
+TRUNK, CKPT, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
+SEED, SIM_STEPS = 9101, int(sys.argv[4])
+N_FRAMES = int(sys.argv[5]) if len(sys.argv) > 5 and sys.argv[5].isdigit() else 256
+
+
+def frames():
+    env = VecCoopEnv(16, np.random.SeedSequence([SEED, 4242]), team_summary=True)
+    rng = np.random.default_rng(0)
+    o = env.reset().obs
+    out = [o]
+    for _ in range(40):
+        o = env.step(rng.integers(0, 15, (16, 2)).astype(np.int32)).obs
+        out.append(o)
+    env.close()
+    x = np.concatenate(out).reshape(-1, 64, 64, 3)
+    idx = rng.choice(len(x), N_FRAMES, replace=False)
+    return mx.array(x[idx]).astype(mx.float32) / 255.0
+
+
+def model0():
+    m = PairPolicy("vq", mx.random.key(init_key_int(SEED, "vq", "registered")))
+    mx.eval(m.parameters())
+    load_trunk(m, TRUNK)
+    return m
+
+
+def block3(m, x):
+    y = x
+    for b in m.trunk.blocks:
+        y = b(y)
+    return y
+
+
+def vq_terms(m, x, sg_trunk=False):
+    h = m.trunk(x)
+    if sg_trunk:
+        h = mx.stop_gradient(h)
+    xm = m.to_msg(h)
+    z, _, q = m.comm._quantize(xm)
+    codebook = ((mx.stop_gradient(z) - q) ** 2).sum(-1).mean()
+    commit = ((z - mx.stop_gradient(q)) ** 2).sum(-1).mean()
+    return codebook, commit, z, q
+
+
+def trunk_grad(m, fn):
+    g = nn.value_and_grad(m, lambda mm: fn(mm))(m)[1]
+    flat = dict(tree_flatten(g["trunk"]))
+    v = mx.concatenate([a.reshape(-1) for a in flat.values()])
+    mx.eval(v)
+    return np.array(v, dtype=np.float64)
+
+
+def analyse(m, x, tag):
+    act = trunk_activity(m.trunk, x)
+    cb, cm, z, q = vq_terms(m, x)
+    mx.eval(cb, cm, z, q)
+    g_y = trunk_grad(m, lambda mm: block3(mm, x).mean())
+    g_cm = trunk_grad(m, lambda mm: VQ_LAMBDA * VQ_BETA * vq_terms(mm, x)[1])
+    g_cb = trunk_grad(m, lambda mm: VQ_LAMBDA * vq_terms(mm, x)[0])
+    nz = lambda a, b: float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-30))  # noqa: E731
+    return {
+        "tag": tag, **act,
+        "codebook_loss": float(cb), "commitment_loss": float(cm),
+        "aux_loss": float(VQ_LAMBDA * (cb + VQ_BETA * cm)),
+        "z_rms": float(mx.sqrt((z ** 2).mean())), "q_rms": float(mx.sqrt((q ** 2).mean())),
+        "codebook_rms": float(mx.sqrt((m.comm.codebook ** 2).mean())),
+        "grad_norm_trunk_commitment": float(np.linalg.norm(g_cm)),
+        "grad_norm_trunk_codebook_term": float(np.linalg.norm(g_cb)),
+        "cos_commitment_vs_mean_block3": nz(g_cm, g_y),
+        "descent_effect_on_mean_block3_per_unit_lr": float(-(g_cm @ g_y)),
+    }
+
+
+def simulate(x, sg_trunk, steps):
+    m = model0()
+    opt = optim.Adam(learning_rate=LR, eps=1e-5, bias_correction=False)
+    opt.init(m.trainable_parameters())
+
+    def loss(mm):
+        cb, cm, _, _ = vq_terms(mm, x, sg_trunk)
+        return VQ_LAMBDA * (cb + VQ_BETA * cm)
+
+    vg = nn.value_and_grad(m, loss)
+    curve = []
+    for s in range(steps + 1):
+        if s % 25 == 0:
+            a = trunk_activity(m.trunk, x)
+            curve.append([s, a["block3_pos_frac"], a["live_h_frac"]])
+            print("  sim", "sg" if sg_trunk else "full", curve[-1], flush=True)
+        if s == steps:
+            break
+        lv, g = vg(m)
+        g, _ = optim.clip_grad_norm(g, 0.5)
+        opt.update(m, g)
+        mx.eval(m.parameters(), opt.state)
+    return curve
+
+
+t0 = time.time()
+x = frames()
+m0 = model0()
+m1 = model0()
+m1.load_weights(CKPT)  # the abort checkpoint (full parameter set)
+mx.eval(m1.parameters())
+res = {"frames": N_FRAMES, "lr": LR, "beta": VQ_BETA, "lambda": VQ_LAMBDA}
+if "--skip-analysis" not in sys.argv:
+    res["init"] = analyse(m0, x, "init")
+    res["abort_ckpt"] = analyse(m1, x, "ckpt_106496")
+    print(json.dumps(res, indent=1), flush=True)
+res["sim_aux_only"] = simulate(x, False, SIM_STEPS)
+print("sim aux only", res["sim_aux_only"], flush=True)
+res["sim_aux_only_sg_trunk"] = simulate(x, True, SIM_STEPS)
+print("sim aux sg trunk", res["sim_aux_only_sg_trunk"], flush=True)
+res["wall_s"] = time.time() - t0
+with open(OUT, "w") as f:
+    json.dump(res, f, indent=1)

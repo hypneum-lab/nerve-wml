@@ -37,6 +37,15 @@ checkpoint of its ``eng_gtmrx`` source (same seed and condition; the last
 finite checkpoint of a failed source, or None = initialisation, flagged).
 The existing STOP file pauses the runner between runs (N10-C evaluation
 windows). The N10-C campaign (default) is unchanged.
+
+Amendment 2026-10-25: a liveness abort restarts a run once from scratch,
+a second abort is a training failure (``queue``). When the registered
+preset uses a pre-trained trunk, KXKM-AI also trains and evaluates the
+per-run-pretraining control (``queue.control_queue``), each control run
+right after its shared-trunk registered run of seed 101 (paired in time,
+PI 2026-10-25 19:50), each run with ``init_trunk`` = its own pinned trunk
+(``guards.control_trunk_path``) and ``per_run_trunk=True``; campaign
+completion requires them, cross-play and the estimands never use them.
 """
 from __future__ import annotations
 
@@ -54,9 +63,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from ..harness.codes import HOST_SETTINGS
+from ..harness.options import options_for
+from . import guards as _guards
 from . import queue as q
 from .guards import (  # noqa: F401 - re-exported for callers and tests
     DEV_MAX_PAIR_STEPS,
@@ -291,6 +303,7 @@ class Campaign:
     def train(self, spec: q.RunSpec, st: dict) -> None:
         attempt = len(st["attempts"]) + 1
         rd = self.run_dir(spec)
+        self._settle_liveness_aside(spec, st)  # an interrupted transition
         if rd.exists():  # restart from scratch; keep the failed partial aside
             aside = rd.with_name(f"{spec.run_id}.failed-{st['infra_failures']}")
             shutil.move(str(rd), str(aside))
@@ -300,8 +313,23 @@ class Campaign:
         # registered per-host implementation settings (single source:
         # codes.HOST_SETTINGS); only a non-registered trial may override them
         settings = dict(HOST_SETTINGS[self.o.host])
-        kw = {**settings, **(self.o.train_kwargs or {})}
+        # registered training-options preset (amendment 2026-10-25) and, for
+        # a pre-training preset, the seed's pinned trunk (hash checked by
+        # the training boundary)
+        opts = options_for(_guards.REGISTERED_TRAIN_OPTIONS)
+        base: dict[str, Any] = {"options": opts}
+        if spec.trunk == q.PER_RUN:  # per-run-pretraining control run
+            if not opts.pretrained_trunk:
+                raise GuardError(f"{spec.run_id}: the per-run-pretraining "
+                                 "control needs a pre-trained-trunk preset")
+            base["init_trunk"] = _guards.control_trunk_path(
+                self.dir, spec.arm, spec.condition)
+            base["per_run_trunk"] = True
+        elif opts.pretrained_trunk:
+            base["init_trunk"] = _guards.trunk_path(self.dir, spec.seed)
+        kw = {**settings, **base, **(self.o.train_kwargs or {})}
         st["train_settings"] = {k: kw[k] for k in settings}
+        st["train_options"] = kw["options"].preset
         if self.o.env_factory is not None:
             kw["env_factory"] = self.o.env_factory
         if spec.warm_from is not None:  # gtm_warm: resolved before training
@@ -326,6 +354,17 @@ class Campaign:
                        state="infra_failed", reason=st["failure_reason"],
                        infra_failures=st["infra_failures"])
             return
+        self._finish_attempt(spec, st, attempt, rec)
+
+    def _finish_attempt(self, spec: q.RunSpec, st: dict, attempt: int,
+                        rec: Any) -> None:
+        """Record a finished training attempt (``rec``: the RunRecord, or
+        its run.json when recovering an interrupted liveness abort)."""
+        rd = self.run_dir(spec)
+        n_live = st.get("liveness_restarts", 0)
+        if getattr(rec, "liveness_abort", False) and n_live < q.MAX_LIVENESS_RESTARTS:
+            self._liveness_restart(spec, st, attempt, rec)
+            return
         st["last_checkpoint"] = rec.last_checkpoint
         st["last_checkpoint_sha256"] = checkpoint_sha256(rd, rec.last_checkpoint)
         if rec.last_checkpoint and st["last_checkpoint_sha256"] is None:
@@ -337,7 +376,12 @@ class Campaign:
             return
         st["finished_at"] = _now()
         if rec.training_failure:
-            st.update(status=q.TRAINING_FAILURE, failure_reason=rec.failure_reason)
+            reason = rec.failure_reason
+            if getattr(rec, "liveness_abort", False):  # second abort: final
+                st["liveness_abort"] = True
+                reason = (f"liveness abort after {n_live} restart(s) from "
+                          f"scratch: {reason}")
+            st.update(status=q.TRAINING_FAILURE, failure_reason=reason)
             outcome = "training_failure"
         else:
             st.update(status=q.TRAINED, failure_reason=None)
@@ -348,6 +392,65 @@ class Campaign:
         self.store.save(st)
         self.event(run=spec.run_id, attempt=attempt, phase="train", state=outcome,
                    wall_time_s=rec.wall_time_s)
+
+    # -- liveness-abort restart (amendment 2026-10-25) -------------------
+    def _liveness_restart(self, spec: q.RunSpec, st: dict, attempt: int,
+                          rec: Any) -> None:
+        """First liveness abort (outcome-blind: the trunk-liveness flag of
+        the training record only): one restart from scratch, counted apart
+        from infrastructure restarts. The transition is persisted BEFORE
+        the aborted attempt is moved aside (idempotent, see
+        ``_settle_liveness_aside``), so an interruption can never grant a
+        second liveness restart."""
+        n = st.get("liveness_restarts", 0) + 1
+        aside = f"{spec.run_id}.liveness-abort-{n}"
+        st["liveness_restarts"] = n
+        st["attempts"].append({
+            "n": attempt, "outcome": "liveness_abort", "at": _now(),
+            "reason": rec.failure_reason, "kept_aside": aside,
+            "wall_time_s": rec.wall_time_s,
+            "pair_steps_done": rec.pair_steps_done})
+        st.update(status=q.LIVENESS_RESTART, failure_reason=rec.failure_reason,
+                  last_checkpoint=None, last_checkpoint_sha256=None,
+                  liveness_aside=aside)
+        self.store.save(st)
+        self._settle_liveness_aside(spec, st)
+        self.event(run=spec.run_id, attempt=attempt, phase="train",
+                   state="liveness_abort_restart", reason=rec.failure_reason,
+                   liveness_restarts=n, kept_aside=aside)
+
+    def _settle_liveness_aside(self, spec: q.RunSpec, st: dict) -> None:
+        """Move the aborted attempt's run directory to its recorded aside
+        name if that has not happened yet (no-op otherwise)."""
+        name = st.get("liveness_aside")
+        if st.get("status") != q.LIVENESS_RESTART or not name:
+            return
+        rd, dst = self.run_dir(spec), self.run_dir(spec).with_name(name)
+        if rd.exists() and not dst.exists():
+            shutil.move(str(rd), str(dst))
+
+    def recover_interrupted_abort(self, spec: q.RunSpec, st: dict) -> dict:
+        """A ``running`` status whose run directory already holds the
+        run.json of a liveness-aborted attempt was interrupted between the
+        end of training and the status update: record that abort (restart
+        or final training failure, as in ``train``) instead of counting an
+        infrastructure failure."""
+        f = self.run_dir(spec) / "run.json"
+        if st["status"] != q.RUNNING or not f.exists():
+            return st
+        try:
+            d = json.loads(f.read_text())
+        except (OSError, ValueError):
+            return st
+        if not d.get("liveness_abort"):
+            return st
+        rec = SimpleNamespace(**{k: d.get(k) for k in (
+            "training_failure", "liveness_abort", "pair_steps_done",
+            "last_checkpoint", "wall_time_s", "failure_reason")})
+        self.event(run=spec.run_id, phase="train",
+                   state="recovered_interrupted_liveness_abort")
+        self._finish_attempt(spec, st, len(st["attempts"]) + 1, rec)
+        return st
 
     def evaluate(self, spec: q.RunSpec, st: dict) -> None:
         if self.o.host != "kxkm":
@@ -527,6 +630,45 @@ class Campaign:
     def stop_requested(self) -> bool:
         return (self.dir / "STOP").exists()
 
+    def control_all(self) -> list[q.RunSpec]:
+        """Per-run-pretraining control runs (only when the registered preset
+        uses a pre-trained trunk; N10-C only)."""
+        enabled = options_for(_guards.REGISTERED_TRAIN_OPTIONS).pretrained_trunk
+        return q.control_queue(self.reg_name, enabled=enabled)
+
+    def control_host(self) -> list[q.RunSpec]:
+        return [s for s in self.control_all() if s.host == self.o.host]
+
+    def _process(self, spec: q.RunSpec, can_eval: bool) -> int | None:
+        """Train (with infrastructure and liveness restarts), evaluate and
+        archive one run of this host; an exit code stops the campaign."""
+        st = self.recover_interrupted_abort(spec, self.store.load(spec))
+        st = self.store.recover_stale(spec) if st["status"] == q.RUNNING else st
+        self.finalize_exhausted(spec, st)
+        if q.needs_training(st):
+            ok, free = self.gpu_ok()
+            if not ok:
+                self.event(phase="campaign", state="gpu_guard_refused",
+                           free_gb=free, min_free_gb=self.o.min_free_gb,
+                           next_run=spec.run_id)
+                return EXIT_GPU
+            # infra restarts and the one liveness restart, from scratch
+            while q.needs_training(st):
+                self.train(spec, st)
+                if (st["status"] in (q.INFRA_FAILED, q.LIVENESS_RESTART)
+                        and q.needs_training(st)):
+                    ok, free = self.gpu_ok()
+                    if not ok:
+                        self.event(phase="campaign", state="gpu_guard_refused",
+                                   free_gb=free, next_run=spec.run_id)
+                        return EXIT_GPU
+            self.finalize_exhausted(spec, st)
+        while can_eval and q.needs_eval(st):
+            self.evaluate(spec, st)
+        if q.needs_archive(st):
+            self.archive(spec, st)
+        return None
+
     def run(self) -> int:
         queue = self.queue_host()
         if not self._pinned:
@@ -536,6 +678,7 @@ class Campaign:
                                  "its registration context (provenance)")
             self.pin({} if reg is None else reg.pins())
         can_eval = self.o.host == "kxkm"
+        twins = {q.control_partner(c).run_id: c for c in self.control_host()}
         for spec in self.queue_all():
             if self.stop_requested():
                 self.event(phase="campaign", state="stopped_by_STOP_file")
@@ -549,36 +692,29 @@ class Campaign:
                     if q.needs_archive(st):
                         self.archive(spec, st)
                 continue
-            st = self.store.recover_stale(spec)
-            self.finalize_exhausted(spec, st)
-            if q.needs_training(st):
-                ok, free = self.gpu_ok()
-                if not ok:
-                    self.event(phase="campaign", state="gpu_guard_refused",
-                               free_gb=free, min_free_gb=self.o.min_free_gb,
-                               next_run=spec.run_id)
-                    return EXIT_GPU
-                while q.needs_training(st):  # infra restarts, from scratch
-                    self.train(spec, st)
-                    if st["status"] == q.INFRA_FAILED and q.needs_training(st):
-                        ok, free = self.gpu_ok()
-                        if not ok:
-                            self.event(phase="campaign", state="gpu_guard_refused",
-                                       free_gb=free, next_run=spec.run_id)
-                            return EXIT_GPU
-                self.finalize_exhausted(spec, st)
-            while can_eval and q.needs_eval(st):
-                self.evaluate(spec, st)
-            if q.needs_archive(st):
-                self.archive(spec, st)
+            rc = self._process(spec, can_eval)
+            if rc is not None:
+                return rc
+            # declared per-run-pretraining control (PI 2026-10-25 19:50):
+            # paired in time, right after its shared-trunk registered run
+            twin = twins.get(spec.run_id)
+            if twin is not None:
+                if self.stop_requested():
+                    self.event(phase="campaign", state="stopped_by_STOP_file")
+                    return EXIT_STOP
+                rc = self._process(twin, can_eval)
+                if rc is not None:
+                    return rc
+        queue = queue + self.control_host()
         states = [self.store.load(s) for s in queue]
         if not can_eval:  # macM1: trains only; evaluation happens on KXKM
             self.event(phase="campaign", state="finished", host=self.o.host,
                        summary=q.summarize(states))
             return EXIT_OK
         # KXKM: completion needs ALL evaluations and ALL cross-play cells of
-        # the registration (N10-C: 60 and 10; N10-C-bis: 48 and 8)
-        everything = self.queue_all()
+        # the registration (N10-C: 60 and 10; N10-C-bis: 48 and 8), plus the
+        # per-run-pretraining control runs when there is one
+        everything = self.queue_all() + self.control_all()
         awaiting, unresolved = [], []
         for s in everything:
             if not self.store.path(s).exists():

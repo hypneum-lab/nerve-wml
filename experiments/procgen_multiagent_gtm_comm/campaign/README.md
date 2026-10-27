@@ -17,6 +17,17 @@ campaign.json (host pinned).
 Files: `queue.py` (frozen list, status files), `run_campaign.py` (runner
 and guards), `kxkm/deploy.sh`, `kxkm/start.sh`.
 
+`macm1/start.sh` (amendment 2026-10-25) starts the macM1 runner the same
+way, and `macm1/pretrain.sh OUT_DIR --seed N [...]` starts a trunk
+pre-training; both run their command through `macm1/day_model_paused.sh`,
+which pauses the second-brain day model (`~/.mtplx/paused`, oMLX backend
+on :8081 stopped) for the whole life of the command. The wrapper creates
+the flag exclusively (it refuses if the flag already exists and leaves it),
+installs its cleanup before creating it, refuses below 40 % free memory,
+stops the command (SIGTERM) on HUP / INT / TERM and lifts the pause on every exit
+path. Only SIGKILL of the wrapper leaves the flag behind: then remove
+`~/.mtplx/paused` by hand.
+
 ## Pre-flight checklist (all must be ticked)
 
 - [ ] Stage-2 manifest frozen by an annotated git tag (the commitment

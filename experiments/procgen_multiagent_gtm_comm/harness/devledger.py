@@ -46,8 +46,43 @@ def allowance(arm: str) -> int:
 
 
 COUNTED = ("smoke", "dev_train")
-KINDS = (*COUNTED, "throughput_learning", "measurement")
-LEARNING_KINDS = (*COUNTED, "throughput_learning")
+# Amendment 2026-10-25 (trunk-collapse fix): learnability-gate development
+# runs, a separate category with its own cap, and single-agent trunk
+# pre-training runs (arm "trunk", condition "single").
+GATE_KINDS = ("gate_dev", "pretrain_dev")
+# gate_dev, per arm: variants C, A, B (PI decision 2026-10-25 09:10: all
+# three on KXKM-AI) + the slot spent by the 0-step crash of 09:05 = 4.
+# gtm, PI decisions 2026-10-25 09:18 and 09:50: + the macM1 (Metal) C check
+# (stopped by hand under memory pressure), + its rerun with the day model
+# paused, + the B rerun after a crash caused by our own concurrent GPU test
+# = 7. PI decisions 2026-10-25 12:07-12:10, before the results: + a second
+# dev seed for C (both arms), + C with and without Adam bias correction on
+# the PR head code (both arms) = gtm 10, eng 7. pretrain_dev, in total (arm
+# "trunk"): + the second seed's pre-training (its CUDA attempt on KXKM-AI
+# crashed at 12:07, then macM1) = 4, + one KXKM-AI validation of the
+# micro-batched pre-training fix for that crash (PI 2026-10-25 12:16) = 5.
+# PI decision 2026-10-25 13:33, before the results: deeper Adam bias-
+# correction study (C vs C-bc): mechanism runs (gtm, 2 x 200k), 3 more dev
+# seeds x 2 arms x 2 presets at 1M (+3 pre-trainings on KXKM-AI) and
+# 2 long gtm runs (10M) = gtm 20, eng 13, pretrain_dev 8. gate_dev runs may
+# then reach GATE_MAX_STEPS.
+# PI decision 2026-10-26 22:02, before any result: every N10-C-bis arm
+# must pass the learnability gate under fix C before the N10-C-bis tag;
+# 3 gate_dev runs per new arm (one gate run + up to 2 infrastructure
+# reruns), dev seed 9101, 1M pair-steps, the seed-9101 trunk.
+GATE_DEV_ALLOWANCE = {"gtm": 20, "eng": 13, "gtm_mis": 3, "eng_gtmrx": 3,
+                      "gtm_warm": 3, "vq": 3}
+GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 8}
+GATE_MAX_STEPS = {"gate_dev": 10_000_000}
+
+
+def gate_allowance(kind: str, arm: str) -> int:
+    if kind == "gate_dev":
+        return GATE_DEV_ALLOWANCE.get(arm, GATE_ALLOWANCE["gate_dev"])
+    return GATE_ALLOWANCE[kind]
+PRETRAIN_ARM, PRETRAIN_CONDITION = "trunk", "single"
+KINDS = (*COUNTED, "throughput_learning", "measurement", *GATE_KINDS)
+LEARNING_KINDS = (*COUNTED, "throughput_learning", "gate_dev")
 SMOKE_SEED = 9001  # not a registered seed
 _TOKEN = object()
 
@@ -130,18 +165,23 @@ def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
     """Account one development run before it starts; raise if not allowed."""
     from .codes import ARM_CODES, CONDITION_CODES
 
-    if arm not in ARM_CODES or condition not in CONDITION_CODES:
-        raise ValueError(f"unknown arm/condition {arm!r}/{condition!r}")
     if kind not in KINDS:
         raise ValueError(f"unknown ledger kind {kind!r}")
+    if kind == "pretrain_dev":
+        if (arm, condition) != (PRETRAIN_ARM, PRETRAIN_CONDITION):
+            raise ValueError("pretrain_dev runs use arm 'trunk', condition "
+                             "'single'")
+    elif arm not in ARM_CODES or condition not in CONDITION_CODES:
+        raise ValueError(f"unknown arm/condition {arm!r}/{condition!r}")
     if kind == "throughput_learning" and not inspected:
         raise ValueError("a throughput_learning run must record what was "
                          "inspected (throughput, losses, success rate, ...)")
     if steps < 1:
         raise ValueError("steps must be >= 1")
-    if steps > MAX_STEPS:
+    limit = GATE_MAX_STEPS.get(kind, MAX_STEPS)
+    if steps > limit:
         raise SmokeLimitError(
-            f"development runs are limited to {MAX_STEPS:,} pair-steps "
+            f"development runs are limited to {limit:,} pair-steps "
             f"(requested {steps:,}); larger runs only via the registered path")
     with _locked(path):
         ledger = read(path)
@@ -151,6 +191,13 @@ def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
             if used >= allowance(arm):
                 raise SmokeLimitError(
                     f"arm {arm!r} already used {used} of {allowance(arm)} smoke runs")
+        if kind in GATE_KINDS:
+            used = sum(1 for r in ledger["runs"]
+                       if r.get("kind") == kind and r["arm"] == arm)
+            if used >= gate_allowance(kind, arm):
+                raise SmokeLimitError(
+                    f"{kind} for {arm!r}: already used {used} of "
+                    f"{gate_allowance(kind, arm)}")
         rid = uuid.uuid4().hex
         entry = {
             "id": rid, "claimed": False, "kind": kind, "arm": arm,

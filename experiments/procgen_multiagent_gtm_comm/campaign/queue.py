@@ -13,6 +13,14 @@ Status files: one JSON per run, ``<status_dir>/<run_id>.json``, written
 atomically. Infrastructure failures restart the run from scratch, at
 most ``MAX_INFRA_RESTARTS`` times (so at most 3 attempts); a training
 failure (non-finite loss / parameter) is final and never retried.
+Amendment 2026-10-25: a trunk-liveness abort restarts the run once from
+scratch (status ``liveness_restart``, counter ``liveness_restarts``,
+separate from ``infra_failures``; the aborted attempt is kept aside as
+``<run_id>.liveness-abort-1`` and never evaluated); a second abort is a
+training failure, evaluated at its last checkpoint and never replaced.
+``control_queue`` is the declared per-run-pretraining control: the 10
+runs of seed 101 (KXKM-AI) again, each with its own pre-trained trunk,
+run ids ``prc-<condition>-<arm>-s101``, outside the frozen 60-run list.
 
 N10-C-bis (addendum 2026-10-25, scope option bis-A): ``build_queue_bis``
 is the frozen 48-run list of the second campaign (4 control arms x 2
@@ -31,6 +39,7 @@ from pathlib import Path
 
 from ..harness.codes import (  # noqa: F401 - re-exported
     HOSTS,
+    PER_RUN_TRUNK_SEED,
     SEED_HOST,
     SEED_HOST_BIS,
     SEEDS,
@@ -41,6 +50,10 @@ ARMS_CLOSED: tuple[str, ...] = ("gtm", "dial", "eng", "nocomm")
 ARM_ORDER: tuple[str, ...] = ("gtm", "nocomm", "dial", "eng", "mlp", "atoc")
 TOTAL_PAIR_STEPS = 50_000_000
 MAX_INFRA_RESTARTS = 2
+# Amendment 2026-10-25 (PI decision 12:07-12:16): a liveness abort restarts
+# the run once from scratch (counted separately from infrastructure
+# restarts); a second abort is a training failure, never replaced.
+MAX_LIVENESS_RESTARTS = 1
 MAX_EVAL_ATTEMPTS = 3
 N_RUNS = 60
 
@@ -57,9 +70,15 @@ ARM_UNITS_BIS: tuple[tuple[str, ...], ...] = (
 WARM_SOURCE_ARM: dict[str, str] = {"gtm_warm": "eng_gtmrx"}
 N_RUNS_BIS = 48
 
+# -- per-run-pretraining control (amendment 2026-10-25, PI 19:12) ------------
+PER_RUN = "per_run"
+CONTROL_PREFIX = "prc-"
+N_CONTROL_RUNS = 10  # every (arm, condition) run of seed PER_RUN_TRUNK_SEED
+
 PENDING = "pending"
 RUNNING = "running"
 INFRA_FAILED = "infra_failed"
+LIVENESS_RESTART = "liveness_restart"  # first liveness abort: retrain from scratch
 TRAINED = "trained"  # training finished, evaluation still to do
 TRAINING_FAILURE = "training_failure"
 DONE = "done"
@@ -75,10 +94,14 @@ class RunSpec:
     # run_id of the warm-start source (``gtm_warm`` only).
     host_fixed: str | None = None
     warm_from: str | None = None
+    # amendment 2026-10-25: "per_run" = a run of the per-run-pretraining
+    # control (own trunk; run_id prefixed "prc-"); None = registered run
+    trunk: str | None = None
 
     @property
     def run_id(self) -> str:
-        return f"{self.condition}-{self.arm}-s{self.seed}"
+        rid = f"{self.condition}-{self.arm}-s{self.seed}"
+        return f"{CONTROL_PREFIX}{rid}" if self.trunk == PER_RUN else rid
 
     @property
     def host(self) -> str:
@@ -145,6 +168,32 @@ def build_queue_bis() -> list[RunSpec]:
     return out
 
 
+def control_queue(registration: str = DEFAULT_REGISTRATION,
+                  enabled: bool = True) -> list[RunSpec]:
+    """The declared per-run-pretraining control (N10-C only): the 10 runs
+    of seed ``PER_RUN_TRUNK_SEED`` (its host, KXKM-AI), in that seed's
+    registered queue order, each with its OWN pre-trained trunk (run_id
+    ``prc-<condition>-<arm>-s101``). Not part of the frozen 60-run list
+    (``build_queue``), never an input of the confirmatory analysis.
+    ``enabled`` is False when the registered preset has no pre-trained
+    trunk (frozen configuration): then there is no control."""
+    _check_registration(registration)
+    if registration != DEFAULT_REGISTRATION or not enabled:
+        return []
+    out = [RunSpec(r.arm, r.seed, r.condition, trunk=PER_RUN)
+           for r in build_queue(registration) if r.seed == PER_RUN_TRUNK_SEED]
+    assert len(out) == N_CONTROL_RUNS
+    assert not {r.run_id for r in out} & {r.run_id for r in build_queue()}
+    return out
+
+
+def control_partner(spec: RunSpec) -> RunSpec:
+    """The shared-trunk registered run a control run is paired with."""
+    if spec.trunk != PER_RUN:
+        raise ValueError(f"{spec.run_id} is not a per-run-pretraining control run")
+    return RunSpec(spec.arm, spec.seed, spec.condition)
+
+
 def runs_for_host(host: str,
                   registration: str = DEFAULT_REGISTRATION) -> list[RunSpec]:
     if host not in HOSTS:
@@ -160,7 +209,10 @@ def new_state(spec: RunSpec) -> dict:
         "archived": False, "attempts": [], "last_checkpoint": None,
         "failure_reason": None, "started_at": None, "finished_at": None,
         "infra_exhausted": False, "synced": False,
+        "liveness_restarts": 0,
     }
+    if spec.trunk is not None:
+        st["trunk"] = spec.trunk
     if spec.warm_from is not None:
         st["warm_from"] = spec.warm_from
     return st
@@ -209,7 +261,7 @@ def fail_attempt(state: dict, reason: str) -> None:
 
 
 def needs_training(state: dict) -> bool:
-    return (state["status"] in (PENDING, RUNNING, INFRA_FAILED)
+    return (state["status"] in (PENDING, RUNNING, INFRA_FAILED, LIVENESS_RESTART)
             and state["infra_failures"] <= MAX_INFRA_RESTARTS)
 
 

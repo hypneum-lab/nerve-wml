@@ -299,3 +299,125 @@ def test_bis_arms_evaluate_with_the_registered_designations(arm):
     d = json.loads(rec.to_json())
     assert d["R_primary"] == rec.R_primary and d["primary_pass"] == rec.primary_pass
     assert d["S"] == rec.R_intact - rec.R_shuffled
+
+
+# -- alignment with fix C (amendment 2026-10-25, PI decision 19:50) ----------
+def _trunk_file(path):
+    m = PairPolicy("gtm", mx.random.key(11))
+    mx.eval(m.parameters())
+    mx.save_safetensors(str(path), dict(tree_flatten(m.trunk.parameters())))
+    return path
+
+
+@pytest.mark.parametrize("arm", BIS_ARMS)
+def test_bis_arms_train_under_fix_c_from_the_seed_trunk(tmp_path, arm):
+    from experiments.procgen_multiagent_gtm_comm.harness.options import PRESETS
+
+    trunk = _trunk_file(tmp_path / "trunk.safetensors")
+    rec = _run(tmp_path, arm, updates=2, name=arm,
+               options=PRESETS["fix-c-coin-pretrain"], init_trunk=trunk)
+    assert rec.training_failure is False and not rec.liveness_abort
+    assert rec.train_options["preset"] == "fix-c-coin-pretrain"
+    assert rec.init_trunk_sha256 == hashlib.sha256(trunk.read_bytes()).hexdigest()
+    assert rec.trunk_mode == "shared"
+    assert rec.liveness and rec.liveness[0]["step"] == 0
+    assert max(rec.first_mb_ratio_dev) < 1e-4
+
+
+def test_gtm_warm_under_fix_c_records_the_warm_source_trunk(tmp_path):
+    from experiments.procgen_multiagent_gtm_comm.harness.options import PRESETS
+
+    opts = PRESETS["fix-c-coin-pretrain"]
+    trunk = _trunk_file(tmp_path / "trunk.safetensors")
+    src = _run(tmp_path, "eng_gtmrx", updates=2, seed=3, name="src",
+               options=opts, init_trunk=trunk)
+    ck = tmp_path / "src" / src.last_checkpoint
+    warm = _run(tmp_path, "gtm_warm", seed=3, name="warm", options=opts,
+                init_trunk=trunk, warm_start_from=ck)
+    assert warm.trunk_mode == "warm_source" and warm.warm_from is not None
+    cold = _run(tmp_path, "gtm_warm", seed=3, name="cold", options=opts,
+                init_trunk=trunk)
+    assert cold.trunk_mode == "shared" and cold.warm_source_untrained
+
+
+def test_vq_aux_loss_is_masked_for_finished_agents_under_fix_c():
+    """PI decision 2026-10-26: with mask_finished the VQ loss of finished
+    senders is excluded (masked mean over the full minibatch), as the
+    policy and entropy terms; the frozen expression is unchanged."""
+    model = PairPolicy("vq", mx.random.key(1))
+    mb = _mb(6, model)
+    enc = model.encode(mb["obs"].astype(mx.float32), None, train=True,
+                       key=mx.random.key(0))
+    rows = model.comm.aux_loss_rows(enc.x_msg)
+    assert float(rows.mean()) == pytest.approx(
+        float(model.comm.aux_loss(enc.x_msg)), rel=1e-6)
+
+    def codebook_grad(mask, live):
+        opt = optim.Adam(learning_rate=5e-4)
+        opt.init(model.trainable_parameters())
+        gs = _make_steps(model, opt, False, plastic=False, mask_finished=mask)[0]
+        m = dict(mb, live=mx.array(live.astype(np.float32)))
+        _, g, ok = accumulate_minibatch(gs, m, None, mx.random.key(0), mask=mask)
+        assert ok
+        return np.abs(np.array(dict(tree_flatten(g))["comm.codebook"])).max()
+
+    none_live = np.zeros((6, 2))
+    assert codebook_grad(True, none_live) == 0.0  # every sender finished
+    assert codebook_grad(True, np.ones((6, 2))) > 0.0
+    assert codebook_grad(False, none_live) > 0.0  # frozen path: unmasked
+
+
+def test_vq_mask_is_per_agent_row_and_micro_batch_invariant():
+    model = PairPolicy("vq", mx.random.key(2))
+    mb = _mb(6, model, seed=3)
+    live = np.ones((6, 2), np.float32)
+    live[:, 1] = 0.0  # agent 1 finished in every pair
+    live[4, 0] = 0.0  # and agent 0 of pair 4
+
+    def grads(m, micro):
+        opt = optim.Adam(learning_rate=5e-4)
+        opt.init(model.trainable_parameters())
+        gs = _make_steps(model, opt, False, plastic=False, mask_finished=True)[0]
+        _, g, ok = accumulate_minibatch(gs, m, micro, mx.random.key(0), mask=True)
+        assert ok
+        return {k: np.array(v) for k, v in tree_flatten(g)}
+
+    m = dict(mb, live=mx.array(live))
+    full, micro = grads(m, None), grads(m, 2)  # 2 + 2 + 2 pairs
+    for k in full:
+        np.testing.assert_allclose(micro[k], full[k], rtol=2e-4, atol=1e-7)
+    # the codebook gets gradient only from the (masked) VQ loss: changing the
+    # observations of finished rows leaves it unchanged
+    obs = np.array(mb["obs"])
+    obs[:, 1] = 255 - obs[:, 1]
+    obs[4, 0] = 255 - obs[4, 0]
+    other = grads(dict(m, obs=mx.array(obs)), None)
+    np.testing.assert_allclose(other["comm.codebook"], full["comm.codebook"],
+                               rtol=1e-5, atol=1e-8)
+    assert np.abs(full["comm.codebook"]).max() > 0.0
+
+
+def test_vq_aux_loss_does_not_reach_the_trunk():
+    """N10-C-bis vq fix (2026-10-27): the VQ loss trains to_msg, the VQ
+    encoder and the codebook, never the shared IMPALA trunk."""
+    import mlx.nn as nn
+
+    model = PairPolicy("vq", mx.random.key(1))
+    mb = _mb(4, model)
+    summ = mx.zeros((4, 2, 2))
+
+    def aux(m):
+        return m(mb["obs"].astype(mx.float32), summ, None, train=True,
+                 key=mx.random.key(0)).aux_loss
+
+    val, g = nn.value_and_grad(model, aux)(model)
+    flat = {k: np.abs(np.array(v)).max() for k, v in tree_flatten(g)}
+    assert float(val) > 0.0
+    assert all(v == 0.0 for k, v in flat.items() if k.startswith("trunk."))
+    for k in ("to_msg.weight", "comm.encode.weight", "comm.codebook"):
+        assert flat[k] > 0.0, k
+    # the value of the loss is unchanged (same x_msg = to_msg(h))
+    enc = model.encode(mb["obs"].astype(mx.float32), None, train=True,
+                       key=mx.random.key(0))
+    assert float(val) == pytest.approx(float(model.comm.aux_loss(enc.x_msg)),
+                                       rel=1e-6)

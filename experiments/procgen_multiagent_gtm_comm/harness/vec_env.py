@@ -38,6 +38,9 @@ class PairStep:
     done: np.ndarray  # bool [n]
     finished: np.ndarray  # bool [n, 2]
     window: tuple[np.ndarray, np.ndarray]  # (in_window bool, remaining int32)
+    # bool [n, 2]: agent reached its own coin on this step (individual
+    # coin reward of the 2026-10-25 amendment; never a policy input)
+    coin: np.ndarray | None = None
 
 
 class _Block:
@@ -118,16 +121,18 @@ class _Block:
         team = np.zeros(self.n, dtype=np.float32)
         done = np.zeros(self.n, dtype=bool)
         finished = np.zeros((self.n, 2), dtype=bool)
+        coin = np.zeros((self.n, 2), dtype=bool)
         for k, env in enumerate(self.envs):
             res = env.step([int(actions[k, 0]), int(actions[k, 1])])
             team[k] = res.team_reward
             done[k] = res.done
             finished[k] = res.info["finished"]
+            coin[k] = res.info["coin_flags"]
             if res.done:
                 self.obs[k] = np.stack(env.reset())
             else:
                 self.obs[k] = np.stack(res.obs_per_agent)
-        return (self._ret_obs(), self.summary(), team, done, finished,
+        return (self._ret_obs(), self.summary(), team, done, finished, coin,
                 *self.window())
 
     def using_stub(self) -> bool:
@@ -297,11 +302,11 @@ class VecCoopEnv:
             res = self._block.step(actions)
         else:
             res = self._rpc("step", np.ascontiguousarray(actions))
-        obs, summ, team, done, finished, flag, rem = res
+        obs, summ, team, done, finished, coin, flag, rem = res
         self._win = (flag, rem)
         return PairStep(
             obs=obs, summary=summ, team_reward=team, done=done,
-            finished=finished, window=(flag.copy(), rem.copy()),
+            finished=finished, window=(flag.copy(), rem.copy()), coin=coin,
         )
 
     def close(self) -> None:

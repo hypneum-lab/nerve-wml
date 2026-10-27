@@ -334,6 +334,15 @@ class VQComm(Comm):
         commitment = ((z - mx.stop_gradient(q)) ** 2).sum(-1).mean()
         return VQ_LAMBDA * (codebook + VQ_BETA * commitment)
 
+    def aux_loss_rows(self, x):
+        """The VQ loss of each sender row [B] (mean over the K slots); its
+        mean over rows equals ``aux_loss(x)``. Used to mask finished
+        agents (amendment 2026-10-25, PI decision 2026-10-26)."""
+        z, _, q = self._quantize(x)
+        codebook = ((mx.stop_gradient(z) - q) ** 2).sum(-1).mean(-1)
+        commitment = ((z - mx.stop_gradient(q)) ** 2).sum(-1).mean(-1)
+        return VQ_LAMBDA * (codebook + VQ_BETA * commitment)
+
     def receive(self, msg, h):
         if msg.shape[-1] == K_SYMBOLS * VQ_D_E:  # training: ST codebook rows
             q = msg.reshape(msg.shape[0], K_SYMBOLS, VQ_D_E)

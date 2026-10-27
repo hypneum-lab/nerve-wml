@@ -325,3 +325,35 @@ def test_estimate_covers_the_bis_queue():
     e = rc.estimate(thr, 3_600_000, "kxkm", "n10c-bis")
     assert len(e["per_run_hours"]) == 48 and e["total_hours"] == pytest.approx(48.0)
     assert len(rc.estimate(thr, 3_600_000, "kxkm")["per_run_hours"]) == 30
+
+
+# -- alignment with fix C (amendment 2026-10-25, PI decision 19:50) ----------
+def test_bis_campaign_uses_fix_c_and_the_seed_trunks(tmp_path, monkeypatch):
+    monkeypatch.setattr(guards, "REGISTERED_TRAIN_OPTIONS", "fix-c-coin-pretrain")
+    c, calls = _bis_campaign(tmp_path, lambda kw: _rec())
+    assert c.control_all() == []  # the per-run control is N10-C only
+    assert c.run() == rc.EXIT_OK
+    assert len(calls["train"]) == 48
+    for kw in calls["train"]:
+        assert kw["options"].preset == "fix-c-coin-pretrain"
+        assert kw["init_trunk"] == guards.trunk_path(c.dir, kw["seed"])
+        assert "per_run_trunk" not in kw
+
+
+def test_bis_liveness_abort_restarts_once(tmp_path, monkeypatch):
+    monkeypatch.setattr(guards, "REGISTERED_TRAIN_OPTIONS", "fix-c-coin-pretrain")
+    first = q.build_queue_bis()[0]
+    seen = []
+
+    def train(kw):
+        tag = f"{kw['condition']}-{kw['arm']}-s{kw['seed']}"
+        seen.append(tag)
+        abort = tag == first.run_id and seen.count(tag) == 1
+        return _rec(training_failure=abort, liveness_abort=abort,
+                    failure_reason="trunk liveness guard" if abort else None)
+
+    c, calls = _bis_campaign(tmp_path, train)
+    assert c.run() == rc.EXIT_OK
+    st = c.store.load(first)
+    assert st["status"] == q.DONE and st["liveness_restarts"] == 1
+    assert st["infra_failures"] == 0 and seen.count(first.run_id) == 2
