@@ -128,6 +128,18 @@ def matched_shrink_factors(
 # --------------------------------------------------------------------------- #
 
 
+def correlated_patterns(p: int, n: int, m: float, rng: np.random.Generator) -> np.ndarray:
+    """Patterns derived from one random ancestor a: xi_i = a_i with prob (1+m)/2.
+
+    Each pattern has overlap m with the ancestor on average and the
+    patterns have pairwise overlap m**2 on average. ``m = 0`` gives
+    independent uniform patterns (drawn through the same stream).
+    """
+    a = np.where(rng.random(n) < 0.5, -1.0, 1.0)
+    keep = rng.random((p, n)) < (1.0 + m) / 2.0
+    return np.where(keep, a, -a)
+
+
 def make_cues(
     xi: np.ndarray, probe_idx: np.ndarray, flips: float, rng: np.random.Generator
 ) -> np.ndarray:
@@ -261,7 +273,11 @@ def evaluate_task(args: tuple) -> list[dict]:
     t_start = time.time()
     records: list[dict] = []
     p_max = max(1, int(round(alpha_grid[-1] * n)))
-    xi_all = np.where(stream(seed, n, 1).random((p_max, n)) < 0.5, -1.0, 1.0)
+    ancestor_m = cfg.get("ancestor_m")
+    if ancestor_m is None:
+        xi_all = np.where(stream(seed, n, 1).random((p_max, n)) < 0.5, -1.0, 1.0)
+    else:
+        xi_all = correlated_patterns(p_max, n, float(ancestor_m), stream(seed, n, 1, 7))
 
     for ai, alpha in enumerate(alpha_grid):
         p = max(1, int(round(alpha * n)))
@@ -293,6 +309,8 @@ def evaluate_task(args: tuple) -> list[dict]:
                     "c_fro": c_fro, "c_spec": c_spec, "temp": temp, "flips": flips,
                     "n_probes": int(probe_idx.size), "cue_overlap": m0,
                 }
+                if ancestor_m is not None:
+                    rec["ancestor_m"] = float(ancestor_m)
                 if temp == 0.0:
                     s, sweeps, conv = run_zero_temperature(j_arm, cues, rng_dyn)
                     m_all = s @ xi.T / n
