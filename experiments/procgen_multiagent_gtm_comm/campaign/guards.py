@@ -86,9 +86,12 @@ REGISTERED_TRAIN_CONFIG = {  # frozen rollout / measurement configuration
     "ckpt_every_pair_steps": 1_000_000, "minibatch_pairs": 1024,
 }
 # Training-options preset of registered runs (harness.train.PRESETS). The
-# tag n10c-freeze-20261024 froze the original configuration; the 2026-10-25
-# amendment changes this only together with a NEW freeze tag.
-REGISTERED_TRAIN_OPTIONS = "frozen-20261024"
+# tag n10c-freeze-20261024 froze the original configuration ("frozen-
+# 20261024", still selectable to reproduce that tag). The 2026-10-25
+# amendment (section 5, item 2) registers fix C; it takes effect only with
+# the NEW freeze tag (no registered run can start before it: the trunk pins
+# below are empty until the registered pre-trainings).
+REGISTERED_TRAIN_OPTIONS = "fix-c-coin-pretrain"
 # Pre-trained trunk of each registered seed (preset with pretrained_trunk):
 # SHA-256 of ``<campaign_dir>/trunks/seed-<seed>/trunk.safetensors``, written
 # by the registered pre-training run of that seed on its fixed host and

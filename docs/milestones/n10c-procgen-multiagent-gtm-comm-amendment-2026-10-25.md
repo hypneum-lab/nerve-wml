@@ -194,7 +194,7 @@ Development runs on KXKM-AI (KXKM per-host settings, `gate_dev` / `pretrain_dev`
 
 ## 5. New freeze, archive and manifest
 
-This amendment cannot reuse tag `n10c-freeze-20261024`. Before any run of the new configuration:
+This amendment cannot reuse tag `n10c-freeze-20261024`. Before any run of the new configuration: (step-by-step plan, open decisions and estimates: `docs/milestones/n10c-freeze-plan-2026-10-28.md`)
 
 1. the PI's ratification of the gate criterion and of the gate result of C (12:07, on the condition of a second development seed, met by rows 20–21) is recorded in the stage-2 manifest ;
 2. `campaign.guards.REGISTERED_TRAIN_OPTIONS` is set to `fix-c-coin-pretrain` (or to the bias-correction variant, only if the PI so decides after section 4.3 and before the freeze) ;
