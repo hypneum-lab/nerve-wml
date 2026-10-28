@@ -1,0 +1,163 @@
+{
+  "seed": 101,
+  "total_steps": 1000000,
+  "n_envs": 64,
+  "horizon": 128,
+  "steps_done": 1000000,
+  "n_updates": 123,
+  "wall_time_s": 374.4372057914734,
+  "episodes": 10426,
+  "coin_rate_curve": [
+    [
+      106496,
+      0.5
+    ],
+    [
+      204800,
+      0.71
+    ],
+    [
+      303104,
+      0.64
+    ],
+    [
+      401408,
+      0.68
+    ],
+    [
+      507904,
+      0.8
+    ],
+    [
+      606208,
+      0.81
+    ],
+    [
+      704512,
+      0.8
+    ],
+    [
+      802816,
+      0.82
+    ],
+    [
+      901120,
+      0.91
+    ],
+    [
+      1000000,
+      0.87
+    ]
+  ],
+  "liveness": [
+    {
+      "block3_pos_frac": 0.6228408813476562,
+      "live_h_frac": 0.5859375,
+      "h_nonzero_frac": 0.52777099609375,
+      "step": 0,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.2030200958251953,
+      "live_h_frac": 0.23046875,
+      "h_nonzero_frac": 0.11480712890625,
+      "step": 106496,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.1812915802001953,
+      "live_h_frac": 0.3203125,
+      "h_nonzero_frac": 0.15264892578125,
+      "step": 204800,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.1795940399169922,
+      "live_h_frac": 0.41015625,
+      "h_nonzero_frac": 0.1593170166015625,
+      "step": 303104,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.18970108032226562,
+      "live_h_frac": 0.4921875,
+      "h_nonzero_frac": 0.1712646484375,
+      "step": 401408,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.19751930236816406,
+      "live_h_frac": 0.5546875,
+      "h_nonzero_frac": 0.1868896484375,
+      "step": 507904,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.1507701873779297,
+      "live_h_frac": 0.59765625,
+      "h_nonzero_frac": 0.188446044921875,
+      "step": 606208,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.17189979553222656,
+      "live_h_frac": 0.67578125,
+      "h_nonzero_frac": 0.2068328857421875,
+      "step": 704512,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.16835594177246094,
+      "live_h_frac": 0.69140625,
+      "h_nonzero_frac": 0.2159271240234375,
+      "step": 802816,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.161102294921875,
+      "live_h_frac": 0.6953125,
+      "h_nonzero_frac": 0.2311553955078125,
+      "step": 901120,
+      "flagged": false
+    },
+    {
+      "block3_pos_frac": 0.17485809326171875,
+      "live_h_frac": 0.6875,
+      "h_nonzero_frac": 0.2180633544921875,
+      "step": 1000000,
+      "flagged": false
+    }
+  ],
+  "usable": true,
+  "failure_reason": null,
+  "trunk_file": "trunk.safetensors",
+  "trunk_sha256": "8589fbbb507612fabaf48be2eb227398b7655bc91ccdc918a6a4059ea799b2c7",
+  "registration": null,
+  "settings": {
+    "micro_batch_pairs": 512,
+    "clear_cache": true
+  },
+  "levels": "training (start_level=0, num_levels=16, easy)",
+  "unit": [
+    "eng",
+    "closed"
+  ],
+  "seed_sequence": [
+    101,
+    99,
+    4,
+    1
+  ],
+  "pre_freeze": {
+    "mode": "pre-freeze registered pre-training",
+    "commit": "1381a389cff617fa45ad345b37500b9ecad2801d",
+    "host": "kxkm",
+    "registered_preset": "fix-c-coin-pretrain",
+    "budget": 1000000,
+    "unit": [
+      "eng",
+      "closed"
+    ]
+  },
+  "liveness_every": 100000
+}
