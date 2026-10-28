@@ -249,11 +249,11 @@ def test_prefreeze_gate_checks_origin_live_not_another_remote(pushed_repo, tmp_p
                                  "sub/x.md", "x.txt"])
 def test_freeze_prepare_refuses_non_plain_manifest_names(tmp_path, bad):
     repo = _repo_copy(tmp_path)
-    before = {rel: (repo / rel).read_bytes() for rel in guards.FROZEN_PATHS}
+    paths = (*guards.FROZEN_PATHS, guards.AMENDMENT_PATH)
+    before = {rel: (repo / rel).read_bytes() for rel in paths}
     with pytest.raises(ValueError):
         fp.prepare(repo, TAG, bad, write_manifest=_fake_manifest)
-    assert {rel: (repo / rel).read_bytes() for rel in guards.FROZEN_PATHS} == before
-    assert "FROZEN by tag" not in (repo / guards.AMENDMENT_PATH).read_text()
+    assert {rel: (repo / rel).read_bytes() for rel in paths} == before  # untouched
 
 
 @pytest.mark.parametrize("change", [
