@@ -114,3 +114,28 @@ def test_detached_wrapper_owns_cleanup_on_term(tmp_path):
     else:
         pytest.fail("command survived the wrapper's TERM")
     assert _events(tmp_path / "log")[-1] == "day_model_resumed"
+
+
+def test_heavy_lock_is_taken_before_the_pause(tmp_path):
+    """HEAVY_LOCK (freeze plan C6): while another job holds the lock the
+    detached wrapper is queued and the day model is NOT paused yet."""
+    lock = tmp_path / "heavy.lock"
+    flag = tmp_path / "mtplx" / "paused"
+    holder = subprocess.Popen(["/usr/bin/lockf", "-k", str(lock), "/bin/sleep", "4"])
+    try:
+        time.sleep(0.5)
+        p = subprocess.run(
+            ["zsh", str(SCRIPT), "--detach", str(tmp_path / "st"),
+             str(tmp_path / "log"), "--", "/bin/sleep", "1"],
+            env=_env(tmp_path, HEAVY_LOCK=lock), capture_output=True, text=True)
+        assert p.returncode == 0 and "queued" in p.stdout, p.stdout + p.stderr
+        assert not flag.exists()  # not paused while waiting for the lock
+    finally:
+        holder.wait(timeout=10)
+    t = time.time() + 20
+    while time.time() < t and "day_model_resumed" not in (
+            (tmp_path / "log").read_text() if (tmp_path / "log").exists() else ""):
+        time.sleep(0.2)
+    assert _events(tmp_path / "log") == ["day_model_paused", "running",
+                                         "day_model_resumed"]
+    assert not flag.exists()

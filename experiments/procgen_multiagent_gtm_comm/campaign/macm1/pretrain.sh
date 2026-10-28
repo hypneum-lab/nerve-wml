@@ -3,8 +3,11 @@
 # second-brain day model paused for the whole run (amendment 2026-10-25,
 # section 6: every macM1 run of the new configuration, pre-training
 # included). Same pause lifecycle as start.sh (day_model_paused.sh).
-#   BASE=~/scratch/n10c-run zsh pretrain.sh OUT_DIR --seed N \
-#        [--registered --freeze-tag ... --swhid ...]
+#   [HEAVY_LOCK=~/scratch/.heavy.lock] BASE=~/scratch/n10c-freeze \
+#     zsh pretrain.sh OUT_DIR --seed N --pre-freeze   (freeze plan, phase T)
+#   or ... --seed N [--registered --freeze-tag ... --swhid ...]
+# HEAVY_LOCK: wait for the shared heavy-job lock before pausing the day
+# model (day_model_paused.sh).
 # Log and launcher state: OUT_DIR/console.log, OUT_DIR/launcher.state.
 set -eu
 HERE="${0:A:h}"

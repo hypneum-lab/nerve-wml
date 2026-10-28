@@ -21,6 +21,10 @@
 # Environment (tests): PAUSE_FLAG (default ~/.mtplx/paused), DAY_MODEL_PORT
 # (default 8081, the oMLX backend; the :8080 front honours the flag),
 # MIN_FREE_PCT (default 40), SETTLE_S (default 5), DETACH_WAIT_S (default 60).
+# HEAVY_LOCK (optional, e.g. ~/scratch/.heavy.lock): with --detach, the
+# detached copy runs under `/usr/bin/lockf -k HEAVY_LOCK`, so it waits for
+# the shared heavy-job lock BEFORE pausing the day model; the detacher
+# reports "queued" while the lock is held by another job.
 set -u
 PAUSE="${PAUSE_FLAG:-$HOME/.mtplx/paused}"
 PORT="${DAY_MODEL_PORT:-8081}"
@@ -36,15 +40,28 @@ shift 3
 
 if (( detach )); then
   rm -f -- "$STATE"
-  nohup zsh "${0:A}" "$STATE" "$LOG" -- "$@" >/dev/null 2>&1 &
+  if [ -n "${HEAVY_LOCK:-}" ]; then
+    # shared macM1: wait for the heavy-job lock FIRST; the day model is
+    # paused only once the lock is held (lockf holds it until the wrapper,
+    # hence the command, exits)
+    print -r -- "waiting: heavy lock $HEAVY_LOCK" >"$STATE"
+    nohup /usr/bin/lockf -k "$HEAVY_LOCK" zsh "${0:A}" "$STATE" "$LOG" -- "$@" \
+      >/dev/null 2>&1 &
+  else
+    nohup zsh "${0:A}" "$STATE" "$LOG" -- "$@" >/dev/null 2>&1 &
+  fi
   wpid=$!
-  for _ in $(seq 1 "${DETACH_WAIT_S:-60}"); do
+  for i in $(seq 1 "${DETACH_WAIT_S:-60}"); do
     if [ -s "$STATE" ]; then
       st=$(<"$STATE")
       case $st in
         running*) print -r -- "started: wrapper pid $wpid, $st (log $LOG)"
                   exit 0 ;;
         refused*) print -r -- "$st" >&2; exit 2 ;;
+        waiting*) if [ "${HEAVY_LOCK_REPORT_QUEUED:-1}" = 1 ] && [ "$i" -ge 3 ]; then
+                    print -r -- "queued: wrapper pid $wpid $st (state $STATE, log $LOG)"
+                    exit 0
+                  fi ;;
       esac
     fi
     kill -0 "$wpid" 2>/dev/null || break

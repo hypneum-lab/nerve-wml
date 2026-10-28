@@ -7,6 +7,9 @@
 # path) lives in day_model_paused.sh; this script never touches the flag.
 #   BASE=~/scratch/n10c-run zsh start.sh --freeze-tag n10c-freeze-YYYYMMDD \
 #        --swhid swh:1:rev:<40 hex> [--archive-to host:/path]
+# HEAVY_LOCK=~/scratch/.heavy.lock (optional): the runner waits for the
+# shared heavy-job lock before the day model is paused, and holds it for
+# its whole life (day_model_paused.sh).
 set -eu
 HERE="${0:A:h}"
 BASE="${BASE:-$HOME/scratch/n10c-run}"
