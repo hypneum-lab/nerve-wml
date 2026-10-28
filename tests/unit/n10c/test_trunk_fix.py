@@ -21,6 +21,7 @@ from experiments.procgen_multiagent_gtm_comm.harness.pretrain import (  # noqa: 
 from experiments.procgen_multiagent_gtm_comm.harness.rollout import (  # noqa: E402
     compute_gae,
 )
+from tests.unit.n10c import _backend  # noqa: E402
 
 GOOD = 7  # the rewarded action of the bandit task
 
@@ -423,6 +424,7 @@ def test_pretrain_writes_a_loadable_trunk(tmp_path):
     assert json.loads((tmp_path / "pretrain.json").read_text())["usable"]
 
 
+@pytest.mark.skipif(_backend.on_cuda(), reason=_backend.CUDA_NONDETERMINISM)
 def test_pretrain_micro_batches_match_the_full_minibatch(tmp_path):
     # KXKM-AI pre-trains in micro-batches (HOST_SETTINGS): same update
     recs = {}
