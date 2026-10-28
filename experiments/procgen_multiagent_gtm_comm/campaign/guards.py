@@ -60,11 +60,21 @@ from ..harness.codes import (
     SEED_HOST_BIS,
     SEEDS,
 )
+from . import trunk_pins as _trunk_pins
 
 REPO = Path(__file__).resolve().parents[3]
 MANIFEST_DIR = Path("experiments/procgen_multiagent_gtm_comm/manifest")
+# The 2026-10-23 amendment and its stage-2 manifest are FROZEN by tag
+# n10c-freeze-20261024 (stopped campaign, excluded): never written again.
+AMENDMENT_PATH_20261023 = ("docs/milestones/"
+                           "n10c-procgen-multiagent-gtm-comm-amendment-2026-10-23.md")
+MANIFEST_20261024 = MANIFEST_DIR.as_posix() + "/stage2-manifest.md"
+FROZEN_PATHS: tuple[str, ...] = (AMENDMENT_PATH_20261023, MANIFEST_20261024)
+# The new N10-C freeze (amendment 2026-10-25, section 5) rewrites and
+# checks the Status line of THIS amendment and writes a NEW manifest.
 AMENDMENT_PATH = ("docs/milestones/"
-                  "n10c-procgen-multiagent-gtm-comm-amendment-2026-10-23.md")
+                  "n10c-procgen-multiagent-gtm-comm-amendment-2026-10-25.md")
+MANIFEST_NAME = "stage2-manifest-fixc.md"
 ALLOWED_AFTER_COMMIT = ("docs/", MANIFEST_DIR.as_posix() + "/")
 DOI_RE = re.compile(r"^10\.17605/OSF\.IO/[A-Z0-9]{5,}$")
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
@@ -86,16 +96,20 @@ REGISTERED_TRAIN_CONFIG = {  # frozen rollout / measurement configuration
     "ckpt_every_pair_steps": 1_000_000, "minibatch_pairs": 1024,
 }
 # Training-options preset of registered runs (harness.train.PRESETS). The
-# tag n10c-freeze-20261024 froze the original configuration; the 2026-10-25
-# amendment changes this only together with a NEW freeze tag.
-REGISTERED_TRAIN_OPTIONS = "frozen-20261024"
+# tag n10c-freeze-20261024 froze the original configuration ("frozen-
+# 20261024", still selectable to reproduce that tag). The 2026-10-25
+# amendment (section 5, item 2) registers fix C; it takes effect only with
+# the NEW freeze tag (no registered run can start before it: the trunk pins
+# below are empty until the registered pre-trainings).
+REGISTERED_TRAIN_OPTIONS = "fix-c-coin-pretrain"
 # Pre-trained trunk of each registered seed (preset with pretrained_trunk):
 # SHA-256 of ``<campaign_dir>/trunks/seed-<seed>/trunk.safetensors``, written
 # by the registered pre-training run of that seed on its fixed host and
 # pinned by the new freeze's manifest. Empty until then: a registered run of
 # a pre-training preset is refused.
-REGISTERED_TRUNK_SHA256: dict[int, str] = {}
+REGISTERED_TRUNK_SHA256: dict[int, str] = dict(_trunk_pins.SHARED)
 PRETRAIN_BUDGET = 1_000_000  # single-agent steps per registered pre-training
+PRETRAIN_PROCEDURE = {"n_envs": 64, "horizon": 128, "liveness_every": 100_000}
 TRUNK_DIR = "trunks"
 
 
@@ -107,7 +121,8 @@ def trunk_path(campaign_dir: Path, seed: int) -> Path:
 # each (arm, condition) run of seed PER_RUN_TRUNK_SEED, written by its own
 # registered pre-training run and pinned by the new freeze manifest. Empty
 # until then: a control run is refused.
-REGISTERED_CONTROL_TRUNK_SHA256: dict[tuple[str, str], str] = {}
+REGISTERED_CONTROL_TRUNK_SHA256: dict[tuple[str, str], str] = {
+    tuple(k.split("/")[::-1]): v for k, v in _trunk_pins.CONTROL.items()}  # (arm, cond)
 
 
 def control_trunk_path(campaign_dir: Path, arm: str, condition: str) -> Path:
@@ -167,7 +182,7 @@ class Registration:
 ADDENDUM_PATH = "docs/milestones/2026-10-25-n10c-bis-control-arms.md"
 ARMS_BY_CONDITION_BIS = {"registered": BIS_ARMS, "closed": BIS_ARMS}
 REGISTRATIONS: dict[str, Registration] = {
-    "n10c": Registration("n10c", TAG_PREFIX, AMENDMENT_PATH, "stage2-manifest.md",
+    "n10c": Registration("n10c", TAG_PREFIX, AMENDMENT_PATH, MANIFEST_NAME,
                          ARMS_BY_CONDITION, SEED_HOST),
     "n10c-bis": Registration("n10c-bis", "n10c-bis-freeze-", ADDENDUM_PATH,
                              "stage2-manifest-bis.md", ARMS_BY_CONDITION_BIS,
@@ -727,6 +742,84 @@ def check_pretrain_boundary(ctx: Any, *, seed: int, total_steps: int,
     host = SEED_HOST[seed]
     assert_runtime_host(host)
     return host
+
+
+def _on_origin_branch(repo: Path, head: str) -> bool:
+    """HEAD is the head of a branch that ``origin`` advertises NOW, or an
+    ancestor of one (checked against the live ``git ls-remote``, not the
+    cached remote-tracking refs)."""
+    out = _git(repo, "ls-remote", "--heads", ORIGIN)
+    for line in out.splitlines():
+        sha = line.split()[0] if line.split() else ""
+        if sha == head:
+            return True
+        known = subprocess.run(["git", "-C", str(repo), "cat-file", "-e",
+                                f"{sha}^{{commit}}"], capture_output=True)
+        if known.returncode == 0 and subprocess.run(
+                ["git", "-C", str(repo), "merge-base", "--is-ancestor", head, sha],
+                capture_output=True).returncode == 0:
+            return True
+    return False
+
+
+def check_prefreeze_pretrain(*, seed: int, total_steps: int, has_env: bool,
+                             unit: tuple[str, str] | None = None,
+                             repo: Path = REPO) -> dict:
+    """Gate for the pre-freeze registered pre-training (PI decision
+    2026-10-28, option A of the freeze plan): the exact registered
+    procedure, run before the new tag so that the trunk SHA-256 can be
+    committed by it. Outcome-blind: pre-training never touches the coop
+    task, a partner, a message or a held-out level.
+
+    Requires a registered seed (or a control unit of seed
+    ``PER_RUN_TRUNK_SEED``), the exact ``PRETRAIN_BUDGET``, the real
+    Procgen, a registered preset with a pre-trained trunk, a clean git
+    tree whose HEAD is on a branch of ``origin``, and the seed's fixed host
+    at runtime. Returns the record written into ``pretrain.json``."""
+    from ..harness.options import PRESETS
+
+    errs: list[str] = []
+    if seed not in SEEDS:
+        errs.append(f"seed {seed} not in the registered seeds {list(SEEDS)}")
+    if total_steps != PRETRAIN_BUDGET:
+        errs.append(f"budget {total_steps:,} != registered {PRETRAIN_BUDGET:,}")
+    if has_env:
+        errs.append("pre-freeze pre-training uses the real Procgen")
+    if unit is not None:
+        arm, cond = unit
+        if seed != PER_RUN_TRUNK_SEED:
+            errs.append(f"per-run pre-training is for the control seed "
+                        f"{PER_RUN_TRUNK_SEED} only (got {seed})")
+        if arm not in ARMS_BY_CONDITION.get(cond, ()):
+            errs.append(f"({arm}, {cond}) is not an N10-C run")
+    preset = PRESETS.get(REGISTERED_TRAIN_OPTIONS)
+    if preset is None or not preset.pretrained_trunk:
+        errs.append(f"registered preset {REGISTERED_TRAIN_OPTIONS!r} has no "
+                    "pre-trained trunk")
+    head = None
+    try:
+        # the development ledger (and its lock file) is written by these very
+        # runs: it is the only path allowed to differ from the commit
+        led = MANIFEST_DIR.as_posix() + "/smoke_ledger.json"
+        if _git(Path(repo), "status", "--porcelain", "--", ".",
+                f":(exclude){led}", f":(exclude){led}.lock"):
+            errs.append("git tree is dirty (uncommitted or untracked files "
+                        "other than the development ledger)")
+        head = _git(Path(repo), "rev-parse", "HEAD")
+        if not _on_origin_branch(Path(repo), head):
+            errs.append(f"HEAD {head[:12]} is not on a branch of {ORIGIN} "
+                        "(push it first)")
+    except GuardError as exc:
+        errs.append(str(exc))
+    if errs:
+        raise GuardError("pre-freeze registered pre-training refused: "
+                         + "; ".join(errs))
+    host = SEED_HOST[seed]
+    assert_runtime_host(host)
+    return {"mode": "pre-freeze registered pre-training", "commit": head,
+            "host": host, "registered_preset": REGISTERED_TRAIN_OPTIONS,
+            "budget": PRETRAIN_BUDGET,
+            "unit": None if unit is None else list(unit)}
 
 
 def registered_run_problems(*, arm: str, seed: int, condition: str,

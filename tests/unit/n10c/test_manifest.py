@@ -245,7 +245,9 @@ def test_gtm_gradient_deviation_no_longer_disclosed(tmp_path):
     assert "GTMBridge straight-through one-hot" in text
 
 
-def test_frozen_status_line_and_no_draft_word(tmp_path):
+def test_frozen_status_line_and_no_draft_word(tmp_path, monkeypatch):
+    from tests.unit.n10c import _trunks
+    _trunks.pin_into_guards(monkeypatch, _trunks.make_all(tmp_path / "trunks"))
     text = _manifest(tmp_path, freeze_tag="n10c-freeze-20261024")
     assert re.search(r"^\W*Status: FROZEN \(tag n10c-freeze-20261024\)",
                      text, re.M)
@@ -272,7 +274,7 @@ def test_manifest_records_n_workers_per_host(tmp_path):
 def test_manifest_records_archive_target_and_pull(tmp_path):
     text = _manifest(tmp_path)
     assert "<PATH>" not in text
-    assert "electron@100.78.191.52:/home/electron/archives/n10c/" in text
+    assert "electron@100.78.191.52:/home/electron/archives/n10c-fixc/" in text
     assert "pull_archive.sh" in text and "10.2.0.237" in text
 
 
@@ -285,3 +287,65 @@ def test_manifest_discloses_the_throughput_learning_deviation(tmp_path):
     assert "throughput_learning" in text and "Declared deviation" in text
     assert "6 of them ran on 2026-10-23" in text and "legacy" not in text
     assert "ledger lists" not in text  # ledger and smoke_runs.json agree
+
+
+# -- section 5: fix C (freeze plan C3 / C4) -----------------------------------
+def test_manifest_section_5_fix_c_with_all_pinned_trunks(tmp_path, monkeypatch):
+    from experiments.procgen_multiagent_gtm_comm.campaign import guards
+    from tests.unit.n10c import _trunks
+
+    shas = _trunks.make_all(tmp_path / "trunks")
+    _trunks.pin_into_guards(monkeypatch, shas)
+    text = _manifest(tmp_path, freeze_tag="n10c-freeze-20261101")
+    assert "## 5. Amendment 2026-10-25" in text
+    assert "Registered preset `fix-c-coin-pretrain`" in text
+    assert "MAX_LIVENESS_RESTARTS = 1" in text
+    for n, h in shas.items():
+        assert f"`{n}`" in text and h in text
+    assert text.count("`prc-") == 10
+    assert "amendment-2026-10-25.md" in text and "Not yet pinned" not in text
+    assert "| kxkm |" in text and "| 40 |" in text
+    assert guards.REGISTERED_TRAIN_OPTIONS in text
+
+
+def test_frozen_manifest_needs_all_16_trunks(tmp_path, monkeypatch):
+    from tests.unit.n10c import _trunks
+
+    with pytest.raises(ValueError, match="all 16 pinned trunks"):
+        _manifest(tmp_path, freeze_tag="n10c-freeze-20261101")
+    draft = _manifest(tmp_path)  # a draft may be incomplete, and says so
+    assert "Not yet pinned" in draft
+    shas = _trunks.make_all(tmp_path / "trunks")
+    _trunks.pin_into_guards(monkeypatch, shas)
+    (tmp_path / "trunks" / "seed-73" / "trunk.safetensors").write_bytes(b"x")
+    with pytest.raises(ValueError, match="SHA-256|disagree"):
+        _manifest(tmp_path, freeze_tag="n10c-freeze-20261101")
+
+
+def test_fixc_compute_estimate():
+    est = manifest.fixc_compute_estimate()
+    assert 520 < est["macm1"] < 560 and 400 < est["kxkm"] < 425
+
+
+def test_throughput_passes_preset_trunk_and_host_settings(monkeypatch):
+    seen = {}
+
+    def fake_train_run(*a, **kw):
+        seen.update(kw)
+        import time
+        kw["_rollout_hook"](0, None)
+        time.sleep(0.01)
+        kw["_rollout_hook"](1, None)
+        from types import SimpleNamespace
+        return SimpleNamespace(pair_steps_done=8, training_failure=False)
+
+    import experiments.procgen_multiagent_gtm_comm.harness.train as tr
+    monkeypatch.setattr(tr, "train_run", fake_train_run)
+    monkeypatch.setattr(throughput, "eval_proxy_seconds", lambda *a, **k: None)
+    opts = tr.PRESETS["fix-c-coin-pretrain"]
+    out = throughput.measure_throughput(
+        "gtm", 2, env_factory=_factory(), n_pairs=2, horizon=2, skip=0,
+        options=opts, init_trunk="T", micro_batch_pairs=512, clear_cache=True)
+    assert seen["options"] is opts and seen["init_trunk"] == "T"
+    assert (seen["micro_batch_pairs"], seen["clear_cache"]) == (512, True)
+    assert out["preset"] == "fix-c-coin-pretrain"

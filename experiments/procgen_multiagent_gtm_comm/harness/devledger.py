@@ -81,7 +81,15 @@ def gate_allowance(kind: str, arm: str) -> int:
         return GATE_DEV_ALLOWANCE.get(arm, GATE_ALLOWANCE["gate_dev"])
     return GATE_ALLOWANCE[kind]
 PRETRAIN_ARM, PRETRAIN_CONDITION = "trunk", "single"
-KINDS = (*COUNTED, "throughput_learning", "measurement", *GATE_KINDS)
+# Pre-freeze registered pre-training (PI decision 2026-10-28, option A of
+# the freeze plan): the exact registered procedure of one registered seed
+# (or one control unit of seed 101) before the tag. Not a development
+# allowance: at most one completed trunk per (seed, unit), and an attempt
+# that did not give a usable trunk gets ONE restart; then the PI decides.
+PREFREEZE_KIND = "pretrain_registered"
+PREFREEZE_MAX_ATTEMPTS = 2
+KINDS = (*COUNTED, "throughput_learning", "measurement", *GATE_KINDS,
+         PREFREEZE_KIND)
 LEARNING_KINDS = (*COUNTED, "throughput_learning", "gate_dev")
 SMOKE_SEED = 9001  # not a registered seed
 _TOKEN = object()
@@ -161,13 +169,15 @@ def remaining(arms, path: Path = LEDGER) -> dict[str, int]:
 
 def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
             path: Path = LEDGER, seed: int = SMOKE_SEED,
-            inspected: list[str] | None = None) -> Reservation:
+            inspected: list[str] | None = None,
+            unit: list[str] | None = None) -> Reservation:
     """Account one development run before it starts; raise if not allowed."""
+    unit = None if unit is None else list(unit)
     from .codes import ARM_CODES, CONDITION_CODES
 
     if kind not in KINDS:
         raise ValueError(f"unknown ledger kind {kind!r}")
-    if kind == "pretrain_dev":
+    if kind in ("pretrain_dev", PREFREEZE_KIND):
         if (arm, condition) != (PRETRAIN_ARM, PRETRAIN_CONDITION):
             raise ValueError("pretrain_dev runs use arm 'trunk', condition "
                              "'single'")
@@ -198,6 +208,21 @@ def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
                 raise SmokeLimitError(
                     f"{kind} for {arm!r}: already used {used} of "
                     f"{gate_allowance(kind, arm)}")
+        if kind == PREFREEZE_KIND:
+            same = [r for r in ledger["runs"] if r.get("kind") == kind
+                    and r.get("seed") == seed and r.get("unit") == unit]
+            if any(r.get("outcome") == "completed" for r in same):
+                raise SmokeLimitError(
+                    f"{kind} seed {seed} unit {unit}: a usable trunk exists")
+            if any(r.get("outcome") == "started" for r in same):
+                raise SmokeLimitError(
+                    f"{kind} seed {seed} unit {unit}: an attempt is still "
+                    "recorded as started (running, or killed: record its "
+                    "outcome first)")
+            if len(same) >= PREFREEZE_MAX_ATTEMPTS:
+                raise SmokeLimitError(
+                    f"{kind} seed {seed} unit {unit}: {len(same)} attempts "
+                    "(one restart allowed); the PI decides")
         rid = uuid.uuid4().hex
         entry = {
             "id": rid, "claimed": False, "kind": kind, "arm": arm,
@@ -208,6 +233,8 @@ def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
             "outcome": "started"}
         if inspected:
             entry["inspected"] = list(inspected)
+        if unit is not None:
+            entry["unit"] = list(unit)
         ledger["runs"].append(entry)
         _write(path, ledger)
         return Reservation(len(ledger["runs"]) - 1, arm, condition, steps, kind,

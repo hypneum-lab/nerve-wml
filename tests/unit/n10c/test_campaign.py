@@ -11,6 +11,16 @@ from experiments.procgen_multiagent_gtm_comm.campaign import guards
 from experiments.procgen_multiagent_gtm_comm.campaign import queue as q
 from experiments.procgen_multiagent_gtm_comm.campaign import run_campaign as rc
 
+
+@pytest.fixture(autouse=True)
+def _frozen_registered_preset(monkeypatch):
+    """These runner tests exercise the 60-run mechanics with the frozen
+    configuration (no pre-trained trunk, no control runs); the fix-C
+    specifics (seed trunks, the 10 control runs of seed 101, the liveness
+    restart) are tested in test_liveness_control.py."""
+    monkeypatch.setattr(guards, "REGISTERED_TRAIN_OPTIONS", "frozen-20261024")
+
+
 TOTAL = 64
 
 

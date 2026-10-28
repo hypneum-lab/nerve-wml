@@ -25,7 +25,8 @@ from typing import Any
 import numpy as np
 
 from . import devledger
-from .codes import ARM_CODES, CONDITION_CODES
+from .codes import ARM_CODES, CONDITION_CODES, HOST_SETTINGS
+from .options import options_for
 
 PKG = Path(__file__).resolve().parent.parent
 
@@ -98,7 +99,10 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
                        n_pairs: int = 64, horizon: int = 128,
                        eval_levels: range = TRAIN_LEVELS,
                        skip: int = STEADY_SKIP, n_workers: int = 1,
-                       ledger: Path = SMOKE_LEDGER, learning: bool = False) -> dict:
+                       ledger: Path = SMOKE_LEDGER, learning: bool = False,
+                       options: Any = None, init_trunk: Path | None = None,
+                       micro_batch_pairs: int | None = None,
+                       clear_cache: bool = False) -> dict:
     """Measure end-to-end training throughput of ``arm`` (untrained start).
 
     One job, real env (unless ``env_factory`` is given for tests), policy,
@@ -109,6 +113,10 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
     learning on and ledgers the run as
     ``throughput_learning``.
     Steady-state rate uses the per-update wall clock after ``skip`` warm-up cycles.
+    ``options`` / ``init_trunk`` / ``micro_batch_pairs`` / ``clear_cache``: a
+    training preset (e.g. the registered fix C, with its pre-trained trunk)
+    and per-host settings, for the fix-C throughput of the freeze manifest
+    (freeze plan, C7); default: the frozen preset, full minibatch.
     """
     from .train import train_run
 
@@ -139,7 +147,9 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
                 horizon=horizon, log_every_pair_steps=n_pairs * horizon,
                 ckpt_every_pair_steps=10**12, _rollout_hook=hook,
                 n_workers=n_workers, frozen_policy=not learning,
-                dev_reservation=res, dev_ledger=ledger,
+                dev_reservation=res, dev_ledger=ledger, options=options,
+                init_trunk=init_trunk, micro_batch_pairs=micro_batch_pairs,
+                clear_cache=clear_cache,
             )
             wall = time.time() - t0
         outcome = "failed_non_finite" if rec.training_failure else "completed"
@@ -155,6 +165,8 @@ def measure_throughput(arm: str, n_updates: int = 20, *,
         "n_updates": n_updates,
         "n_pairs": n_pairs,
         "n_workers": n_workers,  # implementation setting, not registered
+        "preset": getattr(options, "preset", "frozen-20261024"),
+        "micro_batch_pairs": micro_batch_pairs, "clear_cache": clear_cache,
         "horizon": horizon,
         "pair_steps": rec.pair_steps_done,
         "wall_s_incl_warmup": wall,
@@ -240,6 +252,15 @@ def main() -> None:
     t.add_argument("--n-updates", type=int, default=20)
     t.add_argument("--n-workers", type=int, default=1)
     t.add_argument("--out", type=Path, required=True)
+    t.add_argument("--preset", default=None,
+                   help="training preset (default: the frozen one); fix C "
+                        "needs --init-trunk")
+    t.add_argument("--init-trunk", type=Path, default=None)
+    t.add_argument("--host-settings", choices=sorted(HOST_SETTINGS), default=None,
+                   help="apply that host's registered HOST_SETTINGS "
+                        "(micro-batch, clear_cache, n_workers)")
+    t.add_argument("--learning", action="store_true",
+                   help="learning on (ledgered as throughput_learning)")
     s = sub.add_parser("smoke")
     s.add_argument("--runs-dir", type=Path, required=True)
     s.add_argument("--out", type=Path, required=True)
@@ -255,8 +276,14 @@ def main() -> None:
                "results": {}}
         a.out.parent.mkdir(parents=True, exist_ok=True)
         for arm in a.arms:
+            hs = HOST_SETTINGS[a.host_settings] if a.host_settings else {}
             res["results"][arm] = measure_throughput(
-                arm, a.n_updates, n_workers=a.n_workers)
+                arm, a.n_updates, n_workers=hs.get("n_workers", a.n_workers),
+                learning=a.learning,
+                options=None if a.preset is None else options_for(a.preset),
+                init_trunk=a.init_trunk,
+                micro_batch_pairs=hs.get("micro_batch_pairs"),
+                clear_cache=hs.get("clear_cache", False))
             a.out.write_text(json.dumps(res, indent=2))  # incremental
             print(json.dumps({arm: res["results"][arm]}), flush=True)
     else:

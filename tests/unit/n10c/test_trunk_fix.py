@@ -21,6 +21,7 @@ from experiments.procgen_multiagent_gtm_comm.harness.pretrain import (  # noqa: 
 from experiments.procgen_multiagent_gtm_comm.harness.rollout import (  # noqa: E402
     compute_gae,
 )
+from tests.unit.n10c import _backend  # noqa: E402
 
 GOOD = 7  # the rewarded action of the bandit task
 
@@ -77,12 +78,15 @@ class _Bandit:
 
 
 # -- presets / options --------------------------------------------------------
-def test_frozen_preset_is_the_default_and_unchanged():
+def test_frozen_preset_is_the_options_default_and_unchanged():
     o = tr.PRESETS[tr.FROZEN_PRESET]
     assert o == tr.TrainOptions()
     assert (o.coin_reward, o.adam_eps, o.mask_finished, o.liveness,
             o.pretrained_trunk) == (0.0, 1e-8, False, "off", False)
-    assert guards.REGISTERED_TRAIN_OPTIONS == tr.FROZEN_PRESET
+    # the registered preset is fix C (amendment 2026-10-25, section 5);
+    # the frozen preset stays selectable to reproduce n10c-freeze-20261024
+    assert tr.FROZEN_PRESET == "frozen-20261024"
+    assert guards.REGISTERED_TRAIN_OPTIONS == "fix-c-coin-pretrain"
 
 
 def test_fix_presets():
@@ -423,6 +427,7 @@ def test_pretrain_writes_a_loadable_trunk(tmp_path):
     assert json.loads((tmp_path / "pretrain.json").read_text())["usable"]
 
 
+@pytest.mark.skipif(_backend.on_cuda(), reason=_backend.CUDA_NONDETERMINISM)
 def test_pretrain_micro_batches_match_the_full_minibatch(tmp_path):
     # KXKM-AI pre-trains in micro-batches (HOST_SETTINGS): same update
     recs = {}
@@ -649,3 +654,12 @@ def test_per_run_pretraining_seeding_and_record(tmp_path):
                      horizon=4, env_factory=_coins_factory(),
                      log_every_pair_steps=8, ckpt_every_pair_steps=8,
                      per_run_trunk=True)
+
+
+def test_prefreeze_and_registered_pretraining_enforce_the_procedure(tmp_path):
+    for kw in (dict(n_envs=4), dict(horizon=8), dict(liveness_every=10**7)):
+        with pytest.raises(ValueError, match="registered pre-training uses"):
+            pretrain_trunk(73, 10**6, tmp_path, pre_freeze=True, **kw)
+        with pytest.raises(ValueError, match="registered pre-training uses"):
+            pretrain_trunk(0, 10**6, tmp_path,
+                           registration=guards.make_context_for_tests(), **kw)
