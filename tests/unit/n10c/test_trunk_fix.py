@@ -654,3 +654,12 @@ def test_per_run_pretraining_seeding_and_record(tmp_path):
                      horizon=4, env_factory=_coins_factory(),
                      log_every_pair_steps=8, ckpt_every_pair_steps=8,
                      per_run_trunk=True)
+
+
+def test_prefreeze_and_registered_pretraining_enforce_the_procedure(tmp_path):
+    for kw in (dict(n_envs=4), dict(horizon=8), dict(liveness_every=10**7)):
+        with pytest.raises(ValueError, match="registered pre-training uses"):
+            pretrain_trunk(73, 10**6, tmp_path, pre_freeze=True, **kw)
+        with pytest.raises(ValueError, match="registered pre-training uses"):
+            pretrain_trunk(0, 10**6, tmp_path,
+                           registration=guards.make_context_for_tests(), **kw)

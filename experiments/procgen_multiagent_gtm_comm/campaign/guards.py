@@ -109,6 +109,7 @@ REGISTERED_TRAIN_OPTIONS = "fix-c-coin-pretrain"
 # a pre-training preset is refused.
 REGISTERED_TRUNK_SHA256: dict[int, str] = dict(_trunk_pins.SHARED)
 PRETRAIN_BUDGET = 1_000_000  # single-agent steps per registered pre-training
+PRETRAIN_PROCEDURE = {"n_envs": 64, "horizon": 128, "liveness_every": 100_000}
 TRUNK_DIR = "trunks"
 
 
@@ -743,6 +744,24 @@ def check_pretrain_boundary(ctx: Any, *, seed: int, total_steps: int,
     return host
 
 
+def _on_origin_branch(repo: Path, head: str) -> bool:
+    """HEAD is the head of a branch that ``origin`` advertises NOW, or an
+    ancestor of one (checked against the live ``git ls-remote``, not the
+    cached remote-tracking refs)."""
+    out = _git(repo, "ls-remote", "--heads", ORIGIN)
+    for line in out.splitlines():
+        sha = line.split()[0] if line.split() else ""
+        if sha == head:
+            return True
+        known = subprocess.run(["git", "-C", str(repo), "cat-file", "-e",
+                                f"{sha}^{{commit}}"], capture_output=True)
+        if known.returncode == 0 and subprocess.run(
+                ["git", "-C", str(repo), "merge-base", "--is-ancestor", head, sha],
+                capture_output=True).returncode == 0:
+            return True
+    return False
+
+
 def check_prefreeze_pretrain(*, seed: int, total_steps: int, has_env: bool,
                              unit: tuple[str, str] | None = None,
                              repo: Path = REPO) -> dict:
@@ -787,7 +806,7 @@ def check_prefreeze_pretrain(*, seed: int, total_steps: int, has_env: bool,
             errs.append("git tree is dirty (uncommitted or untracked files "
                         "other than the development ledger)")
         head = _git(Path(repo), "rev-parse", "HEAD")
-        if not _git(Path(repo), "branch", "-r", "--contains", head):
+        if not _on_origin_branch(Path(repo), head):
             errs.append(f"HEAD {head[:12]} is not on a branch of {ORIGIN} "
                         "(push it first)")
     except GuardError as exc:

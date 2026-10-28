@@ -36,7 +36,7 @@ one() {  # name seed [--per-run arm cond]
     log "start $name seed $seed $* (attempt $attempt)"
     (cd "$REPO" && nice -n 10 "$PY" -m experiments.procgen_multiagent_gtm_comm.harness.pretrain \
       --seed "$seed" --steps 1000000 --out "$d" --pre-freeze "$@" \
-      > "$OUT/$name.log" 2>&1)
+      > "$OUT/$name.attempt$attempt.log" 2>&1)
     log "end $name rc=$?"
     if usable "$d"; then return 0; fi
   done

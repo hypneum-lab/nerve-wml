@@ -49,10 +49,15 @@ def prepare(repo: Path, tag: str, manifest_name: str | None = None,
     manifest_name = manifest_name or reg.manifest_name
     if "DRAFT" in manifest_name:
         raise ValueError("a frozen manifest file name must not contain DRAFT")
+    if (Path(manifest_name).name != manifest_name or manifest_name in (".", "..")
+            or not manifest_name.endswith(".md")):
+        raise ValueError(f"manifest name {manifest_name!r} must be a plain .md "
+                         "file name in the manifest folder")
     amend_rel = reg.amendment_path
     out_rel = (guards.MANIFEST_DIR / manifest_name).as_posix()
+    frozen = {(repo / p).resolve() for p in guards.FROZEN_PATHS}
     for rel in (amend_rel, out_rel):
-        if rel in guards.FROZEN_PATHS:
+        if rel in guards.FROZEN_PATHS or (repo / rel).resolve() in frozen:
             raise ValueError(f"{rel} is frozen by an earlier tag and is never "
                              "written again")
     if write_manifest is None and reg.name != guards.DEFAULT_REGISTRATION:

@@ -465,7 +465,10 @@ def trunk_table(trunk_root: Path, frozen: bool) -> list[str]:
         if not (d / "pretrain.json").is_file() or pin is None:
             missing.append(name)
             continue
-        rec = json.loads((d / "pretrain.json").read_text())
+        from ..campaign.pin_trunks import check_record
+        rec = check_record(d)  # identity, procedure, host, probes, file hash
+        if rec["seed"] != seed or rec["unit"] != (None if unit is None else list(unit)):
+            raise ValueError(f"trunk {name}: record is of another seed / unit")
         file_sha = sha256(d / "trunk.safetensors")
         if not (file_sha == rec.get("trunk_sha256") == pin) or not rec.get("usable"):
             raise ValueError(f"trunk {name}: file, record and pin disagree")
@@ -475,13 +478,14 @@ def trunk_table(trunk_root: Path, frozen: bool) -> list[str]:
             f"| `{name}` | {pf.get('host')} | `{(pf.get('commit') or '')[:12]}` | "
             f"`{rec.get('seed_sequence')}` | `{pin}` | "
             f"`{sha256(d / 'pretrain.json')}` | "
-            f"{cc[0][1] if cc else '—'} → {cc[-1][1] if cc else '—'} |")
+            f"{cc[0][1] if cc else '—'} → {cc[-1][1] if cc else '—'} | "
+            f"{rec.get('wall_time_s', 0):,.0f} |")
     if frozen and missing:
         raise ValueError("a frozen manifest needs all 16 pinned trunks; missing "
                          + ", ".join(missing))
     head = ["| trunk | host | procedure commit | SeedSequence | trunk SHA-256 "
-            "| pretrain.json SHA-256 | coin rate first → 1M |",
-            "|---|---|---|---|---|---|---|"]
+            "| pretrain.json SHA-256 | coin rate first → 1M | wall s |",
+            "|---|---|---|---|---|---|---|---:|"]
     out = head + rows
     if missing:
         out += ["", "Not yet pinned: " + ", ".join(f"`{m}`" for m in missing) + "."]

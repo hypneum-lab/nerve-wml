@@ -318,7 +318,7 @@ def test_frozen_manifest_needs_all_16_trunks(tmp_path, monkeypatch):
     shas = _trunks.make_all(tmp_path / "trunks")
     _trunks.pin_into_guards(monkeypatch, shas)
     (tmp_path / "trunks" / "seed-73" / "trunk.safetensors").write_bytes(b"x")
-    with pytest.raises(ValueError, match="disagree"):
+    with pytest.raises(ValueError, match="SHA-256|disagree"):
         _manifest(tmp_path, freeze_tag="n10c-freeze-20261101")
 
 

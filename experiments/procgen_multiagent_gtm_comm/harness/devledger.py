@@ -214,6 +214,11 @@ def reserve(arm: str, condition: str, steps: int, *, kind: str = "smoke",
             if any(r.get("outcome") == "completed" for r in same):
                 raise SmokeLimitError(
                     f"{kind} seed {seed} unit {unit}: a usable trunk exists")
+            if any(r.get("outcome") == "started" for r in same):
+                raise SmokeLimitError(
+                    f"{kind} seed {seed} unit {unit}: an attempt is still "
+                    "recorded as started (running, or killed: record its "
+                    "outcome first)")
             if len(same) >= PREFREEZE_MAX_ATTEMPTS:
                 raise SmokeLimitError(
                     f"{kind} seed {seed} unit {unit}: {len(same)} attempts "

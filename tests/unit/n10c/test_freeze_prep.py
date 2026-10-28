@@ -220,3 +220,51 @@ def test_kxkm_lanes_parse():
     for f in ("gpu_wait.sh", "pretrain_lane.sh", "gate_bis_lane.sh"):
         p = REPO / "experiments/procgen_multiagent_gtm_comm/campaign/kxkm" / f
         subprocess.run(["bash", "-n", str(p)], check=True)
+
+
+# -- review round 3 ---------------------------------------------------------------
+def test_prefreeze_ledger_refuses_a_restart_while_an_attempt_is_started(tmp_path):
+    led = tmp_path / "ledger.json"
+    kw = dict(kind=devledger.PREFREEZE_KIND, path=led, seed=73)
+    devledger.reserve("trunk", "single", 10**6, **kw)  # still "started"
+    with pytest.raises(devledger.SmokeLimitError, match="still"):
+        devledger.reserve("trunk", "single", 10**6, **kw)
+
+
+def test_prefreeze_gate_checks_origin_live_not_another_remote(pushed_repo, tmp_path):
+    other = tmp_path / "other.git"
+    subprocess.run(["git", "init", "-q", "--bare", str(other)], check=True)
+    (pushed_repo / "g.txt").write_text("y")
+    _git(pushed_repo, "add", ".")
+    _git(pushed_repo, "commit", "-q", "-m", "elsewhere")
+    _git(pushed_repo, "remote", "add", "other", str(other))
+    _git(pushed_repo, "push", "-q", "other", "main")
+    _git(pushed_repo, "fetch", "-q", "other")
+    with pytest.raises(guards.GuardError, match="not on a branch of origin"):
+        guards.check_prefreeze_pretrain(seed=73, total_steps=10**6,
+                                        has_env=False, repo=pushed_repo)
+
+
+@pytest.mark.parametrize("bad", ["../manifest/stage2-manifest.md",
+                                 "sub/x.md", "x.txt"])
+def test_freeze_prepare_refuses_non_plain_manifest_names(tmp_path, bad):
+    repo = _repo_copy(tmp_path)
+    before = {rel: (repo / rel).read_bytes() for rel in guards.FROZEN_PATHS}
+    with pytest.raises(ValueError):
+        fp.prepare(repo, TAG, bad, write_manifest=_fake_manifest)
+    assert {rel: (repo / rel).read_bytes() for rel in guards.FROZEN_PATHS} == before
+    assert "FROZEN by tag" not in (repo / guards.AMENDMENT_PATH).read_text()
+
+
+@pytest.mark.parametrize("change", [
+    {"n_envs": 4}, {"horizon": 8}, {"liveness_every": 2_000_000},
+    {"liveness": [{"step": 0, "flagged": False}]},
+    {"liveness": [{"step": 0, "flagged": False}] + [
+        {"step": k * 100_000, "flagged": k == 3} for k in range(1, 11)]}])
+def test_pin_trunks_rejects_another_procedure(tmp_path, change):
+    d = tmp_path / "seed-73"
+    _trunks.make(d, 73)
+    rec = json.loads((d / "pretrain.json").read_text()) | change
+    (d / "pretrain.json").write_text(json.dumps(rec))
+    with pytest.raises(ValueError, match="procedure|liveness"):
+        pin_trunks.check_record(d)

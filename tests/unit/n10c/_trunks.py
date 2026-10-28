@@ -41,6 +41,11 @@ def make(dst: Path, seed: int, unit=None, *, usable=True, host=None,
             "clear_cache": hs["clear_cache"]},
         "unit": unit, "seed_sequence": [seed, 99] + ([0, 0] if unit else []),
         "coin_rate_curve": [[106496, 0.4], [1000000, 0.8]],
+        "n_envs": 64, "horizon": 128, "liveness_every": 100_000,
+        "wall_time_s": 400.0,
+        "liveness": [{"step": s, "flagged": False} for s in
+                     [0] + [min(10**6, -(-k * 100_000 // 8192) * 8192)
+                            for k in range(1, 11)]],
         "pre_freeze": {"mode": "pre-freeze registered pre-training",
                        "commit": commit, "host": host,
                        "registered_preset": "fix-c-coin-pretrain",

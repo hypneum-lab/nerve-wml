@@ -68,6 +68,9 @@ from .train import (
 )
 
 PRETRAIN_CODE = 99  # stream code of the pre-training run (not an arm code)
+# Registered pre-training procedure (amendment 2026-10-25, section 3.2;
+# guards.PRETRAIN_PROCEDURE): enforced for registered and pre-freeze runs.
+REGISTERED_PROCEDURE = guards.PRETRAIN_PROCEDURE
 
 
 def pretrain_seed_entropy(seed: int,
@@ -123,6 +126,7 @@ class PretrainRecord:
     # pre-freeze registered pre-training (freeze plan, option A): commit,
     # host, preset and budget of the procedure (None otherwise)
     pre_freeze: dict | None = None
+    liveness_every: int | None = None
 
 
 def make_env(n_envs: int, rand_seed: int) -> Any:
@@ -166,6 +170,12 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
     seed's host and its settings), ledger kind ``pretrain_registered``
     (one usable trunk per seed / unit, one restart of an unusable one)."""
     pf = None
+    if pre_freeze or registration is not None:
+        got = {"n_envs": n_envs, "horizon": horizon,
+               "liveness_every": liveness_every}
+        if got != REGISTERED_PROCEDURE:
+            raise ValueError(f"registered pre-training uses {REGISTERED_PROCEDURE}"
+                             f", not {got}")
     if pre_freeze:
         if registration is not None:
             raise ValueError("pre_freeze and a registration are exclusive")
@@ -206,6 +216,7 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
     rec.seed_sequence = entropy
     rec.unit = None if unit is None else list(unit)
     rec.pre_freeze = pf
+    rec.liveness_every = liveness_every
     rec.settings = {"micro_batch_pairs": micro_batch_pairs,
                     "clear_cache": clear_cache}
     if registration is not None:

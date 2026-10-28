@@ -59,6 +59,16 @@ def check_record(src: Path) -> dict:
         errs.append("trunk not usable (one restart, then the PI decides)")
     if not (rec.get("total_steps") == rec.get("steps_done") == guards.PRETRAIN_BUDGET):
         errs.append("budget not completed exactly")
+    proc = {k: rec.get(k) for k in guards.PRETRAIN_PROCEDURE}
+    if proc != guards.PRETRAIN_PROCEDURE:
+        errs.append(f"procedure {proc} != registered {guards.PRETRAIN_PROCEDURE}")
+    every = guards.PRETRAIN_PROCEDURE["liveness_every"]
+    steps = [m.get("step") for m in rec.get("liveness") or []]
+    want = list(range(guards.PRETRAIN_BUDGET // every + 1))
+    if (not steps or steps[0] != 0
+            or [s // every for s in steps if isinstance(s, int)] != want
+            or any(m.get("flagged") for m in rec.get("liveness") or [])):
+        errs.append("liveness probes do not cover the schedule, or one is flagged")
     host = SEED_HOST.get(seed)
     if pf.get("host") != host:
         errs.append(f"host {pf.get('host')!r} is not the seed's host {host!r}")
