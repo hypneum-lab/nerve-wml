@@ -426,6 +426,129 @@ def _fmt_smoke(sm: dict | None) -> list[str]:
     return lines
 
 
+# -- amendment 2026-10-25 (training fix C), section 5 item 3 -----------------
+# Throughput under fix C, from the learnability-gate records (amendment
+# 2026-10-25, section 4.2; docs/superpowers/research/2026-10-25-n10c-gate/):
+# KXKM-AI 733-747 s per 1M pair-steps (micro-batch 512, 8 workers),
+# macM1 1,291 s per 1M (no micro-batching, day model paused). Planning
+# figures, re-measured over 50M by the campaign itself.
+FIXC_PAIR_STEPS_PER_S = {"kxkm": 1_000_000 / 740.0, "macm1": 1_000_000 / 1291.0}
+FIXC_RUNS_PER_HOST = {"kxkm": 30 + 10, "macm1": 30}  # KXKM: + 10 control runs
+FIXC_N_EVAL_MODELS = 70  # 60 registered runs + 10 control runs
+GATE_INDEX_REL = "docs/superpowers/research/2026-10-25-n10c-gate/index.json"
+AMENDMENTS = (
+    "docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-23.md",
+    "docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-25.md",
+)
+
+
+def fixc_compute_estimate() -> dict[str, float]:
+    """Training hours per host under fix C (planning figures)."""
+    return {h: FIXC_RUNS_PER_HOST[h] * TOTAL_PAIR_STEPS / r / 3600.0
+            for h, r in FIXC_PAIR_STEPS_PER_S.items()}
+
+
+def trunk_table(trunk_root: Path, frozen: bool) -> list[str]:
+    """Rows for the pinned trunks; a frozen manifest needs all 16, each
+    pinned in ``campaign.trunk_pins`` with the SHA-256 of its file."""
+    from ..campaign import guards
+    from ..campaign.queue import control_queue
+
+    want = [(s, None) for s in SEEDS] + [
+        (r.seed, (r.arm, r.condition)) for r in control_queue()]
+    rows, missing = [], []
+    for seed, unit in want:
+        name = f"seed-{seed}" if unit is None else f"seed-{seed}-{unit[1]}-{unit[0]}"
+        d = Path(trunk_root) / name
+        pin = guards.expected_trunk_sha256(seed, *(unit or ("", "")),
+                                           per_run_trunk=unit is not None)
+        if not (d / "pretrain.json").is_file() or pin is None:
+            missing.append(name)
+            continue
+        rec = json.loads((d / "pretrain.json").read_text())
+        file_sha = sha256(d / "trunk.safetensors")
+        if not (file_sha == rec.get("trunk_sha256") == pin) or not rec.get("usable"):
+            raise ValueError(f"trunk {name}: file, record and pin disagree")
+        pf = rec.get("pre_freeze") or {}
+        cc = rec.get("coin_rate_curve") or []
+        rows.append(
+            f"| `{name}` | {pf.get('host')} | `{(pf.get('commit') or '')[:12]}` | "
+            f"`{rec.get('seed_sequence')}` | `{pin}` | "
+            f"`{sha256(d / 'pretrain.json')}` | "
+            f"{cc[0][1] if cc else '—'} → {cc[-1][1] if cc else '—'} |")
+    if frozen and missing:
+        raise ValueError("a frozen manifest needs all 16 pinned trunks; missing "
+                         + ", ".join(missing))
+    head = ["| trunk | host | procedure commit | SeedSequence | trunk SHA-256 "
+            "| pretrain.json SHA-256 | coin rate first → 1M |",
+            "|---|---|---|---|---|---|---|"]
+    out = head + rows
+    if missing:
+        out += ["", "Not yet pinned: " + ", ".join(f"`{m}`" for m in missing) + "."]
+    return out
+
+
+def fixc_lines(out_dir: Path, frozen: bool) -> list[str]:
+    from dataclasses import asdict
+
+    from ..campaign import guards
+    from ..campaign import queue as q
+    from .options import PRESETS
+
+    opts = PRESETS[guards.REGISTERED_TRAIN_OPTIONS]
+    est = fixc_compute_estimate()
+    gate = REPO / GATE_INDEX_REL
+    ctl = q.control_queue(enabled=opts.pretrained_trunk)
+    lines = [
+        "## 5. Amendment 2026-10-25: registered training configuration (fix C)", "",
+        "Amendments (SHA-256 at manifest time):", "",
+        "| file | SHA-256 |", "|---|---|"]
+    lines += [f"| `{a}` | `{sha256(REPO / a)}` |" for a in AMENDMENTS]
+    lines += ["", f"- Registered preset `{opts.preset}` "
+              "(`campaign.guards.REGISTERED_TRAIN_OPTIONS`): "
+              + ", ".join(f"{k} = {v}" for k, v in asdict(opts).items()
+                          if k != "preset")
+              + ". Adam bias correction off (PI decision, amendment section "
+              "4.3); the bias-corrected preset is development-only.",
+              f"- Liveness guard: probe on {train.LIVENESS_PROBE_PAIRS} pair-steps "
+              f"at step 0 and after the first update ending at or after every "
+              f"{opts.liveness_every:,} pair-steps; flagged if the block-3 "
+              f"positive fraction or the live-h fraction is below "
+              f"{train.LIVENESS_MIN_FRAC} or a std is <= {train.LIVENESS_STD_EPS}; "
+              f"abort mode. A first abort restarts the run once from scratch "
+              f"(`MAX_LIVENESS_RESTARTS = {q.MAX_LIVENESS_RESTARTS}`, counted "
+              "apart from the infrastructure restarts); a second abort is a "
+              "training failure, evaluated at its last checkpoint.",
+              f"- Trunk pre-training: single-agent CoinRun, training levels 0-15, "
+              f"{guards.PRETRAIN_BUDGET:,} steps; shared trunk of seed s from "
+              "`SeedSequence([s, 99])`, own trunk of a control run from "
+              "`SeedSequence([101, 99, arm_code, condition_code])`; pre-freeze "
+              "registered procedure on the seed's fixed host with its settings "
+              "(ledger kind `pretrain_registered`; an unusable trunk gets one "
+              "restart, then the PI decides). The trunk files are committed "
+              "under `manifest/trunks/` (PI decision 2026-10-28).", "",
+              "### Pinned trunks", ""]
+    lines += trunk_table(Path(out_dir) / "trunks", frozen)
+    lines += ["", "### Per-run-pretraining control (seed 101, KXKM-AI)", "",
+              f"{len(ctl)} runs, each trained right after its shared-trunk "
+              "registered run of seed 101; descriptive only, never pooled into "
+              "the estimands or the cross-play cells:", ""]
+    lines += [f"- `{c.run_id}` after `{q.control_partner(c).run_id}`" for c in ctl]
+    lines += ["", "### Throughput and compute under fix C (planning figures)", "",
+              "| host | pair-steps/s | runs | training hours |", "|---|---:|---:|---:|"]
+    lines += [f"| {h} | {FIXC_PAIR_STEPS_PER_S[h]:,.0f} | {FIXC_RUNS_PER_HOST[h]} "
+              f"| {est[h]:,.0f} |" for h in ("macm1", "kxkm")]
+    lines += ["", f"Held-out evaluations: {FIXC_N_EVAL_MODELS} models on KXKM-AI. "
+              "The section-4 throughput table above was measured under the "
+              "frozen configuration of 2026-10-24 and is superseded for "
+              "planning by this table.", "",
+              "### Learnability gate and Adam study records", "",
+              f"- `{GATE_INDEX_REL}`, SHA-256 `{sha256(gate) if gate.is_file() else 'missing'}` "
+              "(run records, ledger ids, archive locations; amendment section "
+              "4).", ""]
+    return lines
+
+
 def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
     status = status_text(freeze_tag)
     out = Path(out)
@@ -445,8 +568,11 @@ def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
     lines: list[str] = [
         "# N10-C stage-2 configuration manifest", "",
         f"**Status: {status}.**", "",
-        "Registration: N10-C amendment of 2026-10-23, configuration manifest "
-        "(stage 2). Immutable once frozen. Runs started before the freeze tag are "
+        "Registration: N10-C amendment of 2026-10-23 as amended on 2026-10-25 "
+        "(training fix C, section 5), configuration manifest (stage 2). "
+        "Immutable once frozen. Supersedes the manifest of tag "
+        "n10c-freeze-20261024, whose campaign was stopped and is excluded. "
+        "Runs started before the freeze tag are "
         "excluded from all analyses and reported.", "",
         "## 1. Commit, integer codes and bus", "",
         f"- Harness commit at manifest time: `{git['commit']}` (source: "
@@ -608,7 +734,9 @@ def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
           "retrace the same trajectory. Evidence: "
           "`experiments/procgen_multiagent_gtm_comm/bench/kxkm/repeat/` and "
           "`bench/kxkm/README.md` (branch feat/n10c-grad-accum, PR #53).", "",
-          "## Smoke runs and development disclosure", ""]
+          ]
+    lines += fixc_lines(out.parent, frozen=freeze_tag is not None)
+    lines += ["## Smoke runs and development disclosure", ""]
     lines += _fmt_smoke(sm)
     lines += _fmt_ledger(ledger, sm)
     lines += ["Development used only the stub (unit tests with scripted environments), "
@@ -622,10 +750,12 @@ def write_manifest(out: Path, freeze_tag: str | None = None) -> None:
           "## Artefact archiving (PI decision 2026-10-23)", "",
           "After each run and each evaluation, the run directory (`run.json`, "
           "checkpoints, EvalRecord JSON, cross-play records) is stored on electron-server "
-          "(Tailscale 100.78.191.52) at `electron@100.78.191.52:/home/electron/archives/n10c/`. "
+          "(Tailscale 100.78.191.52) at "
+          "`electron@100.78.191.52:/home/electron/archives/n10c-fixc/` (the archive "
+          "of the stopped campaign of 2026-10-24 stays at `archives/n10c/`). "
           "KXKM-AI cannot reach electron-server, so electron-server PULLS the completed "
           "runs from KXKM-AI (`campaign/pull_archive.sh`, rsync over ssh to "
-          "`electron@10.2.0.237:/ai/saisail/n10c-run/campaign`, completed runs only, "
+          "`electron@10.2.0.237:/ai/saisail/n10c-run2/campaign`, completed runs only, "
           "idempotent, logged); macM1 can push with `--archive-to`. The copy is post-hoc "
           "storage only and changes no registered quantity. macM1 checkpoints are "
           "additionally copied to KXKM-AI for evaluation (campaign `sync` step), and "
