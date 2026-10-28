@@ -2,8 +2,11 @@
 # Pull completed N10-C runs from KXKM-AI to electron-server (KXKM cannot reach
 # electron-server; electron-server -> KXKM works). Run ON electron-server:
 #   bash pull_archive.sh            # e.g. from cron or by hand, repeatable
-# Env: KXKM_SRC (default electron@10.2.0.237:/ai/saisail/n10c-run/campaign),
-#      DEST (default /home/electron/archives/n10c), LOG (default DEST/pull.log).
+# Env: KXKM_SRC (default electron@10.2.0.237:/ai/saisail/n10c-run2/campaign,
+#      the campaign of the fix-C freeze), DEST (default
+#      /home/electron/archives/n10c-fixc), LOG (default DEST/pull.log). The
+#      stopped campaign of 2026-10-24 was n10c-run/campaign -> archives/n10c
+#      (run ids repeat between the two: never mix the destinations).
 # Completed run = status file with eval_done true. Copies run.json, eval.json
 # and the STATUS-SELECTED checkpoint (for an exhausted run that is
 # ../<run>.failed-N/ckpt_*.safetensors, resolved explicitly and stored as
@@ -13,8 +16,8 @@
 # Idempotent (rsync), never deletes, never touches the KXKM side. Exit 1 if
 # any run failed its digest check or its checkpoint could not be fetched.
 set -euo pipefail
-SRC="${KXKM_SRC:-electron@10.2.0.237:/ai/saisail/n10c-run/campaign}"
-DEST="${DEST:-/home/electron/archives/n10c}"
+SRC="${KXKM_SRC:-electron@10.2.0.237:/ai/saisail/n10c-run2/campaign}"
+DEST="${DEST:-/home/electron/archives/n10c-fixc}"
 LOG="${LOG:-$DEST/pull.log}"
 SSH="ssh -o BatchMode=yes -o ControlPath=none"
 mkdir -p "$DEST" "$DEST/.status" "$DEST/_campaign"

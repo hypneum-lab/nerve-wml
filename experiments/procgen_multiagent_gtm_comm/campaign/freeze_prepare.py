@@ -1,8 +1,12 @@
 """Prepare the freeze commit deterministically (no git side effects).
 
     python -m experiments.procgen_multiagent_gtm_comm.campaign.freeze_prepare \
-        --tag n10c-freeze-YYYYMMDD [--manifest-name stage2-manifest.md]
+        --tag n10c-freeze-YYYYMMDD [--registration n10c] [--manifest-name NAME]
 
+The amendment and the manifest name come from the selected registration
+(``guards.REGISTRATIONS``: for N10-C the 2026-10-25 amendment and
+``stage2-manifest-fixc.md``); the files frozen by the earlier tag
+(``guards.FROZEN_PATHS``) are never written.
 Rewrites the Status line of the stage-1 amendment to the final, tag-naming
 form (``**Status:** FROZEN by tag <tag> (stage 1 + stage 2 manifest); OSF
 registration to follow``) and regenerates the stage-2 manifest with
@@ -33,15 +37,29 @@ def rewrite_amendment_status(text: str, tag: str) -> str:
         lambda _m: guards.amendment_status_line(tag), text, count=1)
 
 
-def prepare(repo: Path, tag: str, manifest_name: str = "stage2-manifest.md",
-            write_manifest: Callable[[Path, str], None] | None = None) -> dict:
-    """Rewrite the amendment status and regenerate the manifest in ``repo``."""
+def prepare(repo: Path, tag: str, manifest_name: str | None = None,
+            write_manifest: Callable[[Path, str], None] | None = None,
+            registration: str = guards.DEFAULT_REGISTRATION) -> dict:
+    """Rewrite the amendment status and regenerate the manifest in ``repo``
+    (paths from the registration; never a path of ``guards.FROZEN_PATHS``)."""
     repo = Path(repo)
+    reg = guards.registration(registration)
+    if not guards.valid_tag_name(tag, reg.name):
+        raise ValueError(f"invalid freeze tag {tag!r} for {reg.name}")
+    manifest_name = manifest_name or reg.manifest_name
     if "DRAFT" in manifest_name:
         raise ValueError("a frozen manifest file name must not contain DRAFT")
-    amend = repo / guards.AMENDMENT_PATH
+    amend_rel = reg.amendment_path
+    out_rel = (guards.MANIFEST_DIR / manifest_name).as_posix()
+    for rel in (amend_rel, out_rel):
+        if rel in guards.FROZEN_PATHS:
+            raise ValueError(f"{rel} is frozen by an earlier tag and is never "
+                             "written again")
+    if write_manifest is None and reg.name != guards.DEFAULT_REGISTRATION:
+        raise ValueError(f"no stage-2 manifest writer for {reg.name} yet")
+    amend = repo / amend_rel
     amend.write_text(rewrite_amendment_status(amend.read_text(), tag))
-    out = repo / guards.MANIFEST_DIR / manifest_name
+    out = repo / out_rel
     if write_manifest is None:
         from ..harness.manifest import write_manifest as write_manifest_default
 
@@ -61,10 +79,13 @@ def prepare(repo: Path, tag: str, manifest_name: str = "stage2-manifest.md",
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("--tag", required=True)
-    p.add_argument("--manifest-name", default="stage2-manifest.md")
+    p.add_argument("--registration", default=guards.DEFAULT_REGISTRATION,
+                   choices=sorted(guards.REGISTRATIONS))
+    p.add_argument("--manifest-name", default=None,
+                   help="default: the registration's manifest name")
     p.add_argument("--repo", type=Path, default=guards.REPO)
     a = p.parse_args(argv)
-    res = prepare(a.repo, a.tag, a.manifest_name)
+    res = prepare(a.repo, a.tag, a.manifest_name, registration=a.registration)
     print(res["tag_message"], end="")
     return 0
 

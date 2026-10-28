@@ -95,7 +95,7 @@ def test_n10c_queue_and_guards_defaults_are_unchanged():
     n = guards.registration()
     assert n.name == "n10c" and n.tag_prefix == "n10c-freeze-"
     assert n.amendment_path == guards.AMENDMENT_PATH
-    assert n.manifest_name == "stage2-manifest.md"
+    assert n.manifest_name == guards.MANIFEST_NAME == "stage2-manifest-fixc.md"
     assert n.arms_by_condition == guards.ARMS_BY_CONDITION and n.seed_host == SEED_HOST
     assert guards.make_context_for_tests().registration == "n10c"
     assert guards.make_context_for_tests().pins()["amendment_path"] == guards.AMENDMENT_PATH

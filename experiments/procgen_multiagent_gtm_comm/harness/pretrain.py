@@ -120,6 +120,9 @@ class PretrainRecord:
     # this is, and the entropy of its SeedSequence (None = shared trunk)
     unit: list[str] | None = None
     seed_sequence: list[int] = field(default_factory=list)
+    # pre-freeze registered pre-training (freeze plan, option A): commit,
+    # host, preset and budget of the procedure (None otherwise)
+    pre_freeze: dict | None = None
 
 
 def make_env(n_envs: int, rand_seed: int) -> Any:
@@ -142,7 +145,9 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
                    registration: Any = None,
                    micro_batch_pairs: int | None = None,
                    clear_cache: bool = False,
-                   unit: tuple[str, str] | None = None) -> PretrainRecord:
+                   unit: tuple[str, str] | None = None,
+                   pre_freeze: bool = False,
+                   repo: Path = guards.REPO) -> PretrainRecord:
     """Pre-train the trunk for ``total_steps`` single-agent steps.
 
     ``env`` (tests only) replaces procgen: a gym3-style vector env with
@@ -153,11 +158,26 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
     ``unit`` = (arm, condition): pre-train the OWN trunk of that run of the
     per-run-pretraining control, seeded ``SeedSequence([seed, PRETRAIN_CODE,
     arm_code, condition_code])`` (``pretrain_seed_entropy``); None = the
-    seed's shared trunk, ``SeedSequence([seed, PRETRAIN_CODE])``."""
-    host = guards.check_pretrain_boundary(registration, seed=seed,
-                                          total_steps=total_steps,
-                                          has_env=env is not None,
-                                          unit=unit)
+    seed's shared trunk, ``SeedSequence([seed, PRETRAIN_CODE])``.
+
+    ``pre_freeze``: the registered procedure BEFORE the new freeze tag
+    (PI decision 2026-10-28): ``guards.check_prefreeze_pretrain`` (clean,
+    pushed commit; registered seed or control unit; exact budget; the
+    seed's host and its settings), ledger kind ``pretrain_registered``
+    (one usable trunk per seed / unit, one restart of an unusable one)."""
+    pf = None
+    if pre_freeze:
+        if registration is not None:
+            raise ValueError("pre_freeze and a registration are exclusive")
+        pf = guards.check_prefreeze_pretrain(
+            seed=seed, total_steps=total_steps, has_env=env is not None,
+            unit=unit, repo=repo)
+        host = pf["host"]
+    else:
+        host = guards.check_pretrain_boundary(registration, seed=seed,
+                                              total_steps=total_steps,
+                                              has_env=env is not None,
+                                              unit=unit)
     if host is not None:
         micro_batch_pairs = HOST_SETTINGS[host]["micro_batch_pairs"]
         clear_cache = HOST_SETTINGS[host]["clear_cache"]
@@ -176,14 +196,16 @@ def pretrain_trunk(seed: int, total_steps: int, out_dir: Path, *,
         if total_steps > devledger.MAX_STEPS:
             raise devledger.SmokeLimitError(
                 f"pre-training is limited to {devledger.MAX_STEPS:,} steps")
-        res = devledger.reserve(devledger.PRETRAIN_ARM,
-                                devledger.PRETRAIN_CONDITION, total_steps,
-                                kind="pretrain_dev", path=dev_ledger, seed=seed)
+        res = devledger.reserve(
+            devledger.PRETRAIN_ARM, devledger.PRETRAIN_CONDITION, total_steps,
+            kind=devledger.PREFREEZE_KIND if pre_freeze else "pretrain_dev",
+            path=dev_ledger, seed=seed, unit=unit if pre_freeze else None)
         devledger.claim(res, devledger.PRETRAIN_ARM,
                         devledger.PRETRAIN_CONDITION, total_steps)
     rec = PretrainRecord(seed, total_steps, n_envs, horizon)
     rec.seed_sequence = entropy
     rec.unit = None if unit is None else list(unit)
+    rec.pre_freeze = pf
     rec.settings = {"micro_batch_pairs": micro_batch_pairs,
                     "clear_cache": clear_cache}
     if registration is not None:
@@ -357,6 +379,12 @@ def main() -> None:
                         "their host's HOST_SETTINGS")
     p.add_argument("--clear-cache", action="store_true",
                    help="development only: mx.clear_cache() per update")
+    p.add_argument("--pre-freeze", action="store_true",
+                   help="the registered pre-training of a registered seed (or "
+                        "control unit) BEFORE the new freeze tag (PI decision "
+                        "2026-10-28): clean pushed commit, exact budget, the "
+                        "seed's host and settings; ledger kind "
+                        "pretrain_registered")
     p.add_argument("--per-run", nargs=2, metavar=("ARM", "CONDITION"),
                    default=None,
                    help="own trunk of one run of the per-run-pretraining "
@@ -366,13 +394,19 @@ def main() -> None:
     a = p.parse_args()
     ctx = guards.enforce_cli(a, registered=a.registered,
                              what="registered pre-training")
-    if a.registered and (a.micro_batch_pairs is not None or a.clear_cache):
+    if a.registered and a.pre_freeze:
+        p.error("--registered and --pre-freeze are exclusive")
+    if (a.registered or a.pre_freeze) and (
+            a.micro_batch_pairs is not None or a.clear_cache):
         p.error("registered pre-training uses its host's HOST_SETTINGS; "
                 "do not pass --micro-batch-pairs / --clear-cache")
+    if a.pre_freeze and a.steps != guards.PRETRAIN_BUDGET:
+        p.error(f"--pre-freeze needs --steps {guards.PRETRAIN_BUDGET}")
     rec = pretrain_trunk(a.seed, a.steps, a.out, registration=ctx,
                          micro_batch_pairs=a.micro_batch_pairs,
                          clear_cache=a.clear_cache,
-                         unit=None if a.per_run is None else tuple(a.per_run))
+                         unit=None if a.per_run is None else tuple(a.per_run),
+                         pre_freeze=a.pre_freeze)
     print(json.dumps({k: v for k, v in asdict(rec).items()
                       if k not in ("liveness",)}))
 
