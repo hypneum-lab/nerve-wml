@@ -78,12 +78,15 @@ class _Bandit:
 
 
 # -- presets / options --------------------------------------------------------
-def test_frozen_preset_is_the_default_and_unchanged():
+def test_frozen_preset_is_the_options_default_and_unchanged():
     o = tr.PRESETS[tr.FROZEN_PRESET]
     assert o == tr.TrainOptions()
     assert (o.coin_reward, o.adam_eps, o.mask_finished, o.liveness,
             o.pretrained_trunk) == (0.0, 1e-8, False, "off", False)
-    assert guards.REGISTERED_TRAIN_OPTIONS == tr.FROZEN_PRESET
+    # the registered preset is fix C (amendment 2026-10-25, section 5);
+    # the frozen preset stays selectable to reproduce n10c-freeze-20261024
+    assert tr.FROZEN_PRESET == "frozen-20261024"
+    assert guards.REGISTERED_TRAIN_OPTIONS == "fix-c-coin-pretrain"
 
 
 def test_fix_presets():

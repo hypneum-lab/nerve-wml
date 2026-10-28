@@ -168,8 +168,9 @@ def test_control_queue_is_seed_101_with_own_trunk_ids():
     assert ctl[0].run_id == f"prc-{ctl[0].condition}-{ctl[0].arm}-s101"
 
 
-def test_frozen_preset_has_no_control_runs(tmp_path):
-    c, calls, _ = _campaign(tmp_path, lambda tag, n, kw: _rec())
+def test_frozen_preset_has_no_control_runs(tmp_path, monkeypatch):
+    c, calls, _ = _campaign(tmp_path, lambda tag, n, kw: _rec(),
+                            preset="frozen-20261024", monkeypatch=monkeypatch)
     assert c.control_all() == []
     assert c.run() == rc.EXIT_AWAITING_SYNC
     assert len(calls) == 30 and not any(x.get("per_run_trunk") for x in calls)
