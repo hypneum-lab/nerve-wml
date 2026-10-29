@@ -1,6 +1,6 @@
 # N10-C — Deviation and pre-registration amendment 2026-10-25: campaign stop, trunk collapse, training fix and learnability gate
 
-**Status:** FROZEN by tag n10c-freeze-20261028 (stage 1 + stage 2 manifest); OSF registration to follow
+**Status:** FROZEN by tag n10c-freeze-20261029 (stage 1 + stage 2 manifest); OSF registration to follow
 **Amends:** `docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-23.md` (frozen by tag `n10c-freeze-20261024`, commit `2ce4214`), which amends `docs/milestones/n10c-procgen-multiagent-gtm-comm-2026-05-11.md`.
 **Date drafted:** 2026-10-25.
 **Code:** branch `fix/n10c-trunk-collapse` (`experiments/procgen_multiagent_gtm_comm/harness/{options,train,rollout,vec_env,pretrain,devledger,gate_report}.py`, `campaign/{guards.py,queue.py,run_campaign.py}`, `campaign/macm1/{start,pretrain,day_model_paused}.sh`, tests `tests/unit/n10c/test_{trunk_fix,gate_report,macm1_launcher,liveness_control}.py`).

@@ -1,12 +1,12 @@
 # N10-C stage-2 configuration manifest
 
-**Status: FROZEN (tag n10c-freeze-20261028).**
+**Status: FROZEN (tag n10c-freeze-20261029).**
 
 Registration: N10-C amendment of 2026-10-23 as amended on 2026-10-25 (training fix C, section 5), configuration manifest (stage 2). Immutable once frozen. Supersedes the manifest of tag n10c-freeze-20261024, whose campaign was stopped and is excluded. Runs started before the freeze tag are excluded from all analyses and reported.
 
 ## 1. Commit, integer codes and bus
 
-- Harness commit at manifest time: `b6276454cde854ec0c5bd9a0880511bac38f4a8a` (source: git). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
+- Harness commit at manifest time: `b9aabefb3362d134818b3a06507c6d8189781fd2` (source: git). **The freeze commit must be re-recorded after merge**: this draft is committed in a later commit than the code it describes.
 - Code identity independent of git (SHA-256 of each file at manifest time):
 
 | file | SHA-256 |
@@ -150,7 +150,7 @@ Amendments (SHA-256 at manifest time):
 | file | SHA-256 |
 |---|---|
 | `docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-23.md` | `0114dac7e2777b2d02c12bcb5ff4c73cdd9df08e8df516d60497eefa54eed59b` |
-| `docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-25.md` | `0fdb63939b1b331a13404dd7300f534a876dbe09eb9bd0c73726443d2c299925` |
+| `docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-25.md` | `dfb3b96f15376a5bbfd2a7f5cc1ea7d8d9e29afb0dde1492f94e2f4a6ec618e7` |
 
 - Registered preset `fix-c-coin-pretrain` (`campaign.guards.REGISTERED_TRAIN_OPTIONS`): coin_reward = 0.5, adam_eps = 1e-05, mask_finished = True, liveness = abort, liveness_every = 100000, pretrained_trunk = True, adam_bias_correction = False. Adam bias correction off (PI decision, amendment section 4.3); the bias-corrected preset is development-only.
 - Liveness guard: probe on 128 pair-steps at step 0 and after the first update ending at or after every 100,000 pair-steps; flagged if the block-3 positive fraction or the live-h fraction is below 0.01 or a std is <= 1e-06; abort mode. A first abort restarts the run once from scratch (`MAX_LIVENESS_RESTARTS = 1`, counted apart from the infrastructure restarts); a second abort is a training failure, evaluated at its last checkpoint.
