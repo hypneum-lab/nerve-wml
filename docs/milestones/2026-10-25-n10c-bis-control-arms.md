@@ -316,3 +316,35 @@ The N10-C configuration this addendum was written against (tag `n10c-freeze-2026
 - *Rerun result (2026-10-27 08:25–08:37, slot 2 of 3, ledger `cc6437e1…`, record `kxkm/gate-bis-vq2/fix-c-coin-pretrain-vq/run.json` in `bis_gate`) : **PASS.** 1,000,000 pair-steps ; team success 0.65 at 1M (last 5 logs 0.576) ; coin rate 0.154 → 0.650 ; block-3 positive fraction at the 11 probes 0.063 (step 0), then 0.039–0.071 (minimum 0.039 after step 0) ; minimum live-h 0.75 after step 0 ; no probe flagged, no abort ; 726 s.* The trunk stayed alive with the VQ loss kept away from it, which is consistent with the mechanism of B5 but, being one run, does not by itself prove it.
 
 **B3 verdict (2026-10-27) : all four new arms pass the learnability gate under fix C** — `eng_gtmrx`, `gtm_warm` and `gtm_mis` at their first run, `vq` at its second run with the B5 fix (its first run, a liveness abort, is reported and kept). `vq` used 2 of its 3 `gate_dev` slots, the other new arms 1 of 3. The N10-C-bis stage-2 manifest records the B5 fix as part of the `vq` arm's implementation.
+
+## Necessity gate (PI decision 2026-10-30)
+
+*Append-only. Decided by the PI on 2026-10-30 at about 15:10 CET : « necessity gate of the communication before the N10-C-bis freeze ; on failure, an asymmetric N10-D ». Where it conflicts with the sections above, this section governs. The decision was taken after the reading declared in `docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-30.md` (section 1) and is reported as a non-blind design decision (as in B2).*
+
+**G1. Why.** N10-C-bis spends about 526 h ≈ 21.9 days of KXKM-AI (scope bis-A, « Compute plan ») on contrasts that separate message content, optimisation and symbol structure. They are informative only if the task needs the message. The development records do not show that it does :
+
+- the two agents play the same level in separate instances and neither sees the other (`coop_env.py`, module docstring, lines 11–13) ; a scripted « right / right-jump » policy with no message reaches about **43 %** team success through the real wrapper (2026-10-25 amendment, section 2, item 2) ;
+- in every learnability-gate run under fix C, team success at 1M pair-steps stays close to the per-agent own-coin rate (2026-10-25 amendment, section 4.2 : e.g. `gtm` 0.54 vs 0.595, `eng` 0.76 vs 0.785, seed 9102 `gtm` 0.73 vs 0.765) ;
+- the content-free arm `gtm_mis` reached **0.81** at 1M (B3 results above) against **0.54–0.73** for `gtm` on the development seeds (2026-10-25 amendment, section 4.2, rows 6, 16, 20 ; one run per cell, repeat differences of about 0.1).
+
+On such a task the team reward is earned mostly by independent single-agent navigation inside the Δt window, and the contrasts that isolate the message (C1, C3, the γ/θ receive-path contrasts and NI) are expected to be near 0 **by construction of the task**, not because of a property of the channel. A null N10-C-bis would then be uninformative.
+
+**G2. The gate.** Before any N10-C-bis freeze, the PI runs one development contrast :
+
+- **Arms :** N10-C `eng` (engineered reference sender : ideal, known content) and N10-C `nocomm` (zeroed channel) ; **condition `closed`** (`team_summary=False`, no side channel : the only partner information is the message).
+- **Configuration :** preset `fix-c-coin-pretrain`, **10,000,000 pair-steps** per run (the `gate_dev` cap), training levels 0–15 only, KXKM-AI per-host settings, liveness guard in `abort` mode.
+- **Seeds :** development seeds of the pilot namespace (91xx), never a registered seed ; default **9101** with its committed trunk (SHA-256 prefix `0c27f2daa0a9`), one run per arm. Adding seeds is a PI decision taken before the first gate run, never after a result.
+- **Measure :** team success = mean of the last 5 logged values of the training success curve (last 100 completed episodes at each log), as in section 4.3 of the 2026-10-25 amendment ; with more than one seed, the mean over seeds of the per-seed difference.
+- **Pass :** `eng − nocomm ≥ 0.20` in team success. The threshold is twice the N10-C SESOI (Δ = 0.10) and twice the repeat differences of section 4.2 of the 2026-10-25 amendment.
+- **Failure handling :** a run that crashes or aborts on liveness is rerun once (ledgered) ; if a run still gives no result, it is reported and the PI decides before any further run.
+
+**G3. Consequences.**
+
+- **Pass :** the N10-C-bis freeze proceeds as specified above (sections « Filing » and B3). The gate result is listed in the N10-C-bis stage-2 manifest with its ledger entries.
+- **Fail :** **N10-C-bis is not frozen** and none of its 48 runs is made. The next study is **N10-D**, an **asymmetric** cooperative task in which each agent holds private information that its partner needs to succeed (communication necessary by construction), to be pre-registered in its own document before any N10-D run. Under rule R3, N10-C is then reported as uninterpretable as evidence of communication, with its estimates ; its registered analysis is unchanged.
+
+**G4. Status of the gate runs.** The gate is **exploratory**. Its runs are development runs (ledger kind `gate_dev`, `manifest/smoke_ledger.json`), never use held-out levels 1000–1199 and read no N10-C registered result. They enter **no confirmatory or estimation set**, are never pooled with N10-C or N10-C-bis runs and are not a pilot variance estimate for either.
+
+**G5. Host and order.** KXKM-AI, **after E1-small has ended**, one run at a time, **never in parallel** with any GPU job of ours (E1-small, N10-C campaign runs, gate lanes ; the « Development allowance » rule that no development run executes while an N10-C training run is in progress on that host applies). Compute : about 40 min of GPU was the planning figure given at the decision ; the measured KXKM-AI rate of a 10M `gate_dev` run under fix C (2026-10-25 amendment, section 4.3, part B : 7,434 s) gives about **2.1 h per run, about 4.1 h for the two arms of one seed**. The ledger record carries the measured time.
+
+**G6. Ledger allowance (to be set before the run).** `gate_dev` for `eng` has used 13 of its 13 slots (`harness/devledger.py`, `GATE_DEV_ALLOWANCE`) and `nocomm` has no `gate_dev` entry. The allowance for the gate (one run per arm and seed plus one rerun) is raised by a separate, dated code change before the first gate run, as for the earlier caps.
