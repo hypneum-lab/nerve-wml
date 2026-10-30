@@ -72,6 +72,7 @@ Each `pretrain.json` must read `usable: true` and carry the `pre_freeze` record;
 **Phase F — commitment (PI's final go only).**
 7. `git tag -a n10c-freeze-<YYYYMMDD> -F <message>` on the freeze commit; push the commit and the tag to GitHub (`hypneum-lab/nerve-wml`; mirrored to Gitea); record the GitHub push time.
 8. Software Heritage « Save Code Now »; record the SWHID of the tagged revision (`swh:1:rev:<commit>`).
+   **Recorded (2026-10-30, checked against git and the Software Heritage API; details and a correction in `n10c-procgen-multiagent-gtm-comm-amendment-2026-10-30.md`, section 2):** tag `n10c-freeze-20261029` = tag object `b14717b7efbbee111b577debce981e9b58795d19` → commit `99a7cf4bb01d31e8e7f6c99c0e6676f41e6e17bb`; visit 2 of 2026-10-29T10:55:51Z, snapshot `swh:1:snp:01242c8b5873518a503b84a80ce3a302bb69b8a8`; release `swh:1:rel:b14717b7efbbee111b577debce981e9b58795d19`; **revision SWHID for `--swhid`: `swh:1:rev:99a7cf4bb01d31e8e7f6c99c0e6676f41e6e17bb`** (`swh:1:rev:b14717b…` does not resolve: `b14717b…` is the tag object, not a revision).
 9. OSF registration afterwards, referencing tag, commit and SWHID (optional for the launch).
 
 **Phase L — launch (PI's go).**
