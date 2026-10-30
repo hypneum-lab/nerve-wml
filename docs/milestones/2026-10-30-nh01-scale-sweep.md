@@ -1,10 +1,12 @@
-# NH-01 — Pre-registration amendment (L1, DRAFT) 2026-10-30: size sweep N = 1 000, 2 000, 4 000
+# NH-01 — Pre-registration amendment (L0 draft, target L1) 2026-10-30: size sweep N = 1 000, 2 000, 4 000
 
-**Status:** DRAFT, not frozen. This file becomes binding only when the
-annotated tag `prereg-nh01-scale-<date>` is placed on the commit that
-contains its final version, after the PI has ruled on #86 and #87 and
-after the timing probe below. Nothing in this sweep has been run.
-Runs started before the tag do not count.
+**Status:** L0 draft on a branch, not frozen. This file becomes binding
+only at L1: PR merged on green CI, manifest (§8), annotated tag
+`prereg-nh01-scale-<YYYYMMDD>` on the merge commit, pushed, and a
+Software Heritage save whose revision SWHID (`swh:1:rev:…`) is recorded
+here. The freeze waits for the PI ruling on #86 and #87, the open PI
+decisions of §8 and the timing probe. Nothing in this sweep has been
+run. Runs started before the tag push do not count.
 **Amends:** `docs/milestones/2026-10-25-nh01-confirmatory-n1000.md`
 (tag `prereg-nh01-confirmatory-20261025`, PR #86) and, for the rules on
 non-computable criteria, `docs/milestones/2026-10-27-nh01-correlated-patterns.md`
@@ -15,7 +17,11 @@ agent, the researcher merges and tags.
 **Date drafted:** 2026-10-30. PI request 2026-10-30 14:08.
 **Data status at drafting:** results at N = 1 000 are public (#86, #87,
 provenance re-runs of 2026-10-30). No cell at N = 2 000 or 4 000 has been
-computed. N = 1 000 results inform the predictions only.
+computed. The earlier runs inform the predictions only and are not
+pooled : pilot N ≤ 256 (seeds 0–9, tag
+`prereg-nh01-hopfield-dream-20261025`), confirmatory N = 1 000 (seeds
+0–9, #86), correlated N = 1 000 (seeds 100–109, #87), timing probes
+(seeds 999 and 998, discarded).
 
 ## 1. Question
 
@@ -162,7 +168,11 @@ the runner or its launch wrapper, before the first cell:
 - Host name, CPU model, core count, RAM, load average at launch.
 - The tag record **fetched from the GitHub API** (`git/ref/tags/<tag>`
   and `git/tags/<object>`, raw JSON) with the fetch time, written
-  before the launch time ; start and end UTC timestamps.
+  before the launch time ; start and end UTC timestamps. GitHub does
+  not expose the push time : it is bounded below by the tagger date
+  and above by the API fetch time (the tag is visible on GitHub at
+  that moment) ; the SWH save request and its SWHID, made before the
+  launch, give the external timestamp.
 - The timing-probe output (declared, discarded) and the exact launch
   command.
 
@@ -221,8 +231,18 @@ order tag → run is checked from the artefacts alone.
 
 ## 8. Before the tag (checklist, to be completed)
 
-- [ ] PI ruling on #86 / #87 (wording of m = 0.30 and of the
-      mechanism sentence) ; if it changes a rule, mirror it here.
+Open PI decisions (TBD by PI — no tag while any is open):
+
+- [ ] Ruling on #86 / #87 (wording of m = 0.30 and of the mechanism
+      sentence) ; if it changes a rule, mirror it here.
+- [ ] Extra temperatures T ∈ {0.1, 0.3} kept, changed or dropped.
+- [ ] Seed namespace : seeds 0–9 at every N (as drafted ; at N = 1 000
+      they are the confirmatory seeds of #86 on purpose, for the
+      cross-host reproduction ; at N = 2 000 and 4 000 the streams are
+      new draws because they are keyed by N), or fresh seeds.
+- [ ] Go on the KXKM-AI CPU booking (the GPU services stay untouched).
+
+Freeze steps:
 - [ ] Runner `experiments/nh01_hopfield_dream/scale.py` written on the
       confirmatory primitives, with unit tests: per-load split
       bit-identical to the per-seed task ; conditions 0–1 bit-identical
@@ -231,8 +251,16 @@ order tag → run is checked from the artefacts alone.
 - [ ] Independent review of runner and this file.
 - [ ] Timing probe on KXKM-AI, results here (projection, RSS,
       workers).
-- [ ] PI go, then annotated tag, push, tag fetched from the GitHub API
-      and recorded, launch.
+- [ ] PR merged on green CI.
+- [ ] Manifest `docs/milestones/2026-10-30-nh01-scale-sweep-manifest.md`
+      : SHA-256 of this file, of the runner, of `run.py`,
+      `confirmatory.py`, the tests and the lock file ; its own SHA-256
+      recorded in the tag message.
+- [ ] Annotated tag on the merge commit, pushed ; Software Heritage
+      save requested, revision SWHID recorded here (in a follow-up
+      commit that does not touch the frozen files).
+- [ ] Tag record fetched from the GitHub API and written in the run
+      directory, then launch.
 
 ## References
 
