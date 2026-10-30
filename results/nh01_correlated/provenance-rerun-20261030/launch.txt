@@ -1,0 +1,18 @@
+tag: prereg-nh01-correlated-20261027
+head: df9a1e7634113599c9b38cb4259068a29a5bdd2a
+tag_object_local: 8fe96b881cc4817f3f25dc773fb32b1d852db337
+tag_target_local: df9a1e7634113599c9b38cb4259068a29a5bdd2a
+describe: prereg-nh01-correlated-20261027
+origin: https://github.com/hypneum-lab/nerve-wml.git
+hostname: electron-server
+nproc_all: 8
+uptime_at_launch:  13:10:33 up 94 days, 19:07,  1 user,  load average: 7.18, 6.54, 6.48
+module: correlated
+workers: 2
+nice: 19
+env: OMP/OPENBLAS/MKL/NUMEXPR_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1
+python: Python 3.12.15 (/home/electron/scratch/nh01/venv/bin/python)
+github_fetch_utc: 2026-10-30T12:10:34Z
+start_utc: 2026-10-30T12:10:34Z
+end_utc: 2026-10-30T20:39:46Z
+exit_code: 0

@@ -1,0 +1,32 @@
+{
+  "cells_differing_non_timing": 0,
+  "fields_differing": {},
+  "keys_equal": true,
+  "line_order_equal": false,
+  "max_abs_diff": {},
+  "n_cells": [
+    29640,
+    29640
+  ],
+  "note": "cells compared by key; NaN compared as NaN; cells file bytes differ by line order (imap_unordered) and task_seconds",
+  "sha256_cells.jsonl.gz": {
+    "committed": "d0c4abb62f7119b5e6b25f2949b92f997324a79d0872e26ae63fa0fba0c335f5",
+    "equal": false,
+    "rerun": "4d7d22c67df3843acf0a0920bb3eeff0faf01bd40ff5c030fc158d891279ac1c"
+  },
+  "sha256_figure.png": {
+    "committed": "de3ee7205995c4b97be8c468cbaa122e713b947ddfba42dd2b7c1283ba09eec7",
+    "equal": true,
+    "rerun": "de3ee7205995c4b97be8c468cbaa122e713b947ddfba42dd2b7c1283ba09eec7"
+  },
+  "sha256_summary.json": {
+    "committed": "1562e9ffe4517b9fc33c3047a7cd69ff1e9c4cb67af592c55089ea3588a4e9fc",
+    "equal": false,
+    "rerun": "2067783405a0e4f64ae1803ea180116070032e1d4e5a98b186581cebb393af1b"
+  },
+  "summary_bytes_equal": false,
+  "summary_equal_excl_run_meta": true,
+  "timing_fields_ignored": [
+    "task_seconds"
+  ]
+}

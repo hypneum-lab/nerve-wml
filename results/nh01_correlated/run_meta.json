@@ -1,0 +1,13 @@
+{
+  "host": "electron-server",
+  "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.39",
+  "python": "3.12.15",
+  "numpy": "2.5.4",
+  "cpus": 8,
+  "workers": 2,
+  "wall_seconds": 22866.4,
+  "git_commit": "8a13a33c1c8057cf6014c50096b0596369728973",
+  "tasks_done": 30,
+  "tasks_total": 30,
+  "started_utc": "2026-10-27T16:48:06Z"
+}
