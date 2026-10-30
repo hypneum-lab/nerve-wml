@@ -18,7 +18,7 @@ T = 0 exactness check (shrink ratio exactly 1) passed at every level. P4 (spurio
 
 ## How to read the numbers
 
-The ratio is dominated by the Hebbian denominator. The dreamed capacity at t = 10 barely moves with correlation — 0.611 [0.606, 0.616], 0.616 [0.612, 0.619], 0.636 [0.633, 0.639] for m = 0, 0.15, 0.30 — while the Hebbian capacity collapses : 0.160, 0.068, 0.014. The absolute gain (dream − Hebb) grows 0.451 → 0.548 → 0.621. This is the expected projector-rule behaviour (the dreamed kernel removes the ancestor bias that kills Hebbian retrieval). The median curves α̂_c(t) of the three levels nearly coincide from t = 5 upwards (figure, panel c) ; correlation only slows the rise at small t (t = 1 : 0.406, 0.349, 0.208).
+The ratio is dominated by the Hebbian denominator. The dreamed capacity at t = 10 barely moves with correlation — 0.611 [0.606, 0.616], 0.616 [0.612, 0.619], 0.636 [0.633, 0.639] for m = 0, 0.15, 0.30 — while the Hebbian capacity collapses : 0.160, 0.068, 0.014. The absolute gain (dream − Hebb) grows 0.451 → 0.548 → 0.621. This is the expected projector-rule behaviour (the dreamed kernel removes the ancestor bias that kills Hebbian retrieval). The median curves α̂_c(t) of the three levels nearly coincide from t = 5 upwards (figure, panel c, which plots the mean curves ; the C2′ statistics use medians) ; correlation only slows the rise at small t (t = 1 : 0.406, 0.349, 0.208).
 
 ## Caveats
 
