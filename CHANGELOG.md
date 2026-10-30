@@ -6,6 +6,16 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ### Added
 
+- **NH-01 confirmatory run at N = 1 000 (issue #68).** L1 amendment
+  `docs/milestones/2026-10-25-nh01-confirmatory-n1000.md` frozen by tag
+  `prereg-nh01-confirmatory-20261025` before the run (C2 re-stated as
+  unimodal with a finite optimum t*, C3 decided at T = 0.2); runner
+  `experiments/nh01_hopfield_dream/confirmatory.py`; results
+  `results/nh01_confirmatory/`, note
+  `docs/results/2026-10-25-nh01-confirmatory.md`. Verdict **confirmé**:
+  C1 ratio 3.86 [3.79, 3.93], t* = 7, matched shrink at T = 0.2
+  0.975 [0.967, 0.982].
+
 - **NH-01 pilot: dreaming Hopfield kernel vs uniform shrink (track M,
   issue #68).** L1 pre-registration
   `docs/milestones/2026-10-25-nh01-hopfield-dream-vs-downscale.md` frozen

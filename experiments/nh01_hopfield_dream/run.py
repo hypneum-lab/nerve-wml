@@ -107,12 +107,17 @@ def offdiag(j: np.ndarray) -> np.ndarray:
     return out
 
 
-def matched_shrink_factors(j0_off: np.ndarray, jt_off: np.ndarray) -> tuple[float, float]:
+def matched_shrink_factors(
+    j0_off: np.ndarray, jt_off: np.ndarray, spectral: bool = True
+) -> tuple[float, float]:
     """Return (c_frobenius, c_spectral) such that c * J0 matches Jt.
 
-    Frobenius matching is the pre-registered control; spectral is descriptive.
+    Frobenius matching is the pre-registered control; spectral is descriptive
+    and may be skipped (NaN) when the two dense eigen-solves are too costly.
     """
     c_fro = float(np.linalg.norm(jt_off) / np.linalg.norm(j0_off))
+    if not spectral:
+        return c_fro, math.nan
     s0 = float(np.max(np.abs(np.linalg.eigvalsh(j0_off))))
     st = float(np.max(np.abs(np.linalg.eigvalsh(jt_off))))
     return c_fro, st / s0
@@ -238,15 +243,27 @@ def classify(
     }
 
 
-def evaluate_task(args: tuple[int, int]) -> list[dict]:
-    """All cells (alpha x arms x conditions) for one (N, seed). Paired design."""
-    n, seed = args
+def evaluate_task(args: tuple) -> list[dict]:
+    """All cells (alpha x arms x conditions) for one (N, seed). Paired design.
+
+    ``args`` is ``(n, seed)`` for the pilot grid, or ``(n, seed, cfg)`` where
+    ``cfg`` overrides ``alpha_grid``, ``t_grid``, ``conditions``,
+    ``max_probes`` and ``spectral`` (confirmatory run). Without ``cfg`` the
+    module constants apply and the pilot output is unchanged.
+    """
+    n, seed = args[0], args[1]
+    cfg = args[2] if len(args) > 2 else {}
+    alpha_grid = tuple(cfg.get("alpha_grid", ALPHA_GRID))
+    t_grid = tuple(cfg.get("t_grid", T_GRID))
+    conditions = tuple(cfg.get("conditions", CONDITIONS))
+    max_probes = int(cfg.get("max_probes", MAX_PROBES))
+    spectral = bool(cfg.get("spectral", True))
     t_start = time.time()
     records: list[dict] = []
-    p_max = max(1, int(round(ALPHA_GRID[-1] * n)))
+    p_max = max(1, int(round(alpha_grid[-1] * n)))
     xi_all = np.where(stream(seed, n, 1).random((p_max, n)) < 0.5, -1.0, 1.0)
 
-    for ai, alpha in enumerate(ALPHA_GRID):
+    for ai, alpha in enumerate(alpha_grid):
         p = max(1, int(round(alpha * n)))
         xi = xi_all[:p]
         j_full = hebbian_kernel(xi)
@@ -258,15 +275,15 @@ def evaluate_task(args: tuple[int, int]) -> list[dict]:
         arms: list[tuple[str, float, np.ndarray, float, float]] = [
             ("hebb", 0.0, j0_off, 1.0, 1.0)
         ]
-        for t in T_GRID[1:]:
+        for t in t_grid[1:]:
             wt = w * (1.0 + t) / (1.0 + t * w)
             jt_off = offdiag((v * wt) @ v.T)
-            c_fro, c_spec = matched_shrink_factors(j0_off, jt_off)
+            c_fro, c_spec = matched_shrink_factors(j0_off, jt_off, spectral=spectral)
             arms.append(("dream", t, jt_off, c_fro, c_spec))
             arms.append(("shrink", t, c_fro * j0_off, c_fro, c_spec))
 
-        probe_idx = np.arange(min(p, MAX_PROBES))
-        for ci, (temp, flips) in enumerate(CONDITIONS):
+        probe_idx = np.arange(min(p, max_probes))
+        for ci, (temp, flips) in enumerate(conditions):
             cues = make_cues(xi, probe_idx, flips, stream(seed, n, 2, ai, ci))
             m0 = float(np.mean(np.einsum("bi,bi->b", cues, xi[probe_idx]) / n))
             for arm, t, j_arm, c_fro, c_spec in arms:
@@ -335,9 +352,13 @@ def bootstrap_mean_ci(
     return float(x.mean()), float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
-def _collect(records: list[dict]) -> tuple[dict, dict]:
-    """Capacities per (condition, arm, seed) and spurious fractions at SPURIOUS_ALPHAS."""
-    alphas = np.array(ALPHA_GRID)
+def _collect(
+    records: list[dict],
+    spurious_alphas: tuple[float, ...] = SPURIOUS_ALPHAS,
+    alpha_grid: tuple[float, ...] = ALPHA_GRID,
+) -> tuple[dict, dict]:
+    """Capacities per (condition, arm, seed) and spurious fractions at ``spurious_alphas``."""
+    alphas = np.array(alpha_grid)
     curves: dict[tuple, dict[str, dict[int, np.ndarray]]] = {}
     spur: dict[tuple, dict[str, dict[int, dict[float, float]]]] = {}
     for rec in records:
@@ -345,8 +366,8 @@ def _collect(records: list[dict]) -> tuple[dict, dict]:
         k = arm_key(rec)
         by_seed = curves.setdefault(cond, {}).setdefault(k, {})
         curve = by_seed.setdefault(rec["seed"], np.full(len(alphas), np.nan))
-        curve[ALPHA_GRID.index(rec["alpha"])] = rec["retrieved_frac"]
-        if rec["alpha"] in SPURIOUS_ALPHAS:
+        curve[alpha_grid.index(rec["alpha"])] = rec["retrieved_frac"]
+        if rec["alpha"] in spurious_alphas:
             sp_seed = spur.setdefault(cond, {}).setdefault(k, {}).setdefault(rec["seed"], {})
             sp_seed[rec["alpha"]] = rec["spurious_frac"]
     caps: dict[tuple, dict[str, dict[int, tuple[float, str]]]] = {}
@@ -357,7 +378,14 @@ def _collect(records: list[dict]) -> tuple[dict, dict]:
     return caps, spur
 
 
-def _condition_entry(cond: tuple, by_arm: dict, sp: dict) -> dict:
+def _condition_entry(
+    cond: tuple,
+    by_arm: dict,
+    sp: dict,
+    t_grid: tuple[float, ...] = T_GRID,
+    t_primary: float = T_PRIMARY,
+    spurious_alphas: tuple[float, ...] = SPURIOUS_ALPHAS,
+) -> dict:
     temp, flips, n = cond
     seeds = sorted(by_arm["hebb"].keys())
     hebb = np.array([by_arm["hebb"][s][0] for s in seeds])
@@ -370,7 +398,7 @@ def _condition_entry(cond: tuple, by_arm: dict, sp: dict) -> dict:
         },
         "dream": {}, "shrink": {},
     }
-    for t in T_GRID[1:]:
+    for t in t_grid[1:]:
         for arm in ("dream", "shrink"):
             k = f"{arm}:{t:g}"
             vals = np.array([by_arm[k][s][0] for s in seeds])
@@ -389,9 +417,9 @@ def _condition_entry(cond: tuple, by_arm: dict, sp: dict) -> dict:
                 ),
             }
     entry["spurious"] = {}
-    k_dr = f"dream:{T_PRIMARY:g}"
-    k_sh = f"shrink:{T_PRIMARY:g}"
-    for a in SPURIOUS_ALPHAS:
+    k_dr = f"dream:{t_primary:g}"
+    k_sh = f"shrink:{t_primary:g}"
+    for a in spurious_alphas:
         h = np.array([sp["hebb"][s][a] for s in seeds]) if "hebb" in sp else np.array([])
         d = np.array([sp[k_dr][s][a] for s in seeds]) if k_dr in sp else np.array([])
         s_ = np.array([sp[k_sh][s][a] for s in seeds]) if k_sh in sp else np.array([])
