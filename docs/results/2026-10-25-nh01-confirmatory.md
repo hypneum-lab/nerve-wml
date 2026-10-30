@@ -2,7 +2,7 @@
 
 **Pre-registration:** `docs/milestones/2026-10-25-nh01-confirmatory-n1000.md`, L1 amendment tag `prereg-nh01-confirmatory-20261025` (annotated tag object `41135e4` on commit `a000f73`, created 13:47:06 UTC, pushed 13:47:08 UTC). Amends the pilot pre-registration (tag `prereg-nh01-hopfield-dream-20261025`, results `docs/results/2026-10-25-nh01-pilot.md`). Issue hypneum-lab/nerve-wml#68.
 **Run:** electron-server, launched **13:47:22 UTC** (14 s after the tag push), i.e. after the freeze. Before launch, the SHA-256 of `run.py` and `confirmatory.py` on the host were checked equal to the tagged commit (the host clone is shallow at `8a13a33`, hence `git_commit = 8a13a33` in `run_meta.json`; the code files are those of `a000f73`). 4 worker processes, `nice 19`, single-threaded BLAS, shared host. **6 951 s wall (1.93 h)** for 10/10 seeds, **9 120 cells**, per-seed task 30–47 min, 0 non-converged probe (max 72 sweeps). Timing probe (seed 999, two loads, declared, output discarded) projected 1.6 h.
-**Artefacts:** `results/nh01_confirmatory/{cells.jsonl.gz, summary.json, figure.png, run_meta.json, run.log, probe.log, SHA256SUMS}`. Every number below is read from `summary.json`.
+**Artefacts:** `results/nh01_confirmatory/{cells.jsonl.gz, summary.json, figure.png, run_meta.json, run.log, probe.log, SHA256SUMS}`. Every number below is read from `summary.json`, except the retrieval, spurious-state, convergence and matched-factor figures, which are read from `cells.jsonl.gz`.
 
 ## Verdict (amended rule, N = 1 000, 10 seeds, cue with 10 % flipped bits, 95 % seed-level bootstrap CI)
 
@@ -22,7 +22,7 @@ Under the pre-registered rule, the run **demonstrates** at N = 1 000 that (i) th
 
 - **Finite temperature, dreaming side.** At T = 0.2 the dreaming gain persists : ratio 3.58 [3.53, 3.64] at t = 10, maximum 3.62 at t = 7 — the same optimum as at T = 0. The shrink ratio stays between 0.970 and 0.979 for every t ; all its CIs exclude 1 from below.
 - **Size trend (pilot → confirmatory, T = 0, t = 10).** Ratio 3.13 (N = 64), 3.38 (128), 3.43 (256), 3.86 (1 000) ; Hebb α̂_c 0.211, 0.179, 0.175, 0.157 approaches the thermodynamic 0.138 from above while the dream α̂_c stays ≈ 0.60. The ratio grows mainly because the finite-size Hebbian estimate shrinks.
-- **Retrieval and spurious states.** Dream (t = 7 or 10) retrieves every probe up to α = 0.55 and crosses 0.5 near α = 0.60–0.62 ; Hebb and matched shrink fall from 0.84 at α = 0.14 to 0 at α = 0.20, with spurious final states 0.16 → 0.99 over the same range (shrink identical to Hebb at T = 0 ; at T = 0.2 slightly more spurious states under shrink, 0.91 vs 0.85 at α = 0.14).
+- **Retrieval and spurious states.** Dream (t = 7 or 10) retrieves nearly every probe up to α = 0.55 (319/320 at α = 0.50 for both ; 315/320 for t = 7 and 317/320 for t = 10 at α = 0.55) and crosses 0.5 near α = 0.60–0.62 ; Hebb and matched shrink fall from 0.84 at α = 0.14 to 0.006 (2/320) at α = 0.20, with spurious final states 0.16 → 0.99 over the same range (shrink identical to Hebb at T = 0 ; at T = 0.2 slightly more spurious states under shrink, 0.91 vs 0.85 at α = 0.14).
 - **Matched factor.** c_fro(t = 10) ≈ 0.917 at α = 0.14.
 
 ## Caveats
