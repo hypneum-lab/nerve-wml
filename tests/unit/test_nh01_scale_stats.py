@@ -34,6 +34,26 @@ def test_codex_counterexample_censored_seed_is_not_dropped() -> None:
     assert not hi < 1.1  # C3' cannot « hold » on this completion
 
 
+@pytest.mark.parametrize("sign", [1.0, -1.0])
+def test_heterogeneous_finite_values_with_an_infinite_bound(sign: float) -> None:
+    """Fourth-review counter-example: finite neighbours must be interpolated."""
+    x = np.random.default_rng(123).uniform(0.9, 1.1, 9)
+    mean, lo, hi = ss.bootstrap_mean_ci_ext([*x, sign * math.inf], SEEDS)
+    # reference: numpy percentile with the infinity replaced by a huge finite
+    # sentinel of the same sign; the percentiles fall between finite means
+    idx = np.random.default_rng(nh.BOOT_SEED).integers(0, 10, size=(nh.BOOT_N, 10))
+    sentinel = np.array([*x, sign * 1e300])[idx]
+    means = sentinel.mean(axis=1)
+    if sign > 0:
+        assert mean == math.inf and hi == math.inf
+        assert lo == float(np.percentile(means, 2.5))
+        assert math.isfinite(lo)
+    else:
+        assert mean == -math.inf and lo == -math.inf
+        assert hi == float(np.percentile(means, 97.5))
+        assert math.isfinite(hi)
+
+
 def test_negative_infinity_bound_of_d() -> None:
     mean, lo, hi = ss.bootstrap_mean_ci_ext([0.5] * 9 + [-math.inf], SEEDS)
     assert mean == -math.inf and lo == -math.inf and hi == 0.5

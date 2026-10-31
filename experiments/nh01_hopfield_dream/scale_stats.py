@@ -29,7 +29,7 @@ from experiments.nh01_hopfield_dream import run as nh
 def _percentile_ext(sorted_means: np.ndarray, q: float) -> float:
     """numpy 'linear' percentile, extended to +/-inf neighbours."""
     n = sorted_means.size
-    h = (n - 1) * q / 100.0
+    h = (q / 100.0) * (n - 1)  # numpy: virtual index = quantile * (n - 1)
     lo = int(math.floor(h))
     hi = min(lo + 1, n - 1)
     a, b = float(sorted_means[lo]), float(sorted_means[hi])
@@ -37,7 +37,10 @@ def _percentile_ext(sorted_means: np.ndarray, q: float) -> float:
         return a
     if math.isinf(a) or math.isinf(b):
         return b if math.isinf(b) else a
-    raise AssertionError("finite case is delegated to numpy")
+    # both neighbours finite: numpy's linear rule (its _lerp, bit for bit)
+    t = h - lo
+    diff = b - a
+    return b - diff * (1.0 - t) if t >= 0.5 else a + diff * t
 
 
 def bootstrap_mean_ci_ext(
