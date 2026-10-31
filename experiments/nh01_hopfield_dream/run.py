@@ -48,7 +48,9 @@ N_PRIMARY = 256
 FLIPS_PRIMARY = 0.10
 # (temperature, cue flip fraction) conditions. T = 0 is the primary dynamics.
 CONDITIONS: tuple[tuple[float, float], ...] = ((0.0, 0.10), (0.0, 0.0), (0.2, 0.10))
-RETRIEVED_THRESH = {0.0: 0.9, 0.2: 0.8}
+# T > 0 uses 0.8 at every temperature; 0.1 and 0.3 are the size-sweep
+# extra temperatures (docs/milestones/2026-10-30-nh01-scale-sweep.md).
+RETRIEVED_THRESH = {0.0: 0.9, 0.1: 0.8, 0.2: 0.8, 0.3: 0.8}
 MAX_SWEEPS_T0 = 100
 TIE_REL = 1e-12  # zero-field tolerance relative to N * max|J| (see run_zero_temperature)
 SWEEPS_GLAUBER = 40
@@ -262,6 +264,15 @@ def evaluate_task(args: tuple) -> list[dict]:
     ``cfg`` overrides ``alpha_grid``, ``t_grid``, ``conditions``,
     ``max_probes`` and ``spectral`` (confirmatory run). Without ``cfg`` the
     module constants apply and the pilot output is unchanged.
+
+    Size-sweep keys (all optional, defaults keep earlier outputs unchanged):
+    ``alpha_indices`` gives the global load index of each entry of
+    ``alpha_grid`` (default ``0..len-1``), so that a task restricted to some
+    loads draws the same cue and dynamics streams as the full-grid task;
+    ``p_max`` fixes the number of patterns drawn (default from the last
+    load), so that nested patterns stay identical; ``condition_arms`` is a
+    sequence aligned with ``conditions`` whose entries are ``None`` (all
+    arms) or a collection of ``(arm, t)`` pairs to run in that condition.
     """
     n, seed = args[0], args[1]
     cfg = args[2] if len(args) > 2 else {}
@@ -272,15 +283,23 @@ def evaluate_task(args: tuple) -> list[dict]:
     spectral = bool(cfg.get("spectral", True))
     t_start = time.time()
     records: list[dict] = []
-    p_max = max(1, int(round(alpha_grid[-1] * n)))
+    alpha_indices = tuple(cfg.get("alpha_indices", range(len(alpha_grid))))
+    if len(alpha_indices) != len(alpha_grid):
+        raise ValueError("alpha_indices must align with alpha_grid")
+    condition_arms = tuple(cfg.get("condition_arms", (None,) * len(conditions)))
+    if len(condition_arms) != len(conditions):
+        raise ValueError("condition_arms must align with conditions")
+    p_max = int(cfg.get("p_max", max(1, int(round(alpha_grid[-1] * n)))))
     ancestor_m = cfg.get("ancestor_m")
     if ancestor_m is None:
         xi_all = np.where(stream(seed, n, 1).random((p_max, n)) < 0.5, -1.0, 1.0)
     else:
         xi_all = correlated_patterns(p_max, n, float(ancestor_m), stream(seed, n, 1, 7))
 
-    for ai, alpha in enumerate(alpha_grid):
+    for ai, alpha in zip(alpha_indices, alpha_grid, strict=True):
         p = max(1, int(round(alpha * n)))
+        if p > p_max:
+            raise ValueError("load above p_max")
         xi = xi_all[:p]
         j_full = hebbian_kernel(xi)
         j0_off = offdiag(j_full)
@@ -302,7 +321,10 @@ def evaluate_task(args: tuple) -> list[dict]:
         for ci, (temp, flips) in enumerate(conditions):
             cues = make_cues(xi, probe_idx, flips, stream(seed, n, 2, ai, ci))
             m0 = float(np.mean(np.einsum("bi,bi->b", cues, xi[probe_idx]) / n))
+            allowed = condition_arms[ci]
             for arm, t, j_arm, c_fro, c_spec in arms:
+                if allowed is not None and (arm, t) not in allowed:
+                    continue
                 rng_dyn = stream(seed, n, 3, ai, ci)  # identical across arms
                 rec = {
                     "N": n, "seed": seed, "alpha": alpha, "P": p, "arm": arm, "t": t,
