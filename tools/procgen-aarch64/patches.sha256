@@ -1,0 +1,3 @@
+7abc70e39c54f42fb624d98b661434fd188b7738805631fe25f50a2b3ecef474  0001-fix-setup-allow-filelock-4.x.patch
+6a890e7e326a537d7f22dfb4b205076f58a00cd3a14359c1cf00f55ac67aa5b9  0002-fix-cmake-gate-march-ivybridge-to-x86.patch
+d4446421a36f943df4c92bcd45e199a87a9e530ba7683db9f912c787936d4ac2  0003-fix-cmake-match-x86-char-and-FP-semantics.patch
