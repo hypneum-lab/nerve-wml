@@ -1,7 +1,7 @@
 # NH-01 — Pre-registration amendment (L0 draft, target L1) 2026-10-30: size sweep N = 1 000, 2 000, 4 000
 
-**Status:** L0 draft on a branch, not frozen, revision 3 (2026-10-31,
-after the first and second independent reviews, see §11). The file becomes binding
+**Status:** L0 draft on a branch, not frozen, revision 4 (2026-10-31,
+after three independent reviews, see §11). The file becomes binding
 only through the freeze procedure of §9 : manifest in the tagged tree,
 PR merged on green CI, annotated tag on the merge commit, Software
 Heritage visit recorded in a separate registry. Nothing in this sweep
@@ -17,7 +17,7 @@ else is a « reprise à l'identique » unless stated.
 (sole investigator) ; drafting, implementation and run delegated to an
 agent, the researcher merges and tags.
 **Date drafted:** 2026-10-30, revised 2026-10-31. PI requests
-2026-10-30 14:08, 2026-10-30 22:07 and 2026-10-31 08:40 CET.
+2026-10-30 14:08, 2026-10-30 22:07, 2026-10-31 08:40 and 09:02 CET.
 **Data status at drafting:** results at N = 1 000 are public (#86, #87,
 provenance re-runs of 2026-10-30, exact reproductions). No cell at
 N = 2 000 or 4 000 has been computed. The earlier runs inform the
@@ -86,7 +86,13 @@ and also checks that `p_max` sets the shape of the pattern draw and
 that a load above `p_max` is rejected. The test of default behaviour
 compares two code paths of the current `run.py` ; the historical
 reference is the bit-exact provenance re-run of #86 and #87, not this
-test. The sweep runner (`scale.py`) and its launch wrapper are written
+test. `scale_stats.py:bootstrap_mean_ci_ext` (extended-real bootstrap
+of §4.2.1, seed-ordered) and `provenance.py` (executed-code and
+interpreter checks of §7.1 and §8) are tested in
+`tests/unit/test_nh01_scale_stats.py` (censored counter-example of the
+third review, −inf bounds, order invariance, per-size RNG seeds,
+version check, late import caught in a real forked worker). The sweep
+runner (`scale.py`) and its launch wrapper are written
 before the freeze (§9.2) and must use these keys and this scheduler.
 
 ### 2.2 Why T ∈ {0.1, 0.3}
@@ -161,10 +167,19 @@ For a criterion on X / Y (numerator arm X, denominator Hebb Y) :
 
 Notation : `lab(v)` is the label rule of the criterion (§4.4 for C1
 with its priority, §4.6 for C3′ and C3″) applied to a vector v of
-per-seed values (R and D for C1, S for C3′/C3″), with the
-pre-registered bootstrap (10 000 resamples, RNG seed 20261025 reset
-at each call, as in `run.py:bootstrap_mean_ci` ; LOW and HIGH have the
-same number of seeds and therefore use identical resampling indices).
+per-seed values (R and D for C1, S for C3′/C3″), with the bootstrap
+`scale_stats.py:bootstrap_mean_ci_ext` : 10 000 resamples, RNG seed
+20261025 (or the per-size sequence of §4.8) reset at each call, the
+same resampling indices as `run.py:bootstrap_mean_ci` for the same
+number of seeds (results identical on finite data, tested), but
+**every seed is kept** : this is an explicit exception to
+`run.py:bootstrap_mean_ci`, which drops non-finite values, is unchanged
+and is not used for §4.2.1. **Before any resampling, every vector is
+sorted by increasing seed identifier** (L0, LOW, HIGH, the descriptive
+quantities and the per-t curves ; t columns stay in grid order), so
+that no result depends on the order in which seeds were collected
+(order invariance tested). LOW and HIGH have the same number of seeds
+and therefore use identical resampling indices.
 
 ```
 input : defined seeds d (values from ok capacities), undefined seeds u
@@ -194,10 +209,19 @@ report k, L0, LOW, HIGH and the bounds used
   inside their bounds therefore gives CI bounds between those of LOW
   and HIGH ; a label shared by L0, LOW and HIGH is the label of every
   completion of the box and of the complete-case analysis.
-- **Infinite bounds.** A CI bound equal to ±inf fails every strict
-  inequality it is compared with (for example an upper bound +inf is
-  not < 1.1, a lower bound −inf is not ≥ 3). NaN cannot occur with the
-  conventions above.
+- **Infinite bounds.** In LOW the only infinite values are D_lo = −inf
+  (ratios are ≥ 0 and finite) ; in HIGH they are ratio_hi = +inf and
+  D_hi = +inf. A vector therefore never holds both +inf and −inf and
+  `inf − inf` is never computed (the helper raises if it would be). A
+  resample mean is ±inf iff the resample holds an infinite value ;
+  percentiles use numpy's linear rule when both neighbours are finite
+  and the infinite neighbour otherwise. Comparisons use the extended
+  order : an upper bound +inf is not < 1.1 or < 0.1, a lower bound
+  −inf is not ≥ 3, a lower bound +inf would be ≥ 2. NaN cannot occur.
+  Example (third review) : nine seeds with S = 1 and one with X
+  censored → HIGH gives (mean +inf, CI [1, +inf]) → not « holds » ;
+  the historical helper would have dropped the seed and returned
+  (1, 1, 1).
 - **Initial label « non concluant ».** It is kept as « non concluant »
   only if LOW and HIGH are also « non concluant » ; any disagreement
   gives « non concluant (censure) ». A completion can never turn a
@@ -300,7 +324,8 @@ and tag, voided run listed). The check is an identity of the dynamics
 - **Size contrasts** (descriptive) : R(4 000) − R(1 000) and the dream
   α̂_c difference (P5), each on the masks above, with bootstrap
   resamples drawn **independently for each size** : the RNG of each
-  size is seeded with the sequence (20261025, N), never the same
+  size is seeded with the sequence (20261025, N) (`seed` argument of
+  `bootstrap_mean_ci_ext`), never the same
   indices at two sizes ; pairing of arms is kept within a size ; the
   seed index is not a pairing across sizes. Each contrast compares the
   two conditional populations defined by its masks ; if the masks
@@ -372,11 +397,14 @@ numpy 2.5.4, matplotlib 3.11.2), pinned by
 sha256 from PyPI for the wheel installed in the #86 environment,
 linux x86_64 cp312, no source distributions ; install with
 `--require-hashes --only-binary :all:` ; checked to resolve and to
-reproduce the #86 freeze in a throwaway venv on 2026-10-31 ; pending
-HITL review by the PI). The requirements file does not pin the
-interpreter : the wrapper checks `sys.version_info == (3, 12, 15)`
-separately. The repository `uv.lock` (numpy 2.4.4) is not the sweep
-environment. The
+reproduce the #86 freeze in a throwaway venv on 2026-10-31).
+**Approved by the PI (HITL review, 2026-10-31 09:02 CET) for file
+SHA-256 `ec925b5f2232cd70758921a1b33c3b078d54d6559e2e5ae315601108eafc16e0`** ;
+any change to the file voids this approval. The requirements file does
+not pin the interpreter : the wrapper checks it separately with
+`provenance.py:version_ok` (`sys.version_info[:3] == (3, 12, 15)` and
+release level `final` ; tested). The repository `uv.lock` (numpy 2.4.4)
+is not the sweep environment. The
 number of logical and physical cores is recorded ; at most 24 worker
 processes, so that ≥ 4 logical CPUs stay free.
 
@@ -489,21 +517,31 @@ task ; post-run files after the last.
   command line, environment variables of §7.1, `uv pip freeze`,
   `numpy.show_config()`, host name, CPU model, logical and physical
   core counts, RAM, load average.
-- **Executed-code check**, run (a) in the parent after importing the
-  runner, (b) in every worker process at start-up (pool initializer),
-  (c) in the parent and in the analysis process at the end : for every
+- **Executed-code check** (`provenance.py:check_loaded_modules`), run
+  (a) in the parent after importing the runner, (b) in every worker
+  process at start-up (pool initializer), (b′) **at the end of every
+  task, in a `finally` block of the worker that ran it**
+  (`provenance.py:run_checked`, one JSON line per task in
+  `provenance/imports-<pid>.jsonl`), and (c) in the parent and in the
+  analysis process at the end : for every
   module in `sys.modules` with a file, classify its resolved path as
-  *repository* (under the clone root), *environment* (under the
-  venv `site-packages`) or *standard library* (under the recorded
-  interpreter's `sys.base_prefix`/`lib/python3.12`). Repository files
+  *environment* (under the `site-packages` of the venv built from the
+  approved requirements file), *standard library* (under the recorded
+  interpreter's stdlib path) or *repository* (under the clone root ;
+  tested in that order, since a venv may sit inside the clone).
+  Repository files
   : SHA-256 recorded and compared with `git show <tag>:<path>` ; any
   difference, or a repository module absent from the tag, aborts.
-  Environment modules must belong to a distribution of the pinned
-  freeze. Standard-library modules are allowed and their root is
-  recorded. Any module from another location aborts. Modules imported
-  late (in workers or in the analysis) are therefore covered by
-  checks (b) and (c). The wrapper itself is hashed against the tag in
-  the same way, and the interpreter version is checked against 3.12.15.
+  Environment modules are counted (the venv's `uv pip freeze` is
+  recorded and must equal the requirements file) ; standard-library
+  modules are counted and their root recorded ; only repository files
+  are hashed against the tag. Any module from another location is a
+  violation. A violation found at (a), (b) or (c) aborts ; one found
+  at (b′) fails the task (`ImportCheckError`), which makes its unit
+  incomplete, and the run is reported as failed. A module imported
+  late inside a task is caught by (b′) in that worker (tested with a
+  real forked worker). The wrapper itself is hashed against the tag,
+  and the interpreter is checked by `version_ok`.
 - Start UTC timestamp.
 
 **Post-run** (`provenance/post/`) : end UTC timestamp, exit status,
@@ -517,9 +555,10 @@ rests on two external records : the GitHub API response (server
 snapshot contains the tag, both captured before the start. The
 start and end times are written by the wrapper ; they show the order
 observed by an honest wrapper, not a cryptographic proof of execution
-time. At the end, the output hashes are committed and a second SWH save
-is requested and polled until `succeeded` ; its visit date dates the
-outputs externally. The provenance re-runs of #86 and #87 (2026-10-30)
+time. The outputs are dated externally only by the post-run sequence
+of §9.7 (hashes committed and **pushed**, then SWH save, then
+verification that the visit snapshot contains that commit) ; a
+`succeeded` status alone is not enough. The provenance re-runs of #86 and #87 (2026-10-30)
 used a simpler wrapper (API JSON without headers, local times) and do
 not reach this level ; they document the order observed by their
 script only.
@@ -539,8 +578,8 @@ script only.
 
 ### 9.2 Code and environment
 
-- [x] `run.py` options and thresholds, `scheduling.py`, their tests
-      (§2.1), CI green.
+- [x] `run.py` options and thresholds, `scheduling.py`,
+      `scale_stats.py`, `provenance.py`, their tests (§2.1), CI green.
 - [ ] `experiments/nh01_hopfield_dream/scale.py` (runner, analysis of
       §4 with a unit test per branch of §4.2, §4.2.1 and §4.3–4.8 :
       k = 0, 1, 2, 3, 10 undefined seeds, every flag combination, the
@@ -550,7 +589,9 @@ script only.
       table) and the launch wrapper with the checks of §8.
 - [x] Hash-pinned requirements file
       `experiments/nh01_hopfield_dream/requirements-nh01-scale.txt`
-      (exact #86 freeze) — **[ ] HITL review by the PI pending**.
+      (exact #86 freeze) — [x] **approved by the PI (HITL review,
+      2026-10-31 09:02 CET, SHA-256 `ec925b5f…e0`)** ; void if the file
+      changes.
 - [ ] CI green ; independent review of runner, wrapper and this file.
 
 ### 9.3 Probe
@@ -562,8 +603,9 @@ script only.
 
 - [ ] `docs/milestones/2026-10-30-nh01-scale-sweep-manifest.md`,
       committed on this branch **before** the merge : SHA-256 of this
-      file, `run.py`, `confirmatory.py`, `scheduling.py`, `scale.py`,
-      the wrapper, the tests, the requirements file and `uv.lock`.
+      file, `run.py`, `confirmatory.py`, `scheduling.py`, `scale_stats.py`,
+      `provenance.py`, `scale.py`, the wrapper, the tests, the
+      requirements file and `uv.lock`.
 
 ### 9.5 Merge and tag
 
@@ -585,6 +627,24 @@ script only.
       (`swh:1:rev:…`).
 - [ ] Launch only after the registry commit is pushed ; the wrapper
       re-reads both records (§8).
+
+### 9.7 After the run (external dating of the outputs, in this order)
+
+1. [ ] Commit `SHA256SUMS`, `summary.json`, `run_meta.json` and the
+       provenance files on the results branch ; record the commit id.
+2. [ ] **Push** that commit ; record `git ls-remote origin <branch>`
+       showing the remote ref at that commit. No SWH request before the
+       push has been confirmed.
+3. [ ] Request the Software Heritage save of the repository ; poll
+       until `succeeded` ; record request id and visit date.
+4. [ ] Fetch the visit snapshot and **verify** that it contains the
+       pushed branch pointing to the recorded commit (or a descendant
+       whose history contains it), and that the `SHA256SUMS` blob of
+       that commit in the archive equals the local file. Record the
+       snapshot id, the revision SWHID and the raw API responses in the
+       registry (§9.6 file, new entry).
+5. [ ] Only when step 4 passes are the outputs reported as externally
+       dated ; otherwise the results note says so.
 
 ## 10. Probe results (to be filled before the manifest)
 
@@ -636,6 +696,17 @@ revision that answers it.
 | 9 | Power is a normal approximation (MINEUR) | **Fixed** : §6. |
 | 10 | m ≈ 0.997 / 0.95 not reproducible here (remark) | **Fixed** : §2.2 marks them as indicative, unused by any rule. |
 | 11 | Old artefacts do not reach the new dating level (remark) | **Stated** : §8 confidence paragraph. |
+
+### 11.3 Third review (2026-10-31, Codex gpt-6.1-sol, blind, on 556d48b) — answered in revision 4
+
+| # | Finding (severity) | Response |
+|---|---|---|
+| F1 | Infinite bounds vs the historical bootstrap helper, which drops non-finite values ; NaN percentiles (BLOQUANT) | **Fixed** : `scale_stats.py:bootstrap_mean_ci_ext` (every seed kept, no `inf − inf`, extended percentiles, identical to the historical helper on finite data) ; `run.py:bootstrap_mean_ci` unchanged ; counter-example (9 × S = 1 + one censored seed) in the text (§4.2.1) and in a test. |
+| F2 | Order of seeds in the bootstrap vectors not fixed (MAJEUR) | **Fixed** : every vector sorted by seed identifier before resampling (§4.2.1), enforced in the helper ; order-invariance test with the second-review vector. |
+| F3 | Late imports in workers not covered (MAJEUR) | **Fixed** : check (b′) at the end of every task in a `finally` block, per PID (`provenance.py:run_checked`, §8) ; real forked-worker test. |
+| F4 | `sys.version_info == (3, 12, 15)` always false (MAJEUR) | **Fixed** : `version_ok` uses `[:3]` and release level `final` (§7.1) ; tested. |
+| F5 | Second SWH save may not contain the output hashes (MAJEUR) | **Fixed** : §9.7 order push → save → snapshot verification, with records ; §8 refers to it. |
+| Row 19 remark | « every loaded module hashed against the tag » | **Fixed** : §8 says only repository files are hashed ; environment and standard library are classified and counted. |
 
 ## References
 
