@@ -12,8 +12,9 @@ where a bound may be +inf or -inf. This module keeps every seed:
   identical to it;
 - a vector may hold +inf or -inf but not both (``inf - inf`` is never
   computed); a resample mean is +inf (-inf) iff the resample holds an
-  infinite value; percentiles follow numpy's linear rule on finite
-  neighbours and return the infinite neighbour otherwise.
+  infinite value; a percentile whose two neighbours are finite is
+  numpy's (computed by numpy on the means with the infinities replaced
+  by the largest finite float), otherwise the infinite neighbour.
 """
 
 from __future__ import annotations
@@ -26,21 +27,29 @@ import numpy as np
 from experiments.nh01_hopfield_dream import run as nh
 
 
-def _percentile_ext(sorted_means: np.ndarray, q: float) -> float:
-    """numpy 'linear' percentile, extended to +/-inf neighbours."""
-    n = sorted_means.size
+def _percentile_ext(means: np.ndarray, q: float) -> float:
+    """numpy 'linear' percentile of ``means``, extended to +/-inf neighbours.
+
+    The two order statistics around the virtual index decide the case. If
+    one of them is infinite, the infinite neighbour is returned (or the
+    lower one when the index is an integer or both are equal). Otherwise
+    numpy itself interpolates, on the means with +/-inf replaced by
+    +/- the largest finite float: the result is numpy's, bit for bit,
+    including its handling of ties and signed zeros.
+    """
+    s = np.sort(means)
+    n = s.size
     h = (q / 100.0) * (n - 1)  # numpy: virtual index = quantile * (n - 1)
     lo = int(math.floor(h))
     hi = min(lo + 1, n - 1)
-    a, b = float(sorted_means[lo]), float(sorted_means[hi])
-    if h == lo or a == b:
-        return a
+    a, b = float(s[lo]), float(s[hi])
     if math.isinf(a) or math.isinf(b):
+        if h == lo or a == b:
+            return a
         return b if math.isinf(b) else a
-    # both neighbours finite: numpy's linear rule (its _lerp, bit for bit)
-    t = h - lo
-    diff = b - a
-    return b - diff * (1.0 - t) if t >= 0.5 else a + diff * t
+    big = np.finfo(np.float64).max
+    finite = np.where(np.isposinf(means), big, np.where(np.isneginf(means), -big, means))
+    return float(np.percentile(finite, q))
 
 
 def bootstrap_mean_ci_ext(
@@ -67,5 +76,4 @@ def bootstrap_mean_ci_ext(
     point = float(x.mean())
     if np.isfinite(means).all():
         return point, float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
-    s = np.sort(means)
-    return point, _percentile_ext(s, 2.5), _percentile_ext(s, 97.5)
+    return point, _percentile_ext(means, 2.5), _percentile_ext(means, 97.5)

@@ -54,6 +54,30 @@ def test_heterogeneous_finite_values_with_an_infinite_bound(sign: float) -> None
         assert math.isfinite(hi)
 
 
+def test_finite_neighbours_bitwise_equal_to_numpy() -> None:
+    """Fifth review: signed zeros and ties follow numpy exactly."""
+    s = np.array([-0.0, -0.0, np.inf])
+    assert ss._percentile_ext(s, 2.5).hex() == float(np.percentile(s, 2.5)).hex()
+    rng = np.random.default_rng(7)
+    for _ in range(200):
+        n = int(rng.integers(2, 40))
+        base = rng.choice([-0.0, 0.0, 1.0, -1.0, 0.5], size=n)
+        noise = rng.normal(0, 1, n) * (rng.random(n) < 0.5)
+        v = np.where(noise == 0, base, base + noise)
+        for q in (2.5, 50.0, 97.5):
+            assert ss._percentile_ext(v, q).hex() == float(np.percentile(v, q)).hex()
+
+
+def test_signed_zero_bootstrap_case() -> None:
+    x = np.array([-np.nextafter(0.0, 1.0), 0.0, -np.inf])
+    idx = np.random.default_rng(2).integers(0, 3, size=(22, 3))
+    means = x[idx].mean(axis=1)
+    big = np.finfo(np.float64).max
+    ref = float(np.percentile(np.where(np.isneginf(means), -big, means), 97.5))
+    hi = ss.bootstrap_mean_ci_ext(x, range(3), n_boot=22, seed=2)[2]
+    assert hi.hex() == ref.hex()
+
+
 def test_negative_infinity_bound_of_d() -> None:
     mean, lo, hi = ss.bootstrap_mean_ci_ext([0.5] * 9 + [-math.inf], SEEDS)
     assert mean == -math.inf and lo == -math.inf and hi == 0.5
