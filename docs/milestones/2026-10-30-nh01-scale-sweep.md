@@ -214,8 +214,12 @@ report k, L0, LOW, HIGH and the bounds used
   D_hi = +inf. A vector therefore never holds both +inf and −inf and
   `inf − inf` is never computed (the helper raises if it would be). A
   resample mean is ±inf iff the resample holds an infinite value ;
-  percentiles use numpy's linear rule when both neighbours are finite
-  and the infinite neighbour otherwise. Comparisons use the extended
+  a percentile whose two neighbouring order statistics are finite is
+  computed by `numpy.percentile` itself on the means with ±inf replaced
+  by ± the largest finite float (so it is numpy's linear rule bit for
+  bit, ties and signed zeros included) ; otherwise the infinite
+  neighbour is returned (the lower one if the index is an integer or
+  both neighbours are equal). Comparisons use the extended
   order : an upper bound +inf is not < 1.1 or < 0.1, a lower bound
   −inf is not ≥ 3, a lower bound +inf would be ≥ 2. NaN cannot occur.
   Example (third review) : nine seeds with S = 1 and one with X
