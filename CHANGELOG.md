@@ -4,7 +4,19 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **NH-01 ReScience C submission package (issue #68).** Note
+  `docs/results/2026-10-31-nh01-rescience-package.md`: the package
+  [`hypneum-lab/rescience-nh01`](https://github.com/hypneum-lab/rescience-nh01)
+  (article, verbatim runners at tag `prereg-nh01-correlated-20261027`,
+  pre-registrations, result sets, provenance re-runs) went through two
+  independent automated review passes on 2026-10-31; one blocking
+  statement and one numerical error were fixed, every number was
+  re-derived. README row added; the m = 0.30 wording now separates the
+  registered C1 (44.38, grid-sensitive) from the post-analysis
+  assessment (inconclusive, C3' undefined on 5/10 seeds). No result,
+  runner or pre-registration file changed.
 
 ## [1.10.0] — 2026-10-31
 
