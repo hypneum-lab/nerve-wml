@@ -14,7 +14,8 @@ def _recs(sigma, n_eval=500, seed=1, extra_arm=None):
         for s in DEV_SEEDS
     ]
     if extra_arm:
-        out.append({"seed": 1, "condition": "asym", "arm": extra_arm, "success": 0.9, "n_eval": n_eval})
+        out.append({"seed": 1, "condition": "asym", "arm": extra_arm,
+                    "success": 0.9, "n_eval": n_eval})
     return out
 
 
