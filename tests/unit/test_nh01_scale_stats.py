@@ -133,7 +133,7 @@ def _real_ctx(out_dir: Path) -> pv.ImportContext:
     hashes = {}
     for m in list(sys.modules.values()):
         f = getattr(m, "__file__", None)
-        if f and Path(f).resolve().is_relative_to(repo):
+        if f and Path(f).resolve().is_relative_to(repo) and Path(f).resolve().is_file():
             p = Path(f).resolve()
             hashes[p.relative_to(repo).as_posix()] = pv._sha256(p)
     return pv.ImportContext(

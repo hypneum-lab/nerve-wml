@@ -66,6 +66,12 @@ def check_loaded_modules(ctx: ImportContext, modules: Mapping[str, Any] | None =
         if not f:
             continue  # built-in or frozen module
         p = Path(f).resolve()
+        if not p.is_file():
+            # e.g. a synthetic or relative __file__ that names no real file
+            report["violations"].append(
+                {"module": name, "path": str(p), "reason": "file missing"}
+            )
+            continue
         # environment first: a venv may live inside the repository tree
         if _under(p, site):
             report["environment"] += 1
