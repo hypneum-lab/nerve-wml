@@ -725,6 +725,18 @@ review's expected values (+inf case : lower bound 0.9618469891270791 ;
 −inf case : upper bound 1.0219528638394075) are reproduced. No other
 BLOQUANT reported.
 
+Short targeted checks of F1 (Codex gpt-6.1-sol, blind, scope
+`scale_stats.py`, its tests and §4.2.1) :
+
+- on 89d48df : no BLOQUANT ; one MINEUR (an equal-neighbour shortcut
+  returned −0.0 where numpy returns +0.0). Fixed in 8d50deb :
+  finite-neighbour percentiles are computed by `numpy.percentile`
+  itself on the means with ±inf replaced by ± the largest finite float
+  (§4.2.1 updated in e8d5eb0) ; bitwise tests added.
+- on e8d5eb0 : **« F1 clos »**, no finding in the scope (14 tests pass ;
+  5 487 bitwise comparisons with `numpy.percentile` and eight boundary
+  cases checked by the reviewer ; §4.2.1 matches the code).
+
 ## References
 
 As in the pilot pre-registration (Fachechi–Agliari–Barra 2019 ;
