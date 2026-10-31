@@ -708,6 +708,19 @@ revision that answers it.
 | F5 | Second SWH save may not contain the output hashes (MAJEUR) | **Fixed** : §9.7 order push → save → snapshot verification, with records ; §8 refers to it. |
 | Row 19 remark | « every loaded module hashed against the tag » | **Fixed** : §8 says only repository files are hashed ; environment and standard library are classified and counted. |
 
+### 11.4 Fourth review (2026-10-31, Codex gpt-6.1-sol, blind, targeted on F1–F5, on 6424410)
+
+F2–F5 judged corrected. F1 : one new BLOQUANT — with an infinite
+resample mean present, a percentile whose two neighbours are finite
+and different raised an error instead of being interpolated.
+**Fixed** after the review (commit following 8b0f56e) : numpy's linear
+rule (same virtual index and lerp) is applied to finite neighbours ;
+tests with heterogeneous finite values and an infinite bound of each
+sign, checked against `numpy.percentile` with a finite sentinel ; the
+review's expected values (+inf case : lower bound 0.9618469891270791 ;
+−inf case : upper bound 1.0219528638394075) are reproduced. No other
+BLOQUANT reported.
+
 ## References
 
 As in the pilot pre-registration (Fachechi–Agliari–Barra 2019 ;
