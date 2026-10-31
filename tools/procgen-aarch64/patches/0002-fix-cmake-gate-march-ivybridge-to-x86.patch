@@ -1,0 +1,38 @@
+From 828ea69e5c0e68a2f0fc08e44319f0ef15b68174 Mon Sep 17 00:00:00 2001
+From: electron-rare <108685187+electron-rare@users.noreply.github.com>
+Date: Sat, 31 Oct 2026 22:27:44 +0100
+Subject: [PATCH 2/3] fix(cmake): gate -march=ivybridge to x86
+
+ivybridge and native were applied to every UNIX target, so GCC on
+aarch64 rejected the flag. Apply them only when the target processor
+is x86. No SSE/AVX intrinsics exist in procgen/src (grep-checked).
+---
+ procgen/CMakeLists.txt | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/procgen/CMakeLists.txt b/procgen/CMakeLists.txt
+index 31084aa..ce42faf 100644
+--- a/procgen/CMakeLists.txt
++++ b/procgen/CMakeLists.txt
+@@ -25,11 +25,13 @@ if(MSVC)
+ endif()
+ 
+ if (APPLE OR UNIX)
+-  if(PROCGEN_PACKAGE)
+-    # compile for the minimum spec processor
+-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -march=ivybridge")
+-  else()
+-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -march=native")
++  if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|i[3-6]86)$")
++    if(PROCGEN_PACKAGE)
++      # compile for the minimum spec processor
++      set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -march=ivybridge")
++    else()
++      set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -march=native")
++    endif()
+   endif()
+ 
+   # leave frame pointers so that profiling tools will still work
+-- 
+2.43.0
+
