@@ -70,8 +70,13 @@ GATE_KINDS = ("gate_dev", "pretrain_dev")
 # must pass the learnability gate under fix C before the N10-C-bis tag;
 # 3 gate_dev runs per new arm (one gate run + up to 2 infrastructure
 # reruns), dev seed 9101, 1M pair-steps, the seed-9101 trunk.
-GATE_DEV_ALLOWANCE = {"gtm": 20, "eng": 13, "gtm_mis": 3, "eng_gtmrx": 3,
-                      "gtm_warm": 3, "vq": 3}
+# N10-C-bis necessity gate (addendum G6, G7 host annex 2026-10-31, before
+# any gate run): eng and nocomm, condition closed, 10M pair-steps; per arm
+# one run per seed plus one rerun. eng had used 13 of 13. Values for the
+# PROPOSED k = 4 seeds (9101-9104): eng 13 + 4 + 1 = 18, nocomm 4 + 1 = 5.
+# TBD by PI (seed count and the reading of the rerun); edit before merge.
+GATE_DEV_ALLOWANCE = {"gtm": 20, "eng": 18, "nocomm": 5, "gtm_mis": 3,
+                      "eng_gtmrx": 3, "gtm_warm": 3, "vq": 3}
 GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 8}
 GATE_MAX_STEPS = {"gate_dev": 10_000_000}
 
