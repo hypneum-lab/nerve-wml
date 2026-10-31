@@ -1,7 +1,7 @@
 # NH-01 — Pre-registration amendment (L0 draft, target L1) 2026-10-30: size sweep N = 1 000, 2 000, 4 000
 
-**Status:** L0 draft on a branch, not frozen, revision 2 (2026-10-31,
-after the first independent review, see §11). The file becomes binding
+**Status:** L0 draft on a branch, not frozen, revision 3 (2026-10-31,
+after the first and second independent reviews, see §11). The file becomes binding
 only through the freeze procedure of §9 : manifest in the tagged tree,
 PR merged on green CI, annotated tag on the merge commit, Software
 Heritage visit recorded in a separate registry. Nothing in this sweep
@@ -17,7 +17,7 @@ else is a « reprise à l'identique » unless stated.
 (sole investigator) ; drafting, implementation and run delegated to an
 agent, the researcher merges and tags.
 **Date drafted:** 2026-10-30, revised 2026-10-31. PI requests
-2026-10-30 14:08 and 2026-10-30 22:07 CET.
+2026-10-30 14:08, 2026-10-30 22:07 and 2026-10-31 08:40 CET.
 **Data status at drafting:** results at N = 1 000 are public (#86, #87,
 provenance re-runs of 2026-10-30, exact reproductions). No cell at
 N = 2 000 or 4 000 has been computed. The earlier runs inform the
@@ -43,11 +43,11 @@ by itself explain a difference between sizes (§5).
 | Item | Confirmatory (#86) | Size sweep |
 |---|---|---|
 | Size | N = 1 000 | **N ∈ {1 000, 2 000, 4 000}** |
-| Seeds | 0–9 | **0–9 at every N** (PI decision open, §9.1). Streams are keyed by (seed, N, …), so N = 2 000 and 4 000 are new draws ; at N = 1 000 they are the #86 draws on purpose (computational cross-host reproduction, **not** ten new statistical replications) |
+| Seeds | 0–9 | **0–9 at every N** (PI decision 2026-10-31). The seed index is shared across sizes, but streams are keyed by (seed, N, …), so N = 2 000 and 4 000 are new draws, statistically independent of N = 1 000 ; at N = 1 000 they are the #86 draws on purpose (computational cross-host reproduction, **not** ten new statistical replications) |
 | Dreaming time grid | {0, 1, 3, 5, 7, 10, 15, 20, 30, 100} | unchanged |
 | Load grid | 24 values, 0.04 … 0.95 | unchanged ; global load index k = 0 … 23 |
 | Conditions with all 19 arms | indices 0 = (T = 0, f = 0.10), 1 = (T = 0.2, f = 0.10) | unchanged, same indices |
-| Extra conditions | none | **index 2 = (T = 0.1, f = 0.10), index 3 = (T = 0.3, f = 0.10)**, restricted to the arms `hebb`, `dream t = 10`, `shrink c(10)` (`condition_arms`) |
+| Extra conditions | none | **index 2 = (T = 0.1, f = 0.10), index 3 = (T = 0.3, f = 0.10)**, restricted to the arms `hebb`, `dream t = 10`, `shrink c(10)` (`condition_arms`) ; kept as secondary by PI decision 2026-10-31 |
 | Retrieval threshold | 0.9 at T = 0, 0.8 at T = 0.2 | 0.9 at T = 0, **0.8 at T ∈ {0.1, 0.2, 0.3}** (`RETRIEVED_THRESH`) |
 | Spectral shrink factor | omitted | omitted (`spectral = False`, binding : avoids 432 extra `eigvalsh` per seed task) |
 | Censoring | below-grid rule for C1 only (#87, with an exception kept for « refuted ») | **general rule §4.1–4.3**, applied unconditionally (this changes `correlated.py:78`, which preserved « refuted ») |
@@ -78,17 +78,26 @@ task of a seed) and `condition_arms`. `tests/unit/test_nh01_scale.py`
 checks : per-load split bit-identical to the full task (independent
 and correlated generators), a naive split without the global index
 differs, appended restricted conditions leave the cells of conditions
-0–1 unchanged, thresholds exist for every temperature. The sweep
-runner (`scale.py`) and its launch wrapper are written before the
-freeze (§9.2) and must use these keys.
+0–1 unchanged, thresholds exist for every temperature.
+`experiments/nh01_hopfield_dream/scheduling.py` implements the
+deadline scheduler and the completeness check of §7.5 ;
+`tests/unit/test_nh01_scheduling.py` tests them with a simulated clock
+and also checks that `p_max` sets the shape of the pattern draw and
+that a load above `p_max` is rejected. The test of default behaviour
+compares two code paths of the current `run.py` ; the historical
+reference is the bit-exact provenance re-run of #86 and #87, not this
+test. The sweep runner (`scale.py`) and its launch wrapper are written
+before the freeze (§9.2) and must use these keys and this scheduler.
 
 ### 2.2 Why T ∈ {0.1, 0.3}
 
 C3′ was decisive at one temperature (caveat 1 of #86). With the
 normalisation J = ξᵀξ/N, at low load (α ≈ 0.04–0.10) the replica-
 symmetric mean-field theory has a retrieval branch at both temperatures
-(the first review computed m ≈ 0.997 at T = 0.1 and ≈ 0.95 at T = 0.3
-for α = 0.10) ; with c(10) ≈ 0.92 the shrink acts as T_eff = T/c ≈ 0.11
+(the first review reported m ≈ 0.997 at T = 0.1 and ≈ 0.95 at T = 0.3
+for α = 0.10 from the replica-symmetric equations 8–9 of
+Fachechi–Agliari–Barra ; indicative values, not recomputed here and
+not used by any rule) ; with c(10) ≈ 0.92 the shrink acts as T_eff = T/c ≈ 0.11
 and 0.33. This justifies the temperatures for the low-load part of the
 grid only : it says nothing about retrieval from noisy cues within 40
 sweeps, nor about higher loads, where the Hebbian curve is expected to
@@ -114,7 +123,9 @@ because at low temperature its success is strongly expected for c < 1
 ## 4. Decision function (binding once frozen)
 
 Everything below is evaluated separately for each N, on the analysis
-set of §7.4 (complete units only). Labels are computed in the order
+set of §7.5 (complete units only ; a size with an incomplete unit gets
+« non concluant (incomplet) » for every criterion and is not analysed
+further, §7.5). Labels are computed in the order
 4.1 → 4.8 ; no later step changes an earlier label except where stated.
 
 ### 4.1 Capacity values and flags
@@ -141,32 +152,87 @@ For a criterion on X / Y (numerator arm X, denominator Hebb Y) :
 3. Let k be the number of undefined seeds. **k > 2 → label « non
    calculable »**, whatever the remaining seeds give, including a
    refutation.
-4. **k ∈ {1, 2} → bound sensitivity.** The label is first computed on
-   the defined seeds. It is kept only if the same label is obtained when
-   each undefined seed is added back with its least favourable bound
-   for that label (for « confirmed »/« holds » : the bound pushing the
-   statistic towards the threshold ; for « refuted »/« refutes » : the
-   bound pushing it away from the refutation threshold ; ratio bounds
-   from the capacity bounds of §4.1, X_lo / Y_hi and X_hi / Y_lo). If
-   the bound is infinite or zero in the unfavourable direction, or the
-   labels differ, the label becomes « non concluant (censure) ». k and
-   both analyses are reported.
+4. **k ∈ {1, 2} → bound sensitivity**, exactly as in §4.2.1 below.
+   A censored seed can only lower a label to « non concluant
+   (censure) », never raise it.
 5. **k = 0** → the label of §4.4–4.6 applies directly.
+
+#### 4.2.1 Bound sensitivity (exhaustive)
+
+Notation : `lab(v)` is the label rule of the criterion (§4.4 for C1
+with its priority, §4.6 for C3′ and C3″) applied to a vector v of
+per-seed values (R and D for C1, S for C3′/C3″), with the
+pre-registered bootstrap (10 000 resamples, RNG seed 20261025 reset
+at each call, as in `run.py:bootstrap_mean_ci` ; LOW and HIGH have the
+same number of seeds and therefore use identical resampling indices).
+
+```
+input : defined seeds d (values from ok capacities), undefined seeds u
+        (k = |u| ∈ {1, 2}), capacity bounds of §4.1 for every u :
+        X ∈ [X_lo, X_hi], Y ∈ [Y_lo, Y_hi]
+        (ok : X_lo = X_hi = value ; below_grid : [0, 0.04] ;
+         censored : [0.95, +inf])
+bounds per undefined seed, IEEE arithmetic with the conventions
+        a / +inf = 0, a / 0 = +inf (a > 0) :
+        ratio_lo = X_lo / Y_hi        ratio_hi = X_hi / Y_lo
+        D_lo     = X_lo − Y_hi        D_hi     = X_hi − Y_lo
+L0   = lab(values of d)                          # defined seeds only
+LOW  = lab(values of d ∪ {ratio_lo, D_lo of every u})   # all k at once
+HIGH = lab(values of d ∪ {ratio_hi, D_hi of every u})   # all k at once
+if L0 == LOW == HIGH : label = L0
+else                 : label = "non concluant (censure)"
+report k, L0, LOW, HIGH and the bounds used
+```
+
+- **All k seeds are re-integrated simultaneously**, never one at a
+  time. For C1 the lower ratio bound goes with the lower D bound (same
+  completion), and the C1 priority (« confirmed » before « refuted »)
+  is re-applied inside each `lab` call.
+- **Why two completions suffice.** For fixed resampling indices each
+  bootstrap mean is non-decreasing in every per-seed value, hence so
+  are the percentile bounds. Every completion of the undefined seeds
+  inside their bounds therefore gives CI bounds between those of LOW
+  and HIGH ; a label shared by L0, LOW and HIGH is the label of every
+  completion of the box and of the complete-case analysis.
+- **Infinite bounds.** A CI bound equal to ±inf fails every strict
+  inequality it is compared with (for example an upper bound +inf is
+  not < 1.1, a lower bound −inf is not ≥ 3). NaN cannot occur with the
+  conventions above.
+- **Initial label « non concluant ».** It is kept as « non concluant »
+  only if LOW and HIGH are also « non concluant » ; any disagreement
+  gives « non concluant (censure) ». A completion can never turn a
+  non-concluding complete-case result into « confirmed » or « holds ».
+
+Worked cases (from the second review ; both are now decided by the
+text) :
+
+- *C3′, k = 1.* Nine defined seeds, eight with S = 1 and one with
+  S = 1.31 : L0 = non concluant (S = 1.034, CI [1, 1.103]). The tenth
+  seed has X below_grid and Y = 0.05 ok, so S ∈ [0, 0.8]. HIGH (with
+  0.8) gives CI [0.940, 1.093] → holds ; LOW (with 0) also holds. L0
+  differs → **« non concluant (censure) »**, not « holds ».
+- *C1, k = 2.* Eight defined seeds with X = 0.72, Y = 0.20 (R = 3.6)
+  : L0 = confirmed. Two seeds have X censored and Y = 0.475 ok, so
+  R ∈ [2, +inf]. LOW (both at 2, together) gives a lower CI bound 2.8
+  < 3 → not confirmed. Labels differ → **« non concluant
+  (censure) »**. (Adding one seed at a time would have kept
+  « confirmed » ; that procedure is excluded.)
 
 ### 4.3 Curve criterion (C2′)
 
 C2′ uses, for each seed, the ten capacities m_s(t), t ∈ T grid (t = 0
 is Hebb), at T = 0. A seed enters C2′ iff all ten are `ok`. k > 2
 excluded seeds → « non calculable » ; k ∈ {1, 2} → computed on the
-remaining seeds, k reported (no bound substitution : a median of
-bounds is not defined).
+remaining seeds, k reported. No bound substitution is provided for
+C2′ (a design choice : the criterion is a shape check on the median of
+the admissible seeds, §6).
 
 ### 4.4 C1_N (gain, T = 0, t = 10)
 
 On the mask of §4.2 : « confirmed » if the CI lower bound of R ≥ 3 ;
 otherwise « refuted » if the CI upper bound of D < 0.1 ; otherwise « non
 concluant ». « Confirmed » has priority when both conditions hold (as
-in `confirmatory.py`). §4.2.3–4.2.4 then apply.
+in `confirmatory.py`). Items 3–4 of §4.2 (with §4.2.1) then apply.
 
 ### 4.5 C2′_N (unimodal, interior first maximum)
 
@@ -182,16 +248,30 @@ t\* ∈ [5, 20] ; those are descriptive (§4.8).
 
 On the mask of §4.2 : « holds » if the CI upper bound of S < 1.1 ;
 « refutes » if the CI lower bound ≥ 2 ; otherwise « non concluant ».
-§4.2.3–4.2.4 then apply.
+Items 3–4 of §4.2 (with §4.2.1) then apply.
 
 ### 4.7 Implementation check (voids the run, not a scientific label)
 
-At T = 0, for every seed and every t, the capacity of `shrink c(t)`
-must equal the Hebbian capacity **bitwise**, with the same flag, on all
-10 seeds × 9 values of t (90 comparisons, count asserted). Any failure
-voids the whole sweep (bug fixed, new amendment and tag, voided run
-listed). The check is an identity of the dynamics (sign invariance), it
-can detect a bug, not refute anything.
+At T = 0 the matched shrink must leave the dynamics unchanged. The
+check runs **after** the completeness check of §7.5 and in two parts :
+
+1. **Cell level, on every cell present** (complete or not) : for each
+   (N, seed, α, t) where both cells exist, the condition-0 cell of
+   `shrink c(t)` must equal the Hebbian cell bitwise on
+   `retrieved_frac`, `other_stored_frac`, `spurious_frac`,
+   `nonconverged_frac`, `sweeps` and `mean_overlap`.
+2. **Capacity level, on complete units only** : the capacity of
+   `shrink c(t)` equals the Hebbian capacity bitwise, with the same
+   flag, for every t ≠ 0 ; expected count = 9 × (number of complete
+   units), i.e. 90 per complete size and 270 for a complete sweep,
+   asserted.
+
+A comparison that **cannot be made** because a cell or unit is missing
+is not a failure : it follows the « incomplet » branch of §7.5 for
+that size only. A **difference observed** in any comparison that can
+be made, at any size, voids the whole sweep (bug fixed, new amendment
+and tag, voided run listed). The check is an identity of the dynamics
+(sign invariance) : it can detect a bug, not refute anything.
 
 ### 4.8 Overall_N and secondary labels
 
@@ -210,10 +290,22 @@ can detect a bug, not refute anything.
 - **Descriptive** (no label) : t\* ∈ [5, 20] ; per-seed t\* ; drop
   m(t\*) − m(100) with a bootstrap CI in which t\* is **re-selected in
   each resample** (selection-aware) ; R(N), dream and Hebb α̂_c per N.
+- **Masks of the descriptive quantities**, fixed in advance and
+  reported with their counts : R(N) on the C1 mask of that size ; the
+  dream α̂_c (t = 10, T = 0) on the seeds whose dream capacity is `ok`
+  ; the Hebb α̂_c on the seeds whose Hebb capacity is `ok` ; the drop
+  on the C2′ seeds. Censored or below-grid values never enter a mean.
+  More than 2 excluded seeds at a size → that quantity is « non
+  calculable » at that size and no contrast involving it is computed.
 - **Size contrasts** (descriptive) : R(4 000) − R(1 000) and the dream
-  α̂_c difference (P5), with bootstrap resamples drawn **independently
-  for each size** (pairing of arms kept within a size ; the seed index
-  is not a pairing across sizes).
+  α̂_c difference (P5), each on the masks above, with bootstrap
+  resamples drawn **independently for each size** : the RNG of each
+  size is seeded with the sequence (20261025, N), never the same
+  indices at two sizes ; pairing of arms is kept within a size ; the
+  seed index is not a pairing across sizes. Each contrast compares the
+  two conditional populations defined by its masks ; if the masks
+  differ in size between N, the contrast is read as a difference
+  between those populations, not as an effect of N.
 - No simultaneous-CI correction is applied ; the three sizes and every
   temperature are reported, none is selected.
 
@@ -224,18 +316,25 @@ CHANGELOG entry and PR description, never as « confirmé (formal) ».
 
 ## 5. What a negative means
 
-- C1_N refuted (D upper bound < 0.1) : at that size the pre-registered
-  gain is absent under this estimator.
+Each label states only what its statistic establishes :
+
+- C1_N « refuted » : **the 95 % CI upper bound of the paired absolute
+  gain D = α̂_c(dream, 10) − α̂_c(Hebb) is below 0.1 at that size.**
+  It says the absolute gain is small ; it does not exclude R ≥ 3 (both
+  can hold when the Hebbian capacity is small, e.g. Hebb 0.04 and
+  dream 0.12), and it is not a statement about the ratio.
 - C1_N non concluant or non calculable at some N : **the pre-registered
   gain is not established at that size**. This is not evidence of a
   finite-size effect : power, censoring or numerical differences can
   produce it. Attributing a difference to size requires the explicit
   size contrast of §4.8 with its uncertainty, on identical code and
   host.
-- C3′_N refutes : the matched uniform shrink reproduces the gain at
-  T = 0.2 at that size.
-- C2′_N violated : the median curve over t is not unimodal at that
-  size.
+- C3′_N « refutes » : **the 95 % CI lower bound of S is ≥ 2 at
+  T = 0.2 at that size**, i.e. the matched shrink at least doubles the
+  Hebbian capacity estimate. No equivalence with the dreaming gain is
+  tested (the dream ratio may be much larger).
+- C2′_N « violated » : the median curve over t is not unimodal within
+  τ = 0.02 at that size.
 - Non concluant : keep thresholds. More seeds only through a new,
   separately frozen replication on new seeds (no pooling, no
   sequential top-up of this sample).
@@ -248,8 +347,11 @@ pass the CI bound needs a true distance to the threshold of about
 (1.96 + 0.84) · SD / √10 : **0.111 for R** (true R ≥ 3.11) and **0.012
 for S** (true S ≤ 1.088). With 8 seeds (k = 2) : 0.124 and 0.013. At
 a true R of exactly 3, the probability of « confirmed » is ≈ 2.5 %.
-These are sensitivity figures from N = 1 000 variances, not a
-guaranteed power at N = 4 000. C2′ has no error-rate or power
+These are **normal-approximation** sensitivity figures from N = 1 000
+variances : they are not a calibration of the 10-seed percentile
+bootstrap, nor of the decision after the censoring sensitivity of
+§4.2.1 (which can only lower the probability of a positive label,
+especially at k = 2), and not a guaranteed power at N = 4 000. C2′ has no error-rate or power
 calibration (median of 10 curves, fixed τ) : it is a pre-registered
 shape check, reported as such. The T = 0 shrink identity and the
 Frobenius matching are constructions ; C3′/C3″ are numerical
@@ -264,10 +366,17 @@ KXKM-AI CPU only, `nice 19`, every BLAS/OpenMP pool set to one thread
 (`OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, `MKL_NUM_THREADS`,
 `NUMEXPR_NUM_THREADS`, `VECLIB_MAXIMUM_THREADS` = 1), checked at start
 by the runner (`numpy.show_config()` and thread environment
-recorded). Environment pinned to the versions of #86 (Python 3.12.15,
-numpy 2.5.4, matplotlib 3.11.2) through a hash-pinned requirements
-file in the tagged tree (`pip --require-hashes` / `uv pip sync`) ; the
-repository `uv.lock` (numpy 2.4.4) is not the sweep environment. The
+recorded). Environment = the exact freeze of #86 (17 packages,
+numpy 2.5.4, matplotlib 3.11.2), pinned by
+`experiments/nh01_hopfield_dream/requirements-nh01-scale.txt` (wheel
+sha256 from PyPI for the wheel installed in the #86 environment,
+linux x86_64 cp312, no source distributions ; install with
+`--require-hashes --only-binary :all:` ; checked to resolve and to
+reproduce the #86 freeze in a throwaway venv on 2026-10-31 ; pending
+HITL review by the PI). The requirements file does not pin the
+interpreter : the wrapper checks `sys.version_info == (3, 12, 15)`
+separately. The repository `uv.lock` (numpy 2.4.4) is not the sweep
+environment. The
 number of logical and physical cores is recorded ; at most 24 worker
 processes, so that ≥ 4 logical CPUs stay free.
 
@@ -326,14 +435,27 @@ rewritten for that count) ; thresholds never change.
 
 ### 7.5 Scheduling, wall-time cap, completeness
 
-- Fixed submission order : N = 4 000 (seeds 0–9, loads k = 0 … 23),
-  then N = 2 000, then N = 1 000. The parent checks the wall time at
-  each task completion ; no new task is submitted after **72 h** ;
-  running tasks finish (overshoot ≤ one task, declared).
-- A unit (N, seed) is **complete** iff its 1 056 expected cells are
-  present exactly once (key : N, seed, α, arm, t, T, f). Missing or
-  duplicated cells make the unit incomplete ; a task that raises is
-  a technical failure, logged, its unit incomplete.
+- **Scheduler** : `scheduling.py:run_with_deadline`, used by the
+  runner with `max_in_flight` = the worker cap of the phase. Tasks are
+  started one at a time, in the fixed order N = 4 000 (seeds 0–9,
+  loads k = 0 … 23), then N = 2 000, then N = 1 000, and only when a
+  worker slot is free : there is no pool-level queue of submitted but
+  unstarted tasks (no `imap` over the whole list).
+- **Deadline** : **72 h** on a monotonic clock from the first start.
+  Once it has passed, no task is started ; every task not yet started
+  is cancelled (never run) and listed ; tasks already running finish.
+  The wall-time overshoot is bounded by the largest residual duration
+  of the tasks running at the deadline (several may finish after it).
+  Start and end times of every task are logged.
+  `tests/unit/test_nh01_scheduling.py` checks these rules with a
+  simulated clock (no start at or after the deadline, queue cancelled,
+  in-flight bound, order).
+- A unit (N, seed) is **complete** iff the set of its cell keys
+  (N, seed, α, arm, t, T, f) **equals** the expected set
+  (`scheduling.py:expected_cell_keys`, 1 056 keys), each present once
+  (`unit_status` : no missing, duplicated or unexpected key) ; a count
+  alone is not enough. A task that raises is a technical failure,
+  logged, its unit incomplete.
 - Only complete units are analysed. Incomplete units are archived, not
   analysed, never interpolated.
 - **If any unit of a size is incomplete, every criterion of that size
@@ -367,12 +489,21 @@ task ; post-run files after the last.
   command line, environment variables of §7.1, `uv pip freeze`,
   `numpy.show_config()`, host name, CPU model, logical and physical
   core counts, RAM, load average.
-- After importing the runner and before the first task : the resolved
-  `__file__` of **every loaded module under the repository root**, its
-  SHA-256, and the SHA-256 of the same path from `git show
-  <tag>:<path>` ; the run aborts on any difference or on a module
-  loaded from outside the clone or the pinned environment. The wrapper
-  itself is hashed the same way.
+- **Executed-code check**, run (a) in the parent after importing the
+  runner, (b) in every worker process at start-up (pool initializer),
+  (c) in the parent and in the analysis process at the end : for every
+  module in `sys.modules` with a file, classify its resolved path as
+  *repository* (under the clone root), *environment* (under the
+  venv `site-packages`) or *standard library* (under the recorded
+  interpreter's `sys.base_prefix`/`lib/python3.12`). Repository files
+  : SHA-256 recorded and compared with `git show <tag>:<path>` ; any
+  difference, or a repository module absent from the tag, aborts.
+  Environment modules must belong to a distribution of the pinned
+  freeze. Standard-library modules are allowed and their root is
+  recorded. Any module from another location aborts. Modules imported
+  late (in workers or in the analysis) are therefore covered by
+  checks (b) and (c). The wrapper itself is hashed against the tag in
+  the same way, and the interpreter version is checked against 3.12.15.
 - Start UTC timestamp.
 
 **Post-run** (`provenance/post/`) : end UTC timestamp, exit status,
@@ -387,27 +518,39 @@ snapshot contains the tag, both captured before the start. The
 start and end times are written by the wrapper ; they show the order
 observed by an honest wrapper, not a cryptographic proof of execution
 time. At the end, the output hashes are committed and a second SWH save
-is requested, which dates the outputs externally.
+is requested and polled until `succeeded` ; its visit date dates the
+outputs externally. The provenance re-runs of #86 and #87 (2026-10-30)
+used a simpler wrapper (API JSON without headers, local times) and do
+not reach this level ; they document the order observed by their
+script only.
 
 ## 9. Freeze procedure
 
-### 9.1 Open PI decisions (no freeze while any is open)
+### 9.1 PI decisions (no freeze while any is open)
 
-- [ ] Extra temperatures T ∈ {0.1, 0.3} kept, changed or dropped.
-- [ ] Seed namespace : seeds 0–9 at every N (as drafted) or fresh seeds
-      for N = 2 000 and 4 000.
-- [ ] Go on the KXKM-AI CPU booking and the worker caps of §7.2
-      (GPU services untouched).
-- [ ] Response to the probe projection if > 48 h.
+- [x] Extra temperatures T ∈ {0.1, 0.3} : **kept as secondary** (C3″,
+      outside Overall_N) — PI 2026-10-31 08:40 CET.
+- [x] Seeds : **0–9 at every N** ; N = 1 000 also serves as the
+      reproduction of #86 — PI 2026-10-31 08:40 CET.
+- [ ] Go on the KXKM-AI CPU booking and the worker caps of §7.2 (GPU
+      services untouched) — deferred by the PI until E1-small and NH-81
+      have finished (around 2026-11-02).
+- [ ] Response to the probe projection if > 48 h — deferred likewise.
 
 ### 9.2 Code and environment
 
+- [x] `run.py` options and thresholds, `scheduling.py`, their tests
+      (§2.1), CI green.
 - [ ] `experiments/nh01_hopfield_dream/scale.py` (runner, analysis of
-      §4 with a unit test per branch of §4.2–4.3 and of §4.8, k = 0, 1,
-      2, 3, 10 undefined seeds, every flag combination, label priority,
+      §4 with a unit test per branch of §4.2, §4.2.1 and §4.3–4.8 :
+      k = 0, 1, 2, 3, 10 undefined seeds, every flag combination, the
+      two worked cases of §4.2.1, label priority, infinite bounds,
       selection-aware drop CI, independent bootstrap across sizes,
-      completeness table) and the launch wrapper with the checks of §8.
-- [ ] Hash-pinned requirements file for the #86 versions.
+      masks and counts, the two-part check of §4.7, completeness
+      table) and the launch wrapper with the checks of §8.
+- [x] Hash-pinned requirements file
+      `experiments/nh01_hopfield_dream/requirements-nh01-scale.txt`
+      (exact #86 freeze) — **[ ] HITL review by the PI pending**.
 - [ ] CI green ; independent review of runner, wrapper and this file.
 
 ### 9.3 Probe
@@ -419,8 +562,8 @@ is requested, which dates the outputs externally.
 
 - [ ] `docs/milestones/2026-10-30-nh01-scale-sweep-manifest.md`,
       committed on this branch **before** the merge : SHA-256 of this
-      file, `run.py`, `confirmatory.py`, `scale.py`, the wrapper, the
-      tests, the requirements file and `uv.lock`.
+      file, `run.py`, `confirmatory.py`, `scheduling.py`, `scale.py`,
+      the wrapper, the tests, the requirements file and `uv.lock`.
 
 ### 9.5 Merge and tag
 
@@ -447,11 +590,13 @@ is requested, which dates the outputs externally.
 
 _Empty : no probe has been run._
 
-## 11. Responses to the first review (2026-10-30, Codex gpt-6.1-sol, blind)
+## 11. Responses to the reviews
 
-The review report is archived outside the repository with the PR
-discussion ; each finding was checked against the source before this
-revision.
+The review reports are archived outside the repository with the PR
+discussion ; each finding was checked against the source before the
+revision that answers it.
+
+### 11.1 First review (2026-10-30, Codex gpt-6.1-sol, blind) — answered in revision 2
 
 | # | Finding (severity) | Response |
 |---|---|---|
@@ -475,6 +620,22 @@ revision.
 | 18 | External dating (MAJEUR) | **Fixed** : §8 (HTTP `Date` headers, ref→object→commit check, SWH visit and snapshot before launch, post-run SWH save, confidence statement). |
 | 19 | Executed-code identity (MAJEUR) | **Fixed** : §8 (wrapper in the tree, resolved `__file__` of every loaded module hashed against the tag, pre/post split). |
 | 20 | T = 0.1/0.3 justification too general (MINEUR) | **Fixed** : §2.2 restricted to low load, finite-horizon and high-load caveats. |
+
+### 11.2 Second review (2026-10-31, Codex gpt-6.1-sol, blind, on 076b523) — answered in revision 3
+
+| # | Finding (severity) | Response |
+|---|---|---|
+| 1 | Bound sensitivity not total (BLOQUANT) | **Fixed** : §4.2.1 pseudo-code (simultaneous re-integration of the k seeds, D bounds X_lo − Y_hi / X_hi − Y_lo, coupled R/D completions, C1 priority inside each evaluation, initial « non concluant », infinite bounds, monotonicity argument) ; both counter-examples decided in the text (→ « non concluant (censure) »). |
+| 2 | T = 0 check vs incompleteness ; wrong cross-reference (MAJEUR) | **Fixed** : §4.7 two-part check, missing comparison → « incomplet » branch, observed difference → whole sweep void, 90 per complete size / 270 ; §4 points to §7.5. |
+| 3 | 72 h rule does not bound the queue (MAJEUR) | **Fixed** : §7.5 and `scheduling.py` (start only on a free slot, no start after the monotonic deadline, queue cancelled, running tasks finish, overshoot bound), tests with a simulated clock. |
+| 4 | Negative wording exceeds the statistics (MAJEUR) | **Fixed** : §5 states what each label establishes (C1 refuted = CI upper bound of D < 0.1, not absence of a 3× ratio ; C3′ refutes = lower bound of S ≥ 2, no equivalence with the dream gain). |
+| 5 | Tests do not prove `p_max` is used (MINEUR) | **Fixed** : `test_p_max_sets_the_pattern_draw` (shape of the draw) and `test_load_above_p_max_is_rejected` ; the default-path test is described as a comparison of two current code paths (§2.1). |
+| 6 | Scope of the executed-code check (MINEUR) | **Fixed** : §8, checks in parent, every worker and analysis ; repository / environment / standard-library classification ; interpreter version checked separately (§7.1). |
+| 7 | Masks of descriptive contrasts (MINEUR) | **Fixed** : §4.8 masks and counts per quantity, conditional-population reading, per-size RNG seeding for independence. |
+| 8 | « Median of bounds not defined » (MINEUR) | **Fixed** : §4.3 wording. |
+| 9 | Power is a normal approximation (MINEUR) | **Fixed** : §6. |
+| 10 | m ≈ 0.997 / 0.95 not reproducible here (remark) | **Fixed** : §2.2 marks them as indicative, unused by any rule. |
+| 11 | Old artefacts do not reach the new dating level (remark) | **Stated** : §8 confidence paragraph. |
 
 ## References
 
