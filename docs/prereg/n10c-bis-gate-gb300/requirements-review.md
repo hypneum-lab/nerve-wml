@@ -2,6 +2,11 @@
 
 For the PI's HITL review before access. Generated 2026-10-31 on electron-server (uv 0.13.5, metadata and wheels only, nothing installed or built), Python 3.12, `aarch64-manylinux_2_35`, `--exclude-newer 2026-10-17` (no file newer than two weeks; no direct pin had to be lowered). "latest upload" is the newest file of that version on PyPI.
 
+**PI review: APPROVED, 2026-10-31 22:37 CET (QCM)**, under two conditions: (1) no ffmpeg
+binary is downloaded for `imageio-ffmpeg` 0.3.0 — the Ubuntu ffmpeg is used through
+`IMAGEIO_FFMPEG_EXE`, enforced by the lane (annex section 4); checked: the sdist ships no
+binary and has no network code; (2) the rescience-nh01 condition does not apply here.
+
 **Without an aarch64 wheel (sdist, built on the host):** gym 0.26.2, glcontext 3.1.0, glfw 1.12.0, moderngl 5.13.0, imageio-ffmpeg 0.3.0; Procgen 0.10.7 is a source build (kit PR #101, not in these files).
 
 ### `requirements-gb300-n10c-bis-gate-cuda12.txt`

@@ -158,6 +158,17 @@ load over the session does not line up with one arm).
   pilot run. The SHA-256 of the built wheel, of `libenv.so`, of the installed package tree
   and of the build log are recorded in the build record on the host, before the first
   pilot run (nothing is compiled before access).
+- **apt packages (pinned, Ubuntu 24.04 `noble` archive versions read 2026-10-31):**
+  `ffmpeg=7:6.1.1-3ubuntu5`, `qtbase5-dev=5.15.13+dfsg-1ubuntu1`, `cmake=3.28.3-1build7`,
+  `g++=4:13.2.0-7ubuntu1`, installed as `apt-get install <pkg>=<version>`; a different
+  version available on the host is a recorded deviation, never a silent upgrade.
+- **ffmpeg (PI condition 2026-10-31 22:37):** no ffmpeg binary is downloaded. The
+  `imageio-ffmpeg` 0.3.0 sdist ships no binary (its `setup.py` empties `binaries/` for
+  sdists) and contains no network code; `get_ffmpeg_exe()` takes `IMAGEIO_FFMPEG_EXE`
+  first. The host uses the Ubuntu ffmpeg above: `IMAGEIO_FFMPEG_EXE=/usr/bin/ffmpeg`, and
+  `IMAGEIO_NO_INTERNET=1` blocks the resource downloads of `imageio`. The lane fails before
+  any run if either variable is wrong, if `imageio_ffmpeg.get_ffmpeg_exe()` resolves to
+  another file, or if `imageio_ffmpeg/binaries/` holds any file.
 - **Not bit-identical:** CoinRun levels from this build are not guaranteed identical to
   the x86-64 or macOS builds. This is acceptable: the pilot is intra-host and indicative
   (D2, section 1).
@@ -245,6 +256,7 @@ of `hypneum-lab/nerve-wml` at the merge commit (`REPO`), with the run venv (`PY`
 REPO=... PY=... OUT_ROOT=<new session dir> TRUNK_DIR=<dir with trunk-<seed>.safetensors> \
 END_EPOCH=<end of access, Unix s> RATE_ENG=<S5> RATE_NOCOMM=<S5> \
 GPU_UUID=<nvidia-smi -L> CORES=<taskset list> \
+IMAGEIO_FFMPEG_EXE=/usr/bin/ffmpeg IMAGEIO_NO_INTERNET=1 \
   nohup bash docs/prereg/n10c-bis-gate-gb300/gate_g7_lane.sh </dev/null >/dev/null 2>&1 &
 ```
 

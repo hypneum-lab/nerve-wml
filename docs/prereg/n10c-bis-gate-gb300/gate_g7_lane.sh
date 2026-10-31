@@ -39,6 +39,13 @@ export CUDA_VISIBLE_DEVICES="$GPU_UUID" PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1
   "$RATE_ENG" "$RATE_NOCOMM" || stop "RATE_ENG / RATE_NOCOMM must be finite and > 0"
 [ "$(nvidia-smi --id="$GPU_UUID" --query-gpu=compute_cap --format=csv,noheader | tr -d ' ')" = 10.3 ] \
   || stop "GPU $GPU_UUID does not report compute capability 10.3"
+# ffmpeg: Ubuntu binary only, no download (annex section 4, PI condition 2026-10-31)
+[ "${IMAGEIO_NO_INTERNET:-}" = 1 ] || stop "IMAGEIO_NO_INTERNET must be 1"
+[ "${IMAGEIO_FFMPEG_EXE:-}" = /usr/bin/ffmpeg ] && [ -x /usr/bin/ffmpeg ] \
+  || stop "IMAGEIO_FFMPEG_EXE must be the Ubuntu /usr/bin/ffmpeg"
+"$PY" -I -c "import os, imageio_ffmpeg as f; b = os.path.join(os.path.dirname(f.__file__), 'binaries'); \
+assert f.get_ffmpeg_exe() == '/usr/bin/ffmpeg'; assert not (os.path.isdir(b) and os.listdir(b))" \
+  || stop "imageio-ffmpeg resolves another ffmpeg or ships a binary"
 TRAINER=""
 trap '[ -n "$TRAINER" ] && kill "$TRAINER" 2>/dev/null; stop "operator stop (signal)"' TERM INT
 log "lane start code $(git -C "$REPO" rev-parse HEAD) dirty=$(git -C "$REPO" status --porcelain | wc -l)"
