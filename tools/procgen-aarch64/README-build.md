@@ -79,3 +79,22 @@ observation hash that is not yet a reference value.
 - gym 0.26.2 and gym3 0.3.3 with numpy 1.26.4 on Python 3.12 are untested
   together here; gym 0.26.2 is sdist-only (built by pip, hash-pinned).
 - filelock 4.1.0 is outside the range declared by upstream.
+
+## Build test on arm64 (2026-10-31, GrosMac, colima)
+
+Tested in a colima Linux arm64 VM (2 CPU, 4 GB) on GrosMac, container
+`ubuntu@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852`
+(`ubuntu:24.04`, index digest, arm64 variant), kit at PR head 8ba0d8a,
+`JOBS=2`, pinned apt versions installed without `APT_LOOSE`.
+
+- Build and wheel OK in under 2 minutes, CoinRun smoke test OK.
+- Wheel: `procgen-0.10.7+5e1dbf3-cp312-cp312-linux_aarch64.whl`,
+  sha256 `e977b3f2340dbc41da04182332a985aeaebadd71676d61f0ba34d0ad13c4ea21`.
+- Smoke obs-hash (coinrun, 2 envs, 50 zero-action steps, seed 0):
+  `7c082778387f1eafd230ed3104323d2169e5ca99bb9f7a280d2bbbb9a93198af`
+  (arm64 result only; not compared to x86).
+- Not verified: the VM page size is 4 KiB (`getconf PAGESIZE` = 4096), the
+  GB300 uses 64 KiB pages. Rebuild/run on the GB300 to confirm. Also not
+  compared: frames vs x86/macOS builds. The colima VM image download
+  was not recorded (image was cached or pulled by colima itself).
+- The wheel hash may differ on the GB300 (timestamps, toolchain build).
