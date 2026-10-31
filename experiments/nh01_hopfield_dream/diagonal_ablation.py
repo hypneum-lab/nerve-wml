@@ -50,10 +50,12 @@ N = cf.N_CONF                                    # 1 000
 SEEDS: tuple[int, ...] = tuple(range(200, 210))  # new namespace, disjoint from 0-9 and 100-109
 T_GRID: tuple[float, ...] = cf.T_GRID            # (0.0, 1.0, ..., 30.0, 100.0)
 ALPHA_GRID: tuple[float, ...] = nh.ALPHA_GRID    # 24 loads
-T_STAR_FIXED: float = 7.0                        # from confirmatory C2_unimodal.t_star; NOT re-picked
+# From confirmatory C2_unimodal.t_star; NOT re-picked on the new data.
+T_STAR_FIXED: float = 7.0
 CONDITION: tuple[float, float] = (0.0, cf.FLIPS) # T = 0, f = 0.10 only
 WALL_CAP_SECONDS = 8 * 3600
-PROBE_SEED = 997                                  # timing only, output discarded; not pre-registered
+# Timing only, output discarded; not a pre-registered seed.
+PROBE_SEED = 997
 PROBE_ALPHAS: tuple[float, ...] = (0.2, 0.5)
 
 # Decision thresholds (TBD by PI — see pre-registration)

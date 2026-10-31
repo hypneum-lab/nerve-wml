@@ -158,10 +158,9 @@ If, in either arm, more than 2 of the 10 seeds are right-censored
 (α̂_c = 0.95) at t = 7 or at t = 100, C5 is reported as inconclusive and a
 note is filed; D is undefined under censoring.
 
-**TBD by PI** (these thresholds block the freeze until confirmed):
-- The 0.020 tolerance (currently set to match C2′) and the 0.050 upper
-  threshold are *proposed* values. The PI must confirm them explicitly before
-  the tag is created.
+**Thresholds confirmed by the PI on 2026-10-31 (17:35 CET)**: 0.020 (the C2′
+tolerance, carried forward) and 0.050 (new to this registration). Closed before
+any tag; no "TBD by PI" item remains open.
 
 ### C6 (secondary, CI of ΔD)
 
@@ -236,7 +235,7 @@ With 4 workers: ≈ **0.84 h wall time**; with a factor-2 contention margin:
 
 PR merged on green CI; manifest entry; annotated tag created by the PI;
 Software Heritage SWHID obtained; PI explicit go. The two decision-threshold
-values marked TBD must be confirmed before the tag is created.
+values were confirmed by the PI on 2026-10-31 before any tag.
 
 ## References
 

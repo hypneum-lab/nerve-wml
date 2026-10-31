@@ -14,17 +14,13 @@ No empirical number.  The tests check:
 
 from __future__ import annotations
 
-import math
-
 import numpy as np
 import pytest
 
 from experiments.nh01_hopfield_dream import run as nh
 from experiments.nh01_hopfield_dream.diagonal_ablation import (
-    ALPHA_GRID,
     CENSOR_MAX_SEEDS,
     CONTROL_DROP_CI,
-    T_GRID,
     THRESH_NOT_CAUSE,
     TOL_C2,
     analyse,
@@ -260,7 +256,7 @@ def test_verdict_inconclusive_mid_range() -> None:
     assert v["C6"] == "dD_zero"
 
 
-def test_verdict_c6_dD_negative() -> None:
+def test_verdict_c6_delta_d_negative() -> None:
     """ΔD CI upper bound < 0 → dD_negative (unexpected but pre-specified)."""
     s = _make_summary(
         mean_diag=(TOL_C2 + THRESH_NOT_CAUSE) / 2.0,
