@@ -17,17 +17,22 @@ pre-registrations for a 24 h access to one DGX Station GB300 on 2026-11-01.
 
 | id | decision | proposal in this draft |
 |---|---|---|
-| TBD-1 | Seed set and order (G2: only the PI adds seeds, before any gate run) | 9101, 9102, 9103, 9104, in this order (section 3) |
-| TBD-2 | Run order: one run at a time (G5 as written) or the two arms of a seed concurrently on the one GPU | one run at a time (section 2.3) |
-| TBD-3 | `GATE_DEV_ALLOWANCE` values; reading of G6 « plus one rerun » (per arm, or per run) | per arm: `eng` 13 + k + 1, `nocomm` k + 1; with k = 4: `eng` 18, `nocomm` 5 (section 7) |
-| TBD-4 | Python 3.10 interpreter for the run venv (Ubuntu 24.04 ships 3.12 only) | CPython 3.10.18 (the KXKM-AI patch level), python-build-standalone aarch64, hashed |
+| TBD-1 | Seed set, order and arm order (G2: only the PI adds seeds, before any gate run) | 9101, 9102, 9103, 9104, in this order, arm order alternating per seed (section 3) |
+| TBD-2 | Carry-over of the GB300 verdict to the bis-A decision on KXKM-AI (section 1, item 3): accept the risk as written, or pre-declare a KXKM-AI check with its own budget before any gate result | accept as written; no KXKM-AI check |
+| TBD-3 | `GATE_DEV_ALLOWANCE` values, i.e. the seed count k (G6 read with the per-run rerun of G2) | `eng` 13 + 2k, `nocomm` 2k; with k = 4: `eng` 21, `nocomm` 8 (section 7) |
+| TBD-4 | Python 3.10 interpreter for the run venv (Ubuntu 24.04 ships 3.12 by default) | CPython 3.10.18 (the KXKM-AI patch level), python-build-standalone aarch64, hashed |
 | TBD-5 | Procgen Linux aarch64 build mode (the macM1 patch is inert on Linux, section 4) | in-place development build (`-march=native`), no source change |
-| TBD-6 | Lock entries without an aarch64 wheel (`glcontext`, `glfw`, `moderngl`, `imageio-ffmpeg`) | build from sdist under HITL review; omission only as a declared deviation |
-| TBD-7 | Exact patch versions of the CUDA 12 runtime wheels pulled by `mlx-cuda-12` 0.31.1 | the versions installed in the KXKM-AI `venv310`, read by the PI (not recorded in the repository) |
+| TBD-6 | Lock entries without an aarch64 wheel (`glcontext`, `glfw`, `moderngl`, `imageio-ffmpeg`), and the `filelock` conflict (Procgen 0.10.7 requires `filelock<4`, the lock pins 4.1.0) | build from sdist under HITL review, build tools pinned and hashed; Procgen installed with `--no-deps` after the locked set, the conflict declared as inherited from the KXKM-AI lock |
+| TBD-7 | Exact versions of the complete dependency closure of both backends (`mlx-cuda-12` and the fallback `mlx-cuda-13`, CUDA runtime wheels included) | resolved for aarch64 and hashed before access; the KXKM-AI `venv310` patch levels (read by the PI, not in the repository) are the starting point, never assumed available on aarch64 |
 
 PI actions (not decisions): copy the trunk files of the chosen seeds to the GB300 host
-(they live on macM1 / KXKM-AI, outside the repository) and review the hashed requirement
-files before access (section 5).
+(they live on macM1 / KXKM-AI, outside the repository) as `trunk-<seed>.safetensors`;
+review the hashed requirement files and build recipe before access (section 5); date and
+sign the decisions above.
+
+Closed in this draft (not open to the PI under this annex): the gate runs **one run at a
+time**, as G5 says; concurrent arms would be two GPU jobs of ours and would need an
+amendment of G5, not a resolution of a TBD.
 
 ## 1. Change of substrate (declared)
 
@@ -55,11 +60,15 @@ on 2026-10-31 (sources listed in the PR body). Consequences, stated before any r
    `experiments/procgen_multiagent_gtm_comm/bench/procgen-builds/README.md`). The GB300
    build is a third build. The gate reads training success on levels 0–15 only, so it is
    self-consistent on its host; it never touches held-out levels 1000–1199.
-3. **Limitation.** The gate decides whether the task needs the message, a property of the
-   task that is assumed not to depend on the build. If the gate passes, N10-C-bis
-   (bis-A) still trains on KXKM-AI with the x86-64 build; the gate result is evidence
-   about the task on the GB300 build, carried over to KXKM-AI by that assumption. This is
-   disclosed; it is not tested by this annex.
+3. **Limitation (TBD-2).** The gate measures a training-success difference after a fixed
+   optimisation budget, on one build, backend and set of trunks; it is an operational,
+   exploratory gate, not a proof that the message is necessary (a difference ≥ 0.20 does
+   not prove necessity, a smaller one does not prove uselessness). If the gate passes,
+   N10-C-bis (bis-A) still trains on KXKM-AI with the x86-64 build; the GB300 result is
+   carried over to KXKM-AI by the assumption that the size of the difference does not
+   depend on the build and hardware. This annex does not test that assumption. Any
+   KXKM-AI check of it must be declared, with its budget and ledger, before any gate
+   result is read; it is never added after a result.
 4. MLX convolution backward is nondeterministic on CUDA (stage-2 manifest fix C,
    « Reproducibility »); runs are statistically, not bitwise, reproducible. Nothing here
    depends on bit identity.
@@ -72,14 +81,16 @@ on 2026-10-31 (sources listed in the PR body). Consequences, stated before any r
    fitted); the device must report compute capability 10.3.
 2. **Never in parallel with another GPU job of ours.** No other process of ours uses
    the GB300 GPU while a gate run is alive (no NH-81, no model serving, no benchmark, no
-   N10-C job). Before each run, `nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv`
-   is logged; a process of ours other than the run blocks the start. CPU-only jobs of
-   ours (the rescience-nh01 ARM reproduction) may run concurrently on a disjoint set of
-   cores (`taskset`), never on the cores given to the gate run, and the core sets are
-   logged.
-3. **One run at a time** (G5), unless the PI decides otherwise under TBD-2. If the PI
-   chooses concurrent arms, the two arms of one seed start together and no third run
-   overlaps them.
+   N10-C job). The lane (section 8) checks the GPU's compute processes before each run and
+   every 60 s during it; another compute process before a run blocks it, one during a run
+   marks the run contaminated and stops the session. Graphics contexts are not seen by
+   this check: no other workload of ours is started on the host during the gate. CPU-only
+   jobs of ours (the rescience-nh01 ARM reproduction) may run on a disjoint set of cores
+   (`taskset`); core sets, start and end times of every job are logged. `taskset`
+   separates cores, not memory bandwidth or the shared CPU/GPU power budget; this is
+   recorded, not controlled.
+3. **One run at a time** (G5). The E1-small clause of G5 is specific to KXKM-AI and does
+   not apply on the GB300.
 4. **Per-run settings:** the KXKM-AI registered implementation settings named by G2
    (`micro_batch_pairs = 512`, `clear_cache = on`, `n_workers = 8`), passed explicitly
    on the command line (section 8) and recorded in each `run.json`. The larger GB300 memory
@@ -98,21 +109,36 @@ gate run, in this order:
 | 3 | 9103 | `8c0b72ee4f362e133771f6e0de93e6bac96ced0edb077b8b63f2c974cfd24a7a` | `…/kxkm/adam-study/pretrain-s9103/pretrain.json` |
 | 4 | 9104 | `894688cd4a62b868ea1f18d7021be57a64acb52699a8742048c9e2508da4f16f` | `…/kxkm/adam-study/pretrain-s9104/pretrain.json` |
 
-- These seeds already carry development runs (registered condition, 1M pair-steps) of
-  other designs; the gate runs use condition `closed`, whose seed streams
-  (`SeedSequence([seed, arm, condition])`) differ from every earlier run. The gate is
-  exploratory (G4), so reuse of development seeds is allowed; the four trunks avoid any
-  new pre-training. No trunk is re-trained on the GB300: a trunk whose SHA-256 does not
-  match the table is not used, and that seed is dropped (recorded) unless the PI decides.
-- Seeds 9105 and above are not in the set. If the PI wants seeds never used by any
-  development run, 9111–9114 occur nowhere in the repository, but they need new
-  pre-trainings (`pretrain_dev` has used 8 of 8) and their trunks would be built on the
-  GB300; that alternative is not drafted here.
-- **Stopping by time, never by result.** Seeds run in the order above. A seed's pair is
-  started only if both of its runs can end before the end of access minus the
-  repatriation margin (section 9). The verdict uses the seeds whose two runs completed,
-  which is a prefix of the order above. With one seed the statistic is that seed's
-  difference; with more, the mean over seeds of the per-seed difference (G2).
+Arm order within a seed alternates, fixed now: 9101 `eng` then `nocomm`; 9102 `nocomm`
+then `eng`; 9103 `eng` then `nocomm`; 9104 `nocomm` then `eng` (so that a drift of host
+load over the session does not line up with one arm).
+
+- **Why these seeds.** They are the first four development seeds whose trunks are
+  recorded in the repository, so no new pre-training is needed (`pretrain_dev` has used
+  8 of 8). 9105 also has a trunk; it is left out because four pairs of 10M runs already
+  fill most of 24 h at the KXKM-AI rate (about 4.1 h per pair, G5). They are not new or
+  blind: their earlier development runs (registered condition, 1M pair-steps, other
+  designs) are published. The gate runs use condition `closed`, whose seed streams
+  (`SeedSequence([seed, arm, condition])` with integer arm and condition codes) differ from
+  every earlier run, but the trunks are the same. The gate is exploratory (G4), so reuse
+  is allowed; the dependence is disclosed, not removed.
+- **Trunks are checked before the first gate run.** All four trunk files are hashed by
+  the lane before it starts any run; a missing file or a mismatch stops the session
+  before any gate run, and the PI decides (re-ordering or dropping a seed is then a
+  dated decision taken before any gate result). No trunk is re-trained on the GB300.
+  No seed is substituted or added once the first gate run has started.
+- **Analysed set and verdict.** Seeds run in the order above. A seed's pair starts only
+  under the time rule of section 9; no further pair starts after the first pair that
+  the rule refuses. The outcome is one of:
+
+  | outcome | condition |
+  |---|---|
+  | **PASS** / **FAIL** | at least one complete pair, the session ended by the time rule or after the last seed, and no stop condition of section 9 other than the time rule; statistic = the difference of the one pair, or the mean over complete pairs of the per-seed difference (G2); PASS if ≥ 0.20 |
+  | **INCONCLUSIVE** | no complete pair; or the session stopped on a second failure of a run (an outcome-related training failure: no verdict is read from the other pairs), on contamination, on a hardware error or on a deadline kill of a started pair |
+
+  A complete pair has two runs whose status is OK (section 8). An INCONCLUSIVE session is
+  reported with every run; any further gate run is a new, dated, non-blind PI decision,
+  not part of this pre-registered gate.
 
 ## 4. Procgen build on Linux aarch64 (TBD-5)
 
@@ -159,7 +185,7 @@ before access. The x86-64 / macOS hashes of `bench/requirements-*.lock` do not a
 | `cffi` | 1.17.1 | `cp310` aarch64 wheel |
 | `pycparser` | 3.11 | pure-Python wheel |
 | `cloudpickle` | 3.1.2 | pure-Python wheel |
-| `filelock` | 4.1.0 | pure-Python wheel |
+| `filelock` | 4.1.0 | pure-Python wheel; conflicts with Procgen's `filelock<4` (TBD-6) |
 | `imageio` | 2.38.0 | pure-Python wheel |
 | `pillow` | 12.3.0 | `cp310` aarch64 wheel |
 | `glcontext` | 3.1.0 | sdist only (TBD-6) |
@@ -180,16 +206,20 @@ headers used are recorded.
 
 | id | test | pass condition |
 |---|---|---|
-| S0 | host record: `nvidia-smi`, `nvidia-smi -q`, `uname -a`, `getconf PAGESIZE`, `lscpu`, `free -g`, `python -VV`, `pip freeze`, SHA-256 of the lock and of the checkout (`git rev-parse HEAD`, `git status --porcelain` empty) | recorded; HEAD is the merge commit of this annex or a descendant that changed only `docs/` |
+| S0 | host record: `nvidia-smi`, `nvidia-smi -q`, `uname -a`, `getconf PAGESIZE`, `lscpu`, `free -g`, `python -VV`, `pip freeze`, SHA-256 of the lock and of the checkout (`git rev-parse HEAD`, `git status --porcelain` empty) | recorded; HEAD is the merge commit of this annex or a descendant that changed only `docs/`; checked before S5, which writes a `measurement` entry into the ledger |
 | S1 | MLX on the GPU: `python -c "import mlx.core as mx; print(mx.default_device()); a=mx.ones((4,)); mx.eval(a@a)"`, then one forward and backward pass of a 3×3 `nn.Conv2d` on a 64×64×3 batch | runs on the GPU device without NVRTC / kernel errors; result finite |
 | S2 | `python experiments/procgen_multiagent_gtm_comm/bench/bench_ppo_mlx.py` (NN-only, synthetic data, no environment) | completes; timings recorded |
 | S3 | Procgen: `python -c "import procgen"`, then `bench/procgen-builds/frames.py` twice | both runs print 20 level hashes and the two outputs are byte-identical (host determinism); the hashes are recorded and are not expected to equal macM1 or KXKM-AI |
-| S4 | `python -m experiments.procgen_multiagent_gtm_comm.smoke_test --steps 100` | `using_stub` is false (no stub warning); shapes as on KXKM-AI |
-| S5 | throughput on a frozen random policy, ledger kind `measurement` (not counted): `python -m experiments.procgen_multiagent_gtm_comm.harness.throughput throughput --arms eng nocomm --n-updates 5 --n-workers 8 --preset fix-c-coin-pretrain --init-trunk <trunk 9101> --host-settings kxkm --out <dir>` | completes; pair-steps/s recorded; used only for the time rule of section 3 |
+| S4 | real wrapper on training levels: `python -c "from experiments.procgen_multiagent_gtm_comm.coop_env import ProcgenCoopEnv as E; e=E(seed=9001, num_levels=16, start_level=0, allow_stub=False); o=e.reset(); assert not e.using_stub; print(type(o))"` (the `smoke_test` module is not used: it allows the stub and does not restrict levels) | exits 0, `using_stub` false |
+| S5 | throughput on a frozen random policy, ledger kind `measurement` (not counted): `python -m experiments.procgen_multiagent_gtm_comm.harness.throughput throughput --arms eng nocomm --n-updates 10 --n-workers 8 --preset fix-c-coin-pretrain --init-trunk <trunk 9101> --host-settings kxkm --out <session>/smoke/throughput.json` | for each arm `training_failure` false and `pair_steps_per_s_incl_warmup` finite and > 0; these two values are `RATE_ENG` / `RATE_NOCOMM` of the time rule (section 9) |
 
-A failed smoke test stops the session before any gate run, except S1/S2 failures that
-meet the fallback trigger of section 6. A smoke test may be repeated after an
-environment fix (each attempt logged); no smoke test reads team success of a gate run.
+`python` and `pip` in S0–S5 are those of the run venv (`$PY`). S1 is run from a small
+script committed with the build record before access (fixed batch, loss, assertion of
+finite values and gradients). S3 compares the JSON objects after dropping the
+`building procgen...done` line that may precede them. A failed smoke test stops the
+session before any gate run, except S1/S2 failures that meet the fallback trigger of
+section 6. A smoke test may be repeated after an environment fix (each attempt logged);
+no smoke test reads team success of a gate run.
 
 ## 6. MLX backend and the declared fallback
 
@@ -199,7 +229,11 @@ environment fix (each attempt logged); no smoke test reads team success of a gat
   not compile or do not run on compute capability 10.3 (NVRTC or JIT compile error,
   « no kernel image », unsupported architecture, illegal instruction in a CUDA kernel),
   reproduced once after a clean venv rebuild. Slowness, a different numerical result,
-  memory pressure or a failure of Procgen are **not** triggers.
+  memory pressure, a driver or dependency error, a wrong `CUDA_HOME`, a page-size
+  problem or a failure of Procgen are **not** triggers; the exact error and its
+  classification are archived. After a fallback, S1–S5 are all rerun under
+  `mlx-cuda-13`. A kernel failure that appears only in S5 or in a gate run does not
+  allow the fallback: the session stops and the PI decides.
 - The backend is fixed before the first gate run and is the same for every gate run.
   A backend switch after the first gate run started is not allowed: the session stops
   and the PI decides. A triggered fallback is recorded (error output, both pip freezes)
@@ -210,69 +244,97 @@ environment fix (each attempt logged); no smoke test reads team success of a gat
 
 `eng` has used 13 of its 13 `gate_dev` slots and `nocomm` has none (default cap 4,
 `harness/devledger.py`). G6 asks for « one run per arm and seed plus one rerun », raised
-by a separate, dated code change before the first gate run. Reading per arm, with k seeds:
-`eng` = 13 + k + 1 and `nocomm` = k + 1. The companion commit of this branch sets the
-values for the proposed k = 4 (`eng` 18, `nocomm` 5) and is marked TBD by PI: if the PI
-keeps another k, or reads the rerun as one per run (`eng` 13 + 2k, `nocomm` 2k), the
-values are edited before the merge. The ledger kind stays `gate_dev`; the 10M cap
-(`GATE_MAX_STEPS`) is unchanged.
+by a separate, dated code change before the first gate run. G2 allows one rerun **per
+run** that crashes or aborts, and a crashed attempt still uses a slot, so with k seeds
+each arm needs up to 2k slots: `eng` = 13 + 2k, `nocomm` = 2k. The companion commit sets
+the values for the proposed k = 4 (`eng` 21, `nocomm` 8); it is marked TBD by PI and is
+edited before the merge if the PI keeps another k. The ledger kind stays `gate_dev`; the
+10M cap (`GATE_MAX_STEPS`) is unchanged. The ledger file of the GB300 checkout is copied
+at the start of the session (`smoke_ledger.initial.json`); if any `gate_dev` attempt of
+`eng` or `nocomm` was made elsewhere after the merge, the two ledgers are reconciled
+before the session.
 
 ## 8. Commands
 
-From a clean clone of `hypneum-lab/nerve-wml` at the merge commit (`REPO`), with the run
-venv (`PY`), `CUDA_HOME` set and `PYTHONPATH=.`; for seed `S` with trunk `T` and output
-root `OUT` (a new directory per attempt, never reused):
+The gate runs are launched only by `docs/prereg/n10c-bis-gate-gb300/gate_g7_lane.sh`
+(committed with this annex; its SHA-256 goes into the build record). From a clean clone
+of `hypneum-lab/nerve-wml` at the merge commit (`REPO`), with the run venv (`PY`),
+`CUDA_HOME` set, and absolute paths:
 
 ```bash
-for ARM in eng nocomm; do   # order within a seed: eng, then nocomm
-  (cd "$REPO" && nice -n 10 "$PY" -m experiments.procgen_multiagent_gtm_comm.harness.train \
-    --arm "$ARM" --seed "$S" --condition closed --steps 10000000 \
-    --out "$OUT/gb300-closed-$ARM-s$S" --log-every 200000 --ckpt-every 1000000 \
-    --preset fix-c-coin-pretrain --dev-kind gate_dev \
-    --micro-batch-pairs 512 --clear-cache --n-workers 8 --init-trunk "$T" \
-    > "$OUT/gb300-closed-$ARM-s$S.log" 2>&1)
-done
+REPO=... PY=... OUT_ROOT=<new session dir> TRUNK_DIR=<dir with trunk-<seed>.safetensors> \
+END_EPOCH=<end of access, Unix s> RATE_ENG=<S5> RATE_NOCOMM=<S5> \
+GPU_UUID=<nvidia-smi -L> CORES=<taskset list> \
+  nohup bash docs/prereg/n10c-bis-gate-gb300/gate_g7_lane.sh </dev/null >/dev/null 2>&1 &
 ```
 
-`--log-every 200000` is the cadence of the 10M `gate_dev` runs of section 4.3 part B of
-the 2026-10-25 amendment (50 logs; the measure of G2 is the mean of the last 5, i.e.
-9.2M–10M). The liveness guard in `abort` mode (G2) comes from the preset
-(`train_options.liveness = "abort"` in `run.json`, as in the part-B records). Each run's
-`run.json` must show `using_stub = false`, the preset, `train_options.liveness = "abort"`,
-the trunk hash of section 3, the three per-run settings and `pair_steps_done = 10000000`;
-a run that does not is reported and not used.
+The lane, in order: refuses an existing `OUT_ROOT`; copies the initial ledger; checks the
+four trunk SHA-256 (section 3); then for each seed in order applies the time rule, and
+for each arm in the seed's order checks the GPU, refuses an existing run directory and
+runs
+
+```bash
+taskset -c "$CORES" nice -n 10 "$PY" -m experiments.procgen_multiagent_gtm_comm.harness.train \
+  --arm <arm> --seed <seed> --condition closed --steps 10000000 --out <run dir> \
+  --log-every 200000 --ckpt-every 1000000 --preset fix-c-coin-pretrain --dev-kind gate_dev \
+  --micro-batch-pairs 512 --clear-cache --n-workers 8 --init-trunk <trunk>
+```
+
+with `CUDA_VISIBLE_DEVICES=<GPU UUID>`. `--log-every 200000` is the cadence of the 10M
+`gate_dev` runs of section 4.3 part B of the 2026-10-25 amendment (50 logs; the measure of
+G2 is the mean of the last 5, at 9.2M–10M). The liveness guard in `abort` mode (G2) comes
+from the preset. The trainer's stdout, which carries the success curve, goes to a
+**sealed** file (`<run dir>.result.sealed.json`); stderr to `<run dir>.stderr.log`.
+
+**Run status.** A zero exit code does not establish success (a liveness abort returns
+normally). A run is OK only if its `run.json` shows: `using_stub` false,
+`training_failure` false, `liveness_abort` false, `pair_steps_done` = 10,000,000,
+`init_trunk_sha256` = the table of section 3, `train_options.liveness` = `abort`,
+`micro_batch_pairs` 512, `clear_cache` true, `n_workers` 8, and five final success logs
+at 9.2, 9.4, 9.6, 9.8 and 10M pair-steps, finite, each over a window of 100 completed
+episodes. The lane prints only OK or the names of the failed conditions, never a success
+value. A run that is not OK gets its one rerun (G2) in a new directory; a second non-OK
+attempt stops the session (section 3, INCONCLUSIVE).
 
 ## 9. Stopping rules and repatriation
 
 **Stop the session (no further gate run)** on: a smoke failure outside the fallback
-trigger; a GPU Xid / ECC error or a host reset; a second failure of the same run
-(G2: one ledgered rerun after a crash or a liveness abort, then report and the PI
-decides); any process of ours other than the run found on the GPU during a run (that run
-is reported as contaminated, not rerun without a PI decision); a trunk hash mismatch for
-every remaining seed.
+trigger; a trunk mismatch before the first run; a second non-OK attempt of a run; another
+compute process on the GPU during a run (contamination); a GPU Xid / ECC error or a host
+reset (the operator stops the lane); the deadline kill below. Every stop is written to
+`SESSION_STOP` with its reason; section 3 gives the outcome.
 
-**Blinding within the session:** the team-success curve of a gate run is not read before
-the last gate run of the session has ended; liveness probes, abort status, throughput
-and crash logs may be read.
+**Blinding within the session.** Nobody reads the sealed result files, `run.json`
+success fields or checkpoints before the session has ended (lane done or stopped).
+Monitoring uses `driver.log` (start, end, exit code, OK / failed conditions), the
+stderr logs, `nvidia-smi` and the process table only. The session ends irrevocably when
+the lane exits; no seed, pair or rerun is added after the sealed files are opened.
 
-**Time rule:** a seed's pair starts only if, at the S5 rate, its two runs end at least
-**2 h** before the end of access (repatriation margin).
+**Time rule** (in the lane). With `RATE_ENG`, `RATE_NOCOMM` the S5 values
+`pair_steps_per_s_incl_warmup`, a seed's pair starts only if
+now + 1.5 × (10M / `RATE_ENG` + 10M / `RATE_NOCOMM`) ≤ end of access − 2 h. The rule is
+not re-estimated from the gate runs during the session. A run still alive at end of
+access − 1 h is killed: deadline stop (INCONCLUSIVE if it belonged to a started pair).
 
 **Repatriation (before the end of access):**
 
-1. `sha256sum` of every file under the session directory (run directories with
-   `run.json`, logs and checkpoints, the ledger file `manifest/smoke_ledger.json` of the
-   GB300 checkout, the smoke and build records, pip freeze, host record) into
-   `SHA256SUMS`;
-2. one archive `n10c-bis-gate-gb300-20261101.tar` of that directory plus `SHA256SUMS`,
-   and the archive's own SHA-256;
+1. `SHA256SUMS` with relative paths, sorted, over every file of the session directory
+   except `SHA256SUMS` itself: run directories (`run.json`, checkpoints), sealed result
+   files and logs, `driver.log`, `SESSION_STOP` if any, the initial and final ledger
+   (`manifest/smoke_ledger.json` of the GB300 checkout, copied in), the four trunk files,
+   the smoke, build and host records, the hashed lock, `pip freeze`, the exact
+   environment (`env`), the commands run, the GPU UUID and PCI bus id, the core sets and
+   timestamps of every job on the host;
+2. one archive `n10c-bis-gate-gb300-20261101.tar` of that directory, and the archive's
+   own SHA-256 in a separate file;
 3. copy to electron-server `~/archives/hypneum/n10c-bis-gate-gb300/` and verify there
    (`sha256sum -c` on the archive hash and, after extraction, on `SHA256SUMS`);
 4. nothing is deleted on the GB300 before step 3 succeeds.
 
-The records (`run.json`, ledger entries merged by run id, build and smoke records) are
-added later to `docs/superpowers/research/2026-10-25-n10c-gate/gb300/` and appended to
-the addendum by a results PR, as for B3.
+`run.json.runtime` and `registration` are null for development runs, hence the separate
+host record. The records (`run.json`, ledger entries merged by run id, build and smoke
+records) are added later to `docs/superpowers/research/2026-10-25-n10c-gate/gb300/` and
+appended to the addendum by a results PR, as for B3.
 
 ## 10. What this annex does not change
 
@@ -281,4 +343,8 @@ threshold 0.20, failure handling, consequences G3, exploratory status G4); every
 file, tag, manifest, run or host; the N10-C-bis hypotheses, arms, cells, seeds and host
 of the confirmatory campaign (KXKM-AI). The freeze of this annex is the merge on green
 CI before the first gate run; an annotated tag is optional for an exploratory gate and is
-the PI's choice.
+the PI's choice (if one is made, a gate-specific name, never `n10c-bis-freeze-*`). The
+N10-C-bis freeze itself still depends on this gate's verdict, its entry in the stage-2
+manifest, the PI decisions and the Filing procedure; merging this annex does not
+authorise it. Deployed N10-C clones stay at their freeze tag: the annex's code change
+makes this HEAD unusable for registered N10-C launches, as intended by the guard.
