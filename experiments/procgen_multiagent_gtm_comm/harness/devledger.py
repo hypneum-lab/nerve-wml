@@ -71,11 +71,12 @@ GATE_KINDS = ("gate_dev", "pretrain_dev")
 # 3 gate_dev runs per new arm (one gate run + up to 2 infrastructure
 # reruns), dev seed 9101, 1M pair-steps, the seed-9101 trunk.
 # N10-C-bis necessity gate (addendum G6, G7 host annex 2026-10-31, before
-# any gate run): eng and nocomm, condition closed, 10M pair-steps; per arm
-# one run per seed plus one rerun. eng had used 13 of 13. Values for the
-# PROPOSED k = 4 seeds (9101-9104): eng 13 + 4 + 1 = 18, nocomm 4 + 1 = 5.
-# TBD by PI (seed count and the reading of the rerun); edit before merge.
-GATE_DEV_ALLOWANCE = {"gtm": 20, "eng": 18, "nocomm": 5, "gtm_mis": 3,
+# any gate run): eng and nocomm, condition closed, 10M pair-steps; one run
+# per arm and seed, plus the one rerun per failed run of G2 (a crashed
+# attempt still uses a slot), so 2k slots per arm for k seeds. eng had used
+# 13 of 13. Values for the PROPOSED k = 4 seeds (9101-9104): eng 13 + 8 =
+# 21, nocomm 8. TBD by PI (seed count); edit before merge.
+GATE_DEV_ALLOWANCE = {"gtm": 20, "eng": 21, "nocomm": 8, "gtm_mis": 3,
                       "eng_gtmrx": 3, "gtm_warm": 3, "vq": 3}
 GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 8}
 GATE_MAX_STEPS = {"gate_dev": 10_000_000}
