@@ -145,14 +145,21 @@ load over the session does not line up with one arm).
 
 ## 4. Procgen build on Linux aarch64 (D5, D6)
 
-- **Kit:** nerve-wml PR #101 (branch `prereg/procgen-aarch64-build`, head
-  `8ba0d8a53797e946cac256773a87d2dd8783f29b`), prepared in an arm64 container. Source
+- **Kit:** nerve-wml PR #101 (`tools/procgen-aarch64/`, final head
+  `ac1bed26822752a2aa412a03bcd089908f838a36`, merged as `36fd117`), prepared in an arm64
+  container. Source
   `openai/procgen` 0.10.7, commit `5e1dbf341d291eff40d1f9e0c0a0d5003643aebf` (SHA-256 of
   the `git archive` recorded in the kit, `881b1f4a…0794`). Patches 0001–0003: remove
   `filelock<4` from `setup.py` (D6); restrict `-march` to x86 targets; add
   `-fsigned-char -ffp-contract=off` on aarch64. No SSE/AVX intrinsics are used, so no
   `sse2neon`. The macM1 patch (`bench/procgen-0.10.7-arm64-build.patch`, SHA-256
   `df9bbfa1…e7f`) only touches `if(APPLE)` and is inert on Linux. No game code changes.
+- **Reference build (colima, 2026-10-31):** built and CoinRun-smoke-tested in an arm64
+  colima VM (4 KiB pages), image
+  `ubuntu@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852`;
+  wheel SHA-256 `e977b3f2340dbc41da04182332a985aeaebadd71676d61f0ba34d0ad13c4ea21`. This
+  is a reference only: on the GB300 (64 KiB pages) the build is redone and its own wheel
+  SHA-256 recorded, which may differ.
 - **On the host:** the build and a CoinRun smoke test (S3, S4) are mandatory A0 steps,
   inside the **3 h cap of A0**; if A0 is not done within 3 h, the session stops before any
   pilot run. The SHA-256 of the built wheel, of `libenv.so`, of the installed package tree
