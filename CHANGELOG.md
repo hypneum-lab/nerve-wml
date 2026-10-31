@@ -4,6 +4,17 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.10.0] — 2026-10-31
+
+First release published on GitHub and archived on Zenodo since v1.8.1
+(2026-05-10). The entries of 1.9.0 to 1.9.4 below (June 2026) were
+tagged or recorded in this file but never released, so no Zenodo
+record exists for them; this version archives them together with the
+October 2026 work and carries the L1a gate correction (see
+*Corrections*).
+
 ### Added
 
 - **NH-01 correlated patterns at N = 1 000 (issue #68).** L1 pre-reg

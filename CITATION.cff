@@ -15,13 +15,14 @@ type: software
 authors:
   - family-names: Saillant
     given-names: Clément
+    orcid: "https://orcid.org/0000-0002-8414-185X"
     email: clement@saillant.cc
     affiliation: "L'Electron Rare, Grandris, France"
 repository-code: "https://github.com/hypneum-lab/nerve-wml"
 url: "https://github.com/hypneum-lab/nerve-wml"
 license: MIT
 license-url: "https://github.com/hypneum-lab/nerve-wml/blob/master/LICENSE"
-version: "1.9.4"
+version: "1.10.0"
 keywords:
   - substrate-agnostic protocol
   - World Model Language
@@ -41,13 +42,14 @@ identifiers:
   - type: url
     value: "https://osf.io/v7a2j"
     description: "Parent research program OSF project"
-date-released: 2026-06-15
+date-released: 2026-10-31
 preferred-citation:
   type: unpublished
   title: "dreamOfkiki: A Substrate-Agnostic Formal Framework for Dream-Based Knowledge Consolidation in Artificial Cognitive Systems"
   authors:
     - family-names: Saillant
       given-names: Clément
+      orcid: "https://orcid.org/0000-0002-8414-185X"
       email: clement@saillant.cc
       affiliation: "L'Electron Rare, Grandris, France"
   year: 2026
