@@ -17,12 +17,13 @@ pre-registrations for a 24 h access to one DGX Station GB300 on 2026-11-01.
 
 | id | decision | proposal in this draft |
 |---|---|---|
-| TBD-1 | Seed set, order and arm order (G2: only the PI adds seeds, before any gate run) | 9101, 9102, 9103, 9104, in this order, arm order alternating per seed (section 3) |
+| TBD-1 | Seed set, order and arm order (G2: only the PI adds seeds, before any gate run) | 9101, 9102, 9103, 9104, in this order, arm order alternating per seed (section 3); a change is made in `ORDER` / `TRUNK_SHA` of the lane and in the allowance together |
 | TBD-2 | Carry-over of the GB300 verdict to the bis-A decision on KXKM-AI (section 1, item 3): accept the risk as written, or pre-declare a KXKM-AI check with its own budget before any gate result | accept as written; no KXKM-AI check |
 | TBD-3 | `GATE_DEV_ALLOWANCE` values, i.e. the seed count k (G6 read with the per-run rerun of G2) | `eng` 13 + 2k, `nocomm` 2k; with k = 4: `eng` 21, `nocomm` 8 (section 7) |
 | TBD-4 | Python 3.10 interpreter for the run venv (Ubuntu 24.04 ships 3.12 by default) | CPython 3.10.18 (the KXKM-AI patch level), python-build-standalone aarch64, hashed |
 | TBD-5 | Procgen Linux aarch64 build mode (the macM1 patch is inert on Linux, section 4) | in-place development build (`-march=native`), no source change |
 | TBD-6 | Lock entries without an aarch64 wheel (`glcontext`, `glfw`, `moderngl`, `imageio-ffmpeg`), and the `filelock` conflict (Procgen 0.10.7 requires `filelock<4`, the lock pins 4.1.0) | build from sdist under HITL review, build tools pinned and hashed; Procgen installed with `--no-deps` after the locked set, the conflict declared as inherited from the KXKM-AI lock |
+| TBD-8 | Hardening of G2 « the PI decides »: a second non-OK attempt of any run (not only a crash or liveness abort) makes the session INCONCLUSIVE, with no verdict read from the other pairs | adopt (section 3); declared as a change of G2 failure handling |
 | TBD-7 | Exact versions of the complete dependency closure of both backends (`mlx-cuda-12` and the fallback `mlx-cuda-13`, CUDA runtime wheels included) | resolved for aarch64 and hashed before access; the KXKM-AI `venv310` patch levels (read by the PI, not in the repository) are the starting point, never assumed available on aarch64 |
 
 PI actions (not decisions): copy the trunk files of the chosen seeds to the GB300 host
@@ -134,7 +135,11 @@ load over the session does not line up with one arm).
   | outcome | condition |
   |---|---|
   | **PASS** / **FAIL** | at least one complete pair, the session ended by the time rule or after the last seed, and no stop condition of section 9 other than the time rule; statistic = the difference of the one pair, or the mean over complete pairs of the per-seed difference (G2); PASS if ≥ 0.20 |
-  | **INCONCLUSIVE** | no complete pair; or the session stopped on a second failure of a run (an outcome-related training failure: no verdict is read from the other pairs), on contamination, on a hardware error or on a deadline kill of a started pair |
+  | **INCONCLUSIVE** | no complete pair; or the session stopped on a second non-OK attempt of a run (outcome-related: no verdict is read from the other pairs, TBD-8), on contamination or on a hardware error |
+
+  A pair killed by the deadline (section 9) is time-driven, not outcome-driven: it is
+  excluded and reported, and the verdict uses the complete pairs before it. The time
+  rule does not budget reruns, so a rerun in the last admitted pair can end that way.
 
   A complete pair has two runs whose status is OK (section 8). An INCONCLUSIVE session is
   reported with every run; any further gate run is a new, dated, non-blind PI decision,
@@ -206,12 +211,12 @@ headers used are recorded.
 
 | id | test | pass condition |
 |---|---|---|
-| S0 | host record: `nvidia-smi`, `nvidia-smi -q`, `uname -a`, `getconf PAGESIZE`, `lscpu`, `free -g`, `python -VV`, `pip freeze`, SHA-256 of the lock and of the checkout (`git rev-parse HEAD`, `git status --porcelain` empty) | recorded; HEAD is the merge commit of this annex or a descendant that changed only `docs/`; checked before S5, which writes a `measurement` entry into the ledger |
-| S1 | MLX on the GPU: `python -c "import mlx.core as mx; print(mx.default_device()); a=mx.ones((4,)); mx.eval(a@a)"`, then one forward and backward pass of a 3×3 `nn.Conv2d` on a 64×64×3 batch | runs on the GPU device without NVRTC / kernel errors; result finite |
+| S0 | host record: `nvidia-smi`, `nvidia-smi -q`, `uname -a`, `getconf PAGESIZE`, `lscpu`, `free -g`, `python -VV`, `pip freeze`, SHA-256 of the lock and of the checkout (`git rev-parse HEAD`, `git status --porcelain` empty) | recorded; HEAD is the merge commit of this annex or a descendant that changed only `docs/`, and `docs/prereg/n10c-bis-gate-gb300/` (lane included) is byte-identical to the merge commit; checked before S5, which writes a `measurement` entry into the ledger |
+| S1 | `nvidia-smi --id=<UUID> --query-gpu=compute_cap` gives 10.3 (the lane checks it again); MLX on the GPU: `python -c "import mlx.core as mx; print(mx.default_device()); a=mx.ones((4,)); mx.eval(a@a)"`, then one forward and backward pass of a 3×3 `nn.Conv2d` on a 64×64×3 batch | runs on the GPU device without NVRTC / kernel errors; result finite |
 | S2 | `python experiments/procgen_multiagent_gtm_comm/bench/bench_ppo_mlx.py` (NN-only, synthetic data, no environment) | completes; timings recorded |
 | S3 | Procgen: `python -c "import procgen"`, then `bench/procgen-builds/frames.py` twice | both runs print 20 level hashes and the two outputs are byte-identical (host determinism); the hashes are recorded and are not expected to equal macM1 or KXKM-AI |
 | S4 | real wrapper on training levels: `python -c "from experiments.procgen_multiagent_gtm_comm.coop_env import ProcgenCoopEnv as E; e=E(seed=9001, num_levels=16, start_level=0, allow_stub=False); o=e.reset(); assert not e.using_stub; print(type(o))"` (the `smoke_test` module is not used: it allows the stub and does not restrict levels) | exits 0, `using_stub` false |
-| S5 | throughput on a frozen random policy, ledger kind `measurement` (not counted): `python -m experiments.procgen_multiagent_gtm_comm.harness.throughput throughput --arms eng nocomm --n-updates 10 --n-workers 8 --preset fix-c-coin-pretrain --init-trunk <trunk 9101> --host-settings kxkm --out <session>/smoke/throughput.json` | for each arm `training_failure` false and `pair_steps_per_s_incl_warmup` finite and > 0; these two values are `RATE_ENG` / `RATE_NOCOMM` of the time rule (section 9) |
+| S5 | throughput on a frozen random policy, ledger kind `measurement` (not counted): `python -m experiments.procgen_multiagent_gtm_comm.harness.throughput throughput --arms eng nocomm --n-updates 10 --n-workers 8 --preset fix-c-coin-pretrain --init-trunk <trunk 9101> --host-settings kxkm --out <session>/smoke/throughput.json` | for each arm `training_failure` false and `pair_steps_per_s_incl_warmup` finite and > 0; these two values are `RATE_ENG` / `RATE_NOCOMM` of the time rule (section 9); during S5, `nvidia-smi --query-compute-apps=pid` is recorded and every listed PID must belong to the S5 process tree (this checks the lane's contamination filter, which excludes the trainer and its spawned env workers) |
 
 `python` and `pip` in S0–S5 are those of the run venv (`$PY`). S1 is run from a small
 script committed with the build record before access (fixed batch, loss, assertion of
@@ -300,8 +305,12 @@ attempt stops the session (section 3, INCONCLUSIVE).
 
 **Stop the session (no further gate run)** on: a smoke failure outside the fallback
 trigger; a trunk mismatch before the first run; a second non-OK attempt of a run; another
-compute process on the GPU during a run (contamination); a GPU Xid / ECC error or a host
-reset (the operator stops the lane); the deadline kill below. Every stop is written to
+GPU compute process outside the trainer's process tree, before or during a run, or a
+failed `nvidia-smi` query (contamination, fail closed; the run is killed); a GPU Xid /
+ECC error or a host reset (the operator sends TERM to the lane, which kills the trainer
+and writes `SESSION_STOP`; `nvidia-smi -q` is saved before and after each run so that an
+ECC or Xid event can be found afterwards, and a run with such an event counts as a
+hardware error); the deadline kill below (TERM, then KILL after 60 s). Every stop is written to
 `SESSION_STOP` with its reason; section 3 gives the outcome.
 
 **Blinding within the session.** Nobody reads the sealed result files, `run.json`
@@ -339,7 +348,7 @@ appended to the addendum by a results PR, as for B3.
 ## 10. What this annex does not change
 
 The gate itself (arms, condition, preset, 10M pair-steps, training levels, measure,
-threshold 0.20, failure handling, consequences G3, exploratory status G4); every N10-C
+threshold 0.20, consequences G3, exploratory status G4; the failure handling of G2 is hardened as stated in TBD-8); every N10-C
 file, tag, manifest, run or host; the N10-C-bis hypotheses, arms, cells, seeds and host
 of the confirmatory campaign (KXKM-AI). The freeze of this annex is the merge on green
 CI before the first gate run; an annotated tag is optional for an exploratory gate and is

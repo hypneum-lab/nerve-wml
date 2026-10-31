@@ -36,6 +36,12 @@ LOG="$OUT_ROOT/driver.log"
 log() { echo "$(date -u +%FT%TZ) $*" >> "$LOG"; }
 stop() { log "SESSION STOP: $*"; echo "$*" > "$OUT_ROOT/SESSION_STOP"; exit 0; }
 export CUDA_VISIBLE_DEVICES="$GPU_UUID" PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1
+"$PY" -I -c "import math,sys; r=[float(x) for x in sys.argv[1:]]; sys.exit(0 if all(math.isfinite(x) and x>0 for x in r) else 1)" \
+  "$RATE_ENG" "$RATE_NOCOMM" || stop "RATE_ENG / RATE_NOCOMM must be finite and > 0"
+[ "$(nvidia-smi --id="$GPU_UUID" --query-gpu=compute_cap --format=csv,noheader | tr -d ' ')" = 10.3 ] \
+  || stop "GPU $GPU_UUID does not report compute capability 10.3"
+TRAINER=""
+trap '[ -n "$TRAINER" ] && kill "$TRAINER" 2>/dev/null; stop "operator stop (signal)"' TERM INT
 log "lane start code $(git -C "$REPO" rev-parse HEAD) dirty=$(git -C "$REPO" status --porcelain | wc -l)"
 cp "$REPO/experiments/procgen_multiagent_gtm_comm/manifest/smoke_ledger.json" \
    "$OUT_ROOT/smoke_ledger.initial.json"
@@ -47,9 +53,17 @@ for item in "${ORDER[@]}"; do
     || stop "trunk of seed $s missing or SHA-256 mismatch (before any gate run)"
 done
 
-others_on_gpu() {  # compute processes on the GPU other than $1
-  nvidia-smi --id="$GPU_UUID" --query-compute-apps=pid --format=csv,noheader \
-    | tr -d ' ' | grep -vx "${1:-none}" | grep -c . || true
+tree_of() {  # pid and all its descendants (spawned env workers open CUDA too)
+  local p=$1 c; echo "$p"
+  for c in $(pgrep -P "$p" || true); do tree_of "$c"; done
+}
+
+others_on_gpu() {  # count of GPU compute processes outside the tree of $1; fail closed
+  local apps mine
+  apps=$(nvidia-smi --id="$GPU_UUID" --query-compute-apps=pid --format=csv,noheader) \
+    || { echo query-failed; return; }
+  mine=$( [ -n "${1:-}" ] && tree_of "$1" || true )
+  echo "$apps" | tr -d ' ' | grep -v "^$" | grep -vxF -f <(echo "${mine:-none}") | grep -c . || true
 }
 
 status_ok() {  # prints OK or the failed condition; never prints success values
@@ -88,15 +102,20 @@ run_one() {  # seed arm attempt -> 0 ok, 1 failed, exits on stop conditions
       --dev-kind gate_dev --micro-batch-pairs 512 --clear-cache --n-workers 8 \
       --init-trunk "$TRUNK_DIR/trunk-$s.safetensors" \
       > "$d.result.sealed.json" 2> "$d.stderr.log" ) &
-  local pid=$! cont=0
+  local pid=$! cont=0; TRAINER=$pid
+  nvidia-smi -q > "$d.nvsmi-before.txt" 2>&1 || true
   while kill -0 "$pid" 2>/dev/null; do
     sleep 60
     if [ "$(date +%s)" -gt $((END_EPOCH - 3600)) ]; then
-      kill "$pid"; wait "$pid" || true; stop "deadline: $s $arm attempt $att killed (truncated)"
+      kill "$pid"; sleep 60; kill -9 "$pid" 2>/dev/null || true; wait "$pid" || true
+      stop "deadline: $s $arm attempt $att killed (pair truncated)"
     fi
-    [ "$(others_on_gpu "$pid")" = 0 ] || cont=1
+    if [ "$(others_on_gpu "$pid")" != 0 ]; then
+      kill "$pid"; sleep 60; kill -9 "$pid" 2>/dev/null || true; cont=1; break
+    fi
   done
-  local rc=0; wait "$pid" || rc=$?
+  local rc=0; wait "$pid" || rc=$?; TRAINER=""
+  nvidia-smi -q > "$d.nvsmi-after.txt" 2>&1 || true
   [ "$cont" = 0 ] || stop "contamination: another GPU process during $s $arm attempt $att"
   local st="FAIL:no-run-json"; [ -f "$d/run.json" ] && st=$(status_ok "$d" $STEPS "$s")
   log "end seed $s arm $arm attempt $att rc=$rc status=$st"
@@ -115,4 +134,6 @@ for item in "${ORDER[@]}"; do
   done
   log "pair complete: seed $s"
 done
+cp "$REPO/experiments/procgen_multiagent_gtm_comm/manifest/smoke_ledger.json" \
+   "$OUT_ROOT/smoke_ledger.final.json"
 log "lane done"

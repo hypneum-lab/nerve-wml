@@ -21,3 +21,12 @@ source before a change; verdicts below. Counts: 2 BLOQUANT confirmed, 7 MAJEUR c
 | m1 | S5 `--out` is a file | confirmed | path fixed, pass condition added |
 | m2 | archive contents, ledger snapshot, `SHA256SUMS` self-inclusion | confirmed | section 9 list |
 | m3 | fixed arm order may confound load drift | confirmed | arm order alternates per seed |
+
+**Check of the corrections (2026-10-31, late evening):** one independent Claude reviewer
+(critic, read-only) on head `8e0a521`. Confirmed and fixed: GPU contamination filter
+would have flagged the spawned env workers (now the trainer process tree is excluded,
+tested with a fake `nvidia-smi`); `nvidia-smi` failure was fail-open (now fail closed);
+no operator stop (TERM trap); rates and compute capability not validated; deadline kill
+without SIGKILL; the lane was outside the S0 freeze check; deadline truncation treated as
+outcome-related; G2 hardening undeclared (TBD-8). Minor items not taken: S5 measured under
+condition `registered` (throughput only), CUDA header pinning (covered by TBD-7).
