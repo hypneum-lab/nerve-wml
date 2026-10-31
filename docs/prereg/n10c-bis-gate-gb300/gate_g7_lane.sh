@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# N10-C-bis necessity gate on the DGX Station GB300 (G7 host annex,
+# N10-C-bis necessity gate, indicative pilot (PI decision D2) on the DGX Station GB300 (G7 host annex,
 # docs/prereg/n10c-bis-gate-gb300/g7-host-annex.md, sections 3, 8, 9).
 # One run at a time; fixed seed and arm order; one ledgered rerun per
 # failed run (G2); the session stops on a second failure, a GPU process of
@@ -23,12 +23,11 @@ STEPS=10000000
 MARGIN_S=7200     # repatriation margin (annex section 9)
 SAFETY=1.5        # factor on the S5 estimate (annex section 9)
 # seed:first-arm order, fixed before the session (annex section 3)
-ORDER=("9101:eng nocomm" "9102:nocomm eng" "9103:eng nocomm" "9104:nocomm eng")
+ORDER=("9101:eng nocomm" "9102:nocomm eng" "9103:eng nocomm")   # PI decision D1
 declare -A TRUNK_SHA=(
   [9101]=0c27f2daa0a976e6407a85d6dfa6eafe20a6285c6324795b2194366b1a9aa704
   [9102]=b6805dee76c2f62be352383899d3b3b199458babbac1d260acdfffb78aa62bf1
   [9103]=8c0b72ee4f362e133771f6e0de93e6bac96ced0edb077b8b63f2c974cfd24a7a
-  [9104]=894688cd4a62b868ea1f18d7021be57a64acb52699a8742048c9e2508da4f16f
 )
 [ ! -e "$OUT_ROOT" ] || { echo "OUT_ROOT exists: refuse" >&2; exit 64; }
 mkdir -p "$OUT_ROOT"

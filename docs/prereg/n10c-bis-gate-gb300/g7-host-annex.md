@@ -1,51 +1,55 @@
-# N10-C-bis necessity gate — G7 host annex: DGX Station GB300 (L0 draft)
+# N10-C-bis necessity gate — G7 annex: indicative pilot on a DGX Station GB300 (L0 draft)
 
-**Status:** L0 DRAFT on branch `prereg/n10c-bis-gate-gb300`, not merged, not tagged. It
-binds nothing until it is merged on green CI **before the first gate run**.
+**Status:** L0 DRAFT on branch `prereg/n10c-bis-gate-gb300`, not merged, not tagged; PI
+decisions of 2026-10-31 recorded (section 0); the freeze waits for the PI's review of the
+hashed requirement files (`freeze-manifest.md`). It binds nothing until it is merged on
+green CI **before the first pilot run**.
 **Annex to:** section « Necessity gate (PI decision 2026-10-30) », items G1–G6, of
 `docs/milestones/2026-10-25-n10c-bis-control-arms.md` (merged by PR #91, commit `1d08ecf`).
 That addendum is still a DRAFT and append-only; its item G7 points to this file.
-**Scope:** the necessity gate (`eng − nocomm ≥ 0.20`, condition `closed`, 10M pair-steps)
-only. N10-C (tags `n10c-freeze-20261024`, `n10c-freeze-20261029`), its running campaign,
+**Scope:** an **indicative pilot** of the necessity gate (`eng − nocomm ≥ 0.20`, condition
+`closed`, 10M pair-steps) on the GB300. The decisional gate stays on KXKM-AI as G2–G5
+say. N10-C (tags `n10c-freeze-20261024`, `n10c-freeze-20261029`), its running campaign,
 its hosts and every N10-C-bis provision other than G5 are **not modified**.
 **Date drafted:** 2026-10-31, before any gate run on any host (no `gate_dev` entry exists
 for `nocomm`; the 13 `eng` entries are earlier development runs of other designs).
 **Decision behind it:** PI multiple-choice decision of 2026-10-31, 21:20 CET: prepare the
 pre-registrations for a 24 h access to one DGX Station GB300 on 2026-11-01.
 
-## 0. Open PI decisions (each one blocks the merge)
+## 0. PI decisions 2026-10-31 (QCM, 22:20–22:26 CET; every earlier TBD is closed)
 
-| id | decision | proposal in this draft |
-|---|---|---|
-| TBD-1 | Seed set, order and arm order (G2: only the PI adds seeds, before any gate run) | 9101, 9102, 9103, 9104, in this order, arm order alternating per seed (section 3); a change is made in `ORDER` / `TRUNK_SHA` of the lane and in the allowance together |
-| TBD-2 | Carry-over of the GB300 verdict to the bis-A decision on KXKM-AI (section 1, item 3): accept the risk as written, or pre-declare a KXKM-AI check with its own budget before any gate result | accept as written; no KXKM-AI check |
-| TBD-3 | `GATE_DEV_ALLOWANCE` values, i.e. the seed count k (G6 read with the per-run rerun of G2) | `eng` 13 + 2k, `nocomm` 2k; with k = 4: `eng` 21, `nocomm` 8 (section 7) |
-| TBD-4 | Python 3.10 interpreter for the run venv (Ubuntu 24.04 ships 3.12 by default) | CPython 3.10.18 (the KXKM-AI patch level), python-build-standalone aarch64, hashed |
-| TBD-5 | Procgen Linux aarch64 build mode (the macM1 patch is inert on Linux, section 4) | in-place development build (`-march=native`), no source change |
-| TBD-6 | Lock entries without an aarch64 wheel (`glcontext`, `glfw`, `moderngl`, `imageio-ffmpeg`), and the `filelock` conflict (Procgen 0.10.7 requires `filelock<4`, the lock pins 4.1.0) | build from sdist under HITL review, build tools pinned and hashed; Procgen installed with `--no-deps` after the locked set, the conflict declared as inherited from the KXKM-AI lock |
-| TBD-8 | Hardening of G2 « the PI decides »: a second non-OK attempt of any run (not only a crash or liveness abort) makes the session INCONCLUSIVE, with no verdict read from the other pairs | adopt (section 3); declared as a change of G2 failure handling |
-| TBD-7 | Exact versions of the complete dependency closure of both backends (`mlx-cuda-12` and the fallback `mlx-cuda-13`, CUDA runtime wheels included) | resolved for aarch64 and hashed before access; the KXKM-AI `venv310` patch levels (read by the PI, not in the repository) are the starting point, never assumed available on aarch64 |
+Recorded before any pilot run. Where the text below conflicts with them, they govern.
 
-PI actions (not decisions): copy the trunk files of the chosen seeds to the GB300 host
+| id | decision |
+|---|---|
+| D1 | Three seeds, 9101, 9102, 9103, in this order; arm order alternates per seed (section 3). |
+| D2 | **Indicative only.** The GB300 result is a pilot. No bis-A or N10-D decision is taken from it; G3 does not apply to it; the decisional gate stays on KXKM-AI (G5 unchanged). |
+| D3 | One rerun per run (G2): `GATE_DEV_ALLOWANCE` `eng` = 13 + 2k, `nocomm` = 2k, k = 3: `eng` 19, `nocomm` 6 (section 7, companion commit and test). The decisional KXKM-AI gate gets its own allowance later, by a separate dated change. |
+| D4 | Python **3.12** (CPython 3.12.15) for the pilot venvs, not 3.10: a declared difference from N10-C (KXKM-AI `venv310`, Python 3.10.18). |
+| D5 | Procgen 0.10.7 is built on the host from the kit of nerve-wml PR #101 (prepared in an arm64 container); build and CoinRun smoke are mandatory A0 steps under the 3 h cap (section 4). |
+| D6 | `filelock`: Procgen's `filelock<4` constraint is **lifted** (its `setup.py` patched to accept `filelock` 4.1.0); the N10-C lock is unchanged. Declared deviation of the build, not of N10-C. |
+| D7 | Both MLX backends, `mlx-cuda-12` and `mlx-cuda-13` 0.31.1, are installed (one venv each) and smoke-tested (S1–S5, « A0 »). If `mlx-cuda-12` passes, the pilot runs under it; otherwise under `mlx-cuda-13`. Both are declared now; the backend kept is recorded. |
+| D8 | Hardening of G2 adopted: a second non-OK attempt of any run makes the session INCONCLUSIVE. |
+
+One run at a time, as G5 says (concurrent arms would be two GPU jobs of ours).
+
+PI actions (not decisions): copy the trunk files of the three seeds to the GB300 host
 (they live on macM1 / KXKM-AI, outside the repository) as `trunk-<seed>.safetensors`;
-review the hashed requirement files and build recipe before access (section 5); date and
-sign the decisions above.
-
-Closed in this draft (not open to the PI under this annex): the gate runs **one run at a
-time**, as G5 says; concurrent arms would be two GPU jobs of ours and would need an
-amendment of G5, not a resolution of a TBD.
+review the hashed requirement files (`requirements-gb300-*.txt`, summary in
+`requirements-review.md`) before access.
 
 ## 1. Change of substrate (declared)
 
-G5 fixes the gate host as **KXKM-AI**. This annex moves the gate, and only the gate, to a
-**different substrate**:
+G5 fixes the gate host as **KXKM-AI**, and it stays so for the decisional gate. This annex
+adds an indicative pilot on a **different substrate**:
 
 | | G5 (KXKM-AI) | G7 (GB300) |
 |---|---|---|
 | CPU / ISA | x86-64 | 72-core Arm Neoverse V2 (Grace), aarch64, 64 KiB pages |
 | GPU | RTX 4090, 24 GB, compute capability 8.9 | 1 Blackwell Ultra, 252 GB HBM3e, compute capability 10.3 |
 | OS | Ubuntu (x86-64) | Ubuntu 24.04 aarch64, Linux 6.17, CUDA 13.1/13.2 stack |
-| MLX backend | `mlx-cuda-12` 0.31.1 | `mlx-cuda-12` 0.31.1 (fallback `mlx-cuda-13` 0.31.1, section 6) |
+| Python | 3.10.18 | 3.12.15 (D4) |
+| MLX backend | `mlx-cuda-12` 0.31.1 | `mlx-cuda-12` or `mlx-cuda-13` 0.31.1, chosen by the A0 smoke tests (D7, section 6) |
 | Procgen | official 0.10.7 x86-64 wheel (SHA-256 `4b594d14…`) | 0.10.7 built from source (commit `5e1dbf3`) on aarch64 |
 
 Hardware facts: NVIDIA DGX Station product page and DGX Station Development Guide, read
@@ -61,15 +65,10 @@ on 2026-10-31 (sources listed in the PR body). Consequences, stated before any r
    `experiments/procgen_multiagent_gtm_comm/bench/procgen-builds/README.md`). The GB300
    build is a third build. The gate reads training success on levels 0–15 only, so it is
    self-consistent on its host; it never touches held-out levels 1000–1199.
-3. **Limitation (TBD-2).** The gate measures a training-success difference after a fixed
-   optimisation budget, on one build, backend and set of trunks; it is an operational,
-   exploratory gate, not a proof that the message is necessary (a difference ≥ 0.20 does
-   not prove necessity, a smaller one does not prove uselessness). If the gate passes,
-   N10-C-bis (bis-A) still trains on KXKM-AI with the x86-64 build; the GB300 result is
-   carried over to KXKM-AI by the assumption that the size of the difference does not
-   depend on the build and hardware. This annex does not test that assumption. Any
-   KXKM-AI check of it must be declared, with its budget and ledger, before any gate
-   result is read; it is never added after a result.
+3. **Indicative only (D2).** The pilot measures a training-success difference after a fixed
+   optimisation budget, on one build, backend and set of trunks; it is not a proof that
+   the message is necessary. It informs the planning of the KXKM-AI gate and nothing
+   else: no bis-A or N10-D decision, no G3 consequence, no pooling with the KXKM-AI gate.
 4. MLX convolution backward is nondeterministic on CUDA (stage-2 manifest fix C,
    « Reproducibility »); runs are statistically, not bitwise, reproducible. Nothing here
    depends on bit identity.
@@ -97,33 +96,32 @@ on 2026-10-31 (sources listed in the PR body). Consequences, stated before any r
    on the command line (section 8) and recorded in each `run.json`. The larger GB300 memory
    is not used to change them.
 
-## 3. Seeds (TBD-1)
+## 3. Seeds (D1)
 
 Development seeds of the pilot namespace 91xx (G2), disjoint from the registered seeds
-{0, 17, 42, 73, 101, 131} and from the smoke seed 9001. Proposed set, fixed before any
-gate run, in this order:
+{0, 17, 42, 73, 101, 131} and from the smoke seed 9001. Set fixed by the PI (D1) before any
+pilot run, in this order:
 
 | order | seed | trunk (`init_trunk_sha256`) | trunk record |
 |---|---|---|---|
 | 1 | 9101 | `0c27f2daa0a976e6407a85d6dfa6eafe20a6285c6324795b2194366b1a9aa704` | `docs/superpowers/research/2026-10-25-n10c-gate/macm1/gate/pretrain/pretrain.json` |
 | 2 | 9102 | `b6805dee76c2f62be352383899d3b3b199458babbac1d260acdfffb78aa62bf1` | `…/macm1/gate-s9102/pretrain/pretrain.json` (the trunk of rows 20–21) |
 | 3 | 9103 | `8c0b72ee4f362e133771f6e0de93e6bac96ced0edb077b8b63f2c974cfd24a7a` | `…/kxkm/adam-study/pretrain-s9103/pretrain.json` |
-| 4 | 9104 | `894688cd4a62b868ea1f18d7021be57a64acb52699a8742048c9e2508da4f16f` | `…/kxkm/adam-study/pretrain-s9104/pretrain.json` |
 
 Arm order within a seed alternates, fixed now: 9101 `eng` then `nocomm`; 9102 `nocomm`
-then `eng`; 9103 `eng` then `nocomm`; 9104 `nocomm` then `eng` (so that a drift of host
+then `eng`; 9103 `eng` then `nocomm` (so that a drift of host
 load over the session does not line up with one arm).
 
-- **Why these seeds.** They are the first four development seeds whose trunks are
+- **Why these seeds.** They are the first three development seeds whose trunks are
   recorded in the repository, so no new pre-training is needed (`pretrain_dev` has used
-  8 of 8). 9105 also has a trunk; it is left out because four pairs of 10M runs already
-  fill most of 24 h at the KXKM-AI rate (about 4.1 h per pair, G5). They are not new or
+  8 of 8); 9104 and 9105 also have trunks and are left out (D1); three pairs of 10M runs
+  take about 12.3 h at the KXKM-AI rate (about 4.1 h per pair, G5). They are not new or
   blind: their earlier development runs (registered condition, 1M pair-steps, other
   designs) are published. The gate runs use condition `closed`, whose seed streams
   (`SeedSequence([seed, arm, condition])` with integer arm and condition codes) differ from
   every earlier run, but the trunks are the same. The gate is exploratory (G4), so reuse
   is allowed; the dependence is disclosed, not removed.
-- **Trunks are checked before the first gate run.** All four trunk files are hashed by
+- **Trunks are checked before the first gate run.** All three trunk files are hashed by
   the lane before it starts any run; a missing file or a mismatch stops the session
   before any gate run, and the PI decides (re-ordering or dropping a seed is then a
   dated decision taken before any gate result). No trunk is re-trained on the GB300.
@@ -134,8 +132,8 @@ load over the session does not line up with one arm).
 
   | outcome | condition |
   |---|---|
-  | **PASS** / **FAIL** | at least one complete pair, the session ended by the time rule or after the last seed, and no stop condition of section 9 other than the time rule; statistic = the difference of the one pair, or the mean over complete pairs of the per-seed difference (G2); PASS if ≥ 0.20 |
-  | **INCONCLUSIVE** | no complete pair; or the session stopped on a second non-OK attempt of a run (outcome-related: no verdict is read from the other pairs, TBD-8), on contamination or on a hardware error |
+  | **indicative PASS** / **FAIL** (D2) | at least one complete pair, the session ended by the time rule or after the last seed, and no stop condition of section 9 other than the time rule; statistic = the difference of the one pair, or the mean over complete pairs of the per-seed difference (G2); PASS if ≥ 0.20 |
+  | **INCONCLUSIVE** | no complete pair; or the session stopped on a second non-OK attempt of a run (outcome-related: no verdict is read from the other pairs, D8), on contamination or on a hardware error |
 
   A pair killed by the deadline (section 9) is time-driven, not outcome-driven: it is
   excluded and reported, and the verdict uses the complete pairs before it. The time
@@ -145,67 +143,54 @@ load over the session does not line up with one arm).
   reported with every run; any further gate run is a new, dated, non-blind PI decision,
   not part of this pre-registered gate.
 
-## 4. Procgen build on Linux aarch64 (TBD-5)
+## 4. Procgen build on Linux aarch64 (D5, D6)
 
-- Source: `openai/procgen` tag `0.10.7`, commit `5e1dbf341d291eff40d1f9e0c0a0d5003643aebf`.
-- The macM1 build patch `bench/procgen-0.10.7-arm64-build.patch`
-  (SHA-256 `df9bbfa1d454ee51cbea1b8af47fbb1966a79f4a075357ba2a4c95acca834e7f`) removes
-  `-Werror` inside `if(APPLE)` of `procgen/CMakeLists.txt`; **on Linux it changes
-  nothing**. It is applied anyway, so that the source tree is the macM1 tree.
-- Linux-specific risk: with `PROCGEN_PACKAGE=ON` (wheel build) the CMake file adds
-  `-march=ivybridge`, an x86 target that GCC on aarch64 rejects; the in-place
-  development build adds `-march=native` instead. Proposal: the in-place development
-  build, the mode of the macM1 build (its import printed `building procgen...done`), with
-  no source change beyond the patch. Any further change (a flag, a header) is a
-  deviation: its diff and SHA-256 go into the build record before the first gate run.
-- Toolchain: Ubuntu 24.04 `gcc`/`g++`, `cmake`, Qt 5 (`qtbase5-dev`), versions recorded.
-- **Build record, written at build time** (this annex cannot know the values):
-  procgen version string, source commit, patch SHA-256, compiler and CMake versions,
-  Qt version, exact build command and environment, SHA-256 of the built `libenv.so`, of
-  the installed package tree (sorted list of file hashes) and of the full build log.
-  Stored with the run artefacts (section 9).
+- **Kit:** nerve-wml PR #101 (branch `prereg/procgen-aarch64-build`, head
+  `8ba0d8a53797e946cac256773a87d2dd8783f29b`), prepared in an arm64 container. Source
+  `openai/procgen` 0.10.7, commit `5e1dbf341d291eff40d1f9e0c0a0d5003643aebf` (SHA-256 of
+  the `git archive` recorded in the kit, `881b1f4a…0794`). Patches 0001–0003: remove
+  `filelock<4` from `setup.py` (D6); restrict `-march` to x86 targets; add
+  `-fsigned-char -ffp-contract=off` on aarch64. No SSE/AVX intrinsics are used, so no
+  `sse2neon`. The macM1 patch (`bench/procgen-0.10.7-arm64-build.patch`, SHA-256
+  `df9bbfa1…e7f`) only touches `if(APPLE)` and is inert on Linux. No game code changes.
+- **On the host:** the build and a CoinRun smoke test (S3, S4) are mandatory A0 steps,
+  inside the **3 h cap of A0**; if A0 is not done within 3 h, the session stops before any
+  pilot run. The SHA-256 of the built wheel, of `libenv.so`, of the installed package tree
+  and of the build log are recorded in the build record on the host, before the first
+  pilot run (nothing is compiled before access).
+- **Not bit-identical:** CoinRun levels from this build are not guaranteed identical to
+  the x86-64 or macOS builds. This is acceptable: the pilot is intra-host and indicative
+  (D2, section 1).
 
 ## 5. Software, hashed requirements and smoke tests
 
-### 5.1 Required packages (to be hashed and HITL-reviewed before access)
+### 5.1 Hashed requirements (to be HITL-reviewed by the PI before access)
 
-No lockfile is downloaded or generated by this draft. The run venv needs the exact
-versions below; for each, the aarch64 file is resolved, its SHA-256 recorded in
-`requirements-gb300-aarch64.lock` (`--require-hashes`) and the file reviewed by a human
-before access. The x86-64 / macOS hashes of `bench/requirements-*.lock` do not apply.
+Generated 2026-10-31 on electron-server with `uv pip compile --python-platform
+aarch64-manylinux_2_35 --python-version 3.12 --generate-hashes --no-build --exclude-newer
+2026-10-17` (metadata and wheels only, nothing installed or built; `manylinux_2_35`
+because the `mlx` 0.31.1 wheels are `manylinux_2_35_aarch64`; Ubuntu 24.04 has glibc
+2.39). The sdist-only entries were hashed from the PyPI JSON digests. No file is newer
+than 2026-10-17 (two weeks before the decision).
 
-| package | version | aarch64 availability on PyPI (2026-10-31, metadata only) |
+| file | SHA-256 | use |
 |---|---|---|
-| CPython | 3.10.x (TBD-4) | python-build-standalone aarch64 build |
-| `mlx` | 0.31.1 | `cp310 manylinux_2_35_aarch64` wheel |
-| `mlx-cuda-12` | 0.31.1 | `py3-none-manylinux_2_35_aarch64` wheel |
-| `nvidia-cublas-cu12` | 12.9.* (exact: TBD-7) | dependency of `mlx-cuda-12` |
-| `nvidia-cuda-nvrtc-cu12` | 12.9.* (exact: TBD-7) | dependency of `mlx-cuda-12`; CUDA 12.9 is the first toolkit with `sm_103` |
-| `nvidia-cudnn-cu12` | 9.* (exact: TBD-7) | dependency of `mlx-cuda-12` |
-| `nvidia-nccl-cu12` | exact: TBD-7 | dependency of `mlx-cuda-12` |
-| `numpy` | 1.26.4 | `cp310 manylinux_2_17_aarch64` wheel |
-| `gym3` | 0.3.3 | pure-Python wheel |
-| `gym` | 0.26.2 | sdist only |
-| `gym-notices` | 0.1.0 | pure-Python wheel |
-| `cffi` | 1.17.1 | `cp310` aarch64 wheel |
-| `pycparser` | 3.11 | pure-Python wheel |
-| `cloudpickle` | 3.1.2 | pure-Python wheel |
-| `filelock` | 4.1.0 | pure-Python wheel; conflicts with Procgen's `filelock<4` (TBD-6) |
-| `imageio` | 2.38.0 | pure-Python wheel |
-| `pillow` | 12.3.0 | `cp310` aarch64 wheel |
-| `glcontext` | 3.1.0 | sdist only (TBD-6) |
-| `glfw` | 1.12.0 | sdist only (TBD-6) |
-| `moderngl` | 5.13.0 | sdist only (TBD-6) |
-| `imageio-ffmpeg` | 0.3.0 | sdist only (TBD-6) |
-| `procgen` | 0.10.7 | no aarch64 wheel, no sdist: source build (section 4) |
-| fallback only: `mlx-cuda-13` | 0.31.1 | `py3-none-manylinux_2_35_aarch64` wheel; deps `nvidia-cublas`, `nvidia-cuda-nvrtc`, `nvidia-cudnn-cu13` 9.*, `nvidia-nccl-cu13` (exact versions hashed with the rest) |
+| `requirements-gb300-n10c-bis-gate-cuda12.txt` | `4a10e6c6417bf6a9445cf82f53dc6f8e927ca26584ff4539895d865ad8444038` | venv A0-12 |
+| `requirements-gb300-n10c-bis-gate-cuda13.txt` | `929339cd815b49244640f31c09944d45d10d89ab826a83dcab36613ee7db841a` | venv A0-13 |
+| `requirements-gb300-build-tools.txt` | `70705ec0dbb8897aa502d421767cdc02909ccd673857018d93d838003b03b358` | `setuptools`, `wheel` for the sdist builds (no build isolation) |
 
-Versions are those of `bench/requirements-mlx.lock`, `bench/requirements-procgen-py310.lock`
-and the KXKM-AI `venv310` record of the stage-2 manifest fix C (python 3.10.18, mlx 0.31.1,
-mlx-cuda-12 0.31.1, numpy 1.26.4, gym3 0.3.3, gym 0.26.2, procgen 0.10.7). The fallback
-wheels are hashed and reviewed with the rest so that a fallback needs no unreviewed
-download during access. `CUDA_HOME` points at CUDA headers for the MLX JIT kernels; the
-headers used are recorded.
+Package-by-package summary with source and the explicit list of packages without an
+aarch64 wheel: `requirements-review.md`. Without an aarch64 wheel (sdist, built on the
+host under review): `gym` 0.26.2, `glcontext` 3.1.0, `glfw` 1.12.0, `moderngl` 5.13.0,
+`imageio-ffmpeg` 0.3.0; Procgen 0.10.7 (source build, section 4). Versions match the
+N10-C locks; the CUDA runtime wheels are resolved by uv for aarch64 (`nvidia-cublas-cu12`
+12.9.2.10, `nvidia-cuda-nvrtc-cu12` 12.9.86, `nvidia-cudnn-cu12` 9.27.0.42,
+`nvidia-nccl-cu12` 2.32.3; for CUDA 13: `nvidia-cublas` 13.8.1.7, `nvidia-cuda-nvrtc`
+13.4.92, `nvidia-cudnn-cu13` 9.27.0.42, `nvidia-nccl-cu13` 2.32.3). Install, per venv:
+`pip install --require-hashes --no-deps -r requirements-gb300-build-tools.txt`, then
+`pip install --require-hashes --no-deps --no-build-isolation -r <file>`, then the
+Procgen build. CPython 3.12.15 (D4): python-build-standalone aarch64 archive, its URL and
+SHA-256 recorded in the build record.
 
 ### 5.2 Mandatory smoke tests (before the first gate run; none is a gate run)
 
@@ -222,38 +207,28 @@ headers used are recorded.
 script committed with the build record before access (fixed batch, loss, assertion of
 finite values and gradients). S3 compares the JSON objects after dropping the
 `building procgen...done` line that may precede them. A failed smoke test stops the
-session before any gate run, except S1/S2 failures that meet the fallback trigger of
-section 6. A smoke test may be repeated after an environment fix (each attempt logged);
+session before any gate run, except the backend rule of section 6 (D7). A smoke test may be repeated after an environment fix (each attempt logged);
 no smoke test reads team success of a gate run.
 
-## 6. MLX backend and the declared fallback
+## 6. MLX backend (D7)
 
-- **Primary:** `mlx` 0.31.1 with `mlx-cuda-12` 0.31.1, as on KXKM-AI.
-- **Fallback (a declared, possible deviation):** `mlx` 0.31.1 with `mlx-cuda-13` 0.31.1.
-- **Trigger, and only trigger:** S1 or S2 fails under `mlx-cuda-12` because its kernels do
-  not compile or do not run on compute capability 10.3 (NVRTC or JIT compile error,
-  « no kernel image », unsupported architecture, illegal instruction in a CUDA kernel),
-  reproduced once after a clean venv rebuild. Slowness, a different numerical result,
-  memory pressure, a driver or dependency error, a wrong `CUDA_HOME`, a page-size
-  problem or a failure of Procgen are **not** triggers; the exact error and its
-  classification are archived. After a fallback, S1–S5 are all rerun under
-  `mlx-cuda-13`. A kernel failure that appears only in S5 or in a gate run does not
-  allow the fallback: the session stops and the PI decides.
-- The backend is fixed before the first gate run and is the same for every gate run.
-  A backend switch after the first gate run started is not allowed: the session stops
-  and the PI decides. A triggered fallback is recorded (error output, both pip freezes)
-  in the run artefacts and in the results note; it changes a pinned version and is
-  reported as a deviation.
+- Both backends are installed, `mlx` 0.31.1 + `mlx-cuda-12` 0.31.1 (venv A0-12) and
+  `mlx` 0.31.1 + `mlx-cuda-13` 0.31.1 (venv A0-13), and S1–S5 run in each (« A0 »).
+- **Rule, fixed now:** if every A0 smoke test passes under `mlx-cuda-12`, the pilot runs
+  under `mlx-cuda-12`; otherwise, if they pass under `mlx-cuda-13`, under `mlx-cuda-13`;
+  otherwise the session stops. Speed and numerical values play no part. The backend kept
+  (and the failing test, if any) is recorded; it is the same for every pilot run and
+  never changes once the first pilot run has started.
 
-## 7. Development-ledger allowance (G6, TBD-3)
+## 7. Development-ledger allowance (G6, D3)
 
 `eng` has used 13 of its 13 `gate_dev` slots and `nocomm` has none (default cap 4,
 `harness/devledger.py`). G6 asks for « one run per arm and seed plus one rerun », raised
 by a separate, dated code change before the first gate run. G2 allows one rerun **per
 run** that crashes or aborts, and a crashed attempt still uses a slot, so with k seeds
-each arm needs up to 2k slots: `eng` = 13 + 2k, `nocomm` = 2k. The companion commit sets
-the values for the proposed k = 4 (`eng` 21, `nocomm` 8); it is marked TBD by PI and is
-edited before the merge if the PI keeps another k. The ledger kind stays `gate_dev`; the
+each arm needs up to 2k slots: `eng` = 13 + 2k, `nocomm` = 2k. With k = 3 (D1, D3), the
+companion commit sets `eng` 19 and `nocomm` 6; the test `test_trunk_fix.py` checks those
+values. The ledger kind stays `gate_dev`; the
 10M cap (`GATE_MAX_STEPS`) is unchanged. The ledger file of the GB300 checkout is copied
 at the start of the session (`smoke_ledger.initial.json`); if any `gate_dev` attempt of
 `eng` or `nocomm` was made elsewhere after the merge, the two ledgers are reconciled
@@ -303,8 +278,8 @@ attempt stops the session (section 3, INCONCLUSIVE).
 
 ## 9. Stopping rules and repatriation
 
-**Stop the session (no further gate run)** on: a smoke failure outside the fallback
-trigger; a trunk mismatch before the first run; a second non-OK attempt of a run; another
+**Stop the session (no further gate run)** on: a smoke failure not covered by the
+backend rule of section 6; a trunk mismatch before the first run; a second non-OK attempt of a run; another
 GPU compute process outside the trainer's process tree, before or during a run, or a
 failed `nvidia-smi` query (contamination, fail closed; the run is killed); a GPU Xid /
 ECC error or a host reset (the operator sends TERM to the lane, which kills the trainer
@@ -348,7 +323,7 @@ appended to the addendum by a results PR, as for B3.
 ## 10. What this annex does not change
 
 The gate itself (arms, condition, preset, 10M pair-steps, training levels, measure,
-threshold 0.20, consequences G3, exploratory status G4; the failure handling of G2 is hardened as stated in TBD-8); every N10-C
+threshold 0.20, exploratory status G4; G3 does not apply to the pilot (D2); the failure handling of G2 is hardened as stated in D8); every N10-C
 file, tag, manifest, run or host; the N10-C-bis hypotheses, arms, cells, seeds and host
 of the confirmatory campaign (KXKM-AI). The freeze of this annex is the merge on green
 CI before the first gate run; an annotated tag is optional for an exploratory gate and is
