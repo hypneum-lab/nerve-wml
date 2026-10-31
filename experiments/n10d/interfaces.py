@@ -5,7 +5,8 @@ only sees these Protocols, so the choice does not change the analysis.
 """
 from __future__ import annotations
 
-from typing import Any, Protocol, Sequence
+from collections.abc import Sequence
+from typing import Any, Protocol
 
 from .spec import Arm, TaskSpec
 
