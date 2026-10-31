@@ -28,4 +28,4 @@ tag.
 | `tools/procgen-aarch64/requirements-aarch64-cp312.lock` | `b49aba5ae95cb2ce825a7118bcbcea7eb68f9db627b1abae1b3aef98064ebea1` |
 
 Tag: `n10c-bis-g7-gb300-freeze-20261031` (annotated, on the commit that adds this frozen
-manifest) · merge commit: `8d9c125d353569aba77f07c5cabb9fee298dbff3` · SWHID (revision): pending Software Heritage.
+manifest) · merge commit: `8d9c125d353569aba77f07c5cabb9fee298dbff3` · SWHID (revision): `swh:1:rev:44364dc9820056d808a5a88c9e454bce10c91484` (snapshot `swh:1:snp:5bf2fb338cb42fd4596971937ca1eccb3d79b948`, save requested 2026-10-31T21:58:23Z, succeeded) · tag object `d92b22ffccda0f58a9ccc20704f517af10e91bfd`, tagger date 2026-10-31T22:58:21+01:00 · manifest SHA-256 at the tag `ee27539e8a034a2726deaf36e4ab70e25125dd0e1dd2b6b11dcecaae73549204`.
