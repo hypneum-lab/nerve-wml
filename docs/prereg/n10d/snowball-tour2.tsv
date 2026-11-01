@@ -1,0 +1,292 @@
+source	direction	id	annee	titre	premier_auteur	source_api
+arXiv:1912.05676	amont	DOI:10.1002/0471667196.ess2588.pub3	2019	Stochastic games	T. Ferguson	s2
+arXiv:1912.05676	amont	arXiv:1903.05168	2019	On the Pitfalls of Measuring Emergent Communication	Ryan Lowe	s2
+arXiv:1912.05676	amont	arXiv:1903.00742	2019	Autocurricula and the Emergence of Innovation from Social Interaction: A Manifesto for Multi-Agent Intelligence Research	J. Leibo	s2
+arXiv:1912.05676	amont	arXiv:1810.11187	2018	TarMAC: Targeted Multi-Agent Communication	Abhishek Das	s2
+arXiv:1912.05676	amont	arXiv:1810.08647	2018	Intrinsic Social Motivation via Causal Influence in Multi-Agent RL	Natasha Jaques	s2
+arXiv:1912.05676	amont	arXiv:1804.03980	2018	Emergent Communication through Negotiation	Kris Cao	s2
+arXiv:1912.05676	amont	arXiv:1804.03984	2018	Emergence of Linguistic Communication from Referential Games with Symbolic and Pixel Input	Angeliki Lazaridou	s2
+arXiv:1912.05676	amont	arXiv:1802.01561	2018	IMPALA: Scalable Distributed Deep-RL with Importance Weighted Actor-Learner Architectures	L. Espeholt	s2
+arXiv:1912.05676	amont	arXiv:1710.03748	2017	Emergent Complexity via Multi-Agent Competition	Trapit Bansal	s2
+arXiv:1912.05676	amont	arXiv:1706.02275	2017	Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments	Ryan Lowe	s2
+arXiv:1912.05676	amont	arXiv:1706.08502	2017	Natural Language Does Not Emerge ‘Naturally’ in Multi-Agent Dialog	S. Kottur	s2
+arXiv:1912.05676	amont	arXiv:1705.08926	2017	Counterfactual Multi-Agent Policy Gradients	Jakob N. Foerster	s2
+arXiv:1912.05676	amont	arXiv:1703.04908	2017	Emergence of Grounded Compositional Language in Multi-Agent Populations	Igor Mordatch	s2
+arXiv:1912.05676	amont	arXiv:1702.03037	2017	Multi-agent Reinforcement Learning in Sequential Social Dilemmas	J. Leibo	s2
+arXiv:1912.05676	amont	DOI:10.15781/T23T9DB7H	2016	Cooperation and communication in multiagent deep reinforcement learning	Matthew J. Hausknecht	s2
+arXiv:1912.05676	amont	arXiv:1605.07736	2016	Learning Multiagent Communication with Backpropagation	Sainbayar Sukhbaatar	s2
+arXiv:1912.05676	amont	arXiv:1605.06676	2016	Learning to Communicate with Deep Multi-Agent Reinforcement Learning	Jakob N. Foerster	s2
+arXiv:1912.05676	amont	arXiv:1602.01783	2016	Asynchronous Methods for Deep Reinforcement Learning	Volodymyr Mnih	s2
+arXiv:1912.05676	amont	arXiv:1412.6980	2014	Adam: A Method for Stochastic Optimization	Diederik P. Kingma	s2
+arXiv:1912.05676	amont	DOI:10.1609/aaai.v26i1.8380	2012	Coordinated Multi-Robot Exploration Under Communication Constraints Using Decentralized Markov Decision Processes	Laëtitia Matignon	s2
+arXiv:1912.05676	amont	arXiv:1207.3231	2012	An Overview of Recent Progress in the Study of Distributed Multi-Agent Coordination	Yong-Can Cao	s2
+arXiv:1912.05676	amont	DOI:10.1017/S0269888912000057	2012	Independent reinforcement learners in cooperative Markov games: a survey regarding coordination problems	Laëtitia Matignon	s2
+arXiv:1912.05676	amont	DOI:10.3233/KES-2010-0206	2011	The world of independent learners is not markovian	G. Laurent	s2
+arXiv:1912.05676	amont	S2:b9764ed9cf14b439235987dfe65d35bb6ce406ef	2004	Dynamic Programming for Partially Observable Stochastic Games	E. Hansen	s2
+arXiv:1912.05676	amont	DOI:10.1016/S1364-6613(03)00129-3	2003	Evolving grounded communication for robots.	Luc Steels	s2
+arXiv:1912.05676	amont	DOI:10.1177/10597123030111003	2003	Progress in the Simulation of Emergent Communication and Language	K. Wagner	s2
+arXiv:1912.05676	amont	arXiv:1301.3836	2000	The Complexity of Decentralized Control of Markov Decision Processes	D. Bernstein	s2
+arXiv:1912.05676	amont	S2:9d94165d22ae17b7d933dafffabb16ad2b8e147a	2000	An Algorithm for Distributed Reinforcement Learning in Cooperative Multi-Agent Systems	M. Lauer	s2
+arXiv:1912.05676	amont	S2:38d35d5581e58dca4e9458501e65c1f85ca754d5	1998	The Dynamics of Reinforcement Learning in Cooperative Multiagent Systems	C. Claus	s2
+arXiv:1912.05676	amont	DOI:10.1016/b978-1-55860-307-3.50049-6	1997	Multi-Agent Reinforcement Learning: Independent versus Cooperative Agents	Ming Tan	s2
+arXiv:1912.05676	amont	DOI:10.1145/267658.267738	1997	RoboCup: The Robot World Cup Initiative	E. Osawa	s2
+arXiv:1912.05676	amont	DOI:10.1016/b978-1-55860-335-6.50027-1	1994	Markov Games as a Framework for Multi-Agent Reinforcement Learning	Michael L. Littman	s2
+arXiv:1912.05676	amont	DOI:10.1007/BF00630629	1992	Paul Grice and the philosophy of language	S. Neale	s2
+arXiv:1912.05676	amont	S2:?	2018	Human-level performance in ﬁrst-person multiplayer games with population-based deep reinforcement learning		s2
+arXiv:1912.05676	amont	S2:?	2017	Open sourcing Sonnet - a new library for constructing neural networks. https: //deepmind.com/blog/open-sourcing-sonnet/, 2017		s2
+arXiv:1912.05676	amont	S2:?	2012	Lecture 6a: Overview of mini–batch gradient descent		s2
+arXiv:1912.05676	amont	DOI:10.1007/978-94-009-2727-8_2	1968	Utterer’s Meaning, Sentence-Meaning, and Word-Meaning	H. Grice	s2
+arXiv:1912.05676	amont	S2:?		All conﬁdence intervals shown		s2
+arXiv:1912.05676	aval	arXiv:2610.37849	2026	Detecting Covert Collusion between AI Agents through Partner-Outsider Positive Listening	Kevin Denamganaï	s2
+arXiv:1912.05676	aval	DOI:10.1016/j.neucom.2026.135272	2026	Beyond latent codes: Decodable reference interfaces for robust multi-agent communication	Xue-Yang Yao	s2
+arXiv:1912.05676	aval	arXiv:2609.34373	2026	Emergence, Not Bandwidth: Physical Coupling and the Limits of Learned Multi-Agent Communication	Mihir Chauhan	s2
+arXiv:1912.05676	aval	arXiv:2609.31192	2026	Learning a non-linguistic code for inferred rules from reward	C. Capone	s2
+arXiv:1912.05676	aval	DOI:10.1007/s10458-026-09762-8	2026	Consensus from Ambiguity: Language Emergence in Guessing Games	Ajin George Joseph	s2
+arXiv:1912.05676	aval	arXiv:2604.09521	2026	Semantic Rate-Distortion for Bounded Multi-Agent Communication: Capacity-Derived Semantic Spaces and the Communication Cost of Alignment	A. Nixon	s2
+arXiv:1912.05676	aval	arXiv:2602.13255	2026	DPBench: Structural Determinants of Multi-Agent LLM Coordination Under Simultaneous Resource Contention	Najmul Hasan	s2
+arXiv:1912.05676	aval	arXiv:2512.08743	2025	Single-Agent Scaling Fails Multi-Agent Intelligence: Towards Foundation Models with Native Multi-Agent Intelligence	Shu-Yue Hu	s2
+arXiv:1912.05676	aval	arXiv:2511.19562	2025	Trust-Based Social Learning for Communication (TSLEC) Protocol Evolution in Multi-Agent Reinforcement Learning	Abraham Itzhak Weinberg	s2
+arXiv:1912.05676	aval	DOI:10.1109/ASMA67812.2025.11553070	2025	DCPO: A Model for Dynamic Collaborative Path Planning with Learnable Credit Assignment	Yan Tang	s2
+arXiv:1912.05676	aval	arXiv:2511.09710	2025	Echoing: Identity Failures when LLM Agents Talk to Each Other	Sarath Shekkizhar	s2
+arXiv:1912.05676	aval	arXiv:2511.02687	2025	The Collaboration Gap	Tim R. Davidson	s2
+arXiv:1912.05676	aval	arXiv:2511.01554	2025	Learning what to say and how precisely: Efficient Communication via Differentiable Discrete Communication Learning	Aditya Kapoor	s2
+arXiv:1912.05676	aval	DOI:10.1109/TSMC.2025.3604230	2025	Communication in Multiagent Reinforcement Learning via Counterfactual Message Value	Zi-Hong Gao	s2
+arXiv:1912.05676	aval	arXiv:2510.18407	2025	Heterogeneous Adversarial Play in Interactive Environments	Manjie Xu	s2
+arXiv:1912.05676	aval	DOI:10.1109/ICCVW69036.2025.00676	2025	Collaborative Multimodal Agent Networks: Dynamic Specialization and Emergent Communication for Complex Scene Understanding	Prasanth Yadla	s2
+arXiv:1912.05676	aval	arXiv:2510.02669	2025	AutoMaAS: Self-Evolving Multi-Agent Architecture Search for Large Language Models	Bo Ma	s2
+arXiv:1912.05676	aval	arXiv:2508.20195	2025	AI-AI Esthetic Collaboration with Explicit Semiotic Awareness and Emergent Grammar Development	N. Moldovan	s2
+arXiv:1912.05676	aval	arXiv:2507.09495	2025	GenAI-based Multi-Agent Reinforcement Learning towards Distributed Agent Intelligence: A Generative-RL Agent Perspective	Hang Wang	s2
+arXiv:1912.05676	aval	arXiv:2507.07074	2025	Graph-Based Complexity Metrics for Multi-Agent Curriculum Learning: A Validated Approach to Task Ordering in Cooperative Coordination Environments	Farhaan Ebadulla	s2
+arXiv:1912.05676	aval	arXiv:2507.10566	2025	AI Mother Tongue: Self-Emergent Communication in MARL via Endogenous Symbol Systems	Hung-Ming Liu	s2
+arXiv:1912.05676	aval	DOI:10.1162/opmi_a_00188	2025	Towards Human-Like Emergent Communication via Utility, Informativeness, and Complexity	Mycal Tucker	s2
+arXiv:1912.05676	aval	arXiv:2503.04940	2025	VQEL: Enabling Self-Play in Emergent Language Games via Agent Internal Vector Quantization	Mahdi Samiei	s2
+arXiv:1912.05676	aval	arXiv:2502.03845	2025	PAGNet: Pluggable Adaptive Generative Networks for Information Completion in Multi-Agent Communication	Zhuohui Zhang	s2
+arXiv:1912.05676	aval	DOI:10.1007/s00521-024-10530-6	2025	Learning in public goods games: the effects of uncertainty and communication on cooperation	Nicole Orzan	s2
+arXiv:1912.05676	aval	arXiv:2409.20120	2024	PACE: Procedural Abstractions for Communicating Efficiently	Jonathan D. Thomas	s2
+arXiv:1912.05676	aval	arXiv:2408.07397	2024	Bridging Training and Execution via Dynamic Directed Graph-Based Communication in Cooperative Multi-Agent Systems	Zhuohui Zhang	s2
+arXiv:1912.05676	aval	arXiv:2407.03302	2024	A Review of the Applications of Deep Learning-Based Emergent Communication	Brendon Boldt	s2
+arXiv:1912.05676	aval	DOI:10.1109/LRA.2024.3410159	2024	Limited Information Aggregation for Collaborative Driving in Multi-Agent Autonomous Vehicles	Qingyi Liang	s2
+arXiv:1912.05676	aval	arXiv:2401.03504	2024	ClusterComm: Discrete Communication in Decentralized MARL using Internal Representation Clustering	Robert Müller	s2
+arXiv:1912.05676	aval	DOI:10.1371/journal.pone.0295748	2023	Accelerating language emergence by functional pressures	Kasun Vithanage	s2
+arXiv:1912.05676	aval	DOI:10.1109/SSCI52147.2023.10372029	2023	A Definition and a Test for Human-Level Artificial Intelligence	Deokgun Park	s2
+arXiv:1912.05676	aval	DOI:10.1109/LNET.2023.3285295	2023	Cooperative Navigation via Relational Graphs and State Abstraction	Salwa Mostafa	s2
+arXiv:1912.05676	aval	arXiv:2308.02541	2023	Toward More Human-Like AI Communication: A Review of Emergent Communication Research	Nicolo' Brandizzi	s2
+arXiv:1912.05676	aval	arXiv:2307.01403	2023	Learning Multi-Agent Communication with Contrastive Learning	Y. Lo	s2
+arXiv:1912.05676	aval	arXiv:2306.15837	2023	Symbol emergence as interpersonal cross-situational learning: the emergence of lexical knowledge with combinatoriality	Y. Hagiwara	s2
+arXiv:1912.05676	aval	arXiv:2306.03830	2023	Inductive Bias for Emergent Communication in a Continuous Setting	John Isak Fjellvang Villanger	s2
+arXiv:1912.05676	aval	arXiv:2305.05116	2023	Communication-robust multi-agent learning by adaptable auxiliary multi-agent adversary generation	Lei Yuan	s2
+arXiv:1912.05676	aval	arXiv:2302.14276	2023	On the Role of Emergent Communication for Social Learning in Multi-Agent Reinforcement Learning	Seth Karten	s2
+arXiv:1912.05676	aval	arXiv:2302.09605	2023	Efficient Communication via Self-Supervised Information Aggregation for Online and Offline Multiagent Reinforcement Learning	Cong Guan	s2
+arXiv:1912.05676	aval	arXiv:2302.09368	2023	Natural Language-conditioned Reinforcement Learning with Inside-out Task Language Development and Translation	Jing-Cheng Pang	s2
+arXiv:1912.05676	aval	arXiv:2302.08084	2023	Learning Multi-Object Positional Relationships via Emergent Communication	Yicheng Feng	s2
+arXiv:1912.05676	aval	arXiv:2212.00115	2022	Towards True Lossless Sparse Communication in Multi-Agent Systems	Seth Karten	s2
+arXiv:1912.05676	aval	arXiv:2211.01480	2022	Over-communicate no more: Situated RL agents learn concise communication protocols	A. Kalinowska	s2
+arXiv:1912.05676	aval	arXiv:2209.10958	2022	Developing, evaluating and scaling learning agents in multi-agent environments	I. Gemp	s2
+arXiv:1912.05676	aval	arXiv:2207.00088	2022	Towards Human-Agent Communication via the Information Bottleneck Principle	Mycal Tucker	s2
+arXiv:1912.05676	aval	DOI:10.1609/aaai.v36i8.20887	2022	Multi-Agent Reinforcement Learning with General Utilities via Decentralized Shadow Reward Actor-Critic	Jun-Yu Zhang	s2
+arXiv:1912.05676	aval	arXiv:2206.11302	2022	Recommendations for Systematic Research on Emergent Language	Brendon Boldt	s2
+arXiv:1912.05676	aval	arXiv:2205.12392	2022	Emergent communication through Metropolis-Hastings naming game with deep generative models	T. Taniguchi	s2
+arXiv:1912.05676	aval	arXiv:2205.12381	2022	First Contact: Unsupervised Human-Machine Co-Adaptation via Mutual Information Maximization	S. Reddy	s2
+arXiv:1912.05676	aval	arXiv:2205.15027	2022	Symbol Emergence as Inter-personal Categorization with Head-to-head Latent Word	Kazuma Furukawa	s2
+arXiv:1912.05676	aval	arXiv:2203.08975	2022	A survey of multi-agent deep reinforcement learning with communication	Chang-Xi Zhu	s2
+arXiv:1912.05676	aval	arXiv:2203.03344	2022	Learning to Ground Decentralized Multi-Agent Communication with Contrastive Learning	Y. Lo	s2
+arXiv:1912.05676	aval	arXiv:2111.14210	2021	Emergent Graphical Conventions in a Visual Communication Game	Shuwen Qiu	s2
+arXiv:1912.05676	aval	arXiv:2111.11129	2021	Multi-lingual agents through multi-headed neural networks	Jonathan D. Thomas	s2
+arXiv:1912.05676	aval	arXiv:2111.02827	2021	Towards Learning to Speak and Hear Through Multi-Agent Communication over a Continuous Acoustic Channel	Kevin Eloff	s2
+arXiv:1912.05676	aval	DOI:10.1109/IEEECONF53345.2021.9723192	2021	Randomized Linear Programming for Tabular Average-Cost Multi-agent Reinforcement Learning	Alec Koppel	s2
+arXiv:1912.05676	aval	arXiv:2110.15349	2021	Learning to Ground Multi-Agent Communication with Autoencoders	Toru Lin	s2
+arXiv:1912.05676	aval	arXiv:2110.12929	2021	Convergence Rates of Average-Reward Multi-agent Reinforcement Learning via Randomized Linear Programming	Alec Koppel	s2
+arXiv:1912.05676	aval	arXiv:2110.13621	2021	Model-based Reinforcement Learning for Service Mesh Fault Resiliency in a Web Application-level	Fanfei Meng	s2
+arXiv:1912.05676	aval	arXiv:2108.01828	2021	Emergent Discrete Communication in Semantic Spaces	Mycal Tucker	s2
+arXiv:1912.05676	aval	arXiv:2106.11156	2021	Multi-Agent Curricula and Emergent Implicit Signaling	Niko A. Grupen	s2
+arXiv:1912.05676	aval	arXiv:2106.00543	2021	MARL with General Utilities via Decentralized Shadow Reward Actor-Critic	Jun-Yu Zhang	s2
+arXiv:1912.05676	aval	DOI:10.1007/s10462-021-09996-w	2021	Multi-agent deep reinforcement learning: a survey	Sven Gronauer	s2
+arXiv:1912.05676	aval	arXiv:2103.08067	2021	Quasi-Equivalence Discovery for Zero-Shot Emergent Communication	Kalesha Bullard	s2
+arXiv:1912.05676	aval	arXiv:2103.02150	2021	Inference-Based Deterministic Messaging For Multi-Agent Communication	Varun Bhatt	s2
+arXiv:1912.05676	aval	arXiv:2101.10276	2021	Emergent Communication under Competition	Michael Noukhovitch	s2
+arXiv:1912.05676	aval	DOI:10.31234/osf.io/mcv5b	2021	Expression unleashed: The evolutionary and cognitive foundations of human communication	Wiktor Rorot	s2
+arXiv:1912.05676	aval	arXiv:2012.08630	2020	Open Problems in Cooperative AI	Allan Dafoe	s2
+arXiv:1912.05676	aval	arXiv:2011.09410	2020	A Definition and a Test for Human-Level Artificial Intelligence	Deokgun Park	s2
+arXiv:1912.05676	aval	arXiv:2010.15896	2020	Exploring Zero-Shot Emergent Communication in Embodied Multi-Agent Populations	Kalesha Bullard	s2
+arXiv:1912.05676	aval	arXiv:2010.10380	2020	Negotiating team formation using deep reinforcement learning	Yoram Bachrach	s2
+arXiv:1912.05676	aval	arXiv:2010.04872	2020	Self-play for Data Efficient Language Acquisition	Charles Lovering	s2
+arXiv:1912.05676	aval	arXiv:2010.01192	2020	Correcting Experience Replay for Multi-Agent Communication	S. Ahilan	s2
+arXiv:1912.05676	aval	arXiv:2009.05940	2020	Pow-Wow: A Dataset and Study on Collaborative Communication in Pommerman	Takuma Yoneda	s2
+arXiv:1912.05676	aval	arXiv:2009.01810	2020	SEDRo: A Simulated Environment for Developmental Robotics	Aishwarya Pothula	s2
+arXiv:1912.05676	aval	DOI:10.1162/isal_a_00328	2020	Effects of Supervision, Population Size, and Self-Play on Multi-Agent Reinforcement Learning to Communicate	M. Dubova	s2
+arXiv:1912.05676	aval	arXiv:2006.02419	2020	Emergent Multi-Agent Communication in the Deep Learning Era	Angeliki Lazaridou	s2
+arXiv:1912.05676	aval	arXiv:2002.09604	2020	Emergent Communication with World Models	A. I. Cowen-Rivers	s2
+arXiv:1912.05676	aval	arXiv:1912.02368	2019	Inter-Level Cooperation in Hierarchical Reinforcement Learning	Abdul Rahman Kreidieh	s2
+arXiv:1912.05676	aval	DOI:10.1109/TON.2025.3644923	2026	CPID-MAAC: RL for Joint User Association and Trajectory Control in UAV-Assisted MEC Systems	Zheng-Wei Gao	s2
+arXiv:1912.05676	aval	S2:1d59ea907344ddd37cecebf3d466e882ee01a8f0	2024	An Inductive Bias for Emergent Communication in a Continuous Setting	John Isak Fjellvang Villanger	s2
+arXiv:1912.05676	aval	S2:acca7ffeb9e1ff5f4604ec859b00cf852b4532c1	2023	Studying the joint role of partial observability and channel reliability in emergent communication	Valentin Villecroze	s2
+arXiv:1912.05676	aval	DOI:10.18653/v1/2023.findings-acl.491	2023	Multi-Agent Language Learning: Symbolic Mapping	Yicheng Feng	s2
+arXiv:1912.05676	aval	S2:250d98df407a8345066389a8b59afc2c5d5ae490	2022	Understanding Redundancy in Discrete Multi-Agent Communication	Jonathan D. Thomas	s2
+arXiv:1912.05676	aval	S2:df827e86453f41edf5c7500d321cb5c0f0a0b56d	2022	On the Pitfalls of Visual Learning in Referential Games	Shresth Verma	s2
+arXiv:1912.05676	aval	S2:b8089cce7ab740c03daff13af6f9c2d62b004df7	2022	Intent-Grounded Compositional Communication through Mutual Information in Multi-Agent Teams	Seth Karten	s2
+arXiv:1912.05676	aval	DOI:10.52202/068431-0075	2022	Efficient Multi-agent Communication via Self-supervised Information Aggregation	Cong Guan	s2
+arXiv:1912.05676	aval	DOI:10.52202/068431-1614	2022	Trading off Utility, Informativeness, and Complexity in Emergent Communication	Mycal Tucker	s2
+arXiv:1912.05676	aval	S2:f6ee73a9f201c3c5e56d27501fe5d9dd043aa36e	2022	Generalization and Translatability in Emergent Communication via Informational Constraints	Mycal Tucker	s2
+arXiv:1912.05676	aval	S2:da1149d20e57edb87d316aa23863fdfa91ebd7ed	2021	Curriculum-Driven Multi-Agent Learning and the Role of Implicit Communication in Teamwork	Niko A. Grupen	s2
+arXiv:1912.05676	aval	S2:3412eb39c9b7657474fcc74746734ffb0be47ae1	2021	Learning to Improve Representations by Communicating About Perspectives	Julius Taylor	s2
+arXiv:1912.05676	aval	S2:4a27db2008c8ddda347946a22d1ee74372e24149	2021	A Definition and a Test for Human-Level Artificial Intelligence	Deokgun Park	s2
+arXiv:1912.05676	aval	DOI:10.22648/ETRI.2020.J.350614	2020	A Survey on Recent Advances in Multi-Agent Reinforcement Learning	Yoo Byunghyun	s2
+arXiv:1912.05676	aval	S2:aca7186acffd01eaccf9eecb26997f68661bda82		Interpretable Multi-Agent Communication via Information Gating	Stav Belogolovsky	s2
+arXiv:2607.26773	amont	arXiv:2605.30653	2026	Counterfactual Graph for Multi-Agent LLM Calibration	Jia-Tan Huang	s2
+arXiv:2607.26773	amont	arXiv:2604.13349	2026	When Less Latent Leads to Better Relay: Information-Preserving Compression for Latent Multi-Agent LLM Collaboration	Yiping Li	s2
+arXiv:2607.26773	amont	arXiv:2412.06769	2024	Training Large Language Models to Reason in a Continuous Latent Space	Shibo Hao	s2
+arXiv:2607.26773	amont	arXiv:2310.06272	2023	Let Models Speak Ciphers: Multiagent Debate through Embeddings	Chau Pham	s2
+arXiv:2607.26773	amont	arXiv:2309.16042	2023	Towards Best Practices of Activation Patching in Language Models: Metrics and Methods	Fred Zhang	s2
+arXiv:2607.26773	amont	arXiv:2305.20050	2023	Let's Verify Step by Step	H. Lightman	s2
+arXiv:2607.26773	amont	arXiv:2202.05262	2022	Locating and Editing Factual Associations in GPT	Kevin Meng	s2
+arXiv:2607.26773	amont	arXiv:2110.14168	2021	Training Verifiers to Solve Math Word Problems	K. Cobbe	s2
+arXiv:2607.26773	amont	arXiv:1910.06222	2019	Understanding the Limitations of Variational Mutual Information Estimators	Jiaming Song	s2
+arXiv:2607.26773	amont	arXiv:1905.06922	2019	On Variational Bounds of Mutual Information	B. Poole	s2
+arXiv:2607.26773	amont	arXiv:1903.05168	2019	On the Pitfalls of Measuring Emergent Communication	Ryan Lowe	s2
+arXiv:2607.26773	amont	S2:e0121c1d2dc5c8cc77f4b1570e28f2443ece2a8f	2018	Social Influence as Intrinsic Motivation for Multi-Agent Deep Reinforcement Learning	Natasha Jaques	s2
+arXiv:2607.26773	amont	arXiv:1811.04251	2018	Formal Limitations on the Measurement of Mutual Information	D. McAllester	s2
+arXiv:2607.26773	amont	arXiv:1803.05457	2018	Think you have Solved Question Answering? Try ARC, the AI2 Reasoning Challenge	Peter Clark	s2
+arXiv:2607.26773	amont	arXiv:1612.07182	2016	Multi-Agent Cooperation and the Emergence of (Natural) Language	Angeliki Lazaridou	s2
+arXiv:2607.26773	amont	S2:700d686df3f438f5682c64f11fce57c571be722a	2026	DroidSpeak: KV Cache Sharing Across Fine-tuned Model Variants	Yu-Han Liu	s2
+arXiv:2607.26773	amont	S2:78d08b8ab4132defffe98ec7f80a51452203f70d	2020	Investigating Gender Bias in Language Models Using Causal Mediation Analysis	J. Vig	s2
+arXiv:2607.26773	amont	DOI:10.5822/978-1-61091-908-1_4	2018	New Orleans, Louisiana, USA	Stefan Al	s2
+arXiv:2607.26773	amont	S2:?		2026. Beyond Tokens: A Unified Framework for Latent Communication in LLM-based Multi-Agent Systems		s2
+arXiv:2607.26773	amont	S2:?		Methods in Natural Language		s2
+arXiv:2607.26773	amont	S2:?		2025. Cache-to-Cache: Direct Semantic Communication between Large Language Models		s2
+arXiv:2607.26773	amont	S2:?		2025. To-wards Faithful Natural Language Explanations: A Study Using Activation Patching in Large Language Models		s2
+arXiv:2607.26773	aval	arXiv:2610.28905	2026	Hidden Messages Between Diffusion Language Model Agents: Causal Evidence for Latent Communication	A. Gazzaev	s2
+arXiv:2607.26773	aval	arXiv:2610.35930	2026	Who Convinced Whom? Tracing How LLMs Change Their Minds in Multi-Agent Systems	Arnesh Batra	s2
+arXiv:2607.26773	aval	arXiv:2610.22026	2026	Augment the Cache, Replace the Activation: A 2x2 Study of Internal-State Sharing	Adam Deng	s2
+arXiv:2607.26773	aval	arXiv:2610.33020	2026	Mine or Yours? Mind-Bridged Language Models Take Each Other's Memories as Their Own	Yun Xu	s2
+arXiv:2607.26773	aval	arXiv:2609.34444	2026	Social Circuits behind Multi-agent Echo Chambers	Chui-Yang Meng	s2
+arXiv:2607.26773	aval	arXiv:2609.11365	2026	Portable Semantics, Private Dialects: Reuse and Negative Transfer in Latent Communication Between Language-Model Cells	Narcis Marincat	s2
+arXiv:2607.26773	aval	arXiv:2609.07474	2026	Where Should Language Sit in a Multimodal Model? Lessons from What Language Does to Human Perception and Cognition	Peng Xie	s2
+arXiv:2607.26773	aval	arXiv:2608.20054	2026	What You Can't See Is What You Learn: Slot-Selective Evidence Masking Favors Compositional Generalization in Shared-Genome Language-Model Societies	Narcis Marincat	s2
+arXiv:2607.26773	aval	arXiv:2608.04893	2026	When Does Latent Communication Pay? A Causal Audit of Relayed KV Caches in Multi-Agent LLMs	Jiaming Cheng	s2
+arXiv:2607.26773	aval	arXiv:2602.15382	2026	Vision Wormhole: Latent-Space Communication in Heterogeneous Multi-Agent Systems	Xiaoze Liu	s2
+arXiv:2607.26773	aval	S2:fef9e06c339145fa37ce5a4a785a833f335af84a		What You Can’t See Is What You Learn: Restricted Evidence Visibility Favors Compositional Generalization in Shared-Genome Language-Model Societies	Narcis Marincat	s2
+arXiv:2608.04893	amont	arXiv:2607.26773	2026	Do Latent Channels Actually Communicate? A Causal Audit of Latent Multi-Agent LLM	Hui-Xiang Zhang	s2
+arXiv:2608.04893	amont	arXiv:2607.11250	2026	Do Multi-Agent LLMs Explore Each Other?	Hyeong Kyu Choi	s2
+arXiv:2608.04893	amont	arXiv:2606.28958	2026	When Latent Agents Lie: KV-Cache Integrity in Multi-Agent LLM Collaboration	Luís Brito	s2
+arXiv:2608.04893	amont	arXiv:2606.13594	2026	See What I See, Know What I Think: Dense Latent Communication Across Heterogeneous Agents	Si-Yi Chen	s2
+arXiv:2608.04893	amont	arXiv:2606.13945	2026	LatentDx: Latent Multi-Agent Communication for Cross-Hospital Rare-Disease Diagnosis	Zi-Qing Wang	s2
+arXiv:2608.04893	amont	arXiv:2606.05711	2026	Beyond tokens: a unified framework for latent communication in LLM-based multi-agent systems	Ying-Zhu Liu	s2
+arXiv:2608.04893	amont	arXiv:2606.03280	2026	A Negative Result on Cross-Model Activation Transfer in a Pythia Multi-Hop Setting	Pei-Yan Zhang	s2
+arXiv:2608.04893	amont	arXiv:2605.28214	2026	Out of Sight, Not Out of Mind: Unveiling Latent Attack in Latent-based Multi-Agent Systems	Chen-Xi Wang	s2
+arXiv:2608.04893	amont	arXiv:2605.25421	2026	HyLaT: Efficient Multi-Agent Communication via Hybrid Latent-Text Protocol	Xinyi Mou	s2
+arXiv:2608.04893	amont	arXiv:2605.22786	2026	LCGuard: Latent Communication Guard for Safe KV Sharing in Multi-Agent Systems	Sadia Asif	s2
+arXiv:2608.04893	amont	arXiv:2605.09649	2026	Make Each Token Count: Towards Improving Long-Context Performance with KV Cache Eviction	Ngoc Bui	s2
+arXiv:2608.04893	amont	arXiv:2605.08840	2026	ReST-KV: Robust KV Cache Eviction with Layer-wise Output Reconstruction and Spatial-Temporal Smoothing	Yongqi An	s2
+arXiv:2608.04893	amont	arXiv:2605.03884	2026	QKVShare: Quantized KV-Cache Handoff for Multi-Agent On-Device LLMs	Pratik Honavar	s2
+arXiv:2608.04893	amont	arXiv:2604.21794	2026	Learning to Communicate: Toward End-to-End Optimization of Multi-Agent Language Systems	Ye Yu	s2
+arXiv:2608.04893	amont	arXiv:2604.13349	2026	When Less Latent Leads to Better Relay: Information-Preserving Compression for Latent Multi-Agent LLM Collaboration	Yiping Li	s2
+arXiv:2608.04893	amont	arXiv:2604.03809	2026	Representational Collapse in Multi-Agent LLM Committees: Measurement and Diversity-Aware Consensus	Dipkumar Patel	s2
+arXiv:2608.04893	amont	arXiv:2602.15382	2026	Vision Wormhole: Latent-Space Communication in Heterogeneous Multi-Agent Systems	Xiaoze Liu	s2
+arXiv:2608.04893	amont	arXiv:2602.11583	2026	The Five Ws of Multi-Agent Communication: Who Talks to Whom, When, What, and Why - A Survey from MARL to Emergent Language and LLMs	Jing-Di Chen	s2
+arXiv:2608.04893	amont	arXiv:2602.03036	2026	LatentMem: Customizing Latent Memory for Multi-Agent Systems	Muxin Fu	s2
+arXiv:2608.04893	amont	arXiv:2602.03695	2026	Agent Primitives: Reusable Latent Building Blocks for Multi-Agent Systems	Hai-Bo Jin	s2
+arXiv:2608.04893	amont	arXiv:2511.20639	2025	Latent Collaboration in Multi-Agent Systems	Jiaru Zou	s2
+arXiv:2608.04893	amont	arXiv:2511.09149	2025	Enabling Agents to Communicate Entirely in Latent Space	Zhuo-Yun Du	s2
+arXiv:2608.04893	amont	arXiv:2510.20733	2025	Thought Communication in Multiagent Collaboration	Yu-Jian Zheng	s2
+arXiv:2608.04893	amont	arXiv:2510.03215	2025	Cache-to-Cache: Direct Semantic Communication Between Large Language Models	Tianyu Fu	s2
+arXiv:2608.04893	amont	arXiv:2510.03346	2025	KVComm: Enabling Efficient LLM Communication through Selective KV Sharing	Xiangyu Shi	s2
+arXiv:2608.04893	amont	arXiv:2506.06609	2025	Transferring Linear Features Across Language Models With Model Stitching	Alan Chen	s2
+arXiv:2608.04893	amont	arXiv:2505.09388	2025	Qwen3 Technical Report	An Yang	s2
+arXiv:2608.04893	amont	arXiv:2503.04429	2025	Activation Space Interventions Can Be Transferred Between Large Language Models	N. Oozeer	s2
+arXiv:2608.04893	amont	arXiv:2501.14082	2025	Communicating Activations Between Language Model Agents	Vignav Ramesh	s2
+arXiv:2608.04893	amont	arXiv:2412.08905	2024	Phi-4 Technical Report	M. Abdin	s2
+arXiv:2608.04893	amont	arXiv:2412.06769	2024	Training Large Language Models to Reason in a Continuous Latent Space	Shibo Hao	s2
+arXiv:2608.04893	amont	arXiv:2406.18665	2024	RouteLLM: Learning to Route LLMs with Preference Data	Isaac Ong	s2
+arXiv:2608.04893	amont	arXiv:2406.04692	2024	Mixture-of-Agents Enhances Large Language Model Capabilities	Junlin Wang	s2
+arXiv:2608.04893	amont	arXiv:2309.16042	2023	Towards Best Practices of Activation Patching in Language Models: Metrics and Methods	Fred Zhang	s2
+arXiv:2608.04893	amont	arXiv:2306.02561	2023	LLM-Blender: Ensembling Large Language Models with Pairwise Ranking and Generative Fusion	Dongfu Jiang	s2
+arXiv:2608.04893	amont	arXiv:2305.14325	2023	Improving Factuality and Reasoning in Language Models through Multiagent Debate	Yilun Du	s2
+arXiv:2608.04893	amont	arXiv:2305.05176	2023	FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance	Lingjiao Chen	s2
+arXiv:2608.04893	amont	arXiv:2211.00593	2022	Interpretability in the Wild: a Circuit for Indirect Object Identification in GPT-2 small	Kevin Wang	s2
+arXiv:2608.04893	amont	arXiv:2203.11171	2022	Self-Consistency Improves Chain of Thought Reasoning in Language Models	Xue-Zhi Wang	s2
+arXiv:2608.04893	amont	arXiv:2202.05262	2022	Locating and Editing Factual Associations in GPT	Kevin Meng	s2
+arXiv:2608.04893	amont	arXiv:2110.14168	2021	Training Verifiers to Solve Math Word Problems	K. Cobbe	s2
+arXiv:2608.04893	amont	arXiv:2106.02997	2021	Causal Abstractions of Neural Networks	Atticus Geiger	s2
+arXiv:2608.04893	amont	arXiv:2009.13081	2020	What Disease does this Patient Have? A Large-scale Open Domain Question Answering Dataset from Medical Exams	Di Jin	s2
+arXiv:2608.04893	amont	arXiv:1803.05457	2018	Think you have Solved Question Answering? Try ARC, the AI2 Reasoning Challenge	Peter Clark	s2
+arXiv:2608.04893	amont	arXiv:1703.04908	2017	Emergence of Grounded Compositional Language in Multi-Agent Populations	Igor Mordatch	s2
+arXiv:2608.04893	amont	arXiv:1612.07182	2016	Multi-Agent Cooperation and the Emergence of (Natural) Language	Angeliki Lazaridou	s2
+arXiv:2608.04893	amont	arXiv:1605.07736	2016	Learning Multiagent Communication with Backpropagation	Sainbayar Sukhbaatar	s2
+arXiv:2608.04893	amont	arXiv:1605.06676	2016	Learning to Communicate with Deep Multi-Agent Reinforcement Learning	Jakob N. Foerster	s2
+arXiv:2608.04893	amont	DOI:10.1007/BF01068419	1987	A comparison of the Two One-Sided Tests Procedure and the Power Approach for assessing the equivalence of average bioavailability	D. Schuirmann	s2
+arXiv:2608.04893	amont	S2:?	2017	Equivalence tests: A practical primer for t tests, correlations, and meta-analyses		s2
+arXiv:2608.04893	amont	S2:?	1987	Ohio Supercomputer Center		s2
+arXiv:2608.04893	amont	DOI:10.2307/4615733	1979	A Simple Sequentially Rejective Multiple Test Procedure	S. Holm	s2
+arXiv:2608.04893	amont	S2:?		When Does Latent Communication Pay? A P REPRINT		s2
+arXiv:2608.04893	aval	arXiv:2610.27813	2026	LatBridge: Efficient and Stable Model Replacement in Latent-Communication Multi-Agent Systems	Jia-Jun Zhu	s2
+arXiv:2608.04893	aval	arXiv:2610.28905	2026	Hidden Messages Between Diffusion Language Model Agents: Causal Evidence for Latent Communication	A. Gazzaev	s2
+arXiv:2608.04893	aval	arXiv:2610.33020	2026	Mine or Yours? Mind-Bridged Language Models Take Each Other's Memories as Their Own	Yun Xu	s2
+arXiv:2608.04893	aval	arXiv:2609.11365	2026	Portable Semantics, Private Dialects: Reuse and Negative Transfer in Latent Communication Between Language-Model Cells	Narcis Marincat	s2
+arXiv:2608.04893	aval	arXiv:2608.20054	2026	What You Can't See Is What You Learn: Slot-Selective Evidence Masking Favors Compositional Generalization in Shared-Genome Language-Model Societies	Narcis Marincat	s2
+arXiv:2608.04893	aval	arXiv:2608.15939	2026	Aborted but Not Forgotten: KV-Cache Retention Breaks Rollback Consistency in Language Agents	Gui-Jia Zhang	s2
+arXiv:2608.04893	aval	arXiv:2602.15382	2026	Vision Wormhole: Latent-Space Communication in Heterogeneous Multi-Agent Systems	Xiaoze Liu	s2
+arXiv:2608.04893	aval	S2:fef9e06c339145fa37ce5a4a785a833f335af84a		What You Can’t See Is What You Learn: Restricted Evidence Visibility Favors Compositional Generalization in Shared-Genome Language-Model Societies	Narcis Marincat	s2
+arXiv:2609.34373	amont	arXiv:2602.02035	2026	Bandwidth-Efficient Multi-Agent Communication through Information Bottleneck and Vector Quantization	Ahmad Farooq	s2
+arXiv:2609.34373	amont	arXiv:2511.01554	2025	Learning what to say and how precisely: Efficient Communication via Differentiable Discrete Communication Learning	Aditya Kapoor	s2
+arXiv:2609.34373	amont	arXiv:2508.02912	2025	Communicating Plans, Not Percepts: Scalable Multi-Agent Coordination with Embodied World Models	Brennen A. Hill	s2
+arXiv:2609.34373	amont	arXiv:2410.13341	2024	Limits to scalable evaluation at the frontier: LLM as Judge won't beat twice the data	Florian E. Dorner	s2
+arXiv:2609.34373	amont	arXiv:2204.05669	2022	An Analysis of Discretization Methods for Communication Learning with Multi-Agent Reinforcement Learning	Astrid Vanneste	s2
+arXiv:2609.34373	amont	arXiv:2110.15349	2021	Learning to Ground Multi-Agent Communication with Autoencoders	Toru Lin	s2
+arXiv:2609.34373	amont	arXiv:2108.13264	2021	Deep Reinforcement Learning at the Edge of the Statistical Precipice	Rishabh Agarwal	s2
+arXiv:2609.34373	amont	arXiv:1912.05676	2019	Biases for Emergent Communication in Multi-agent Reinforcement Learning	Tom Eccles	s2
+arXiv:2609.34373	amont	arXiv:1911.06992	2019	Learning Efficient Multi-agent Communication: An Information Bottleneck Approach	R. Wang	s2
+arXiv:2609.34373	amont	arXiv:1905.12561	2019	Anti-efficient encoding in emergent communication	R. Chaabouni	s2
+arXiv:2609.34373	amont	arXiv:1903.05168	2019	On the Pitfalls of Measuring Emergent Communication	Ryan Lowe	s2
+arXiv:2609.34373	amont	arXiv:1711.00937	2017	Neural Discrete Representation Learning	A. van den Oord	s2
+arXiv:2609.34373	amont	arXiv:1707.06347	2017	Proximal Policy Optimization Algorithms	John D. Schulman	s2
+arXiv:2609.34373	amont	arXiv:1706.08502	2017	Natural Language Does Not Emerge ‘Naturally’ in Multi-Agent Dialog	S. Kottur	s2
+arXiv:2609.34373	amont	arXiv:1605.06676	2016	Learning to Communicate with Deep Multi-Agent Reinforcement Learning	Jakob N. Foerster	s2
+arXiv:2609.34373	amont	DOI:10.1109/IROS.2012.6386109	2012	MuJoCo: A physics engine for model-based control	E. Todorov	s2
+arXiv:2609.34373	amont	arXiv:1209.1695	2012	Decentralized Stochastic Control with Partial History Sharing: A Common Information Approach	Ashutosh Nayyar	s2
+arXiv:2609.34373	amont	S2:?		Partially coupled (bimanual, blind)		s2
+arXiv:2610.28905	amont	arXiv:2608.04893	2026	When Does Latent Communication Pay? A Causal Audit of Relayed KV Caches in Multi-Agent LLMs	Jiaming Cheng	s2
+arXiv:2610.28905	amont	arXiv:2607.26773	2026	Do Latent Channels Actually Communicate? A Causal Audit of Latent Multi-Agent LLM	Hui-Xiang Zhang	s2
+arXiv:2610.28905	amont	arXiv:2606.16281	2026	Who Should Lead Decoding Now? Tracking Reliable Trajectories for Ensembling Masked Diffusion Language Models	Heecheol Yun	s2
+arXiv:2610.28905	amont	arXiv:2605.22967	2026	Learned Relay Representations for Forward-Thinking Discrete Diffusion Models	Benjamin Rozonoyer	s2
+arXiv:2610.28905	amont	arXiv:2603.09184	2026	Latent-DARM: Bridging Discrete Diffusion And Autoregressive Models For Reasoning	Lina Berrayana	s2
+arXiv:2610.28905	amont	arXiv:2603.01331	2026	MetaState: Persistent Working Memory Enhances Reasoning in Discrete Diffusion Language Models	Kejing Xia	s2
+arXiv:2610.28905	amont	arXiv:2602.22661	2026	dLLM: Simple Diffusion Language Modeling	Zhanhui Zhou	s2
+arXiv:2610.28905	amont	arXiv:2511.20639	2025	Latent Collaboration in Multi-Agent Systems	Jiaru Zou	s2
+arXiv:2610.28905	amont	arXiv:2511.09149	2025	Enabling Agents to Communicate Entirely in Latent Space	Zhuo-Yun Du	s2
+arXiv:2610.28905	amont	arXiv:2508.15487	2025	Dream 7B: Diffusion Large Language Models	Jiacheng Ye	s2
+arXiv:2610.28905	amont	arXiv:2502.09992	2025	Large Language Diffusion Models	Shen Nie	s2
+arXiv:2610.28905	amont	arXiv:2406.07524	2024	Simple and Effective Masked Diffusion Language Models	S. Sahoo	s2
+arXiv:2610.28905	amont	arXiv:2205.14217	2022	Diffusion-LM Improves Controllable Text Generation	Xiang Lisa Li	s2
+arXiv:2610.28905	amont	arXiv:1910.11473	2019	QASC: A Dataset for Question Answering via Sentence Composition	Tushar Khot	s2
+arXiv:2610.37849	amont	arXiv:2610.18727	2026	On the Monitorability of Natural Language Autoencoders: Identification vs Discrimination	Kevin Denamganaï	s2
+arXiv:2610.37849	amont	arXiv:2606.09931	2026	A Note on the Strategic Confinement Problem	C. D. de Witt	s2
+arXiv:2610.37849	amont	arXiv:2604.01151	2026	Detecting Multi-Agent Collusion Through Multi-Agent Interpretability	A. Rose	s2
+arXiv:2610.37849	amont	arXiv:2602.23163	2026	A Decision-Theoretic Formalisation of Steganography With Applications to LLM Monitoring	Usman Anwar	s2
+arXiv:2610.37849	amont	arXiv:2602.15198	2026	Colosseum: Auditing Collusion in Cooperative Multi-Agent Systems	Mason Nakamura	s2
+arXiv:2610.37849	amont	arXiv:2507.01413	2025	Evaluating LLM Agent Collusion in Double Auctions	Kushal Agrawal	s2
+arXiv:2610.37849	amont	arXiv:2504.10374	2025	Ctrl-Z: Controlling AI Agents via Resampling	Aryan Bhatt	s2
+arXiv:2610.37849	amont	arXiv:2410.03768	2024	Hidden in Plain Text: Emergence & Mitigation of Steganographic Collusion in LLMs	Yohan Mathew	s2
+arXiv:2610.37849	amont	arXiv:2404.00806	2024	Algorithmic Collusion by Large Language Models	Sara Fish	s2
+arXiv:2610.37849	amont	arXiv:2402.07510	2024	Secret Collusion among AI Agents: Multi-Agent Deception via Steganography	Mikhail Baranchuk	s2
+arXiv:2610.37849	amont	arXiv:2401.10360	2024	Excuse me, sir? Your language model is leaking (information)	Or Zamir	s2
+arXiv:2610.37849	amont	arXiv:2310.18512	2023	Preventing Language Models From Hiding Their Reasoning	Fabien Roger	s2
+arXiv:2610.37849	amont	arXiv:2210.14889	2022	Perfectly Secure Steganography Using Minimum Entropy Coupling	C. S. D. Witt	s2
+arXiv:2610.37849	amont	DOI:10.1145/3460120.3484550	2021	Meteor: Cryptographically Secure Steganography for Realistic Distributions	Gabriel Kaptchuk	s2
+arXiv:2610.37849	amont	arXiv:2012.09486	2020	ReferentialGym: A Nomenclature and Framework for Language Emergence & Grounding in (Visual) Referential Games	Kevin Denamganaï	s2
+arXiv:2610.37849	amont	arXiv:2006.02419	2020	Emergent Multi-Agent Communication in the Deep Learning Era	Angeliki Lazaridou	s2
+arXiv:2610.37849	amont	arXiv:2003.12694	2020	Countering Language Drift with Seeded Iterated Learning	Yuchen Lu	s2
+arXiv:2610.37849	amont	arXiv:2003.02979	2020	Other-Play for Zero-Shot Coordination	Heng-Yuan Hu	s2
+arXiv:2610.37849	amont	arXiv:1912.05676	2019	Biases for Emergent Communication in Multi-agent Reinforcement Learning	Tom Eccles	s2
+arXiv:2610.37849	amont	arXiv:1909.01496	2019	Neural Linguistic Steganography	Zachary M. Ziegler	s2
+arXiv:2610.37849	amont	arXiv:1909.04499	2019	Countering Language Drift via Visual Grounding	Jason Lee	s2
+arXiv:2610.37849	amont	arXiv:1903.05168	2019	On the Pitfalls of Measuring Emergent Communication	Ryan Lowe	s2
+arXiv:2610.37849	amont	S2:e0121c1d2dc5c8cc77f4b1570e28f2443ece2a8f	2018	Social Influence as Intrinsic Motivation for Multi-Agent Deep Reinforcement Learning	Natasha Jaques	s2
+arXiv:2610.37849	amont	arXiv:1612.07182	2016	Multi-Agent Cooperation and the Emergence of (Natural) Language	Angeliki Lazaridou	s2
+arXiv:2610.37849	amont	arXiv:1605.06676	2016	Learning to Communicate with Deep Multi-Agent Reinforcement Learning	Jakob N. Foerster	s2
+arXiv:2610.37849	amont	DOI:10.1016/j.ic.2004.02.003	1998	An information-theoretic model for steganography	C. Cachin	s2
+arXiv:2610.37849	amont	S2:76b411ae47ec3b766ed8a62796e7b3d68bc4ccdf	2022	Information theoretic approach to detect collusion in multi-agent games	Trevor Bonjour	s2
+arXiv:2610.37849	amont	DOI:10.1007/978-1-4684-4730-9_5	1983	The Prisoners' Problem and the Subliminal Channel	G. J. Simmons	s2
+arXiv:2610.37849	amont	S2:?		Q3 Does that zero gap mean that the outsider ignores the messages? Hypothesis 2 also predicts that, where the speaker states an intention in plain words		s2
+arXiv:2610.37849	amont	S2:?		Q2 Does PoPLi stay at zero without a code, whether the agents do not collude, collude through a joint reward or collude openly? Hypothesis 2 predicts a gap that includes zero in every such market. 2		s2
+arXiv:2610.37849	amont	S2:?		A Limitations and dual use		s2
+arXiv:2610.37849	amont	S2:?		an offline-replay protocol that runs this test on logged multi-agent runs by editing logged prompts, without restoring any agent state (Section 3.2)		s2

@@ -1,0 +1,956 @@
+source	direction	id	annee	titre	premier_auteur	source_api
+arXiv:1903.05168	amont	CorpusId:67856566	2019	Understanding Agent Incentives using Causal Influence Diagrams. Part I: Single Action Settings	Tom Everitt	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1811.01458	2018	Bayesian Action Decoder for Deep Multi-Agent Reinforcement Learning	Jakob N. Foerster	semantic_scholar_batch
+arXiv:1903.05168	amont	CorpusId:60440666	2018	Social Influence as Intrinsic Motivation for Multi-Agent Deep Reinforcement Learning	Natasha Jaques	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1810.08647	2018	Intrinsic Social Motivation via Causal Influence in Multi-Agent RL	Natasha Jaques	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1809.00549	2018	Emergence of Communication in an Interactive World with Consistent Speakers	Ben Bogin	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1002/9781118887486.ch3	2018	Principal Components Analysis	Stu Daultrey	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1145/3306618.3314268	2018	Learning Existing Social Conventions via Observationally Augmented Self-Play	A. Lerer	semantic_scholar_batch
+arXiv:1903.05168	amont	CorpusId:169351942	2018	Learning Social Conventions in Markov Games	A. Lerer	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1804.02341	2018	Compositional Obverter Communication Learning From Raw Visual Input	E. Choi	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1804.03980	2018	Emergent Communication through Negotiation	Kris Cao	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1804.03984	2018	Emergence of Linguistic Communication from Referential Games with Symbolic and Pixel Input	Angeliki Lazaridou	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.5909/jbe.2024.29.4.399	2017	Self-supervised Monocular Depth Estimation with Multiple Resolution Images	A. Paszke	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1706.03741	2017	Deep Reinforcement Learning from Human Preferences	Paul F. Christiano	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1706.08502	2017	Natural Language Does Not Emerge ‘Naturally’ in Multi-Agent Dialog	S. Kottur	semantic_scholar_batch
+arXiv:1903.05168	amont	CorpusId:3706001	2017	Emergent Communication in a Multi-Modal, Multi-Step Referential Game	Katrina Evtimova	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1704.06960	2017	Translating Neuralese	Jacob Andreas	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1703.06585	2017	Learning Cooperative Visual Dialog Agents with Deep Reinforcement Learning	Abhishek Das	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1703.04908	2017	Emergence of Grounded Compositional Language in Multi-Agent Populations	Igor Mordatch	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1705.11192	2017	Emergence of Language with Multi-agent Games: Learning to Communicate with Sequences of Symbols	Serhii Havrylov	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1612.07182	2016	Multi-Agent Cooperation and the Emergence of (Natural) Language	Angeliki Lazaridou	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1611.05397	2016	Reinforcement Learning with Unsupervised Auxiliary Tasks	M. Jaderberg	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1610.03585	2016	A Paradigm for Situated and Goal-Driven Language Learning	Jon Gauthier	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1610.01644	2016	Understanding intermediate layers using linear classifier probes	Guillaume Alain	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1605.07736	2016	Learning Multiagent Communication with Backpropagation	Sainbayar Sukhbaatar	semantic_scholar_batch
+arXiv:1903.05168	amont	CorpusId:148322624	2016	Causal Inference in Statistics: A Primer	J. Pearl	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1602.02672	2016	Learning to Communicate to Solve Riddles with Deep Distributed Recurrent Q-Networks	Jakob N. Foerster	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1602.01783	2016	Asynchronous Methods for Deep Reinforcement Learning	Volodymyr Mnih	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1502.05477	2015	Trust Region Policy Optimization	John D. Schulman	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1412.6980	2014	Adam: A Method for Stochastic Optimization	Diederik P. Kingma	semantic_scholar_batch
+arXiv:1903.05168	amont	arXiv:1312.6199	2013	Intriguing properties of neural networks	C. Szegedy	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1007/s11229-009-9477-0	2007	Evolutionary dynamics of Lewis signaling games: signaling systems vs. partial pooling	Simon M. Huttegger	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1177/10597123030111003	2003	Progress in the Simulation of Emergent Communication and Language	K. Wagner	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1006/JTBI.2001.2406	2001	Costly signaling and cooperation.	H. Gintis	semantic_scholar_batch
+arXiv:1903.05168	amont	CorpusId:1211821	1999	Policy Gradient Methods for Reinforcement Learning with Function Approximation	R. Sutton	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1177/1043463195007001004	1995	Conversation and Cooperation in Social Dilemmas	David F. Sally	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1016/b978-1-55860-335-6.50027-1	1994	Markov Games as a Framework for Multi-Agent Reinforcement Learning	Michael L. Littman	semantic_scholar_batch
+arXiv:1903.05168	amont	CorpusId:13259913	1993	The Mathematics of Statistical Machine Translation: Parameter Estimation	P. Brown	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1016/S0003-3472(05)80161-7	1991	Honest signalling: the Philip Sidney game	J. Smith	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.4135/9781412985475	1989	Principal Components Analysis	G. Dunteman	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1001/JAMA.1984.03350080015006	1984	Evolution of language.	William H. Strange	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1016/0022-5193(75)90111-3	1975	Mate selection-a selection for a handicap.	A. Zahavi	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1016/0304-4068(74)90037-8	1974	Subjectivity and Correlation in Randomized Strategies	R. Aumann	semantic_scholar_batch
+arXiv:1903.05168	amont	CorpusId:10319744	2018	GENERATIVE ADVERSARIAL NETS	Individualized Treat	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1142/s2425038416300184	2017	Deep learning	Xing-Bang Hao	semantic_scholar_batch
+arXiv:1903.05168	amont		2017	Emergent translation inmulti-agent communication		semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1057/9780230226203.0222	2005	Cheap Talk	Vijay Krishna	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1023/A:1022672621406	2004	Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning	Ronald J. Williams	semantic_scholar_batch
+arXiv:1903.05168	amont	DOI:10.1080/09540099108946587	1991	Function Optimization using Connectionist Reinforcement Learning Algorithms	Ronald J. Williams	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2610.37849	2026	Detecting Covert Collusion between AI Agents through Partner-Outsider Positive Listening	Kevin Denamganaï	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2610.18727	2026	On the Monitorability of Natural Language Autoencoders: Identification vs Discrimination	Kevin Denamganaï	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2610.17409	2026	Position: Beyond Training Time, Test-Time Coordination is Essential for Cooperative MARL	Dong-Su Lee	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2610.14449	2026	Jevolution: A Framework for Studying Communication and Collective Dynamics in AI Agents	Xi-Ru Huang	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2610.15163	2026	Sanzaru: Benchmarking Protocol Formation under Epistemic&Communication Asymmetry	Yi-Ping Li	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2610.05041	2026	Communication Shapes Collective Inference in Self-Adapting LLM Societies: Evidence from Mafia	Hao-Nan Huang	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1016/j.neucom.2026.135272	2026	Beyond latent codes: Decodable reference interfaces for robust multi-agent communication	Xue-Yang Yao	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2609.34373	2026	Emergence, Not Bandwidth: Physical Coupling and the Limits of Learned Multi-Agent Communication	Mihir Chauhan	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2609.34444	2026	Social Circuits behind Multi-agent Echo Chambers	Chui-Yang Meng	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2609.32701	2026	Despite Instructions: Frontier Agents Improvise Covert Channels at Test Time	Jacob Dineen	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2609.31192	2026	Learning a non-linguistic code for inferred rules from reward	C. Capone	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2609.28581	2026	Auditability Is Not One Property: Rule Overlap, Behavioural Agreement, and Composition in Reinforcement Learning	Hung-Ming Liu	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2608.22055	2026	GenCoord: Executable Commitments for Embodied LLM Agents under Private Information	Jun-Ning Zhu	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.3389/fcomp.2026.1873726	2026	Dissociating communicative success from representational alignment in common ground formation	Taiki Yamamoto	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2607.26773	2026	Do Latent Channels Actually Communicate? A Causal Audit of Latent Multi-Agent LLM	Hui-Xiang Zhang	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.3390/technologies14070432	2026	In Pursuit of the Emergence Point: Extracting Phase Transitions in Multi-Agent Communication	A. Chernyavskiy	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2607.00233	2026	From Signals to Structure: How Memory Architecture Drives Language Emergence in LLM Agents	Yashar Talebirad	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1613/jair.1.17302	2026	Deep Learning Agents and the Emergence of Compositional Languages: Approaches, Inductive Biases and Measurement	Nicholas Bailey	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2604.07821	2026	More Capable, Less Cooperative? When LLMs Fail At Zero-Cost Collaboration	Advait Yadav	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2604.08728	2026	Wireless Communication Enhanced Value Decomposition for Multi-Agent Reinforcement Learning	Di-Yi Hu	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2602.17737	2026	NestRL: A Nested Training Regime for Mutual Adaptation in Human-AI Teaming	Upasana Biswas	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2601.17454	2026	Does Centralized Learning Help Embodied Agents Coordinate, and When Can a Tabular Study Tell?	M. Atif	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2510.06274	2025	Bridging Reasoning to Learning: Unmasking Illusions using Complexity Out of Distribution Generalization	Mohammad Mahdi Samiei Paqaleh	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2508.18725	2025	Toward Edge General Intelligence With Agentic AI and Agentification: Concepts, Technologies, and Future Directions	Rui-Chen Zhang	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2508.06659	2025	In-Context Reinforcement Learning via Communicative World Models	Fernando Martinez-Lopez	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2506.05236	2025	Towards Language-Augmented Multi-Agent Deep Reinforcement Learning	Maxime Toquebiau	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2506.02739	2025	Why do AI agents communicate in human language?	Pengcheng Zhou	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2505.21985	2025	Reward-Independent Messaging for Decentralized Multi-Agent Reinforcement Learning	Naoto Yoshida	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1002/ana.27229	2025	AI in Neurology: Everything, Everywhere, all at Once PART 2: Speech, Sentience, Scruples, and Service	Matthew Rizzo	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2504.03353	2025	Decentralized Collective World Model for Emergent Communication and Coordination	Kentarou Nomura	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2503.15516	2025	In Pursuit of Predictive Models of Human Preferences Toward AI Teammates	Ho-Chit Siu	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1098/rsta.2024.0148	2025	Signalling and social learning in swarms of robots	L. Cazenille	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1007/s00521-024-10530-6	2025	Learning in public goods games: the effects of uncertainty and communication on cooperation	Nicole Orzan	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1007/s00521-024-10598-0	2025	Learning to communicate using a communication critic and counterfactual reasoning	Simon Vanneste	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1145/3708320	2024	Adversarial Machine Learning Attacks and Defences in Multi-Agent Reinforcement Learning	Maxwell Standen	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2411.10173	2024	Semantics and Spatiality of Emergent Communication	Rotem Ben Zion	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2407.03302	2024	A Review of the Applications of Deep Learning-Based Emergent Communication	Brendon Boldt	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2403.17497	2024	Sharing the Cost of Success: A Game for Evaluating and Learning Collaborative Multi-Agent Instruction Giving and Following Policies	Philipp Sadler	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2402.16247	2024	Learning Translations: Emergent Communication Pretraining for Cooperative Language Acquisition	Dylan Cope	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2402.04824	2024	Learning Communication Policies for Different Follower Behaviors in a Collaborative Reference Game	Philipp Sadler	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2401.15840	2024	Emergent Explainability: Adding a causal chain to neural network inference	Adam Perrett	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2401.15059	2024	Fully Independent Communication in Multi-Agent Reinforcement Learning	Rafael Pina	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1109/JAS.2023.123807	2024	Orientation and Decision-Making for Soccer Based on Sports Analytics and AI: A Systematic Review	Zhi-Qiang Pu	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2312.10256	2023	Multi-agent Reinforcement Learning: A Comprehensive Survey	Dom Huh	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2310.15597	2023	Emergent Communication in Interactive Sketch Question Answering	Zi-Xing Lei	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2310.02435	2023	Multi-Agent Reinforcement Learning Based on Representational Communication for Large-Scale Traffic Signal Control	Rohit Bokade	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2309.06021	2023	Emergent Communication in Multi-Agent Reinforcement Learning for Future Wireless Networks	Marwa Chafii	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2308.04938	2023	An in-depth analysis of discretization methods for communication learning using backpropagation with multi-agent reinforcement learning	Astrid Vanneste	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2308.04844	2023	Scalability of Message Encoding Techniques for Continuous Communication Learned with Multi-Agent Reinforcement Learning	Astrid Vanneste	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2308.02541	2023	Toward More Human-Like AI Communication: A Review of Emergent Communication Research	Nicolo' Brandizzi	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2307.00973	2023	Digital Twin-Empowered Communications: A New Frontier of Wireless Networks	Lina Bariah	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2306.11336	2023	Cooperative Multi-Agent Learning for Navigation via Structured State Abstraction	Mohamed K. Abdel-Aziz	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2306.03830	2023	Inductive Bias for Emergent Communication in a Continuous Setting	John Isak Fjellvang Villanger	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2306.01920	2023	Context-Aware Bayesian Network Actor-Critic Methods for Cooperative Multi-Agent Reinforcement Learning	Dingyang Chen	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2305.12235	2023	Joining the Conversation: Towards Language Acquisition for Ad Hoc Team Play	Dylan Cope	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2305.10920	2023	Emergent Communication with Attention	Ryokan Ri	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2305.08481	2023	Task-Oriented Communication Design at Scale	Arsham Mostaani	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2305.05116	2023	Communication-robust multi-agent learning by adaptable auxiliary multi-agent adversary generation	Lei Yuan	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2305.02632	2023	A framework for the emergence and analysis of language in social learning agents	T. J. Wieczorek	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2302.01605	2023	Learning Zero-Shot Cooperation with Humans, Assuming Humans Are Biased	Chao Yu	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2301.01628	2023	Task-Effective Compression of Observations for the Centralized Control of a Multiagent System Over Bit-Budgeted Channels	Arsham Mostaani	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.3390/s22249584	2022	Decentralized Policy Coordination in Mobile Sensing with Consensual Communication	Bolei Zhang	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1162/tacl_a_00524	2022	The Emergence of Argument Structure in Artificial Languages	T. Bosc	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2211.01480	2022	Over-communicate no more: Situated RL agents learn concise communication protocols	A. Kalinowska	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2208.05414	2022	Diversifying Message Aggregation in Multi-Agent Communication Via Normalized Tensor Nuclear Norm Regularization	Yuan-Zhao Zhai	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2206.07505	2022	Revisiting Some Common Practices in Cooperative Multi-Agent Reinforcement Learning	Wei Fu	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2204.05669	2022	An Analysis of Discretization Methods for Communication Learning with Multi-Agent Reinforcement Learning	Astrid Vanneste	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2203.08975	2022	A survey of multi-agent deep reinforcement learning with communication	Chang-Xi Zhu	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1016/j.arcontrol.2022.03.003	2022	The role of information structures in game-theoretic multi-agent learning	Tao Li	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2202.03634	2022	Multi-Agent Path Finding with Prioritized Communication Learning	Wen-Hao Li	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1075/is.21020.kor	2021	Interaction history as a source of compositionality in emergent communication	Tomasz Korbak	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2111.11129	2021	Multi-lingual agents through multi-headed neural networks	Jonathan D. Thomas	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2111.01785	2021	PatchGame: Learning to Signal Mid-level Patches in Referential Games	Kamal Gupta	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2110.15349	2021	Learning to Ground Multi-Agent Communication with Autoencoders	Toru Lin	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2110.14241	2021	Dynamic population-based meta-learning for multi-agent communication with natural language	Abhinav Gupta	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2110.08203	2021	Shared Visual Representations of Drawing for Communication: How do different biases affect human interpretability and intent?	Daniela Mihai	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2110.05769	2021	Interpretation of Emergent Communication in Heterogeneous Collaborative Embodied Agents	Shivansh Patel	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2109.09390	2021	Socially Supervised Representation Learning: The Role of Subjectivity in Learning Efficient Representations	Julius Taylor	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2107.07630	2021	Evaluation of Human-AI Teams for Learned and Rule-Based Agents in Hanabi	Ho-Chit Siu	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2107.06857	2021	Scalable Evaluation of Multi-Agent Reinforcement Learning with Melting Pot	J. Leibo	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2106.15691	2021	Deep multiagent reinforcement learning: challenges and directions	Annie Wong	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2106.11156	2021	Multi-Agent Curricula and Emergent Implicit Signaling	Niko A. Grupen	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2106.05018	2021	RLupus: Cooperation through emergent communication in The Werewolf social deduction game	Nicolo' Brandizzi	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2106.02067	2021	Learning to Draw: Emergent Communication through Sketching	Daniela Mihai	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2105.12804	2021	TexRel: a Green Family of Datasets for Emergent Communications on Relations	Hugh Perkins	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2105.05069	2021	Zero-Shot Generalization using Intrinsically Motivated Compositional Emergent Protocols	Rishi Hazra	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2105.03943	2021	gComm: An environment for investigating generalization in Grounded Language Acquisition	Rishi Hazra	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2104.10508	2021	Searching with Opponent-Awareness	Timy Phan	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2104.09557	2021	Learning to Communicate with Strangers via Channel Randomisation Methods	Dylan Cope	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1007/s10462-021-09996-w	2021	Multi-agent deep reinforcement learning: a survey	Sven Gronauer	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2103.08067	2021	Quasi-Equivalence Discovery for Zero-Shot Emergent Communication	Kalesha Bullard	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2103.02150	2021	Inference-Based Deterministic Messaging For Multi-Agent Communication	Varun Bhatt	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2102.12550	2021	Learning Emergent Discrete Message Communication for Cooperative Reinforcement Learning	Sheng Li	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2102.04775	2021	Structured Diversification Emergence via Reinforced Organization Control and Hierarchical Consensus Learning	Wen-Hao Li	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2102.02304	2021	Exploiting environmental signals to enable policy correlation in large-scale decentralized systems	Panayiotis Danassis	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2101.11739	2021	"This item is a glaxefw, and this is a glaxuzb": Compositionality Through Language Transmission, using Artificial Neural Networks	Hugh Perkins	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2101.10276	2021	Emergent Communication under Competition	Michael Noukhovitch	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2101.10253	2021	The emergence of visual semantics through communication games	Daniela Mihai	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2012.09486	2020	ReferentialGym: A Nomenclature and Framework for Language Emergence & Grounding in (Visual) Referential Games	Kevin Denamganaï	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:228063917	2020	Infinite use of finite means: Zero-Shot Generalization using Compositional Emergent Protocols	Rishi Hazra	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2012.05011	2020	Intrinsically Motivated Compositional Language Emergence	Rishi Hazra	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2011.14890	2020	Low-Bandwidth Communication Emerges Naturally in Multi-Agent Learning Systems	Niko A. Grupen	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2011.03615	2020	Single and Multi-Agent Deep Reinforcement Learning for AI-Enabled Wireless Networks: A Tutorial	Amal Feriani	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2010.15896	2020	Exploring Zero-Shot Emergent Communication in Embodied Multi-Agent Populations	Kalesha Bullard	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2010.15058	2020	Measuring non-trivial compositionality in emergent communication	Tomasz Korbak	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2010.04872	2020	Self-play for Data Efficient Language Acquisition	Charles Lovering	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2010.04978	2020	Event-Triggered Multi-agent Reinforcement Learning with Communication under Limited-bandwidth Constraint	Guangzhen Hu	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2010.01192	2020	Correcting Experience Replay for Multi-Agent Communication	S. Ahilan	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1109/SCSE49731.2020.9313061	2020	Contribution of reflection in language emergence with an under-restricted situation	Kense Todo	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2009.02128	2020	Towards a Learning-Based Framework for Self-Driving Design of Networking Protocols	H. B. Pasandi	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2007.09948	2020	Toward Joint Learning of Optimal MAC Signaling and Wireless Channel Access	A. Valcarce	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:263872187	2020	Towards Joint Learning of Optimal Signaling and Wireless Channel Access	A. Valcarce	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2007.09820	2020	Reinforcement Communication Learning in Different Social Network Structures	M. Dubova	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1162/isal_a_00328	2020	Effects of Supervision, Population Size, and Self-Play on Multi-Agent Reinforcement Learning to Communicate	M. Dubova	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.18653/v1/2020.alvr-1.4	2020	On the role of effective and referring questions in GuessWhat?!	Mauricio Mazuecos	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.18653/v1/2020.alvr-1	2020	Toward General Scene Graph: Integration of Visual Semantic Knowledge with Entity Synset Alignment	Woo Suk Choi	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.18653/v1/2020.winlp-1.9	2020	Effective questions in referential visual dialogue	Mauricio Mazuecos	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2006.07200	2020	Learning to Communicate Using Counterfactual Reasoning	Simon Vanneste	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2006.04109	2020	Incorporating Pragmatic Reasoning Communication into Emergent Language	Yi-Peng Kang	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2006.02419	2020	Emergent Multi-Agent Communication in the Deep Learning Era	Angeliki Lazaridou	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2005.14220	2020	Task-Oriented Data Compression for Multi-Agent Communications Over Bit-Budgeted Channels	Arsham Mostaani	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:219124151	2020	Task-Based Information Compression for Multi-Agent Communication Problems with Channel Rate Constraints	Arsham Mostaani	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1007/978-3-030-47358-7_7	2020	Deep Multi Agent Reinforcement Learning for Autonomous Driving	Sushrut Bhalla	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2004.04722	2020	Re-conceptualising the Language Game Paradigm in the Framework of Multi-Agent Reinforcement Learning	Paul Van Eecke	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2004.01097	2020	Learning to cooperate: Emergent communication in multi-agent navigation	Ivana Kajić	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2004.02780	2020	Networked Multi-Agent Reinforcement Learning with Emergent Communication	Shubham Gupta	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2003.11922	2020	Rat big, cat eaten! Ideas for a useful deep-agent protolanguage	M. Baroni	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2003.01848	2020	On Emergent Communication in Competitive Multi-Agent Teams	P. Liang	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2002.09604	2020	Emergent Communication with World Models	A. I. Cowen-Rivers	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:2001.01772	2020	Incentivizing the Emergence of Grounded Discrete Communication Between General Agents	Thomas A. Unger	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:221749529	2020	Generalizing Emergent Communication.	Thomas A. Unger	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1912.05676	2019	Biases for Emergent Communication in Multi-agent Reinforcement Learning	Tom Eccles	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1911.06992	2019	Learning Efficient Multi-agent Communication: An Information Bottleneck Approach	R. Wang	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1911.05438	2019	Learning to Communicate in Multi-Agent Reinforcement Learning : A Review	Mohamed Salah Zaïem	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1911.04362	2019	To Populate is To Regulate	N. Fitzgerald	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1911.01098	2019	Emergence of Numeric Concepts in Multi-Agent Autonomous Communication	Shang-Min Guo	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1910.06079	2019	Developmentally motivated emergence of compositional communication via template transfer	Tomasz Korbak	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:209479370	2019	CONTRIBUTION OF INTERNAL REFLECTION IN LANGUAGE EMERGENCE WITH AN UNDER-RESTRICTED SITUATION	Kense Todo	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1909.05232	2019	On Memory Mechanism in Multi-Agent Reinforcement Learning	Yilun Zhou	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1909.04224	2019	Signal Instructed Coordination in Cooperative Multi-agent Reinforcement Learning	Li-Heng Chen	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:202542596	2019	Signal Instructed Coordination in Team Competition	Li-Heng Chen	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1908.05135	2019	Mastering emergent language: learning to guide in simulated navigation	Mathijs Mul	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1109/CIG.2019.8847943	2019	A Hierarchical Approach for MARLÖ Challenge	Linjie Xu	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1907.00852	2019	EGG: a toolkit for research on Emergence of lanGuage in Games	E. Kharitonov	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1906.02403	2019	Ease-of-Teaching and Language Structure from Emergent Communication	Fu-Shan Li	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:209480205	2019	Entropy Minimization In Emergent Languages	E. Kharitonov	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1905.13687	2019	Information Minimization In Emergent Languages	E. Kharitonov	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1905.12561	2019	Anti-efficient encoding in emergent communication	R. Chaabouni	semantic_scholar_batch
+arXiv:1903.05168	aval	arXiv:1810.05587	2018	A survey and critique of multiagent deep reinforcement learning	Pablo Hernandez-Leal	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.1109/PIMRC.2019.8904190	2018	Learning-based Physical Layer Communications for Multiagent Collaboration	Arsham Mostaani	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:267760586	2024	An Inductive Bias for Emergent Communication in a Continuous Setting	John Isak Fjellvang Villanger	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:259298530	2023	On the Word Boundaries of Emergent Languages Based on Harris's Articulation Scheme	Ryo Ueda	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:263768091	2023	Studying the joint role of partial observability and channel reliability in emergent communication	Valentin Villecroze	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:248989620	2022	A LITTLE TAXONOMY OF OPEN - ENDEDNESS	Asiiah Song	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:249061252	2022	V ARYING MEANING COMPLEXITY TO EXPLAIN AND MEASURE COMPOSITIONALITY	T. Bosc	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.18653/v1/2022.emnlp-tutorials.3	2022	Emergent Language-Based Coordination In Deep Multi-Agent Systems	M. Baroni	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:267840868	2022	On the Word Boundaries of Emergent Languages Based on Harris’s Articulation Scheme	H. Larochelle	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:232147827	2021	A Framework for Measuring Compositional Inductive Bias	Hugh Perkins	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:235490388	2021	Curriculum-Driven Multi-Agent Learning and the Role of Implicit Communication in Teamwork	Niko A. Grupen	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:235497977	2021	HexaJungle: a MARL Simulator to Study the Emergence of Language	Kiran Ikram	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:235683081	2021	Multiagent Deep Reinforcement Learning: Challenges and Directions Towards Human-Like Approaches	Annie Wong	semantic_scholar_batch
+arXiv:1903.05168	aval	DOI:10.18653/v1/2021.acl-srw.6	2021	On the Relationship between Zipf’s Law of Abbreviation and Interfering Noise in Emergent Languages	Ryo Ueda	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:237571662	2021	Learning to Improve Representations by Communicating About Perspectives	Julius Taylor	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:284352851		Emergence of linguistic universals in neural agents via artificial language learning and communication	A. Plaat	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:291320275		The 4th Workshop on Spatial Language Understanding and Grounded Communication for Robotics	Parisa Kordjamshidi	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:295003506		Multi-Agent Deep Reinforcement Learning in Robotics: Context and Open Challenges	Maxime Toquebiau	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:295114311		Multi-Agent Deep Reinforcement Learning in Robotics: Context and Open Challenges	Maxime Toquebiau	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:295259991		UvA-DARE (Digital Academic	Nicolo' Brandizzi	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:295262937		UvA-DARE (Digital Academic	Nicolo' Brandizzi	semantic_scholar_batch
+arXiv:1903.05168	aval	CorpusId:295297025		Multi-Agent Deep Reinforcement Learning in Robotics: Context and Open Challenges	Maxime Toquebiau	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1803.03453	2018	The Surprising Creativity of Digital Evolution: A Collection of Anecdotes from the Evolutionary Computation and Artificial Life Research Communities	J. Lehman	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1710.06922	2017	Emergent Translation in Multi-Agent Communication	Jason Lee	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1706.06122	2017	VAIN: Attentional Multi-agent Predictive Modeling	Yedid Hoshen	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1706.02275	2017	Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments	Ryan Lowe	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1706.08502	2017	Natural Language Does Not Emerge ‘Naturally’ in Multi-Agent Dialog	S. Kottur	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1705.08926	2017	Counterfactual Multi-Agent Policy Gradients	Jakob N. Foerster	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1007/978-3-319-71682-4_5	2017	Cooperative Multi-agent Control Using Deep Reinforcement Learning	Jayesh K. Gupta	semantic_scholar_batch
+arXiv:1812.09755	amont	CorpusId:13585854	2017	Multiagent Bidirectionally-Coordinated Nets for Learning to Play StarCraft Combat Games	Peng Peng	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1703.10069	2017	Multiagent Bidirectionally-Coordinated Nets: Emergence of Human-level Coordination in Learning to Play StarCraft Combat Games	Peng Peng	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1703.06182	2017	Deep Decentralized Multi-task Multi-Agent Reinforcement Learning under Partial Observability	Shayegan Omidshafiei	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1703.04908	2017	Emergence of Grounded Compositional Language in Multi-Agent Populations	Igor Mordatch	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1705.11192	2017	Emergence of Language with Multi-agent Games: Learning to Communicate with Sequences of Symbols	Serhii Havrylov	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1612.00222	2016	Interaction Networks for Learning about Objects, Relations and Physics	P. Battaglia	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1612.07182	2016	Multi-Agent Cooperation and the Emergence of (Natural) Language	Angeliki Lazaridou	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1609.02993	2016	Episodic Exploration for Deep Deterministic Policies: An Application to StarCraft Micromanagement Tasks	Nicolas Usunier	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1606.02447	2016	Learning Language Games through Interaction	Sida I. Wang	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1605.07736	2016	Learning Multiagent Communication with Backpropagation	Sainbayar Sukhbaatar	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1605.06676	2016	Learning to Communicate with Deep Multi-Agent Reinforcement Learning	Jakob N. Foerster	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1602.02672	2016	Learning to Communicate to Solve Riddles with Deep Distributed Recurrent Q-Networks	Jakob N. Foerster	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1038/nature16961	2016	Mastering the game of Go with deep neural networks and tree search	David Silver	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1512.03385	2015	Deep Residual Learning for Image Recognition	Kaiming He	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1038/nature14236	2015	Human-level control through deep reinforcement learning	Volodymyr Mnih	semantic_scholar_batch
+arXiv:1812.09755	amont	arXiv:1409.0473	2014	Neural Machine Translation by Jointly Learning to Align and Translate	D. Bahdanau	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1109/TCIAIG.2013.2286295	2013	A Survey of Real-Time Strategy Game AI Research and Competition in StarCraft	Santiago Ontañón	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1109/CIG.2012.6374183	2012	Applying reinforcement learning to small scale combat in the real-time strategy game StarCraft:Broodwar	S. Wender	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1017/S0269888912000057	2012	Independent reinforcement learners in cooperative Markov games: a survey regarding coordination problems	Laëtitia Matignon	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1145/1553374.1553380	2009	Curriculum learning	Yoshua Bengio	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1109/TSMCC.2007.913919	2008	A Comprehensive Survey of Multiagent Reinforcement Learning	L. Buşoniu	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1109/IROS.2007.4399095	2007	Hysteretic q-learning :an algorithm for decentralized reinforcement learning in cooperative multi-agent teams	Laetitia Matignon	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1007/s10458-005-2631-2	2005	Cooperative Multi-Agent Learning: The State of the Art	Liviu Panait	semantic_scholar_batch
+arXiv:1812.09755	amont	CorpusId:6665743	2003	All learning is Local: Multi-agent Learning in Global Reward Games	Yu-Han Chang	semantic_scholar_batch
+arXiv:1812.09755	amont	CorpusId:28535139	2000	An Algorithm for Distributed Reinforcement Learning in Cooperative Multi-Agent Systems	M. Lauer	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1162/neco.1997.9.8.1735	1997	Long Short-Term Memory	S. Hochreiter	semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1016/b978-1-55860-307-3.50049-6	1997	Multi-Agent Reinforcement Learning: Independent versus Cooperative Agents	Ming Tan	semantic_scholar_batch
+arXiv:1812.09755	amont		2012	Lecture 6.5-rmsprop: Divide the gradient by a running average of its recent magnitude. COURSERA: Neural networks for machine learning		semantic_scholar_batch
+arXiv:1812.09755	amont	DOI:10.1023/A:1022672621406	2004	Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning	Ronald J. Williams	semantic_scholar_batch
+arXiv:1812.09755	amont			We empirically show that based on the given scenario–using the gating mechanism–our model can learn when to communicate		semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2610.35282	2026	Satellite Intelligence: Distributed Training, Collaborative Inference,and LLM Adaptation in LEO Constellation	Zheng Lin	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2610.25254	2026	BatchParScale: Sparse Batch-Mixing for Sequence Models	Hans Peter Lyngsøe Raaschou-jensen	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2610.17409	2026	Position: Beyond Training Time, Test-Time Coordination is Essential for Cooperative MARL	Dong-Su Lee	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2610.10302	2026	Continual Graph Multi-Agent Reinforcement Learning	Tommaso Marzi	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2610.08155	2026	Token-Efficient Multi-Agent Collaboration via System One-Guided Computational Division of Labor	Zi-Han Zhou	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1016/j.engappai.2026.116173	2026	Priority-guided gated cooperative correction for coverage control with multiple unmanned aerial vehicles	Jia-Ming Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2610.02370	2026	Network-in-the-Loop at Scale: GPU-Batched 5G Simulation for Massively Parallel Robot Learning	Zi-Fan Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1016/j.neucom.2026.135272	2026	Beyond latent codes: Decodable reference interfaces for robust multi-agent communication	Xue-Yang Yao	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2609.37566	2026	RAVEN: Receiver-Conditioned Action-Value Encoding for Finite-Alphabet Multi-Agent Communication	Shu-Wei Sun	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2609.34136	2026	Waggle: Learning One Anonymous Local Law for Self-Organizing LLM Swarms	Ming-Xi Zou	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2609.33637	2026	Hierarchical Multi-agent Reinforcement Learning for Warehouse Robot Coordination under Communication Loss	Wei-Hao Sun	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2609.32935	2026	Communication-Aware Heterogeneous Graph Learning for Decentralized Multi-Human Multi-Robot Task Allocation	Zi-Qin Yuan	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2609.23269	2026	Latent Telepathy: Multi-Robot Communication with Self-Supervised Perceptual Latents	Howard Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.3390/drones10090687	2026	A Learnable Sparse Attention Graph Architecture for Heterogeneous Multi-UAV Air-to-Ground Mission Planning	Hao-Lun Sun	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TVT.2026.3686780	2026	Consensus-Driven Event-Based Graph Information Bottleneck for Integrated Communication and Control	Zi-Qiong Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1145/3840392	2026	Adaptive Collaboration in Multiplex UAV Networks with Dynamic Communication	Tian-Yu Zuo	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2608.00458	2026	BANDMAS: Causality-Inspired Semantic Packet Scheduling for Bandwidth-Efficient Multi-Agent Collaboration	Jiangwen Dong	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1016/j.artint.2026.104603	2026	Probing Diametric Coordination Graphs for Multi-Agent Reinforcement Learning	Mutong Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.3390/e28080919	2026	Information Bottleneck for Communication-Efficient Multi-Agent Reinforcement Learning in UAV Swarms	Zheng Yang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.3390/s26154778	2026	Don’t Fire Together: Desynchronised Communication Scheduling for Bandwidth-Limited Multi-Robot Exploration	Rong Zhao	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2607.13880	2026	Task-Oriented Sensing and Covert Transmissions for Collaborative Multi-AUV Systems	Xue-Yao Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1145/3806645.3807599	2026	FAME: A Framework for Accelerating Independent Multi-Agent Reinforcement Learning on Heterogeneous Platforms	Samuel Wiggins	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.15607/rss.2026.xxii.040	2026	Interactive Knowledge Distillation with Adaptive Teachers in Cooperative Multi-Agent Reinforcement Learning	Minwoo Cho	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1088/1361-6501/ae891d	2026	HiRiSC: hierarchical risk-shaped coordination with sparse hypergraph communication for congested multi-agent path finding	Guihai Shen	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2607.08504	2026	Early to Share, Late to Save: Synchronisation-Driven Communication Gating in Bandwidth-Constrained Cooperative VLN	Arav Gupta	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2607.03473	2026	MUTE: Return-Preserving Communication Unlearning for Efficient Multi-Agent Coordination	Rui Zuo	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1016/j.neucom.2026.133642	2026	Efficient multi-agent policy learning using knowledge distillation of large language models	Liqiang Tian	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TVT.2026.3666220	2026	Model-Based Decentralized Joint Optimization of Resource Allocation, Phase Shift, and UAV Trajectory for Energy-Efficient RIS Assisted UAV-MEC Systems	Liang-Shun Wu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/ICUFN69619.2026.11628618	2026	Communication-Aware Adaptive Decentralized Traffic Signal Control via Broadcast gate	Min-Jun Choi	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2606.29126	2026	HiComm: Hierarchical Communication for Multi-agent Reinforcement Learning	Run-Ze Zhao	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2606.20962	2026	Heterogeneous Policy Networks for Composite Robot Team Communication and Coordination	Esmaeil Seraj	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1117/12.3094021	2026	Information driven reward shaping for improved reinforcement learning in distributed edge-tasks	Prithviraj Dasgupta	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2606.07200	2026	Learning Multi-Agent Communication Protocol: Study on Information Entropy Efficiency in MARL	Xinren Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1145/3817113	2026	Scaling Up Multi-Agent Reinforcement Learning for Large Agent Teams and Long-Horizon Tasks: A Survey	Minghong Geng	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2606.01828	2026	Dynamic Trust-Aware Sparse Communication Topology for LLM-Based Multi-Agent Consensus	Wanshuang Gou	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.3390/s26113413	2026	Sparse Communication for Policy Shaping in Multi-Agent Reinforcement Learning	Jia-Hao Li	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2605.27532	2026	SCALE-COMM: Shared, Contrastively-Aligned Latent Embeddings for MARL Communication	Mahmoud Abouelyazid	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.65109/OAYF2008	2026	Grounded Communication Policies in Heterogeneous Agent Reinforcement Learning	Aju Ani Justus	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.65109/BMST1644	2026	Graph-Conditioned Diffusion for Offline Multi-Agent Reinforcement Learning	Luis Pimentel	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.65109/TAYO7266	2026	Why and Whom to Communicate? A Dual-Objective, Cost-Benefit Framework for Multi-Agent Communication	Yi-Yu Lin	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2606.11249	2026	MASK: Multi-Agent Semantic K-Scheduling for Risk-Sensitive 6G Robotics	Ahmet Günhan Aydın	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2608.14559	2026	When to Communicate: Belief Distributions and KL Divergence for Principled Gating in Multi-Agent RL	Teoman Kaman	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2605.23027	2026	PIMbot: A Self-Adaptive Attack Framework for Adversarial Manipulation of Multi-Robot Reinforcement Learning	Zexin Li	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2605.21085	2026	Decoupling Communication from Policy: Robust MARL under Bandwidth Constraints	Alexi Canesse	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2605.18077	2026	LLM-Guided Communication for Cooperative Multi-Agent Reinforcement Learning	S. Bae	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2605.13170	2026	Finding the Weakest Link: Adversarial Attack against Multi-Agent Communications	Maxwell Standen	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TVT.2025.3627237	2026	Towards Communication Efficient Multi-Agent Cooperations: Reinforcement Learning and LLM	Yang Su	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2604.16518	2026	On-Orbit Space AI: Federated, Multi-Agent, and Collaborative Algorithms for Satellite Constellations	Zi-Yang Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s12652-026-05076-5	2026	Boosting multi-agent reinforcement learning with pruned prioritized experience replay and collaborative learning. Case study: intrusion detection system	F. Louati	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TKDE.2026.3658366	2026	Communication Learning in Multi-Agent Systems From Graph Modeling Perspective	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2603.17564	2026	In Trust We Survive: Emergent Trust Learning	Qian Chen	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2603.20285	2026	AgentComm-Bench: Stress-Testing Cooperative Embodied AI Under Latency, Packet Loss, and Bandwidth Collapse	Aayam Bansal	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2603.20279	2026	Learning Communication Between Heterogeneous Agents in Multi-Agent Reinforcement Learning for Autonomous Cyber Defence	A. Popa	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1609/aaai.v40i35.40185	2026	GRDC: A Unified Graph-Driven Framework for Role Discovery and Communication in Multi-Agent Reinforcement Learning	Zi-Hong Gao	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2603.11802	2026	A Semi-Decentralized Approach to Multiagent Control	M. Al-Husseini	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2603.20238	2026	Joint Trajectory, RIS, and Computation Offloading Optimization via Decentralized Model-Based PPO in Urban Multi-UAV Mobile Edge Computing	Liang-Shun Wu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2603.04833	2026	SCoUT: Scalable Communication via Utility-Guided Temporal Grouping in Multi-Agent Reinforcement Learning	Manav Vora	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1016/j.neucom.2026.133447	2026	Leader-follower communication graph optimization method for multi-agent reinforcement learning via transformer	Chao Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2602.21667	2026	Send Less, Perceive More: Masked Quantized Point Cloud Communication for Loss-Tolerant Collaborative Perception	Sheng Xu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2602.15776	2026	GlobeDiff: State Diffusion Process for Partial Observability in Multi-Agent Systems	Yi-Qin Yang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2602.03688	2026	TodyComm: Task-Oriented Dynamic Communication for Multi-Round LLM-based Multi-Agent System	Wenzhe Fan	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TMC.2025.3608813	2026	Enhancing Learning to Communicate With Reward-Shaped Curriculum and Network Awareness	Xinghai Wei	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2601.09295	2026	MACRO-LLM: LLM-Empowered Multi-Agent Collaborative Reasoning under Spatiotemporal Partial Observability	Handi Chen	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2601.08214	2026	Hybrid Centralized Distributed Control for Lifelong MAPF over Wireless Connections	Jing-Hao Cao	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/CCNC65079.2026.11366395	2026	Connectivity-Influence Weighting: A Structural Bias for Graph-Based MARL	Reda El Marhouch	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2601.05407	2026	Interactive Distillation for Cooperative Multi-Agent Reinforcement Learning	Minwoo Cho	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1145/3788149.3788252	2025	Goal-Aware Subgraph Partitioning for Efficient Communication in Multi-Agent Reinforcement Learning	Che Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2512.11179	2025	Bandwidth-constrained Variational Message Encoding for Cooperative Multi-agent Reinforcement Learning	Wei Duan	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TMC.2025.3587257	2025	Efficient Cooperative Mechanism for Distributed Multi-Agent Traffic Signal Control	Lu Li	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1145/3779067	2025	ROIS: Role-Based Multi-Agent Collaboration by Context-Time-Aware Information Sharing	Hanwen Qi	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s10462-025-11439-9	2025	Reinforcement learning for single-agent to multi-agent systems: from basic theory to industrial application progress, a survey	Dehua Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2511.12892	2025	Green Emergency Communications in RIS- and MA-Assisted Multi-UAV SAGINs: A Partially Observable Reinforcement Learning Approach	Liang-Shun Wu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2511.09171	2025	Learning Efficient Communication Protocols for Multi-Agent Reinforcement Learning	Xinren Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.3390/aerospace12110993	2025	Multi-UAV Cooperative Pursuit Planning via Communication-Aware Multi-Agent Reinforcement Learning	Haojie Ren	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2511.03348	2025	Learning Communication Skills in Multi-task Multi-agent Deep Reinforcement Learning	Chang-Xi Zhu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2511.01078	2025	Predictive Auxiliary Learning for Belief-based Multi-Agent Systems	Qin-Wei Huang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TMC.2025.3586429	2025	CSMAAC: Multi-Agent Reinforcement Learning Based Flight Control in Partially Observable Multi-UAV Assisted Crowd Sensing Systems	Zheng-Wei Gao	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TSMC.2025.3604230	2025	Communication in Multiagent Reinforcement Learning via Counterfactual Message Value	Zi-Hong Gao	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2510.19995	2025	Communication to Completion: Modeling Collaborative Workflows with Intelligent Multi-Agent Communication	Yiming Lu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2510.07888	2025	Network Topology and Information Efficiency of Multi-Agent Systems: Study based on MARL	Xinren Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/SMC58881.2025.11343592	2025	Spectrum Sharing in V2X Networks Based on Multi-Agent Graph Emergent Communication	Yue Pi	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1177/09544070251370921	2025	The end-to-end platoon-lane-changing control based on deep meta reinforce learning on highways	Meng-Yu Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2509.25550	2025	Unifying Agent Interaction and World Information for Multi-agent Coordination	Dong-Su Lee	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.24963/ijcai.2025/8	2025	Multi-Agent Communication with Information Preserving Graph Contrastive Learning	Wei Du	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2507.23604	2025	Hierarchical Message-Passing Policies for Multi-Agent Reinforcement Learning	Tommaso Marzi	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.23919/CCC64809.2025.11178316	2025	A Communication Approach for Cooperation of Multi-Agent Reinforcement Learning Based on Value Decomposition	Yifan Lei	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2507.14553	2025	Clutter Detection and Removal by Multi-Objective Analysis for Photographic Guidance	Xiaoran Wu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2507.06499	2025	Learning to Communicate over an Unknown Shared Network	Shivangi Agarwal	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1016/j.patcog.2025.112093	2025	Learning multi-agent communication via graph contrastive learning	Wei Du	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/IJCNN64981.2025.11228957	2025	MAIF: Efficient Multi-agent Communication via Intention Filter	Cheng Wu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/ICC52391.2025.11161345	2025	Semantic Communications for Partially Observable Multi-Agent Reinforcement Learning-Based Unmanned Aerial Vehicles Monitoring System	Tiange Xiang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2506.05236	2025	Towards Language-Augmented Multi-Agent Deep Reinforcement Learning	Maxime Toquebiau	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TCSVT.2025.3528980	2025	Robust Multi-Agent Collaborative Perception via Spatio-Temporal Awareness	Kun Yang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/JIOT.2025.3545496	2025	OC-HMAS: Dynamic Self-Organization and Self-Correction in Heterogeneous Multiagent Systems Using Multimodal Large Models	Ping Feng	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s00521-025-11272-9	2025	Communication with factorized policy gradients in multi-agent deep reinforcement learning	Chang-Xi Zhu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2505.07176	2025	Internet of Agents: Fundamentals, Applications, and Challenges	Yuntao Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2505.07207	2025	HYGMA: Hypergraph Coordination Networks with Dynamic Grouping for Multi-Agent Reinforcement Learning	Chiqiang Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/IWCMC65282.2025.11059543	2025	A Multi-Agent Deep Reinforcement Learning Approach for Traffic Management in Complex Communication Networks	Christina Alhachem	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2505.00753	2025	LLM-Based Human-Agent Collaboration and Interaction Systems: A Survey	Henry Peng Zou	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2504.21278	2025	Robust Multi-agent Communication Based on Decentralization-Oriented Adversarial Training	Xuyan Ma	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2504.08417	2025	Belief States for Cooperative Multi-Agent Reinforcement Learning under Partial Observability	Paul J. Pritz	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1145/3706110	2025	Credible Negotiation for Multi-agent Reinforcement Learning in Long-term Coordination	Tian-Long Gu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2503.13657	2025	Why Do Multi-Agent LLM Systems Fail?	M. Cemri	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2610.34466	2025	IntNet: A Communication-Driven Multi-Agent Reinforcement Learning Framework for Cooperative Autonomous Driving	L. Parada	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1016/j.neucom.2025.130105	2025	LLM-guided decision-making toolkit for multi-agent reinforcement learning	Zhe-Min Li	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2502.19717	2025	Exponential Topology-enabled Scalable Communication in Multi-agent Reinforcement Learning	Xin-Ran Li	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2502.14743	2025	Multi-Agent Coordination across Diverse Applications: A Survey	Li-Jun Sun	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2502.03845	2025	PAGNet: Pluggable Adaptive Generative Networks for Information Completion in Multi-Agent Communication	Zhuohui Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/LRA.2024.3518304	2025	Learning Multi-Agent Coordination for Replenishment At Sea	Byeolyi Han	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2502.00558	2025	Asynchronous Cooperative Multi-Agent Reinforcement Learning with Limited Communication	Sydney Dolan	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1098/rsta.2024.0148	2025	Signalling and social learning in swarms of robots	L. Cazenille	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s00521-024-10530-6	2025	Learning in public goods games: the effects of uncertainty and communication on cooperation	Nicole Orzan	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2501.15695	2025	Contextual Knowledge Sharing in Multi-Agent Reinforcement Learning with Decentralized Communication and Coordination	Hung Du	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2501.12263	2025	mmCooper: A Multi-Agent Multi-Stage Communication-Efficient and Collaboration-Robust Cooperative Perception Framework	Bing-Yi Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2501.02174	2025	TACTIC: Task-Agnostic Contrastive pre-Training for Inter-Agent Communication	Peihong Yu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TII.2024.3452192	2025	Coordinated Operation of Multiple Microgrids With Heat–Electricity Energy Based on Graph Surrogate Model-Enabled Robust Multiagent Deep Reinforcement Learning	Sicheng Li	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2501.00312	2024	M2I2: Learning Efficient Multi-Agent Communication via Masked State Modeling and Intention Inference	Chu-Xiong Sun	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1145/3699431	2024	Multi-Agent Reinforcement Learning based Edge Content Caching for Connected Autonomous Vehicles in IoV	Xiao-Long Xu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s00521-024-10655-8	2024	MARIC: an efficient multi-agent real-time intention-based communication model for team cooperation	Xin He	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2411.00382	2024	Communication Learning in Multi-Agent Systems from Graph Modeling Perspective	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/CAC63892.2024.10865512	2024	Modeling Markov Decision Process Elements Leveraging Language Models for Offline Multi-Agent Reinforcement Learning	Zhuohui Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2409.17348	2024	Language Grounded Multi-agent Reinforcement Learning with Human-interpretable Communication	Hu-Ao Li	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2409.11852	2024	XP-MARL: Auxiliary Prioritization in Multi-Agent Reinforcement Learning to Address Non-Stationarity	Jian-Ye Xu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2409.07127	2024	DCMAC: Demand-aware Customized Multi-Agent Communication via Upper Bound Training	Dong-Kun Huo	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TCYB.2024.3453892	2024	Enhancing Collaboration in Heterogeneous Multiagent Systems Through Communication Complementary Graph	Kexing Peng	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/FPL64840.2024.00040	2024	A Heterogeneous Acceleration System for Attention-Based Multi-Agent Reinforcement Learning	Samuel Wiggins	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1038/s42256-024-00879-7	2024	Efficient and scalable reinforcement learning for large-scale network control	Cheng-Dong Ma	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2408.07397	2024	Bridging Training and Execution via Dynamic Directed Graph-Based Communication in Cooperative Multi-Agent Systems	Zhuohui Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2408.05686	2024	The Bandit Whisperer: Communication Learning for Restless Bandits	Yunfan Zhao	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2412.19835	2024	Multi-Agent Q-Learning for Real-Time Load Balancing User Association and Handover in Mobile Networks	A. Alizadeh	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2407.17030	2024	Applications of Multi-Agent Deep Reinforcement Learning Communication in Network Management: A Survey	Yue Pi	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s10458-024-09665-6	2024	Team-wise effective communication in multi-agent reinforcement learning	Ming Yang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TMC.2023.3339213	2024	Effective Multi-Agent Communication Under Limited Bandwidth	Lebin Yu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/QRS-C63300.2024.00082	2024	A Land-Based War-Gaming Simulation Method Based on Multi-Agent Proximal Policy Optimization	Xu-Le Gao	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/IJCNN60899.2024.10651259	2024	Towards Zero-Shot Generalization: Mutual Information-Guided Hierarchical Multi-Agent Coordination	Qingyang Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2406.19477	2024	Multi-Agent Cooperative Games Using Belief Map Assisted Training	Qin-Wei Huang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s42979-024-03001-1	2024	Enhancing Intrusion Detection Systems with Reinforcement Learning: A Comprehensive Survey of RL-based Approaches and Techniques	F. Louati	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2405.08550	2024	Learning Multi-Agent Communication from Graph Modeling Perspective	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2404.06387	2024	Robust Coordination Under Misaligned Communication via Power Regularization	Nancirose Piazza	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s12204-024-2713-4	2024	Reward Function Design Method for Long Episode Pursuit Tasks Under Polar Coordinate in Multi-Agent Reinforcement Learning	Yubo Dong	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1609/aaai.v38i16.29683	2024	Expressive Multi-Agent Communication via Identity-Aware Learning	Wei Du	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1609/aaai.v38i16.29700	2024	PMAC: Personalized Multi-Agent Communication	Xiangrui Meng	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2403.06535	2024	Decentralized and Lifelong-Adaptive Multi-Agent Collaborative Learning	Shuo Tang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/JSAC.2023.3345395	2024	QoI-Aware Mobile Crowdsensing for Metaverse by Multi-Agent Deep Reinforcement Learning	Yu-Xiao Ye	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2402.18345	2024	Solving Multi-Entity Robotic Problems Using Permutation Invariant Neural Networks	Tian-Xu An	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2402.14090	2024	Social Environment Design	Edwin Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1093/comjnl/bxae008	2024	An Intelligent Security System Using Enhanced Anomaly-Based Detection Scheme	F. Louati	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1016/j.jai.2024.02.003	2024	A survey on multi-agent reinforcement learning and its application	Zepeng Ning	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2401.10973	2024	T2MAC: Targeted and Trusted Multi-Agent Communication through Selective Engagement and Evidence-Driven Integration	Chuxiong Sun	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2312.11545	2023	Robust Communicative Multi-Agent Reinforcement Learning with Active Defense	Lebin Yu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2312.10256	2023	Multi-agent Reinforcement Learning: A Comprehensive Survey	Dom Huh	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/ICMLA58977.2023.00146	2023	Benchmarking Communicative Reinforcement Learning Frameworks on Multi-Robot Cooperative Tasks	M. Abbas	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2312.05162	2023	A Review of Cooperation in Multi-agent Learning	Ya-Li Du	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/ICA58824.2023.00015	2023	Learning to Communicate Using Action Probabilities for Multi-Agent Cooperation	Yi-Dong Bai	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2311.14770	2023	Learning to Cooperate and Communicate Over Imperfect Channels	Jannis Weil	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2310.02435	2023	Multi-Agent Reinforcement Learning Based on Representational Communication for Large-Scale Traffic Signal Control	Rohit Bokade	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2310.00871	2023	COMPOSER: Scalable and Robust Modular Policies for Snake Robots	Yu-You Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/HPEC58863.2023.10363567	2023	Accelerating Multi-Agent DDPG on CPU-FPGA Heterogeneous Platform	Samuel Wiggins	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TNNLS.2023.3309608	2023	NVIF: Neighboring Variational Information Flow for Cooperative Large-Scale Multiagent Reinforcement Learning	Jiajun Chai	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TSG.2023.3282812	2023	Energy Management of Multiple Microgrids Considering Missing Measurements: A Novel MADRL Approach	Sicheng Li	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TITS.2023.3272027	2023	Collaborative 3D Object Detection for Autonomous Vehicles via Learnable Communications	Jun-Yong Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2308.10721	2023	CoMIX: A Multi-agent Reinforcement Learning Training Architecture for Efficient Decentralized Coordination and Independent Decision Making	Giovanni Minelli	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2308.10209	2023	Fairness-Aware Competitive Bidding Influence Maximization in Social Networks	Congcong Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2308.04844	2023	Scalability of Message Encoding Techniques for Continuous Communication Learned with Multi-Agent Reinforcement Learning	Astrid Vanneste	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s43154-023-00103-1	2023	Human-Robot Teaming: Grand Challenges	Manisha Natarajan	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2308.03358	2023	RGMComm: Return Gap Minimization via Discrete Communications in Multi-Agent Reinforcement Learning	Jing-Di Chen	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2308.00629	2023	Dependency Structure Search Bayesian Optimization for Decision Making Models	Mohit Rajpal	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2308.09902	2023	DPMAC: Differentially Private Communication for Cooperative Multi-Agent Reinforcement Learning	Canzhe Zhao	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s00521-023-08875-5	2023	AGRCNet: communicate by attentional graph relations in multi-agent reinforcement learning for traffic signal control	Ting-Huai Ma	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2307.13929	2023	Spatio-Temporal Domain Awareness for Multi-Agent Collaborative Perception	Kun Yang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/MLCCIM60412.2023.00043	2023	MA-TDMPC: Multi-Agent Temporal Difference for Model Predictive Control	Rong-Xiao Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2307.09051	2023	QMNet: Importance-Aware Message Exchange for Decentralized Multi-Agent Reinforcement Learning	Xiufeng Huang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s00521-023-08784-7	2023	Multi-agent air combat with two-stage graph-attention communication	Zhixiao Sun	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2307.01403	2023	Learning Multi-Agent Communication with Contrastive Learning	Y. Lo	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1155/2023/5814420	2023	Learning Attentional Communication with a Common Network for Multiagent Reinforcement Learning	Wen-Wu Yu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2306.11168	2023	Learning Models of Adversarial Agent Behavior Under Partial Observability	Sean Ye	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2306.10134	2023	Dynamic Size Message Scheduling for Multi-Agent Communication Under Limited Bandwidth	Qing-Shuang Sun	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TGCN.2022.3186792	2023	Optimal Computation Offloading in Collaborative LEO-IoT Enabled MEC: A Multiagent Deep Reinforcement Learning Approach	Yifeng Lyu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.5555/3545946.3598669	2023	Model-based Sparse Communication in Multi-agent Reinforcement Learning	Shuai Han	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.5555/3545946.3598963	2023	Grey-box Adversarial Attack on Communication in Multi-agent Reinforcement Learning	Xiao Ma	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.5555/3545946.3599015	2023	Learning Group-Level Information Integration in Multi-Agent Communication	Xiangrui Meng	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.5555/3545946.3598944	2023	Emergent Compositional Concept Communication through Mutual Information in Multi-Agent Teams	Seth Karten	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/CCDC58219.2023.10327314	2023	Multi-Agent Reinforcement Learning With Distributed Targeted Multi-Agent Communication	Chi Xu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2304.14656	2023	From Explicit Communication to Tacit Cooperation: A Novel Paradigm for Cooperative MARL	Da-Peng Li	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2304.11632	2023	Towards Effective and Interpretable Human-Agent Collaboration in MOBA Games: A Communication Perspective	Yiming Gao	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/ICDE55515.2023.00140	2023	Air-Ground Spatial Crowdsourcing with UAV Carriers by Geometric Graph Convolutional Multi-Agent Deep Reinforcement Learning	Yu Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2303.10733	2023	Cheap Talk Discovery and Utilization in Multi-Agent Reinforcement Learning	Y. Lo	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2303.03598	2023	Guided Image-to-Image Translation by Discriminator-Generator Communication	Yuan-Jiang Cao	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.23919/JCC.2023.03.005	2023	Communication-efficient decision-making of digital twin assisted Internet of vehicles: A hierarchical multi-agent reinforcement learning approach	Xiao-Yuan Fu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2302.14276	2023	On the Role of Emergent Communication for Social Learning in Multi-Agent Reinforcement Learning	Seth Karten	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TNNLS.2023.3243557	2023	Multiagent Reinforcement Learning With Graphical Mutual Information Maximization	Shifei Ding	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2302.05055	2023	Low Entropy Communication in Multi-Agent Reinforcement Learning	Lebin Yu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2302.03429	2023	Towards Skilled Population Curriculum for Multi-Agent Reinforcement Learning	R. Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2302.08913	2023	Referential communication in heterogeneous communities of pre-trained visual deep networks	Mat'eo Mahaut	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2301.04299	2023	SoK: Adversarial Machine Learning Attacks and Defences in Multi-Agent Reinforcement Learning	Maxwell Standen	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2301.01919	2023	Scalable Communication for Multi-Agent Reinforcement Learning via Transformer-Based Email Mechanism	Xu-Dong Guo	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2212.09586	2022	Learning latent representations to co-adapt to humans	Sagar Parekh	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/GLOBECOM48099.2022.10001408	2022	Importance-Aware Message Exchange and Prediction for Multi-Agent Reinforcement Learning	Xiufeng Huang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/MSN57253.2022.00144	2022	Multi-UAV Joint Observation, Communication, and Policy in MEC	Shuai Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2212.00115	2022	Towards True Lossless Sparse Communication in Multi-Agent Systems	Seth Karten	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2211.15824	2022	CLAS: Coordinating Multi-Robot Manipulation with Central Latent Action Spaces	Elie Aljalbout	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2211.01480	2022	Over-communicate no more: Situated RL agents learn concise communication protocols	A. Kalinowska	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.3390/drones6110339	2022	Joint Communication and Action Learning in Multi-Target Tracking of UAV Swarms with Deep Reinforcement Learning	Wenhong Zhou	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TVT.2022.3195202	2022	Learning Task-Oriented Channel Allocation for Multi-Agent Communication	Guojun He	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2210.16624	2022	LearningGroup: A Real-Time Sparse Training on FPGA via Learnable Weight Grouping for Multi-Agent Reinforcement Learning	Jenny Yang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/IROS47612.2022.9981513	2022	AB-Mapper: Attention and BicNet based Multi-agent Path Planning for Dynamic Environment	Huifeng Guan	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1155/2022/9329186	2022	A Multiagent Cooperative Decision-Making Method for Adaptive Intersection Complexity Based on Hierarchical RL	Xiaojuan Wei	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2210.06274	2022	Centralized Training with Hybrid Execution in Multi-Agent Reinforcement Learning	Pedro P. Santos	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TNNLS.2022.3197918	2022	Cascaded Attention: Adaptive and Gated Graph Attention Network for Multiagent Reinforcement Learning	Shu-Han Qi	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TVT.2022.3187377	2022	Intelligent Resource Allocation in Joint Radar-Communication With Graph Neural Networks	Joash Lee	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/Allerton49937.2022.9929423	2022	Decentralized Anomaly Detection via Deep Multi-Agent Reinforcement Learning	Hadar Szostak	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2209.12836	2022	Where2comm: Communication-Efficient Collaborative Perception via Spatial Confidence Maps	Yue Hu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2209.10485	2022	Towards a Standardised Performance Evaluation Protocol for Cooperative MARL	Ruan John de Kock	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2209.06415	2022	DMCA: Dense Multi-agent Navigation using Attention and Communication	Senthil Hariharan Arul	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2207.06559	2022	Scalable Model-based Policy Optimization for Decentralized Networked Systems	Ya-Li Du	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s10489-022-03208-w	2022	Graph cooperation deep reinforcement learning for ecological urban traffic signal control	Li-Ping Yan	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2207.00964	2022	NVIF: Neighboring Variational Information Flow for Large-Scale Cooperative Multi-Agent Scenarios	Jiajun Chai	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.24963/ijcai.2022/82	2022	Efficient Multi-Agent Communication via Shapley Message Value	Di Xue	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1609/aaai.v36i9.21179	2022	Multi-Agent Incentive Communication via Decentralized Teammate Modeling	Lei Yuan	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2206.09484	2022	A Critical Review of Communications in Multi-robot Systems	Jennifer Gielis	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2206.06758	2022	Universally Expressive Communication in Multi-Agent Reinforcement Learning	Matthew Morris	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2207.05683	2022	Policy Diagnosis via Measuring Role Diversity in Cooperative Multi-agent RL	Si-Yi Hu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.2172/2003731	2022	Scaling Multi-Agent Reinforcement Learning via State Upsampling.	Luis Pimentel	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2205.11849	2022	Collaborative 3D Object Detection for Automatic Vehicle Systems via Learnable Communications	Jun-Yong Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2205.10607	2022	Coordinating Policies Among Multiple Agents via an Intelligent Communication Channel	Dian-Bo Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1631/FITEE.2200055	2022	Prospects for multi-agent collaboration and gaming: challenge, technology, and application	Yu Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/ICC45855.2022.9838553	2022	Towards Distributed Communication and Control in Real-World Multi-Agent Reinforcement Learning	Jie-Yan Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.5555/3535850.3535981	2022	Learning Efficient Diverse Communication for Cooperative Heterogeneous Teaming	Esmaeil Seraj	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.5555/3535850.3536120	2022	Exploration and Communication for Partially Observable Collaborative Multi-Agent Reinforcement Learning	Raphaël Avalos	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.5555/3535850.3535884	2022	Optimizing Multi-Agent Coordination via Hierarchical Graph Probabilistic Recursive Reasoning	Saar Cohen	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2205.15023	2022	Scalable Multi-Agent Model-Based Reinforcement Learning	Vladimir V. Egorov	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2205.11163	2022	Learning to Advise and Learning from Advice in Cooperative Multiagent Reinforcement Learning	Yue Jin	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1155/2022/2951193	2022	Learning Attentional and Gated Communication via Curiosity	Chuxiong Sun	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TNNLS.2022.3165114	2022	Fully Decentralized Multiagent Communication via Causal Inference	Han Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2204.03516	2022	Distributed Reinforcement Learning for Robot Teams: a Review	Yu-Tong Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2203.08975	2022	A survey of multi-agent deep reinforcement learning with communication	Chang-Xi Zhu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2203.07832	2022	Learning to Infer Belief Embedded Communication	Guo Ye	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2203.07676	2022	An Introduction to Multi-Agent Reinforcement Learning and Review of its Application to Autonomous Mobility	Lukas M. Schmidt	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2203.03344	2022	Learning to Ground Decentralized Multi-Agent Communication with Contrastive Learning	Y. Lo	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2203.02896	2022	Depthwise Convolution for Multi-Agent Communication With Enhanced Mean-Field Approximation	Donghan Xie	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2202.09422	2022	Communication-Efficient Actor-Critic Methods for Homogeneous Markov Games	Dingyang Chen	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2202.01334	2022	Adaptive Discrete Communication Bottlenecks with Dynamic Vector Quantization	Dian-Bo Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2201.11994	2022	FCMNet: Full Communication Memory Net for Team-Level Cooperation in Multi-Agent Systems	Yu-Tong Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2201.12938	2022	Probe-Based Interventions for Modifying Agent Behavior	Mycal Tucker	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2201.07452	2022	Interpretable Learned Emergent Communication for Human–Agent Teams	Seth Karten	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s10489-021-02873-7	2022	Enhancing cooperation by cognition differences and consistent representation in multi-agent reinforcement learning	Hong-Wei Ge	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2112.15156	2021	Multi-Agent Reinforcement Learning via Adaptive Kalman Temporal Difference and Successor Representation	Mohammad Salimibeni	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2112.10374	2021	CGIBNet: Bandwidth-constrained Communication with Graph Information Bottleneck in Multi-Agent Reinforcement Learning	Qi Tian	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2112.03547	2021	Self-Organized Polynomial-Time Coordination Graphs	Qianlan Yang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2112.01078	2021	Multi-Agent Intention Sharing via Leader-Follower Forest	Zeyang Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2111.14177	2021	Evaluating Generalization and Transfer Capacity of Multi-Agent Reinforcement Learning Across Variable Number of Agents	Bengisu Guresti	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TNNLS.2021.3121546	2021	Event-Triggered Communication Network With Limited-Bandwidth Constraint for Multi-Agent Reinforcement Learning	Guangzhen Hu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2111.00643	2021	Learning Distilled Collaboration Graph for Multi-Agent Perception	Yiming Li	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2110.00760	2021	AB-Mapper: Attention and BicNet Based Multi-agent Path Finding for Dynamic Crowded Environment	Huifeng Guan	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/ICCV48922.2021.00162	2021	Self-Motivated Communication Agent for Real-World Vision-Dialog Navigation	Yi Zhu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2109.11408	2021	Reinforced Natural Language Interfaces via Entropy Decomposition	Xiaoran Wu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2109.05413	2021	Learning Selective Communication for Multi-Agent Path Finding	Ziyuan Ma	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2109.00882	2021	MACRPO: Multi-agent cooperative recurrent policy optimization	E. Kargar	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/ICBASE53849.2021.00107	2021	Aggregation Transfer Learning for Multi-Agent Reinforcement learning	Dongsheng Xu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2108.09568	2021	Heterogeneous Graph Attention Networks for Learning Diverse Communication	Esmaeil Seraj	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2108.03803	2021	Mis-spoke or mis-lead: Achieving Robustness in Multi-Agent Communicative Reinforcement Learning	Wan-Qi Xue	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1016/j.neucom.2021.07.014	2021	Structural relational inference actor-critic for multi-agent reinforcement learning	Xianjie Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2108.04097	2021	Deep Learning for Embodied Vision Navigation: A Survey	Fengda Zhu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2107.01151	2021	Collaborative Visual Navigation	Haiyang Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2106.08482	2021	Minimizing Communication while Maximizing Performance in Multi-Agent Reinforcement Learning	V. Vijay	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2106.03007	2021	Truthful Self-Play	Shohei Ohsawa	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2106.02195	2021	Celebrating Diversity in Shared Multi-Agent Reinforcement Learning	Chenghao Li	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2105.01798	2021	Pervasive AI for IoT Applications: A Survey on Resource-Efficient Distributed Artificial Intelligence	Emna Baccour	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.5555/3463952.3464065	2021	Multi-Agent Graph-Attention Communication and Teaming	Yaru Niu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.5555/3463952.3464010	2021	Learning Correlated Communication Topology in Multi-Agent Reinforcement learning	Ya-Li Du	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.5555/3463952.3464195	2021	Intrinsic Motivated Multi-Agent Communication	Chuxiong Sun	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s10462-021-09996-w	2021	Multi-agent deep reinforcement learning: a survey	Sven Gronauer	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2103.05091	2021	Learning Connectivity for Data Distribution in Robot Teams	Ekaterina Tolstaya	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2102.12550	2021	Learning Emergent Discrete Message Communication for Cooperative Reinforcement Learning	Sheng Li	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2101.10276	2021	Emergent Communication under Competition	Michael Noukhovitch	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s10489-020-02065-9	2021	Multi-agent deep reinforcement learning with type-based hierarchical group communication	Hao Jiang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2101.03238	2021	Neurosymbolic Transformers for Multi-Agent Communication	J. Inala	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TVT.2020.3042089	2020	Cooperative Caching and Fetching in D2D Communications - A Fully Decentralized Multi-Agent Reinforcement Learning Approach	Yan Yan	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/ICTAI50040.2020.00013	2020	Multi-Agent Reinforcement Learning for Cooperative Adaptive Cruise Control	Ashley Peake	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TCYB.2020.3025491	2020	Multiagent Adversarial Collaborative Learning via Mean-Field Theory	Gui-Yang Luo	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/SMC42975.2020.9283355	2020	Learning Effective Value Function Factorization via Attentional Communication	Bo Wu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/SMC42975.2020.9282974	2020	GHGC: Goal-based Hierarchical Group Communication in Multi-Agent Reinforcement Learning	Hao Jiang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2010.04978	2020	Event-Triggered Multi-agent Reinforcement Learning with Communication under Limited-bandwidth Constraint	Guangzhen Hu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/HPEC43674.2020.9286212	2020	Towards a Distributed Framework for Multi-Agent Reinforcement Learning Research	Yu-Tai Zhou	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1162/isal_a_00248	2020	Communication in Decision Making: Competition favors Inequality	Jacopo Talamini	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2006.11438	2020	Deep Implicit Coordination Graphs for Multi-agent Reinforcement Learning	Sheng Li	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2006.04109	2020	Incorporating Pragmatic Reasoning Communication into Emergent Language	Yi-Peng Kang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2006.02419	2020	Emergent Multi-Agent Communication in the Deep Learning Era	Angeliki Lazaridou	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TPWRS.2020.2999536	2020	Agent-Based Modeling in Electricity Market Using Deep Deterministic Policy Gradient Algorithm	Yan-Chang Liang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2006.00176	2020	When2com: Multi-Agent Perception via Communication Graph Grouping	Yen-Cheng Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2004.01339	2020	Multi-agent Reinforcement Learning for Networked System Control	Tian-Shu Chu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/s10458-020-09455-w	2020	Learning multi-agent communication with double attentional deep reinforcement learning	Hangyu Mao	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2003.09575	2020	Who2com: Collaborative Perception via Learnable Handshake Communication	Yen-Cheng Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2003.08039	2020	ROMA: Multi-Agent Reinforcement Learning with Emergent Roles	Tonghan Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2002.09604	2020	Emergent Communication with World Models	A. I. Cowen-Rivers	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2002.05233	2020	Learning multi-agent coordination through connectivity-driven communication	E. Pesce	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:211096927	2020	Connectivity-driven Communication in Multi-agent Reinforcement Learning through Diffusion Processes on Graphs	E. Pesce	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:219531911	2020	Learning Multi-Agent Coordination through Graph-driven Communication	E. Pesce	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2002.04235	2020	Learning structured communication for multi-agent reinforcement learning	Junjie Sheng	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1912.05304	2019	Learning Agent Communication under Limited Bandwidth by Message Pruning	Hangyu Mao	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1912.01513	2019	BADGER: Learning to (Learn [Learning Algorithms] through Multi-Agent Communication)	Marek Rosa	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1912.00949	2019	Multi-Agent Deep Reinforcement Learning with Adaptive Policies	Yixiang Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1911.10715	2019	Multi-Agent Game Abstraction via Graph Attention Neural Network	Y. Liu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1911.06992	2019	Learning Efficient Multi-agent Communication: An Information Bottleneck Approach	R. Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1911.04094	2019	SMIX(λ): Enhancing Centralized Value Functions for Cooperative Multiagent Reinforcement Learning	Xinghu Yao	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1910.05366	2019	Learning Nearly Decomposable Value Functions Via Communication Minimization	Tonghan Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1909.12557	2019	Multi-Agent Actor-Critic with Hierarchical Graph Attention Network	Heechang Ryu	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1908.03963	2019	A review of cooperative multi-agent deep reinforcement learning	Afshin Oroojlooy	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1906.04737	2019	Dealing with Non-Stationarity in Multi-Agent Deep Reinforcement Learning	Georgios Papoudakis	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:2002.06684	2019	R-MADDPG for Partially Observable Environments and Limited Communication	Rose E. Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1901.03887	2019	Improving coordination in small-scale multi-agent deep reinforcement learning through memory-driven communication	E. Pesce	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1810.11187	2018	TarMAC: Targeted Multi-Agent Communication	Abhishek Das	semantic_scholar_batch
+arXiv:1812.09755	aval	arXiv:1809.05188	2018	CM3: Cooperative Multi-goal Multi-stage Multi-agent Reinforcement Learning	Jiachen Yang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TASE.2025.3637862	2026	EALLMs: Environment-Aligned LLMs for Enhanced Exploration and Communication in Multi-Agent Reinforcement Learning	Zhuohui Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.48550/arXiv.2604.03785	2026	Decomposing Communication Gain and Delay Cost Under Cross-Timestep Delays in Cooperative Multi-Agent Reinforcement Learning	Zi-Hong Gao	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TIFS.2025.3560203	2025	Grey-Box Adversarial Attack on Communication in Communicative Multi-Agent Reinforcement Learning	Xiao Ma	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/ACCESS.2025.3631242	2025	IC4Net: Decentralized Communication for Continual Multi-Agent Learning	Martín González-Soto	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.48550/arXiv.2509.25550	2025	Learning to Interact in World Latent for Team Coordination	Dong-Su Lee	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.48550/arXiv.2505.00753	2025	A Survey on Large Language Model based Human-Agent Systems	Henry Peng Zou	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1109/TGRS.2024.3353192	2024	MDCNet: A Multiplatform Distributed Collaborative Network for Object Detection in Remote Sensing Imagery	Shujing Duan	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:272330302	2024	Position: Social Environment Design Should be Further Developed for AI-based Policy-Making	Edwin Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.48550/arXiv.2308.03358	2023	Minimizing Return Gaps with Discrete Communications in Decentralized POMDP	Jing-Di Chen	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:259298824	2023	Revisiting Populations in multi-agent Communication	Paul Michel	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:260811254	2023	Complementary Attention for Multi-Agent Reinforcement Learning	Jianzhun Shao	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:265279979	2023	Hijacking Robot Teams Through Adversarial Communication	Zixuan Wu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.52202/075280-1539	2023	Mixed-Initiative Multiagent Apprenticeship Learning for Human Training of Robot Teams	Esmaeil Seraj	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:246035294	2022	The Enforcers: Consistent Sparse-Discrete Methods for Constraining Informative Emergent Communication	Seth Karten	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:246972385	2022	A Meta-Gradient Approach to Learning Cooperative Multi-Agent A Meta-Gradient Approach to Learning Cooperative Multi-Agent Communication Topology Communication Topology	Qi Zhang	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.5220/0010849600003116	2022	Micro Junction Agent: A Scalable Multi-agent Reinforcement Learning Method for Traffic Control	Bumkyu Choi	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:250056152	2022	Time-aware Deep Reinforcement Learning with Multi-Temporal Abstraction by	Yeonji Kim	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.48550/arXiv.2207.06559	2022	Fully Decentralized Model-based Policy Optimization for Networked Systems	Ya-Li Du	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:254432871	2022	Intent-Grounded Compositional Communication through Mutual Information in Multi-Agent Teams	Seth Karten	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:263164696	2022	The role of MAS interoperability for IoT applications: A survey on recent advances in manufacturing systems	Banu Çalış Uslu	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:245334666	2021	Multi-agent Communication with Graph Information Bottleneck under Limited Bandwidth	Qi Tian	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:235359003	2021	Unbiased Self-Play	Shohei Ohsawa	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:237351237	2021	Edge-enhanced Graph Neural Networks for Multi-Agent Communication		semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:236957208	2021	Deep Learning for Embodied Vision Navigation: A Survey	Fengda Zhu	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:237392711	2021	Learning to Imitate, Adapt and Communicate	Siddharth Agrawal	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:245384149	2021	Emergent Communication under Varying Group Sizes and Connectivities	Jooyeon Kim	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:250481408	2021	R OLE D IVERSITY M ATTERS : A S TUDY OF C OOPERA - TIVE T RAINING S TRATEGIES FOR M ULTI -A GENT RL		semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:231861100	2021	Multi-Agent Graph-Aention Communication	Yaru Niu	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1007/978-3-030-69322-0_11	2020	Policy Adaptive Multi-agent Deep Deterministic Policy Gradient	Yixiang Wang	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:204891892	2019	Learning Environmental States via Communication	Masoumeh Heidari Kapourchali	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:204794846	2019	Emergence of Practical Language for Locations in a Simulated Warehouse through Language Games	Otto Hantula	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:264468350		Research and applications of game intelligence	评述 博弈智能的研究与应用 郝建业	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:275603088		Continuous Communication with Factorized Policy Gradients in Multi-agent Deep Reinforcement Learning	Chang-Xi Zhu	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:277020029		L EVERAGING L ARGE L ANGUAGE M ODELS FOR O P - TIMISED C OORDINATION IN T EXTUAL M ULTI -A GENT R EINFORCEMENT L EARNING		semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:279057722		Coordination Machines for Minimizing Communication in Multi-Agent Reinforcement Learning	Jacob Heglund	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:280026171		Master Computer Science		semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:285553802		The thinking communication network with semi-multiple communication cycles under the multi-agent deep reinforcement learning	用 控制理论与应	semantic_scholar_batch
+arXiv:1812.09755	aval	DOI:10.1016/j.eswa.2026.134277		CoVarNet: Contrastive variational network for communication in multi-agent reinforcement learning	Lu Ren	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:295003506		Multi-Agent Deep Reinforcement Learning in Robotics: Context and Open Challenges	Maxime Toquebiau	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:295114311		Multi-Agent Deep Reinforcement Learning in Robotics: Context and Open Challenges	Maxime Toquebiau	semantic_scholar_batch
+arXiv:1812.09755	aval	CorpusId:295297025		Multi-Agent Deep Reinforcement Learning in Robotics: Context and Open Challenges	Maxime Toquebiau	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:2106.11083	2021	Conditional Neural Relational Inference for Interacting Systems	J. Ramos	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:2103.01937	2021	Neural Production Systems	Anirudh Goyal	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:2103.01197	2021	Coordination Among Neural Modules Through a Shared Global Workspace	Anirudh Goyal	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:2103.00336	2021	Transformers with Competitive Ensembles of Independent Mechanisms	Alex Lamb	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:2011.15091	2020	Inductive biases for deep learning of higher-level cognition	Anirudh Goyal	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:2006.16225	2020	Object Files and Schemata: Factorizing Declarative and Procedural Knowledge in Dynamical Systems	Anirudh Goyal	semantic_scholar_batch
+arXiv:2107.02367	amont	DOI:10.1038/s41593-020-0614-x	2020	Hippocampal neurons represent events as transferable units of experience	Chen Sun	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1911.12247	2019	Contrastive Learning of Structured World Models	Thomas Kipf	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1911.10635	2019	Multi-Agent Reinforcement Learning: A Selective Overview of Theories and Algorithms	K. Zhang	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1910.12827	2019	Entity Abstraction in Visual Model-Based Reinforcement Learning	Rishi Veerapaneni	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1909.10893	2019	Recurrent Independent Mechanisms	Anirudh Goyal	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1904.12774	2019	Routing Networks and the Challenges of Modular and Compositional Computation	C. Rosenbaum	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1901.03887	2019	Improving coordination in small-scale multi-agent deep reinforcement learning through memory-driven communication	E. Pesce	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1809.11044	2018	Relational Forward Models for Multi-Agent Learning	Andrea Tacchetti	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1806.01261	2018	Relational inductive biases, deep learning, and graph networks	P. Battaglia	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1802.10353	2018	Relational Neural Expectation Maximization: Unsupervised Discovery of Objects and their Interactions	Sjoerd van Steenkiste	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1711.01239	2017	Routing Networks: Adaptive Selection of Non-linear Functions for Multi-Task Learning	C. Rosenbaum	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1711.00937	2017	Neural Discrete Representation Learning	A. van den Oord	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1706.03762	2017	Attention is All you Need	Ashish Vaswani	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1706.01427	2017	A simple neural network module for relational reasoning	A. Santoro	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1706.01433	2017	Visual Interaction Networks: Learning a Physics Simulator from Video	Nicholas Watters	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1704.01212	2017	Neural Message Passing for Quantum Chemistry	J. Gilmer	semantic_scholar_batch
+arXiv:2107.02367	amont	DOI:10.1177/0048393116672833	2017	Modularity of Mind	Martin Palecek	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1702.05068	2017	Discovering objects and their relations from entangled scene representations	D. Raposo	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1701.08734	2017	PathNet: Evolution Channels Gradient Descent in Super Neural Networks	Chrisantha Fernando	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1701.06538	2017	Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer	Noam Shazeer	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1611.08097	2016	Geometric Deep Learning: Going beyond Euclidean data	M. Bronstein	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1610.04574	2016	Generalization Error of Invariant Classifiers	Jure Sokolić	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1606.01305	2016	Zoneout: Regularizing RNNs by Randomly Preserving Hidden Activations	D. Krueger	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1605.08254	2016	Robust Large Margin Deep Neural Networks	Jure Sokolić	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1511.06279	2015	Neural Programmer-Interpreters	Scott E. Reed	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1511.02799	2015	Neural Module Networks	Jacob Andreas	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1409.0473	2014	Neural Machine Translation by Jointly Learning to Align and Translate	D. Bahdanau	semantic_scholar_batch
+arXiv:2107.02367	amont	arXiv:1005.2243	2010	Robustness and generalization	Huan Xu	semantic_scholar_batch
+arXiv:2107.02367	amont	CorpusId:142159570	2009	Consciousness: The Science of Subjectivity	A. Revonsuo	semantic_scholar_batch
+arXiv:2107.02367	amont	CorpusId:14995779	2009	Probabilistic Graphical Models: Principles and Techniques - Adaptive Computation and Machine Learning	D. Koller	semantic_scholar_batch
+arXiv:2107.02367	amont	DOI:10.1038/nature03687	2005	Invariant visual representation by single neurons in the human brain	R. Quiroga	semantic_scholar_batch
+arXiv:2107.02367	amont	DOI:10.1126/SCIENCE.1108905	2005	Attractor Dynamics in the Hippocampal Representation of the Local Environment	T. Wills	semantic_scholar_batch
+arXiv:2107.02367	amont	DOI:10.1126/SCIENCE.1086872	2003	Representation of Action Sequence Boundaries by Macaque Prefrontal Cortical Neurons	N. Fujii	semantic_scholar_batch
+arXiv:2107.02367	amont	DOI:10.1016/S0888-613X(96)00074-6	1996	Global discretization of continuous attributes as preprocessing for machine learning	Michal R. Chmielewski	semantic_scholar_batch
+arXiv:2107.02367	amont	DOI:10.1162/neco.1991.3.1.79	1991	Adaptive Mixtures of Local Experts	R. Jacobs	semantic_scholar_batch
+arXiv:2107.02367	amont	CorpusId:628165	1990	A Framework for the Cooperation of Learning Algorithms	L. Bottou	semantic_scholar_batch
+arXiv:2107.02367	amont	DOI:10.1023/A:1022639103969	1986	Chunking in Soar: The Anatomy of a General Learning Mechanism	J. Laird	semantic_scholar_batch
+arXiv:2107.02367	amont	CorpusId:221660038	2019	Weak convergence and empirical processes	S. Mukherjee	semantic_scholar_batch
+arXiv:2107.02367	amont		2012	The previous paper (Xu and Mannor, 2012) further shows concrete examples of this bound for a case where the function (x, y) 7→ `(f̃(x), y) is Lipschitz with Lipschitz constant ςx,y(w)		semantic_scholar_batch
+arXiv:2107.02367	amont	DOI:10.1109/TNN.2008.2005605	2009	The Graph Neural Network Model	F. Scarselli	semantic_scholar_batch
+arXiv:2107.02367	amont	CorpusId:146478349	2006	A Cortical Region Consisting Entirely of Face-Selective Cells	D. Wilson	semantic_scholar_batch
+arXiv:2107.02367	amont	CorpusId:18793746	1997	Modular Neural Networks and Self-Decomposition	E. Ronco	semantic_scholar_batch
+arXiv:2107.02367	amont	CorpusId:12497608	1996	Multiagent Learning through Collective Memory	Andrew Garland	semantic_scholar_batch
+arXiv:2107.02367	amont	CorpusId:142242370	1988	A cognitive theory of consciousness	B. Baars	semantic_scholar_batch
+arXiv:2107.02367	amont	DOI:10.5840/persforum19873112	1987	The Society of Mind	M. Minsky	semantic_scholar_batch
+arXiv:2107.02367	amont	DOI:10.2307/2185146	1984	Vehicles, Experiments in Synthetic Psychology	V. Braitenberg	semantic_scholar_batch
+arXiv:2107.02367	amont			Did you include the total amount of compute and the type of resources used (e.g., type of GPUs, internal cluster, or cloud provider)?		semantic_scholar_batch
+arXiv:2107.02367	amont			c) Did you report error bars		semantic_scholar_batch
+arXiv:2107.02367	amont			a) Did you include the full text of instructions given to participants and screenshots, if applicable?		semantic_scholar_batch
+arXiv:2107.02367	amont			E.3 Computational resources GPU nodes on university cluster are used		semantic_scholar_batch
+arXiv:2107.02367	amont			Did you describe any potential participant risks, with links to Institutional Review Board (IRB) approvals, if applicable?		semantic_scholar_batch
+arXiv:2107.02367	amont			Did you include the estimated hourly wage paid to participants and the total amount spent on participant compensation?		semantic_scholar_batch
+arXiv:2107.02367	amont			a) Did you include the code, data, and instructions needed to reproduce the main experimental results (either in the supplemental material or as a URL)? [Yes] see section 2		semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.1186/s13059-025-03638-y	2025	CellMemory: hierarchical interpretation of out-of-distribution cells using bottlenecked transformer	Qifei Wang	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2505.02627	2025	A Theoretical Analysis of Provable Compositional Generalization in Neural Networks: A Necessary and Sufficient Condition	Yuan-Peng Li	semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.1109/TCBBIO.2025.3543884	2025	IIB-DDI: Invariant Information Bottleneck Theory for Out-of-Distribution Drug-Drug Interaction Prediction	Jia-Hui Zhang	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2412.08528	2024	Efficient Continual Learning for Small Language Models with a Discrete Key-Value Bottleneck	Andor Diera	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2410.13331	2024	Improving Discrete Optimisation Via Decoupled Straight-Through Estimator	Rushi Shah	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2410.10180	2024	Gaussian Mixture Vector Quantization with Aggregated Categorical Posterior	Mingyuan Yan	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2410.03376	2024	Mitigating Adversarial Perturbations for Deep Reinforcement Learning via Vector Quantization	T. Luu	semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.1145/3696412	2024	Causal representation learning through higher-level information extraction	Francisco Silva	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2407.04939	2024	Balance of Number of Embedding and their Dimensions in Vector Quantization	Hang Chen	semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.1109/IJCNN60899.2024.10650802	2024	Pre-training Molecular Graph Representations with Motif-Enhanced Message Passing	Yang-Yi Lu	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2406.06976	2024	Discrete Dictionary-based Decomposition Layer for Structured Representation Learning	Taewon Park	semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.1109/ICASSP48485.2024.10445746	2024	Low Bitrate Loss Resilience Scheme for a Speech Enhancing Neural Codec	M. Kolundzija	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2403.13765	2024	Towards Principled Representation Learning from Videos for Reinforcement Learning	Dipendra Kumar Misra	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2403.03089	2024	VQSynery: Robust Drug Synergy Prediction With Vector Quantization Mechanism	Jiawei Wu	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2402.10575	2024	Symbolic Autoencoding for Self-Supervised Sequence Learning	Mohammad Hossein Amani	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2312.15985	2023	Discrete Messages Improve Communication Efficiency among Isolated Intelligent Agents	Hang Chen	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2312.07280	2023	Towards Equipping Transformer with the Ability of Systematic Compositionality	Chen Huang	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2311.15268	2023	Unlearning via Sparse Representations	Vedant Shah	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2310.18777	2023	Improving Compositional Generalization Using Iterated Learning and Simplicial Embeddings	Yi Ren	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2310.14170	2023	Learning Invariant Molecular Representation in Latent Discrete Space	Xiang Zhuang	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2310.04582	2023	Universal Humanoid Motion Representations for Physics-Based Control	Zhengyi Luo	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2309.06629	2023	The Relational Bottleneck as an Inductive Bias for Efficient Abstraction	Taylor Webb	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2308.02541	2023	Toward More Human-Like AI Communication: A Review of Emergent Communication Research	Nicolo' Brandizzi	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2307.14988	2023	Incrementally-Computable Neural Networks: Efficient Inference for Dynamic Inputs	Or Sharir	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2305.18887	2023	How Does Information Bottleneck Help Deep Learning?	Kenji Kawaguchi	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2305.18378	2023	Disentanglement via Latent Quantization	Kyle Hsu	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2302.10503	2023	Reusable Slotwise Mechanisms	Bailey Trang Nguyen	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2302.07950	2023	Self-organising Neural Discrete Representation Learning à la Kohonen	K. Irie	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2301.04299	2023	SoK: Adversarial Machine Learning Attacks and Defences in Multi-Agent Reinforcement Learning	Maxwell Standen	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2212.13835	2022	Representation Learning in Deep RL via Discrete Information Bottleneck	Riashat Islam	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2211.11956	2022	A Short Survey of Systematic Generalization	Yuan-Peng Li	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2211.01177	2022	Neural Systematic Binder	Gautam Singh	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2211.00247	2022	Discrete Factorial Representations as an Abstraction for Goal Conditioned Reinforcement Learning	Riashat Islam	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2210.03022	2022	Stateful active facilitator: Coordination and Environmental Heterogeneity in Cooperative Multi-Agent Reinforcement Learning	Dian-Bo Liu	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2208.11633	2022	On a Built-in Conflict between Deep Learning and Systematic Generalization	Yuan-Peng Li	semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.1016/j.tics.2022.06.010	2022	Symbols and mental programs: a hypothesis about human singularity.	S. Dehaene	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2207.11240	2022	Discrete Key-Value Bottleneck	Frederik Trauble	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2206.13497	2022	Robustness Implies Generalization via Data-Dependent Generalization Bounds	Kenji Kawaguchi	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2205.10607	2022	Coordinating Policies Among Multiple Agents via an Intelligent Communication Channel	Dian-Bo Liu	semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.3389/fpsyg.2022.806397	2022	Neurosymbolic Systems of Perception and Cognition: The Role of Attention	Hugo Latapie	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2205.07424	2022	Trustworthy Graph Neural Networks: Aspects, Methods, and Trends	He Zhang	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2204.00616	2022	Simplicial Embeddings in Self-Supervised Learning and Downstream Classification	Samuel Lavoie	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2202.01334	2022	Adaptive Discrete Communication Bottlenecks with Dynamic Vector Quantization	Dian-Bo Liu	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2112.03143	2021	Properties of Minimizing Entropy	Xu Ji	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2112.01603	2021	Neurosymbolic Systems of Perception & Cognition: The Role of Attention	Hugo Latapie	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2110.15245	2021	From Machine Learning to Robotics: Challenges and Opportunities for Embodied Intelligence	N. Roy	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2106.08365	2021	Test Sample Accuracy Scales with Training Sample Density in Neural Networks	Xu Ji	semantic_scholar_batch
+arXiv:2107.02367	aval	arXiv:2011.15091	2020	Inductive biases for deep learning of higher-level cognition	Anirudh Goyal	semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.48550/arXiv.2410.13331	2024	Improving Discrete Optimisation Via Decoupled Straight-Through Gumbel-Softmax	Rushi Shah	semantic_scholar_batch
+arXiv:2107.02367	aval	CorpusId:259311814	2023	From IID to the Independent Mechanisms assumption in continual learning	Oleksiy Ostapenko	semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.18653/v1/2023.emnlp-main.852	2023	Unifying Discrete and Continuous Representations for Unsupervised Paraphrase Generation	Mingfeng Xue	semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.48550/arXiv.2308.03358	2023	Minimizing Return Gaps with Discrete Communications in Decentralized POMDP	Jing-Di Chen	semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.48550/arXiv.2302.07950	2023	Topological Neural Discrete Representation Learning à la Kohonen	K. Irie	semantic_scholar_batch
+arXiv:2107.02367	aval	DOI:10.48550/arXiv.2211.01177	2022	Neural Block-Slot Representations	Gautam Singh	semantic_scholar_batch
+arXiv:2107.02367	aval	CorpusId:269917404	2022	S TATEFUL ACTIVE FACILITATOR : C OORDINATION AND E NVIRONMENTAL H ETEROGENEITY IN C OOPERATIVE M ULTI -A GENT R EINFORCEMENT L EARNING	V. Shah	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2303.03747	2023	Graph Decision Transformer	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2301.07137	2023	Heterogeneous Multi-Robot Reinforcement Learning	Matteo Bettini	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2207.07601	2022	ST-P3: End-to-end Vision-based Autonomous Driving via Spatial-Temporal Feature Learning	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:2405.08550	amont	DOI:10.24963/ijcai.2022/82	2022	Efficient Multi-Agent Communication via Shapley Message Value	Di Xue	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2205.14953	2022	Multi-Agent Reinforcement Learning is a Sequence Modeling Problem	Mu-Ning Wen	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2205.13005	2022	QGNN: Value Function Factorisation with Graph Neural Networks	Ryan Kortvelesy	semantic_scholar_batch
+arXiv:2405.08550	amont	DOI:10.5555/3535850.3535981	2022	Learning Efficient Diverse Communication for Cooperative Heterogeneous Teaming	Esmaeil Seraj	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2111.09189	2021	ToM2C: Target-oriented Multi-agent Communication and Cooperation with Theory of Mind	Yuan-Fei Wang	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2109.11251	2021	Trust Region Policy Optimisation in Multi-Agent Reinforcement Learning	J. Kuba	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2108.08325	2021	Towards Collaborative Simultaneous Localization and Mapping: a Survey of the Current Research Landscape	Pierre-Yves Lajoie	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2106.07551	2021	MALib: A Parallel Framework for Population-based Multi-agent Reinforcement Learning	Ming Zhou	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2105.08692	2021	Coach-Player Multi-Agent Reinforcement Learning for Dynamic Team Composition	Bo Liu	semantic_scholar_batch
+arXiv:2405.08550	amont	DOI:10.5555/3463952.3464065	2021	Multi-Agent Graph-Attention Communication and Teaming	Yaru Niu	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2103.01955	2021	The Surprising Effectiveness of PPO in Cooperative Multi-Agent Games	Chao Yu	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2101.08001	2021	UPDeT: Universal Multi-agent Reinforcement Learning via Policy Decoupling with Transformers	Si-Yi Hu	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2011.00583	2020	Game-Theoretic Multiagent Reinforcement Learning	Yaodong Yang	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2010.09776	2020	SMARTS: Scalable Multi-Agent Reinforcement Learning Training School for Autonomous Driving	Ming Zhou	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2003.08839	2020	Monotonic Value Function Factorisation for Deep Multi-Agent Reinforcement Learning	Tabish Rashid	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:2002.05233	2020	Learning multi-agent coordination through connectivity-driven communication	E. Pesce	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1911.10715	2019	Multi-Agent Game Abstraction via Graph Attention Neural Network	Y. Liu	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1911.07470	2019	Graph Transformer for Graph-to-Sequence Learning	Deng Cai	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1910.05366	2019	Learning Nearly Decomposable Value Functions Via Communication Minimization	Tonghan Wang	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1907.11180	2019	Google Research Football: A Novel Reinforcement Learning Environment	Karol Kurach	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1905.05408	2019	QTRAN: Learning to Factorize with Transformation for Cooperative Multi-Agent Reinforcement Learning	Kyunghwan Son	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1902.04043	2019	The StarCraft Multi-Agent Challenge	Mikayel Samvelyan	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1902.01554	2019	Learning to Schedule Communication in Multi-agent Reinforcement Learning	Daewoo Kim	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1901.11454	2019	Efficient Ridesharing Order Dispatching with Mean Field Multi-Agent Reinforcement Learning	Minne Li	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1810.11187	2018	TarMAC: Targeted Multi-Agent Communication	Abhishek Das	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1812.09755	2018	Learning when to Communicate at Scale in Multiagent Cooperative and Competitive Tasks	Amanpreet Singh	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1805.07733	2018	Learning Attentional Communication for Multi-Agent Cooperation	Jiechuan Jiang	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1802.05438	2018	Mean Field Multi-Agent Reinforcement Learning	Yaodong Yang	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1711.00832	2017	A Unified Game-Theoretic Approach to Multiagent Reinforcement Learning	Marc Lanctot	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1709.04326	2017	Learning with Opponent-Learning Awareness	Jakob N. Foerster	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1707.06347	2017	Proximal Policy Optimization Algorithms	John D. Schulman	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1706.05296	2017	Value-Decomposition Networks For Cooperative Multi-Agent Learning	P. Sunehag	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1706.02275	2017	Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments	Ryan Lowe	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1705.08926	2017	Counterfactual Multi-Agent Policy Gradients	Jakob N. Foerster	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1703.10069	2017	Multiagent Bidirectionally-Coordinated Nets: Emergence of Human-level Coordination in Learning to Play StarCraft Combat Games	Peng Peng	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1611.01144	2016	Categorical Reparameterization with Gumbel-Softmax	Eric Jang	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1611.00712	2016	The Concrete Distribution: A Continuous Relaxation of Discrete Random Variables	Chris J. Maddison	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1605.07736	2016	Learning Multiagent Communication with Backpropagation	Sainbayar Sukhbaatar	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1605.06676	2016	Learning to Communicate with Deep Multi-Agent Reinforcement Learning	Jakob N. Foerster	semantic_scholar_batch
+arXiv:2405.08550	amont	arXiv:1506.02438	2015	High-Dimensional Continuous Control Using Generalized Advantage Estimation	John D. Schulman	semantic_scholar_batch
+arXiv:2405.08550	amont	DOI:10.1038/nature14236	2015	Human-level control through deep reinforcement learning	Volodymyr Mnih	semantic_scholar_batch
+arXiv:2405.08550	amont	DOI:10.1007/s10479-007-0176-2	2007	An overview of bilevel optimization	B. Colson	semantic_scholar_batch
+arXiv:2405.08550	amont	CorpusId:871178	1998	The Dynamics of Reinforcement Learning in Cooperative Multiagent Systems	C. Claus	semantic_scholar_batch
+arXiv:2405.08550	amont	DOI:10.1016/b978-1-55860-335-6.50027-1	1994	Markov Games as a Framework for Multi-Agent Reinforcement Learning	Michael L. Littman	semantic_scholar_batch
+arXiv:2405.08550	amont	DOI:10.1007/BF02098169	1992	Hierarchical optimization: An introduction	Gnana Anandalingam	semantic_scholar_batch
+arXiv:2405.08550	amont	CorpusId:269447346	2022	Temporal Dynamic Weighted Graph Convolution for Multi-agent Reinforcement Learning	Yun-Tao Liu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2610.26671	2026	PACT: Plan-Augmented Coordination via Trace-Graphs for Dynamic Multi-Agent Combinatorial Optimization	Xiao Zhou	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2610.10302	2026	Continual Graph Multi-Agent Reinforcement Learning	Tommaso Marzi	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2610.07578	2026	Cooperating with Future Collaborators: Multi-Agent RL under Staggered Participation	Jiang-Lin Qiao	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/TMC.2026.3693470	2026	UAV Carrier Enabled Vehicular Crowdsensing by Multi-Agent Reinforcement Learning With Mutual Policy Divergence and Attentive Memory Update	Qi-Ran Zhao	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2609.34426	2026	Q-learning Penalized Transformer for Safe Offline Reinforcement Learning	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2609.32745	2026	MORPH: Self-Organising Multi-Robot Task Allocation via Neuroplasticity-Inspired Adaptive Topology	Xuezhi Niu	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.24963/ijcai.2026/50	2026	DIRECT: Decentralized Intention and Latent Rule Emergence for Multi-Agent Cooperation Under Intermittent Communication	Enguang Yao	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.3390/e28080919	2026	Information Bottleneck for Communication-Efficient Multi-Agent Reinforcement Learning in UAV Swarms	Zheng Yang	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2607.09330	2026	Communication-Efficient Digital-Twin Coordination for Heterogeneous LLM Embodied Agents over Computing Power Networks	Nuo-Cheng Yang	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1088/1361-6501/ae891d	2026	HiRiSC: hierarchical risk-shaped coordination with sparse hypergraph communication for congested multi-agent path finding	Guihai Shen	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1016/j.neucom.2026.133642	2026	Efficient multi-agent policy learning using knowledge distillation of large language models	Liqiang Tian	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.3390/s26144408	2026	Operating-Regime Evaluation of Byzantine-Resilient Multi-Agent Reinforcement Learning for Sensor-Networked Safe Formation Control	Fu-Liang Ma	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2606.29126	2026	HiComm: Hierarchical Communication for Multi-agent Reinforcement Learning	Run-Ze Zhao	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2606.02359	2026	MOC: Multi-Order Communication in LLM-based Multi-Agent Systems	Yao Guan	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2606.20621	2026	PEAR: Permutation-Equivariant Adaptive Routing Multi-Agent Debate	Yang Feng	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2605.21085	2026	Decoupling Communication from Policy: Robust MARL under Bandwidth Constraints	Alexi Canesse	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2605.18077	2026	LLM-Guided Communication for Cooperative Multi-Agent Reinforcement Learning	S. Bae	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2605.17393	2026	Heterogeneous Information-Bottleneck Coordination Graphs for Multi-Agent Reinforcement Learning	Wei Duan	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2605.15706	2026	Differentiable Mixture-of-Agents Incentivizes Swarm Intelligence of Large Language Models	Xingjian Wu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2604.13472	2026	Bridging MARL to SARL: An Order-Independent Multi-Agent Transformer via Latent Consensus	Zijian Zhao	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2604.05297	2026	Breakthrough the Suboptimal Stable Point in Value-Factorization-Based Multi-Agent Reinforcement Learning	Le-Song Tao	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/TKDE.2026.3658366	2026	Communication Learning in Multi-Agent Systems From Graph Modeling Perspective	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2603.22386	2026	From Static Templates to Dynamic Runtime Graphs: A Survey of Workflow Optimization for LLM Agents	Ling Yue	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2603.19677	2026	GoAgent: Group-of-Agents Communication Topology Generation for LLM-based Multi-Agent Systems	Hong-Jiang Chen	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2603.20279	2026	Learning Communication Between Heterogeneous Agents in Multi-Agent Reinforcement Learning for Autonomous Cyber Defence	A. Popa	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2603.15054	2026	Interference-Aware K-Step Reachable Communication in Multi-Agent Reinforcement Learning	Ziyu Cheng	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2603.04833	2026	SCoUT: Scalable Communication via Utility-Guided Temporal Grouping in Multi-Agent Reinforcement Learning	Manav Vora	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/TPDS.2026.3654605	2026	Hammurabi: Establish Cooperative Order From Pre-Trained Policies in Multi-UAV Networks	Dezhi Chen	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1016/j.neucom.2026.133447	2026	Leader-follower communication graph optimization method for multi-agent reinforcement learning via transformer	Chao Wang	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2602.17062	2026	Retaining Suboptimal Actions to Follow Shifting Optima in Multi-Agent Reinforcement Learning	Yonghyeon Jo	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2602.15776	2026	GlobeDiff: State Diffusion Process for Partial Observability in Multi-Agent Systems	Yi-Qin Yang	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2602.08584	2026	Conditional Sequence Modeling for Safe Reinforcement Learning	Wen-Song Bai	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1007/s44427-026-00021-y	2026	Self-Play Meta-Reinforcement Learning in Multi-Agent Games	Imre Gergely Mali	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2601.08327	2026	Safe Heterogeneous Multi-Agent RL with Communication Regularization for Coordinated Target Acquisition	Gabriele Calzolari	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/TCYB.2025.3638807	2025	Fuzzy Knowledge-Based Hierarchical Reinforcement Learning for Large-Scale Heterogeneous Multiagent Systems	Ding-Bang Liu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2512.18094	2025	Rethinking Multi-Agent Intelligence Through the Lens of Small-World Networks	Boxuan Wang	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/ICPADS67057.2025.11323015	2025	HIPS : Hierarchical Decision-Making Pathfinding Based on Social Value Orientation	Haoxiang Zhao	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2512.11179	2025	Bandwidth-constrained Variational Message Encoding for Cooperative Multi-agent Reinforcement Learning	Wei Duan	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2512.03528	2025	Multi-Agent Reinforcement Learning with Communication-Constrained Priors	Guang Yang	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2511.03348	2025	Learning Communication Skills in Multi-task Multi-agent Deep Reinforcement Learning	Chang-Xi Zhu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2511.01554	2025	Learning what to say and how precisely: Efficient Communication via Differentiable Discrete Communication Learning	Aditya Kapoor	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1007/s11227-025-08052-6	2025	A curriculum-based multi-agent DPG-ASC algorithm for UAV area defense	Miaoping Sun	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/IROS60139.2025.11247096	2025	Transformer-Based Multi-Agent Reinforcement Learning Method With Credit-Oriented Strategy Differentiation	Kai-Xuan Huang	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2510.10585	2025	D3MAS: Decompose, Deduce, and Distribute for Enhanced Knowledge Sharing in Multi-Agent Systems	Heng Zhang	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2510.07799	2025	Dynamic Generation of Multi-LLM Agents Communication Topologies with Graph Diffusion Models	E. Jiang	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2510.03930	2025	LLM Chemistry Estimation for Multi-LLM Recommendation	Huascar Sanchez	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2509.16736	2025	Towards Transparent and Incentive-Compatible Collaboration in Decentralized LLM Multi-Agent Systems: A Blockchain-Driven Approach	Min-Feng Qi	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2508.13661	2025	Communication-Enhanced Tutoring for Efficient Decentralized Multi-Agent Reinforcement Learning	Maciej Wojtala	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1016/j.eswa.2025.129421	2025	ROCO: Role-oriented communication for efficient multi-agent reinforcement learning	Zai-Peng Xie	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2507.23604	2025	Hierarchical Message-Passing Policies for Multi-Agent Reinforcement Learning	Tommaso Marzi	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2506.18019	2025	Graphs Meet AI Agents: Taxonomy, Progress, and Future Opportunities	Yuan-Chen Bei	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2506.02951	2025	Adaptive Graph Pruning for Multi-Agent Communication	Boyi Li	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2505.23352	2025	Understanding the Information Propagation Effects of Communication Topologies in LLM-based Multi-Agent Systems	Xu Shen	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2505.22467	2025	Topological Structure Learning Should Be A Research Priority for LLM-Based Multi-Agent Systems	Jiaxi Yang	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.5555/3709347.3744029	2025	CADP: Towards Better Centralized Learning for Decentralized Execution in MARL	Yi-He Zhou	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1007/s11227-025-07377-6	2025	CoMP-LG: coordinate-aware multi-agent pathfinding via learnable communication graphs	Qingling Zhang	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/CCDC65474.2025.11090613	2025	Graph Neural Network-Based Relation Modeling for Multi-Agent Reinforcement Learning	Tingting Wei	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1007/s11432-024-4353-9	2025	Graph decision transformer for offline reinforcement learning	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2505.01822	2025	Analytic Energy-Guided Policy Optimization for Offline Reinforcement Learning	Ji-Feng Hu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2504.09100	2025	A Short Survey on Small Reasoning Models: Training, Inference, Applications and Research Directions	Cheng-Yu Wang	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/ICASSP49660.2025.10889127	2025	A Ranking Scheme for Trust Region Multi-agent Reinforcement Learning	Ruichen Gao	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2503.23626	2025	A Constrained Multi-Agent Reinforcement Learning Approach to Autonomous Traffic Signal Control	Anirudh Satheesh	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1016/j.knosys.2025.113377	2025	Human attention guided multiagent hierarchical reinforcement learning for heterogeneous agents	Ding-Bang Liu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2502.19717	2025	Exponential Topology-enabled Scalable Communication in Multi-agent Reinforcement Learning	Xin-Ran Li	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2502.10148	2025	Closed-Loop Vision-Language Planning for Multi-Agent Coordination	Zhi-Yuan Li	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2502.04028	2025	Deep Meta Coordination Graphs for Multi-Agent Reinforcement Learning	Nikunj Gupta	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2501.02174	2025	TACTIC: Task-Agnostic Contrastive pre-Training for Inter-Agent Communication	Peihong Yu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2412.17767	2024	ResearchTown: Simulator of Human Research Community	Hao-Fei Yu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2411.11364	2024	Continual Task Learning through Adaptive Policy Self-Composition	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2411.01168	2024	Prompt Tuning with Diffusion for Few-Shot Pre-trained Policy Generalization	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2411.01146	2024	Task-Aware Harmony Multi-Task Decision Transformer for Offline Reinforcement Learning	Ziqing Fan	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/CAC63892.2024.10864683	2024	Resource Allocation in Non-Cooperative Game Models with Reinforcement Learning	Lin-Yao Wang	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2411.00382	2024	Communication Learning in Multi-Agent Systems from Graph Modeling Perspective	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2410.11782	2024	G-Designer: Architecting Multi-agent Communication Topologies via Graph Neural Networks	Guibin Zhang	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2410.02506	2024	Cut the Crap: An Economical Communication Pipeline for LLM-based Multi-Agent Systems	Guibin Zhang	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2405.18890	2024	Locally Estimated Global Perturbations are Better than Local Perturbations for Federated Sharpness-aware Minimization	Ziqing Fan	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2405.18080	2024	HarmoDT: Harmony Multi-Task Decision Transformer for Offline Reinforcement Learning	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.3390/ai5020029	2024	Development of an Attention Mechanism for Task-Adaptive Heterogeneous Robot Teaming	Yi-Bei Guo	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2305.17352	2023	Is Centralized Training with Decentralized Execution Framework Centralized Enough for MARL?	Yi-He Zhou	semantic_scholar_batch
+arXiv:2405.08550	aval	arXiv:2212.14164	2022	On Transforming Reinforcement Learning With Transformers: The Development Trajectory	Sheng-Chao Hu	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/TASE.2025.3641551	2026	Learning Multi-Agent Reservoir Cooperative Operations Over Multi-Relational Directed Acyclic Graph	Qi-Yong He	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.48550/arXiv.2503.18891	2025	AgentDropout: Dynamic Agent Elimination for Token-Efficient and High-Performance LLM-Based Multi-Agent Collaboration	Zhexuan Wang	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/ACCESS.2025.3554493	2025	Visual Explanation With Action Query Transformer in Deep Reinforcement Learning and Visual Feedback via Augmented Reality	Hidenori Itaya	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1109/ACCESS.2025.3631242	2025	IC4Net: Decentralized Communication for Continual Multi-Agent Learning	Martín González-Soto	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.52202/085713-0587	2025	Can Dependencies Induced by LLM-Agent Workflows Be Trusted?	Yu Yao	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.52202/085713-4956	2025	Rebalancing Return Coverage for Conditional Sequence Modeling in Offline Reinforcement Learning	Wen-Song Bai	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.52202/079017-3908	2024	Decomposed Prompt Decision Transformer for Efficient Unseen Task Generalization	Hongling Zheng	semantic_scholar_batch
+arXiv:2405.08550	aval	DOI:10.1016/j.eswa.2026.134277		CoVarNet: Contrastive variational network for communication in multi-agent reinforcement learning	Lu Ren	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2606.16379	2026	Scalable and Interpretable Representation Alignment with Ordinal Similarity	Diogo F. Soares	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2604.26370	2026	Topology-Aware Representation Alignment for Semi-Supervised Vision-Language Learning	Junwon You	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2602.14486	2026	Revisiting the Platonic Representation Hypothesis: An Aristotelian View	Fabian Gröger	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2510.10889	2025	Topological Alignment of Shared Vision-Language Embedding Space	Junwon You	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2504.13181	2025	Perception Encoder: The best visual embeddings are not at the output of the network	Daniel Bolya	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2504.13180	2025	PerceptionLM: Open-Access Data and Models for Detailed Visual Understanding	J. Cho	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2503.11910	2025	RTD-Lite: Scalable Topological Analysis for Comparing Weighted Graphs in Learning Tasks	Eduard Tulchinskii	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2502.16282	2025	Understanding the Emergence of Multimodal Representation Alignment	Megan Tjandrasuwita	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2408.00118	2024	Gemma 2: Improving Open Language Models at a Practical Size	Gemma Team Morgane Riviere	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2310.13018	2023	Getting aligned on representational alignment	Ilia Sucholutsky	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2305.06329	2023	Similarity of Neural Network Models: A Survey of Functional and Representational Measures	Max Klabunde	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2304.07193	2023	DINOv2: Learning Robust Visual Features without Supervision	M. Oquab	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2302.13971	2023	LLaMA: Open and Efficient Foundation Language Models	Hugo Touvron	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2212.07143	2022	Reproducible Scaling Laws for Contrastive Language-Image Learning	Mehdi Cherti	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2203.12602	2022	VideoMAE: Masked Autoencoders are Data-Efficient Learners for Self-Supervised Video Pre-Training	Zhan Tong	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2201.00058	2021	Representation Topology Divergence: A Method for Comparing Neural Network Representations	S. Barannikov	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2111.06377	2021	Masked Autoencoders Are Scalable Vision Learners	Kai-Ming He	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2110.14739	2021	Generalized Shape Metrics on Neural Representations	Alex H. Williams	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2106.10270	2021	How to train your ViT? Data, Augmentation, and Regularization in Vision Transformers	A. Steiner	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2106.07682	2021	Revisiting Model Stitching to Compare Neural Representations	Yamini Bansal	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2103.01913	2021	WIT: Wikipedia-based Image Text Dataset for Multimodal Multilingual Machine Learning	Krishna Srinivasan	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2103.00020	2021	Learning Transferable Visual Models From Natural Language Supervision	A. Radford	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:2010.11929	2020	An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale	A. Dosovitskiy	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:1906.00722	2019	Topological Autoencoders	Michael Moor	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:1905.00414	2019	Similarity of Neural Network Representations Revisited	Simon Kornblith	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:1810.11750	2018	Towards Understanding Learning Representations: To What Extent Do Different Neural Networks Learn the Same Representation	Liwei Wang	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:1806.05759	2018	Insights on representational similarity in neural networks with canonical correlation	Ari S. Morcos	semantic_scholar_batch
+arXiv:2609.27252	amont	CorpusId:23890457	2017	SVCCA: Singular Vector Canonical Correlation Analysis for Deep Learning Dynamics and Interpretability	M. Raghu	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:1701.00239	2017	Randomly Weighted d-Complexes: Minimal Spanning Acycles and Persistence Diagrams	P. Skraba	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:1511.07543	2015	Convergent Learning: Do different neural networks learn the same representations?	Yi-Xuan Li	semantic_scholar_batch
+arXiv:2609.27252	amont	DOI:10.1093/ije/dyq191	2015	The proof and measurement of association between two things.	C. Spearman	semantic_scholar_batch
+arXiv:2609.27252	amont	arXiv:1407.1426	2014	Local Kernels and the Geometric Structure of Data	Tyrus Berry	semantic_scholar_batch
+arXiv:2609.27252	amont	DOI:10.1016/J.ACHA.2007.11.001	2008	Non-linear independent component analysis with diffusion maps	Amit Singer	semantic_scholar_batch
+arXiv:2609.27252	amont	DOI:10.1198/tech.2005.s333	2005	Permutation, Parametric, and Bootstrap Tests of Hypotheses		semantic_scholar_batch
+arXiv:2609.27252	amont	DOI:10.1109/SFCS.2000.892133	2000	Topological Persistence and Simplification	H. Edelsbrunner	semantic_scholar_batch
+arXiv:2609.27252	amont	DOI:10.1002/J.1538-7305.1957.TB01515.X	1957	Shortest connection networks and some generalizations	R. Prim	semantic_scholar_batch
+arXiv:2609.27252	amont	CorpusId:272330373	2024	Do Topological Characteristics Help in Knowledge Distillation?	Jungeun Kim	semantic_scholar_batch
+arXiv:2609.27252	amont	DOI:10.52202/079017-2953	2024	Homology Consistency Constrained Efficient Tuning for Vision-Language Models	Huatian Zhang	semantic_scholar_batch
+arXiv:2609.27252	amont	DOI:10.18653/v1/2023.acl-long.891	2023	Crosslingual Generalization through Multitask Finetuning	Niklas Muennighoff	semantic_scholar_batch
+arXiv:2609.27252	amont	CorpusId:248498316	2021	Grounding Representation Similarity Through Statistical Testing	Frances Ding	semantic_scholar_batch
+arXiv:2609.27252	amont		2008	Representational similarity analysis - connecting the branches of systems neuroscience		semantic_scholar_batch
+arXiv:2609.27252	amont	DOI:10.1111/J.2517-6161.1995.TB02031.X	1995	Controlling the false discovery rate: a practical and powerful approach to multiple testing	Y. Benjamini	semantic_scholar_batch
+arXiv:2609.27252	amont	DOI:10.1090/S0002-9939-1956-0078686-7	1956	On the shortest spanning subtree of a graph and the traveling salesman problem	J. Kruskal	semantic_scholar_batch
+arXiv:2609.27252	amont			Openllama: An open reproduction of llama,		semantic_scholar_batch
+arXiv:2609.27252	aval	arXiv:2610.09411	2026	Shared Geometry As A Rosetta Stone: Cross-Modal Alignment Without Paired Data	Dominik Schnaus	semantic_scholar_batch
+arXiv:2610.08612	amont	DOI:10.1016/j.physa.2025.131134	2025	The beneficial role of noises for disentanglement tasks in modular Hebbian networks	Elena Agliari	semantic_scholar_batch
+arXiv:2610.08612	amont	arXiv:2501.16789	2025	Networks of Hebbian networks: more is different	Elena Agliari	semantic_scholar_batch
+arXiv:2610.08612	amont	arXiv:2501.04387	2025	The unbearable lightness of restricted Boltzmann machines: Theoretical insights and biological applications	Giovanni di Sarra	semantic_scholar_batch
+arXiv:2610.08612	amont	arXiv:2409.08151	2024	Generalized hetero-associative neural networks	Elena Agliari	semantic_scholar_batch
+arXiv:2610.08612	amont	DOI:10.1016/j.neunet.2021.06.017	2021	On the effective initialisation for restricted Boltzmann machines via duality with Hopfield model	F. Leonelli	semantic_scholar_batch
+arXiv:2610.08612	amont	arXiv:2101.11744	2021	On the mapping between Hopfield networks and Restricted Boltzmann Machines	Matthew Smart	semantic_scholar_batch
+arXiv:2610.08612	amont	arXiv:2011.11307	2020	Restricted Boltzmann machine: Recent advances and mean-field theory	A. Decelle	semantic_scholar_batch
+arXiv:2610.08612	amont	arXiv:1611.06759	2016	Emergence of Compositional Representations in Restricted Boltzmann Machines	J. Tubiana	semantic_scholar_batch
+arXiv:2610.08612	amont	arXiv:1111.5191	2011	Multitasking associative networks.	Elena Agliari	semantic_scholar_batch
+arXiv:2610.08612	amont	arXiv:1105.2790	2011	On the equivalence of Hopfield networks and Boltzmann Machines	Adriano Barra	semantic_scholar_batch
+arXiv:2610.08612	amont	DOI:10.1002/9781119991083.ch42	2007	Networks		semantic_scholar_batch
+arXiv:2610.08612	amont	CorpusId:264142913	2005	Theory of Neural Information Processing Systems	A. Coolen	semantic_scholar_batch
+arXiv:2610.08612	amont	DOI:10.1162/089976602760128018	2002	Training Products of Experts by Minimizing Contrastive Divergence	Geoffrey E. Hinton	semantic_scholar_batch
+arXiv:2610.08612	amont	DOI:10.1103/PHYSREVA.32.1007	1985	Spin-glass models of neural networks.	D. Amit	semantic_scholar_batch
+arXiv:2610.08612	amont		2017	Machine learning: New tool in the box		semantic_scholar_batch
+arXiv:2610.08612	amont	DOI:10.1016/B978-0-08-051581-6.50053-2	1985	A Learning Algorithm for Boltzmann Machines	D. Ackley	semantic_scholar_batch
+arXiv:2610.08612	amont			Multi-channel pattern		semantic_scholar_batch
+arXiv:2609.32605	amont	DOI:10.1007/s40574-026-00538-2	2026	Pattern disentanglement and reconstruction by modular Hebbian networks	Elena Agliari	semantic_scholar_batch
+arXiv:2609.32605	amont	DOI:10.1016/j.physa.2025.131134	2025	The beneficial role of noises for disentanglement tasks in modular Hebbian networks	Elena Agliari	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:2509.06905	2025	Yet another exponential Hopfield model	L. Albanese	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:2505.18796	2025	Supervised and Unsupervised protocols for hetero-associative neural networks	A. Alessandrelli	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:2503.06274	2025	Multi-channel pattern reconstruction through $L$-directional associative memories	Elena Agliari	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:2501.16789	2025	Networks of Hebbian networks: more is different	Elena Agliari	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:2410.24153	2024	Dense Associative Memory Through the Lens of Random Features	Benjamin Hoover	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:2401.07110	2024	Hebbian learning from first principles	L. Albanese	semantic_scholar_batch
+arXiv:2609.32605	amont	DOI:10.1038/s42254-023-00595-y	2023	A new frontier for Hopfield networks	Dmitry Krotov	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:2304.14964	2023	The Exponential Capacity of Dense Associative Memories	Carlo Lucibello	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:2212.00606	2022	Dense Hebbian Neural Networks: A Replica Symmetric Picture of Supervised Learning	Elena Agliari	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:2211.09694	2022	Thermodynamics of bidirectional associative memories	Adriano Barra	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:2203.14273	2022	Nonlinear PDEs approach to statistical mechanics of dense associative memories	Elena Agliari	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:2008.02217	2020	Hopfield Networks is All You Need	H. Ramsauer	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:1911.12689	2019	Neural Networks with a Redundant Representation: Detecting the Undetectable.	Elena Agliari	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:1903.10563	2019	Machine learning and the physical sciences	Giuseppe Carleo	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:1702.01929	2017	On a Model of Associative Memory with Huge Storage Capacity	M. Demircigil	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:1701.00939	2017	Dense Associative Memory Is Robust to Adversarial Inputs	Dmitry Krotov	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:1606.01164	2016	Dense Associative Memory for Pattern Recognition	Dmitry Krotov	semantic_scholar_batch
+arXiv:2609.32605	amont	DOI:10.6028/NIST.SP.800-38D	2007	Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM) and GMAC	M. Dworkin	semantic_scholar_batch
+arXiv:2609.32605	amont	CorpusId:264142913	2005	Theory of Neural Information Processing Systems	A. Coolen	semantic_scholar_batch
+arXiv:2609.32605	amont	DOI:10.1002/0471667846.CH9	2004	Low-Density Parity-Check Codes	Christian Schlegel	semantic_scholar_batch
+arXiv:2609.32605	amont	arXiv:cond-mat/0205123	2002	Broken Replica Symmetry Bounds in the Mean Field Spin Glass Model	F. Guerra	semantic_scholar_batch
+arXiv:2609.32605	amont	DOI:10.1109/ISIT.1997.613028	1997	Good error-correcting codes based on very sparse matrices	D. MacKay	semantic_scholar_batch
+arXiv:2609.32605	amont	DOI:10.1364/AO.26.004947	1987	Adaptive bidirectional associative memories.	B. Kosko	semantic_scholar_batch
+arXiv:2609.32605	amont	DOI:10.1142/0271	1986	Spin Glass Theory And Beyond: An Introduction To The Replica Method And Its Applications	M. Mézard	semantic_scholar_batch
+arXiv:2609.32605	amont	DOI:10.1073/PNAS.79.8.2554	1982	Neural networks and physical systems with emergent collective computational abilities.	J. Hopfield	semantic_scholar_batch
+arXiv:2609.32605	amont	DOI:10.6028/nist.fips.203	2024	Module-Lattice-Based Key-Encapsulation Mechanism Standard	G. Nist	semantic_scholar_batch
+arXiv:2609.32605	amont	DOI:10.1142/s2425038416300184	2017	Deep learning	Xing-Bang Hao	semantic_scholar_batch
+arXiv:2609.32605	amont	CorpusId:31476420	1999	Advanced Encryption Standard (AES)	Dirk Fox	semantic_scholar_batch
+arXiv:2609.32605	amont	CorpusId:2221052	1972	More Is Different Broken symmetry and the nature of the hierarchical structure of science	P. Anderson	semantic_scholar_batch
+arXiv:2609.32605	amont			Acceptance test		semantic_scholar_batch
+arXiv:2609.32605	amont			replica symmetry breaking after 40 years		semantic_scholar_batch
