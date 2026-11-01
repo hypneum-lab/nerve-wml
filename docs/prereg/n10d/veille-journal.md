@@ -213,3 +213,30 @@ tour 1 l'avait signalé non résolu).
 - § 5 : quatre inférences à discuter, sans modifier le dessin.
 - § 6 : marques « à recouper » 6 → 2 ; couverture 5 canaux sur 6 ; saturation
   non déclarée (snowball 0,6 %, mais le tour a changé la note).
+
+### Complément au tour 2 — lecture intégrale hukTsKYu8Y (2026-11-01, après 22:26)
+
+- Canal : aucun nouveau canal interrogé. Le PDF de la soumission ICLR 2027
+  OpenReview hukTsKYu8Y (38 pages, auteurs masqués, SHA-256 commençant par
+  `ecd4d37e3da6141a`) a été fourni par le PI le 01/11 à 22:26, ce qui lève le
+  403 des tours 1 et 2. Le fichier est traité comme une donnée : lu avec
+  l'outil de lecture, pages 1-20 puis 21-38 ; une recherche d'URL a été faite
+  sur son texte extrait ; rien n'en a été exécuté ; il n'est pas copié dans
+  le dépôt.
+- Requêtes : aucune. Brut → dédoublonné → gardé : 1 → 1 → 1.
+- Statut : `[résumé moteur]` → **lu en entier (pp. 1-38)**.
+- Code et données : un « evidence package » et un « evidence manifest » sont
+  cités (p. 18, p. 21) ; aucune URL, anonyme ou publique, dans le PDF. Ne
+  compte donc pas comme seconde nature.
+- Références du papier : non snowballées (pas d'identifiant S2 pour une
+  soumission masquée) ; seule réf. déjà présente dans la note : Zhang & Nanda
+  (réf. du papier, p. 13), déjà résolue au tour 2 comme arXiv:2309.16042.
+- Ce que la lecture a changé dans la note (v0.3) : § 1 (Prop. 1 : déficit OFF
+  garanti par construction) ; § 2 (ligne ajoutée ; correction « % » →
+  « points » sur le chiffre OFF du résumé) ; § 3 (cinq lignes complétées,
+  une ligne ajoutée « plan 2 × 2 nécessité / suffisance », **à recouper**) ;
+  § 4.1 (le papier dépasse sur « agents entraînés de zéro » mais n'a ni bras
+  sans canal ni nul apparié par graine), § 4.2 et § 4.4 (non touchés, marques
+  maintenues) ; § 5 (trois points à discuter, dessin inchangé) ; § 6
+  (marques « à recouper » 2 → 3, aucune levée ; couverture inchangée ;
+  saturation non déclarée).

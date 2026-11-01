@@ -53,8 +53,8 @@ du dossier `.github` (PR #23).
 - **Ce que ça tranche.** Si le message entre causalement dans la politique de
   l'auditeur — la question ouverte n° 1 de la note.
 - **Antériorité la plus proche.** Lowe 2019 (arXiv:1903.05168, CIC et messages
-  brouillés) ; OpenReview hukTsKYu8Y (couper / substituer / restaurer)
-  `[résumé moteur]` ; Cheng et al. arXiv:2608.04893 `[résumé moteur]`.
+  brouillés) ; OpenReview hukTsKYu8Y (couper / substituer / restaurer ;
+  lu en entier pp. 1-38 le 01/11, voir § 5) ; Cheng et al. arXiv:2608.04893 `[résumé moteur]`.
 - **Limite.** Lowe §6.2 : couper le canal en test crée un décalage de
   distribution ; d'où la restauration et D2 en complément.
 
@@ -186,3 +186,32 @@ précédé de D6 (CPU), soit est. 12-23 h GPU et ≈ 30 h humaines.
 - **Toute exécution maintenant.** Verrou non passé ; aucun calcul sur KXKM,
   macM1 ou GrosMac dans ce chantier ; KXKM est d'ailleurs réservé après
   E1-small (`MS:348`, G5).
+
+## 5. Après lecture de hukTsKYu8Y (01/11, pp. 1-38 lues en entier)
+
+Rien n'est lancé ; aucun dessin ne part avant que le verrou soit passé.
+Détail des faits et des pages : `reading-note.md` § 2 (complément v0.3).
+
+- **D1 — en partie tombé.** Fait : hukTsKYu8Y fait déjà le canal coupé (OFF),
+  le contenu substitué depuis un autre input (transplant à trois valeurs) et
+  une restauration, sur des modèles entraînés de zéro (pp. 4-7, p. 23). Fait :
+  il ne fait ni message gelé (constant), ni bras sans canal entraîné, ni nul
+  apparié par graine, et son canal est un paquet continu entre modules
+  homogènes supervisés par entropie croisée (p. 3, p. 18). Inférence : D1 ne
+  peut plus être présenté comme une intervention nouvelle ; ce qui reste neuf
+  est son cadre (renforcement, neurolettres discrètes, `nocomm` entraîné,
+  nul apparié). L'antériorité de D1 passe de `[résumé moteur]` à lu en entier.
+  Inférence : leur sélection de cas à trois valeurs distinctes (p. 5) est une
+  amélioration possible de D1, à chiffrer.
+- **D2 — reste neuf.** Fait : aucun modèle n'y est entraîné sans canal (le
+  déficit OFF est garanti par construction, Prop. 1 p. 4).
+- **D3 — non touché** (pas de démarrage à chaud).
+- **D4 — non touché** (deux initialisations par corpus, pas de cross-play,
+  p. 23).
+- **D5 — non touché** (pas de code fixe ni d'attracteurs).
+- **D6, D7 — internes, non touchés.**
+- **Nouveau candidat, non classé :** un test de mécanisme à la manière de leur
+  plan 2 × 2 (restauration des entrées de l'auditeur contre transplant
+  d'entrées seules) suppose une voie de réception identifiable ; inférence :
+  pour N10-D cela demanderait d'instrumenter le chemin de réception de
+  l'auditeur, coût non estimé, hors du dessin minimal.

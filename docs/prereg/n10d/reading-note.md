@@ -1,4 +1,4 @@
-# Note de lecture — N10-D (v0.2, 2026-11-01)
+# Note de lecture — N10-D (v0.3, 2026-11-01)
 
 Statut : brouillon de lecture, verrou **non passé** (seul le PI le déclare,
 après le contradicteur). Ce document ne modifie ni `protocol.md` (PR #100,
@@ -20,7 +20,10 @@ Références internes (chemins relatifs au dépôt indiqué) :
 
 Historique : v0 (tour 1 : arXiv, OpenReview, Semantic Scholar) ; v0.2 (tour 2 :
 OpenReview, bioRxiv, thèses/HAL, code et données, snowball sur 6 sources de
-plus ; détail dans `veille-journal.md`).
+plus ; détail dans `veille-journal.md`) ; v0.3 (lecture intégrale d'OpenReview
+hukTsKYu8Y, pp. 1-38, PDF fourni par le PI le 01/11 à 22:26, empreinte
+SHA-256 commençant par `ecd4d37e3da6141a` ; le PDF n'est pas copié dans le
+dépôt).
 
 ## 1. Question que la campagne prétend trancher (une phrase)
 
@@ -43,6 +46,15 @@ des relais sans contenu pertinent ; régime naturel où il peut : effet d'appari
 borné à ±2,8 points). Inférence : « attendu par construction » est le
 comportement publié d'un canal nécessaire, ce qui conforte l'écart entre la
 question de `P100` §1 et la question ouverte.
+
+Fait (v0.3) : hukTsKYu8Y démontre qu'avec un canal qui est la seule route
+entre modules, couper le canal produit un déficit garanti dès que la tâche est
+apprise (Proposition 1, p. 4) ; les auteurs en concluent que ce déficit
+« certifie que l'information passe par le workspace, mais pas ce qui passe »
+(p. 4) et ne s'appuient pas dessus (p. 9). Inférence : c'est le même statut que
+`eng − nocomm` sur `asym` dans `P100` §1 (attendu par construction), formulé
+cette fois comme un énoncé démontré ; la question d'usage causal reste celle
+qui compte.
 
 ## 2. Sources primaires lues en entier
 
@@ -68,6 +80,18 @@ Tour 2 (PDF ouverts le 2026-11-01 ; pages lues dites exactement) :
 | arXiv:2610.37849 | Denamganaï, 2026 (PoPLi) | 1-6 (introduction, travaux liés, méthode, début du montage) sur 17 ; résultats et annexes non lus ici (le résumé donne les chiffres) | Test comportemental par paraphrase : partenaire contre étranger placés dans le même siège ; reprend la recommandation de Lowe §6.2 de ne pas mettre le message à zéro ; code publié `Near32/PartnerOutsiderPositiveListening` (MIT, README lu). |
 | arXiv:2609.11365 | Marincat, 2026 | 1-8 (résumé, introduction, cadre, §4 P1) sur 17 ; §5-§7 et annexes survolés | Audit d'interopérabilité entre 6 sociétés de cellules LM entraînées indépendamment, paquets continus : 26 directions inter-initialisations sur 26 échouent à tous les échelons d'alignement ; deux sociétés de même initialisation sont interopérables à 1,000 ; contrôles par dérangement et par décalage ; protocole scellé et préenregistré. |
 
+Complément v0.3 (PDF fourni par le PI, lu avec l'outil de lecture, rien
+exécuté depuis le fichier) :
+
+| id résolu | auteurs, année | pages lues | ce qu'elle établit |
+|---|---|---|---|
+| OpenReview hukTsKYu8Y | auteurs masqués, ICLR 2027 (soumission, relecture en double aveugle) | pp. 1-38 lues en entier (corps pp. 1-9, références pp. 10-13, annexes A-H pp. 14-38), PDF fourni par le PI 01/11 22:26 | Modèle « AFGW » de 6 891 784 paramètres **entraîné de zéro** (pas un LLM pré-entraîné) sur des mondes relationnels synthétiques, supervision par les seuls jetons de réponse (p. 3, p. 17-20) ; quatre modules récurrents de même architecture (style GRU), deux lecteurs de mémoire disjoints, un workspace compétitif dont le paquet continu de 640 dimensions est la **seule** route entre modules (p. 3-4, Table 2 p. 18). Protocole en échelons : présence, dépendance (OFF = broadcast mis à zéro), usage du contenu (transplant du paquet d'un donneur, cas choisis symboliquement pour que X, Y, Z soient distincts : ignoré / relais / calcul), mécanisme (restauration des requêtes natives du récepteur = nécessité ; transplant des seules requêtes = suffisance ; bruit de même norme), étendue (une source, trois récepteurs) (p. 2, p. 4-5). Contrôles : auto-remplacement, mêmes faits dans un autre ordre, source non pertinente, bruit de paquet de même norme, écriture jamais lue r = 3 (p. 5, p. 29-30). Confirmation **gelée et hachée localement, non préenregistrée publiquement** (p. 23) : 2 corpus × 2 initialisations = 4 modèles (A1, A2, B1, B2), panneaux de 512 cas (p. 6, p. 23-24). Résultats : OFF −41,41 à −51,56 **points** en composition, 0,39 à 1,37 point en local (p. 6, Table 3 p. 21) ; transplant → hybride Z dans 60,9-73,0 % (312-374/512) contre 4,9-12,7 % sans intervention (p. 7, Table 6 p. 24) ; restauration ramène Z au taux natif (réduction appariée 48,24-68,16 points) et rend la sortie native dans 2 047/2 048 cas, bruit de même norme garde 97,1-99,2 % de l'effet (p. 7, p. 22) ; transplant de requêtes seules reproduit la sortie du transplant complet dans 2 045/2 048 cas (supplémentaire, panneaux déjà vus, p. 7, p. 36) ; contraste positif dans les 64 combinaisons famille × initialisation, test du signe unilatéral p = 2^−32 en traitant les familles comme unités (p. 7, p. 23) ; variante trois récepteurs : 2 graines, familles de développement, hors étude gelée (p. 8, p. 31-33). Statistique : comptes et agrégats « descriptifs » (p. 22, p. 34, p. 36) ; **aucun bras entraîné sans canal, aucun nul par permutation d'étiquettes de bras**. Limites déclarées : suffisance au niveau de la sortie seulement, logits différents (p. 7, p. 37) ; la récupération 2 047/2 048 est un contrôle au niveau du décodage, pas une preuve de maintien entre jetons (p. 34-35) ; recombinaison au sein du même processus générateur (p. 6, p. 23) ; non établi : que la compétition ou la largeur du paquet soient nécessaires (Table 1, p. 17) ; le test ne sépare pas lectures contextuelles et lexicales, le bruit de même norme n'est qu'un contrôle d'amplitude (p. 29-30) ; restant ouvert selon les auteurs : insertion dans un Transformer pré-entraîné, ignition non linéaire, limites de capacité, maintien entre jetons, rapport (p. 9, p. 16) ; survie du mécanisme à un lecteur invariant par permutation après réentraînement (p. 38). Code : un « evidence package » et un « evidence manifest » sont mentionnés (p. 18, p. 21) mais **aucune URL, ni anonyme ni publique**, n'apparaît dans le PDF (recherche texte du PDF, 01/11). |
+
+Correction d'une lecture `[résumé moteur]` de la v0.2 : le résumé de la page 1
+écrit « lowers accuracy by 41–52% » ; le corps (p. 6) et la Table 3 (p. 21)
+donnent des **points de pourcentage** (41,41-51,56 points). La v0.2 écrivait
+« −41 à −52 % ».
+
 Lues en partie seulement au tour 2 (PDF ouvert, sections dites) :
 
 | id | pages / sections | usage dans la note |
@@ -79,22 +103,31 @@ Lue en résumé seulement :
 
 | id | source | statut |
 |---|---|---|
-| OpenReview hukTsKYu8Y | « Does the Workspace Do the Work? A Causal Protocol for Verifying Global-Workspace Computation in a Language Model », soumission ICLR 2027, auteurs masqués (relecture en double aveugle), mots-clés Global Workspace Theory, activation patching | `[résumé moteur]` : PDF (`openreview.net/pdf/c506e622…`) et `notes?id=` en 403 au tour 2 aussi ; titre et résumé via `notes/search` ; aucune version arXiv trouvée (requêtes `ti:"Does the Workspace Do the Work"` et `abs:"global workspace" AND abs:"causal protocol"`, 0 résultat chacune). Résumé : couper le broadcast −41 à −52 % sur les questions à deux modules (≤ 1,4 pt sur un module) ; broadcast substitué → combinaison dans 61-73 % des cas ; restauration 2 047/2 048 ; protocole fixé d'avance. **non vérifié** au-delà du résumé. |
+| OpenReview hukTsKYu8Y | « Does the Workspace Do the Work? A Causal Protocol for Verifying Global-Workspace Computation in a Language Model », soumission ICLR 2027, auteurs masqués (relecture en double aveugle), mots-clés Global Workspace Theory, activation patching | `[résumé moteur]` : PDF (`openreview.net/pdf/c506e622…`) et `notes?id=` en 403 au tour 2 aussi ; titre et résumé via `notes/search` ; aucune version arXiv trouvée (requêtes `ti:"Does the Workspace Do the Work"` et `abs:"global workspace" AND abs:"causal protocol"`, 0 résultat chacune). Résumé : couper le broadcast −41 à −52 % sur les questions à deux modules (≤ 1,4 pt sur un module) ; broadcast substitué → combinaison dans 61-73 % des cas ; restauration 2 047/2 048 ; protocole fixé d'avance. **non vérifié** au-delà du résumé. **Remplacé en v0.3** par la lecture intégrale (pp. 1-38, tableau « Complément v0.3 » ci-dessus) ; ligne conservée pour l'historique. |
 
 ## 3. Déjà publié
 
 | affirmation | sources (nature) | état |
 |---|---|---|
-| Sur une tâche où l'information est privée par construction, un canal appris bat nettement le silence. | 1812.09755 Tables (article, expérience) ; 1903.05168 §2 et §6 (article, analyse critique) ; 2608.04893 §4.1 (régime calibré, 100 % contre 23-25 %) ; 2610.28905 Table 1 (article) ; `MS` G1 et `P100` §1 qui citent l'attendu (document interne) | recoupé (4 articles + dépôt) |
-| Les métriques côté émetteur (SC, entropie) ne prouvent pas que l'auditeur utilise le message. | 1903.05168 Table 2 et §5 (article) ; 1912.05676 Eccles 2019 §3 (article, autre équipe : équilibre où le récepteur ignore le canal) ; 2608.04893 (« un gain de benchmark n'établit pas la transmission », article empirique) | recoupé ; Eccles lu en partie (pp. 1-5) |
-| Couper le canal en test est un test biaisé ; il faut des bras entraînés avec et sans canal. | (a) couper/mettre à zéro n'est pas un test du contenu : 1903.05168 §6.2 (article, décalage de distribution) ; 2608.04893 §3 et MedQA (zéro −14,7 points contre dérangé −0,4 : effet de présence sans effet d'appariement) ; 2610.37849 §2 (reprend la recommandation de Lowe ; dépendant) ; 2607.26773 (cite la préférence pour le remplacement dans la distribution, pp. 1-5). (b) bras entraînés de zéro avec et sans canal : 1903.05168 §6.2 (recommandation) ; 2609.34373 (silence entraîné comme condition à part, 25 graines, pratique) | (a) **recoupé** (deux articles, deux équipes, expériences différentes ; nuance : Cheng parle d'effet de présence, Lowe de décalage) ; (b) recoupé en pratique, pas en énoncé |
-| Le dérangement / la substitution / la restauration de messages comme protocole causal d'usage du canal. | 1903.05168 (CIC, messages brouillés) ; 2608.04893 (dérangé, zéro, aléatoire ; lu pp. 1-10) ; 2610.28905 (dérangé, substitution ciblée, zéro, aléatoire, auto-substitué ; lu pp. 1-9, code publié) ; 2607.26773 Zhang & Emu (4 réglages ; lu pp. 1-5) ; 2609.11365 (transplantation, dérangement, décalage ; lu pp. 1-8) ; hukTsKYu8Y `[résumé moteur]` (restauration 2 047/2 048) | **recoupé en méthode** ; quatre sources lues, dont une avec code ; la restauration n'est lue en entier que chez Zhang & Emu (NLD) ; hukTsKYu8Y non vérifié |
+| Sur une tâche où l'information est privée par construction, un canal appris bat nettement le silence. | 1812.09755 Tables (article, expérience) ; 1903.05168 §2 et §6 (article, analyse critique) ; 2608.04893 §4.1 (régime calibré, 100 % contre 23-25 %) ; 2610.28905 Table 1 (article) ; `MS` G1 et `P100` §1 qui citent l'attendu (document interne) ; v0.3 : hukTsKYu8Y Prop. 1 p. 4 et p. 6 (canal seule route entre modules : OFF −41,41 à −51,56 points en composition ; mais canal coupé en test, pas bras entraîné sans canal) | recoupé (5 articles + dépôt) ; hukTsKYu8Y **confirme** sous forme démontrée |
+| Les métriques côté émetteur (SC, entropie) ne prouvent pas que l'auditeur utilise le message. | 1903.05168 Table 2 et §5 (article) ; 1912.05676 Eccles 2019 §3 (article, autre équipe : équilibre où le récepteur ignore le canal) ; 2608.04893 (« un gain de benchmark n'établit pas la transmission », article empirique) ; v0.3 : hukTsKYu8Y pp. 1-2 et p. 9 (présence ≠ usage ; une architecture rend l'usage possible sans le produire) | recoupé ; Eccles lu en partie (pp. 1-5) ; hukTsKYu8Y **confirme** (côté architecture plutôt que côté émetteur) |
+| Couper le canal en test est un test biaisé ; il faut des bras entraînés avec et sans canal. | (a) couper/mettre à zéro n'est pas un test du contenu : 1903.05168 §6.2 (article, décalage de distribution) ; 2608.04893 §3 et MedQA (zéro −14,7 points contre dérangé −0,4 : effet de présence sans effet d'appariement) ; 2610.37849 §2 (reprend la recommandation de Lowe ; dépendant) ; 2607.26773 (cite la préférence pour le remplacement dans la distribution, pp. 1-5). (b) bras entraînés de zéro avec et sans canal : 1903.05168 §6.2 (recommandation) ; 2609.34373 (silence entraîné comme condition à part, 25 graines, pratique). v0.3, pour (a) : hukTsKYu8Y Prop. 1 p. 4 et preuve p. 29 (quand le canal est la seule route, la coupure renseigne sur la route, pas sur le calcul ; argument par construction, distinct du décalage de distribution) ; pour (b) : hukTsKYu8Y n'entraîne aucun modèle sans canal (ne touche pas) | (a) **recoupé**, hukTsKYu8Y **confirme** par un troisième argument ; (deux articles, deux équipes, expériences différentes ; nuance : Cheng parle d'effet de présence, Lowe de décalage) ; (b) recoupé en pratique, pas en énoncé |
+| Le dérangement / la substitution / la restauration de messages comme protocole causal d'usage du canal. | 1903.05168 (CIC, messages brouillés) ; 2608.04893 (dérangé, zéro, aléatoire ; lu pp. 1-10) ; 2610.28905 (dérangé, substitution ciblée, zéro, aléatoire, auto-substitué ; lu pp. 1-9, code publié) ; 2607.26773 Zhang & Emu (4 réglages ; lu pp. 1-5) ; 2609.11365 (transplantation, dérangement, décalage ; lu pp. 1-8) ; v0.3 : hukTsKYu8Y lu en entier (OFF, transplant à trois valeurs, restauration des requêtes, transplant des requêtes seules, bruit de même norme, plan 2 × 2 et décomposition exacte Prop. 4 ; pp. 4-5, 7, 35-37 ; restauration 2 047/2 048, p. 7 et p. 22) | **recoupé en méthode** ; cinq sources lues, dont une avec code ; la restauration est désormais lue en entier dans hukTsKYu8Y (restauration des **requêtes du récepteur**, pas du message) ; hukTsKYu8Y **dépasse** les autres sources sur le volet mécanisme (voir ligne suivante) |
+| Un plan 2 × 2 (broadcast × requêtes du récepteur) avec restauration (nécessité) et transplant des requêtes seules (suffisance) localise la voie par laquelle un contenu transmis agit. | hukTsKYu8Y pp. 5, 7, 35-37 (article seul ; aucun code public : « evidence package » cité p. 18 et p. 21 sans URL) | **à recouper** (une seule source ; nouvelle ligne v0.3) |
 | Sous couplage rigide un canal appris peut ne rien apporter par rapport au silence. | 2609.34373 §4.1 (lu pp. 1-9 : +0,001 ± 0,001, p = 0,982, n = 25 ; couplage partiel : appris indistinguable du silence, p = 0,400) ; 2608.04893 §5 (régime naturel : l'appariement du cache vaut 0 à ±2,8 points quand le récepteur résout seul) ; `MS:326-328` (gtm_mis 0,81 contre gtm 0,54-0,73, une graine, non répliqué) | **recoupé** (MARL à contrôle continu et relais LLM, deux équipes, deux régimes) ; `MS` reste une observation à une graine |
 | Les protocoles appris par des entraînements indépendants ne sont pas mutuellement lisibles (le cross-play s'effondre). | 2609.34373 §4.5 (0,980 → 0,144 sur 600 paires ordonnées, le meilleur alignement construit ne récupère que 17 % de l'écart) ; 2609.11365 §4 (26 directions inter-initialisations sur 26 échouent à tous les échelons ; seules les paires de même initialisation sont interopérables) | **recoupé** (deux articles, tâches et substrats différents ; Marincat lu pp. 1-8 ; initialisation et ordre des données distincts de la graine seule) |
-| Messages discrets appris entre modules ou agents spécialisés. | 2107.02367 (article, modules spécialistes) ; 2609.34373 Table 2-3 (canal VQ de 2 bits, 25 graines, 0,983 contre silence 0,000 sur l'arène non couplée : un canal discret par VQ transmet quand il est nécessaire) | **recoupé, périmètre réduit** : agents MARL, pas modules spécialistes Transformer ; la veille interne `VEI:70-105` dérive de l'article et ne compte plus |
+| Messages discrets appris entre modules ou agents spécialisés. | 2107.02367 (article, modules spécialistes) ; 2609.34373 Table 2-3 (canal VQ de 2 bits, 25 graines, 0,983 contre silence 0,000 sur l'arène non couplée : un canal discret par VQ transmet quand il est nécessaire) | **recoupé, périmètre réduit** : agents MARL, pas modules spécialistes Transformer ; hukTsKYu8Y ne touche pas cette ligne (paquets **continus** de 640 dimensions, Table 2 p. 18) ; la veille interne `VEI:70-105` dérive de l'article et ne compte plus |
 | Un code fixe décodé par attracteurs résiste à un fort bruit de canal sans aucun apprentissage. | 2609.32605 (article ; lu) ; 2610.08612 (article, même groupe) ; 1407.6029 Fiete, Schwab, Tran `[résumé moteur]` (autre groupe : réseaux de Hopfield binaires construits comme décodeurs de tout code neuronal bruité, taux d'erreur asymptotiquement nul à taux d'information 1/log n) | **recoupé** par un groupe indépendant, mais le second groupe en résumé seulement et sur un réseau **construit** (non appris) ; 10.1038/339693a0 Sourlas 1989 (notice Crossref seule) n'est qu'un précédent de principe, non utilisé |
 | Positive listening partenaire contre étranger comme test d'usage. | 2610.37849 Denamganaï 2026 (lu pp. 1-6) ; 1903.05168 §3 (définition) ; dépôt `Near32/PartnerOutsiderPositiveListening` (code, README lu) | recoupé sur la notion et la méthode de remplacement ; résultats de PoPLi non lus ici |
 | Une mesure d'usage fondée sur le zéro reste pratiquée. | `SudarshanHegde326/emergent-comm-usage-marl`, `scripts/analysis/spread_ablation.py` (mémoire MSc, 3 graines, ablation par message mis à zéro) `[README et début du script lus]` | observation de pratique, une source de code ; ne pas en tirer de conclusion |
+
+v0.3, lignes non touchées par hukTsKYu8Y (fait, après lecture des pp. 1-38) :
+couplage rigide / canal sans valeur (le papier n'a pas de condition où le canal
+est inutile, la composition l'exige par construction, p. 3) ; cross-play (deux
+initialisations par corpus, mais aucun appariement émetteur-récepteur croisé,
+p. 23) ; code fixe décodé par attracteurs ; positive listening partenaire
+contre étranger ; pratique du zéro (le papier utilise OFF comme échelon 1 en le
+déclarant insuffisant, p. 4).
 
 ## 4. Reste ouvert
 
@@ -119,6 +152,19 @@ Lue en résumé seulement :
    trouvée. **recoupé en absence sur 6 canaux** (voir § 6 pour les limites),
    mais l'absence reste une inférence ; tout nouveau résultat sur ce point
    change la question.
+   v0.3 — Fait : hukTsKYu8Y (lu pp. 1-38) applique OFF, transplant et
+   restauration sur des modèles **entraînés de zéro** (4 initialisations en
+   confirmation, p. 23), ce que Cheng et al. et Gazzaev et al. ne faisaient
+   pas. Fait : il n'entraîne aucun bras sans canal, ne permute pas
+   d'étiquettes de bras, et son inférence est un test du signe sur 64
+   combinaisons famille × initialisation où les familles sont les unités
+   (p. 7, p. 23) ; il qualifie lui-même ses regroupements de descriptifs et
+   rappelle que deux initialisations d'une même famille ne sont pas
+   indépendantes (p. 34, p. 36). Inférence : le papier **dépasse** la
+   littérature lue sur « intervention de message sur des agents entraînés de
+   zéro », mais **ne touche pas** le nul apparié par graine sur des bras
+   entraînés avec et sans canal ; l'absence est désormais constatée sur 7
+   sources lues et 6 canaux.
 2. **Le même test sur des neurolettres discrètes entre substrats hétérogènes
    (MLP/LIF) et au chemin de réception γ/θ.** Preuve de l'absence : aucune des
    13 sources snowballées (7 au tour 1, 6 au tour 2 ; 668 + 114 citants en
@@ -131,6 +177,21 @@ Lue en résumé seulement :
    aucune intervention causale sur le message ni substrats hétérogènes.
    **à recouper** : seuls le filtre par titre et un résumé OpenReview
    étayent l'absence ; aucune lecture intégrale ne la confirme.
+   v0.3 — Fait : le concurrent le plus proche, lu en entier (hukTsKYu8Y),
+   utilise quatre modules de **même** architecture récurrente (style GRU ;
+   seuls l'accès mémoire et le rôle diffèrent, p. 3, p. 17-19) et un paquet
+   **continu** (640 dimensions, Table 2 p. 18) ; ni MLP contre LIF, ni
+   impulsions, ni messages discrets, ni chemin de réception γ/θ. Inférence :
+   ce papier **ne touche pas** 4.2 ; il ne contredit pas l'absence mais ne la
+   prouve pas non plus (une lecture intégrale, même nature que le résumé
+   OpenReview) ; la marque **à recouper** reste.
+   Inférence sur la portée : AFGW n'est pas un grand LLM pré-entraîné mais un
+   petit modèle (6,9 M paramètres) entraîné de zéro en 22 minutes environ par
+   modèle (p. 20, Table 13 p. 28), ce qui le rapproche de N10-D plus que le
+   titre ne le laisse penser ; les écarts qui restent sont la supervision
+   (entropie croisée sur jetons de réponse, pas d'apprentissage par
+   renforcement), le canal continu au lieu de neurolettres discrètes, et
+   l'homogénéité des modules.
 3. **Claim B (accord de classifieurs) contre usage du canal.** Fait : `RAP:56`
    (B3) indique que les codes « post-VQ » sont l'argmax de la tête π et que
    MI(code ; XOR) ≈ 0,001 nat selon un rejeu d'agent non reproductible depuis
@@ -147,6 +208,12 @@ Lue en résumé seulement :
    distinguer « canal inutilisé » de « canal inutilisable ». Une source
    (Chauhan) en lecture partielle + un précédent théorique (Eccles) :
    **à recouper** pour le chiffre, recoupé pour l'existence du phénomène.
+   v0.3 — Fait : dans hukTsKYu8Y le canal appris est utilisé dans les quatre
+   modèles de confirmation (p. 7) ; les auteurs écrivent que l'architecture
+   rend l'usage possible sans le produire et que le protocole aurait pu le
+   réfuter (p. 9). Inférence : le papier **ne touche pas** le chiffre de 4.4
+   (aucun cas de canal inutilisé n'y est rapporté) ; il énonce seulement la
+   possibilité ; la marque reste.
 
 Ce qui n'est **pas** ouvert : `eng − nocomm` sur asym avec émetteur conçu
 (`P100` §1 le dit lui-même).
@@ -194,7 +261,36 @@ dessin) :
   Inférence : 25 graines est un ordre de grandeur publié pour un test apparié
   d'agents appris de zéro, à comparer à la puissance visée par `P100`.
 
+Points à discuter issus de la lecture de hukTsKYu8Y (v0.3 ; inférences, rien
+n'est modifié dans le dessin) :
+- Fait : le papier fait déjà « coupé » (OFF), « substitué depuis un autre
+  input » (transplant, proche du message permuté) et une restauration (p. 4-7).
+  Fait : il ne fait pas de message **gelé** (constant) et sa restauration porte
+  sur les requêtes du récepteur, pas sur le retour au message intact.
+  Inférence : la nouveauté de D1 ne tient plus à l'intervention elle-même mais
+  à son cadre : agents appris par renforcement, messages discrets, bras
+  `nocomm` entraîné de zéro, nul apparié par graine.
+- Fait : le papier choisit symboliquement des cas où réponse du récepteur,
+  réponse du donneur et réponse hybride sont distinctes deux à deux (p. 5).
+  Inférence : un analogue pour la tâche `asym` (épisodes où la cible du
+  donneur et la cible du récepteur diffèrent et où l'on sait d'avance quelle
+  sortie trahit l'usage du contenu) séparerait « relais » et « usage » dans
+  le permuté ; option à chiffrer.
+- Fait : leur inférence traite les familles comme unités avec un test du signe
+  (p. 7) ; 4 initialisations seulement. Inférence : ce n'est pas un modèle de
+  nul pour N10-D ; le nul apparié par graine reste à écrire.
+
 ## 6. Trois tests du verrou
+
+État v0.3 (après lecture intégrale de hukTsKYu8Y) :
+
+| test | état | ce qui manque |
+|---|---|---|
+| Saturation | **non déclarée.** La lecture intégrale a changé la note (§ 1, § 2, § 3 cinq lignes et une ligne ajoutée, § 4.1, 4.2, 4.4, § 5) ; aucun snowball n'a été fait sur hukTsKYu8Y (OpenReview hors S2, auteurs masqués). | Snowball des références de hukTsKYu8Y (pp. 10-13) ; un tour sans entrée qui change la note. |
+| Recoupement | **inchangé en nombre de marques levées, une marque ajoutée.** Avant v0.3 : 2 marques « à recouper » (4.2, 4.4). Après : **3** (4.2, 4.4, et la nouvelle ligne § 3 « plan 2 × 2 nécessité / suffisance », tenue par hukTsKYu8Y seul, sans code public). Aucune marque n'est levée : hukTsKYu8Y ne touche ni 4.2 ni 4.4. La ligne « dérangement / substitution / restauration » ne dépend plus d'une source non vérifiée. | Code public de hukTsKYu8Y (aucune URL dans le PDF) ou une seconde source de nature différente pour le volet mécanisme ; les manques de la v0.2 restent (PoPLi résultats, Zhang & Emu pp. 6-9, Marincat § 5-7, Eccles suite, second résultat pour 4.4). |
+| Couverture | **inchangée** (5 canaux sur 6) : le PDF vient du PI, pas d'une nouvelle requête. | Comme en v0.2. |
+
+État v0.2 (conservé) :
 
 | test | état | ce qui manque |
 |---|---|---|
@@ -230,3 +326,4 @@ dessin) :
 | 2026-11-01 (tour 2) | OpenReview `spio7kWIWr`, `dz0yb4MlKd`, `OAmBy25HHg` | titres et résumés via `notes/search` `[résumé moteur]` |
 | 2026-11-01 (tour 2) | dépôts GitHub `Near32/PartnerOutsiderPositiveListening`, `alanrbtx/hidden-messages-diffusion-agents`, `SudarshanHegde326/emergent-comm-usage-marl` | README ; début de `spread_ablation.py` |
 | 2026-11-01 (tour 2) | thèses HAL tel-05076852 (Toquebiau 2024), tel-03536320 (Chaabouni 2021), tel-04728859 (Pontes Mota 2024) | résumés `[résumé moteur]` ; non gardées (hors sujet ou fond) |
+| 2026-11-01 (v0.3, après 22:26) | OpenReview hukTsKYu8Y, PDF fourni par le PI (38 pages, SHA-256 commençant par `ecd4d37e3da6141a`) | **pp. 1-38 en entier** : corps 1-9, déclarations et références 10-13, annexes A-H 14-38 (tableaux 1-23, propositions 1-7) ; recherche texte d'URL de code dans le PDF : aucune |
