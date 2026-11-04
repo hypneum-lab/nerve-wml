@@ -19,7 +19,7 @@
 }
 
 @misc{aristotelianprh2026,
-  author        = {Gr{\"o}ger, Friedrich and Wen, Yiren and Brbi{\'c}, Maria},
+  author        = {Gr{\"o}ger, Fabian and Wen, Shuo and Brbi{\'c}, Maria},
   title         = {Revisiting the {Platonic} Representation Hypothesis:
                    An {Aristotelian} View},
   year          = {2026},
@@ -45,16 +45,9 @@
   note      = {arXiv:1905.00414}
 }
 
-@inproceedings{song2012featureselection,
-  author    = {Song, Le and Smola, Alex and Gretton, Arthur and
-               Bedo, Justin and Borgwardt, Karsten},
-  title     = {Feature Selection via Dependence Maximization},
-  booktitle = {Journal of Machine Learning Research},
-  year      = {2012},
-  volume    = {13},
-  pages     = {1393--1434}
-}
-
+% unverified (bib audit 2026-11-04): EUSIPCO 2007 paper has no DOI;
+% Crossref title+author query returned no match. Check the
+% normalisation (sigma_i vs sigma_i^2) against the PDF before submission.
 @inproceedings{royvetterli2007erank,
   author    = {Roy, Olivier and Vetterli, Martin},
   title     = {The Effective Rank: A Measure of Effective Dimensionality},
@@ -66,14 +59,16 @@
                singular values}
 }
 
-@misc{wei2024differank,
+@inproceedings{wei2024differank,
   author        = {Wei, Lai and Tan, Zhiquan and Li, Chenghai and
                    Wang, Jindong and Huang, Weiran},
-  title         = {Large Language Model Evaluation via Matrix Nuclear-Norm},
+  title         = {{Diff-eRank}: A Novel Rank-Based Metric for Evaluating
+                   Large Language Models},
+  booktitle     = {Advances in Neural Information Processing Systems 37
+                   (NeurIPS 2024)},
   year          = {2024},
-  eprint        = {2410.10672},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.CL},
-  note          = {Introduces Diff-eRank, an effective-rank-style
-                   metric for LLM hidden-state collapse analysis}
+  pages         = {39501--39521},
+  doi           = {10.52202/079017-1248},
+  eprint        = {2401.17139},
+  archivePrefix = {arXiv}
 }
