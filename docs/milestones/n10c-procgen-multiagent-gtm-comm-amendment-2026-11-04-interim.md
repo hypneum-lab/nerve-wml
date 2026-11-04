@@ -1,6 +1,6 @@
 # N10-C — Deviation amendment 2026-11-04 (evening): early stop of macM1 after `registered-mlp-s0` and declared interim analysis of the seed-0 runs
 
-**Status:** DRAFT — written before any evaluation of a run of tag `n10c-freeze-20261029`; to be signed by the PI (section 8) and pushed to GitHub **before** the evaluation of section 3 is launched. Not frozen.
+**Status:** DECLARED — signed by the PI on 2026-11-04 (section 8), with his decisions of about 19:10 CET; written and pushed to GitHub **before** any evaluation of a run of tag `n10c-freeze-20261029`. Not frozen. Decision on inference: the whole campaign is exploratory (section 4.2, option (b)).
 **Declares against:** `docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-25.md` (FROZEN by tag `n10c-freeze-20261029`, tag object `b14717b`, commit `99a7cf4`, SWHID `swh:1:rev:99a7cf4bb01d31e8e7f6c99c0e6676f41e6e17bb`), which amends the frozen 2026-10-23 amendment and the locked `docs/milestones/n10c-procgen-multiagent-gtm-comm-2026-05-11.md`; the N10-C-bis addendum `docs/milestones/2026-10-25-n10c-bis-control-arms.md` (DRAFT, section « Blinding during N10-C », binding); the declaration of 2026-10-30 (`…-amendment-2026-10-30.md`, DRAFT); and the morning declaration of the same day, `docs/milestones/n10c-procgen-multiagent-gtm-comm-deviation-2026-11-04.md` (signed 06:51 CET).
 **Date drafted:** 2026-11-04, about 19:10 CET (dated by the GitHub push time of its first commit; git dates are not evidence of time).
 **Investigator:** Clément Saillant (Hypneum Lab, sole investigator).
@@ -67,21 +67,23 @@ Up to 19:02 CET on 2026-11-04, no held-out result of any run of tag `n10c-freeze
 
 **Single pass.** The evaluation is launched once, after the 9 status files are present on KXKM-AI (expected ≈ 2026-11-05 03:47, then about 9 × 6.7 min). The 8 runs already synced are **not** evaluated earlier in a separate pass: one look, not two. Each run is evaluated once by the runner (`eval_done`); evaluation failures are retried by the runner within `MAX_EVAL_ATTEMPTS = 3`, never by hand.
 
+**Trigger.** The launch is automated on KXKM-AI by a one-shot trigger (`/ai/saisail/n10c-run2/interim_eval_trigger.sh`, started with `nohup`, timestamped log `/ai/saisail/n10c-run2/interim-eval-trigger.log`). It polls the KXKM-AI status files, reads only `status`, `synced_from` and `eval_done`, and launches the command above when the preconditions below hold; it then exits. It gives up, without launching, if `registered-mlp-s0` is not synced by **2026-11-05 09:00 CET**; the evaluation is then rescheduled by a later record of section 8.
+
 **Preconditions, in order:**
 
-1. This document is signed by the PI (section 8) and **pushed to GitHub**; its push time is the evidence that it precedes the evaluation.
-2. On macM1, `attempts.jsonl` holds the `stopped_by_STOP_file` event and runner pid 75468 has exited.
-3. On KXKM-AI, `status/` holds exactly the 9 status files of the interim set, all `trained` or `training_failure`, `eval_done: false`; `runs/` holds no `eval.json`.
+1. This document is signed by the PI (section 8) and **merged on GitHub**; the push and merge times are the evidence that it precedes the evaluation.
+2. On KXKM-AI, `status/` holds exactly the 9 status files of the interim set, all `trained` or `training_failure`, `eval_done: false`; `runs/` holds no `eval.json`. (`registered-mlp-s0` is synced only after its training ended, and the macM1 runner exits on the STOP file right after; its `stopped_by_STOP_file` event is recorded afterwards in section 8.)
+3. The KXKM-AI repository HEAD is the tag commit `99a7cf4bb01d31e8e7f6c99c0e6676f41e6e17bb`, with a clean tree.
 4. `--dry-run` of the same command prints `ok` for every guard except the GPU one.
 
 **What the evaluation writes.** The runner writes `runs/<run_id>/eval.json` (`harness/evaluate.py`, `EvalRecord`) and an event per run in `attempts.jsonl` that **carries `S` and `R_intact`** (`run_campaign.py`, `evaluate`). From the launch on, the KXKM-AI `attempts.jsonl` and `console.log` are outcome-bearing files; any later liveness monitoring of the campaign reads them only through a field filter (`run`, `phase`, `state`, timestamps). The electron-server archive pull (`/home/electron/archives/n10c`, cron `17 * * * *`) copies the evaluated runs as usual.
 
-**What the interim analysis reads and reports (default, to be ratified by the PI in section 8 before the launch):**
+**What the interim analysis reads and reports (PI decision 2026-11-04, about 19:10 CET: full scope, all of it exploratory):**
 
-- for each run of the interim set, the scalar fields of `eval.json`: `R_intact`, `R_shuffled`, `S`, `completion_time`, `bandwidth_bits`, and `untrained` / `levels` as provenance;
-- reported cell by cell (arm × condition, seed 0, host macM1), **without interval, test, pooling, ranking or contrast between arms**, labelled « interim, one seed, one host, not pre-registered »;
-- `analysis.py` (the registered cross-seed estimands, pilot categories and cross-play) is **not** run: with one seed it has no seed-level variance, no host block and no cross-play cell;
-- training-curve fields of `run.json` (`coin_rate_curve`, `entropy_curve`, training success) are not read by default.
+- for each run of the interim set, the scalar fields of `eval.json`: `R_intact`, `R_shuffled`, `S`, `completion_time`, `bandwidth_bits`, with `untrained` / `levels` as provenance, and the per-episode lists when needed;
+- the training records of `run.json`, training curves included (`coin_rate_curve`, `entropy_curve`, training success, `liveness`);
+- `analysis.py` at the frozen tag, run on the interim set as it is, with the intervals and tests it produces. With one seed and one host it has no seed-level variance, no host block and no cross-play cell: any quantity the frozen code cannot compute from one seed is reported as **undefined**, never replaced by another estimator, interval or test chosen after the look (that would be a new deviation);
+- every figure is reported cell by cell (arm × condition, seed 0, host macM1) and labelled « interim, one seed, one host, not pre-registered, exploratory ». **No interval, test, category or contrast of this analysis has any confirmatory value**, whatever its value; none is a pilot category in the sense of the registration.
 
 ## 4. Consequences for inference
 
@@ -101,7 +103,7 @@ Three options were considered:
 - **(b)** the whole campaign of tag `n10c-freeze-20261029` is reclassified as exploratory, including any run trained after a resumption;
 - **(c)** an alpha-spending correction (group-sequential boundary) applied to the final confirmatory tests.
 
-**Recommended: (b).** Grounds:
+**Adopted by the PI on 2026-11-04 (about 19:10 CET): (b).** The whole campaign of tag `n10c-freeze-20261029` is exploratory: the 9 seed-0 runs of the interim set, `registered-atoc-s0` and every other run if the campaign is resumed, the evaluations, intervals and tests of the interim analysis and of any later analysis of this campaign. Grounds (as drafted before the decision):
 
 - Option (a) has almost nothing to protect. Seed 0 touches 9 of the 10 cells; the registered estimators are per-arm across six seeds, with host as a block factor. Removing seed 0 leaves 5 seeds with unbalanced host blocks (2 macM1, 3 KXKM-AI), which is a different estimator, not the registered one. The only cells not looked at would be `registered-atoc` and the cross-play cells, and the cross-play cells involve seed 0 through the fixed pairs `(131, 0)` and `(0, 17)`. Moreover, any resumption would be decided after the look, so the set of runs that exists at the end would itself depend on the interim results.
 - Option (c) does not fit. No spending function was registered; choosing one now is itself an analysis choice made at the look. With one seed the interim analysis has no test, so the alpha « spent » is undefined. Alpha-spending controls repeated testing on accruing data; it does not repair design decisions (stop, continue, scope) that may follow the look.
@@ -146,27 +148,30 @@ The macM1 half may be resumed only if all of the following hold:
 6. **Stop point:** if the resumption is limited (for instance to `registered-atoc-s0`), a new stop mechanism must be set up before the launch: the watcher of the morning declaration exits with the runner pid 75468 and does not act on a new runner.
 7. **Evaluation of any run trained after the resumption** follows section 3 (KXKM-AI only, frozen runner, `--min-free-gb 1000` unless the KXKM-AI half is launched by a separate declaration), in a single pass per declared batch.
 
-Whatever the option chosen in section 4.2, the runs of a resumption are reported under that option, not as confirmatory runs of tag `n10c-freeze-20261029` unless section 4.2 option (a) is the one adopted.
+Under option (b), adopted in section 4.2, the runs of a resumption are exploratory runs of tag `n10c-freeze-20261029`, never confirmatory runs.
 
 ## 7. What this amendment does not change
 
 Hypotheses, arms, estimands, blinding rule (except the breach declared in section 4.1), reading rules, the N10-C-bis addendum, the morning declaration (except its stop point, section 1), and the N10-D work under the reading gate.
 
+
 ## 8. PI signature, decisions and records to append
 
-**Decisions for the PI, before the evaluation of section 3 is launched:**
+**Signature.** PI, 2026-11-04 — Clément Saillant, instruction given in session at about 19:10 CET, with the decisions below, before any evaluation of a run of tag `n10c-freeze-20261029`.
 
-1. Option of section 4.2: (a), (b) or (c). Recommended: (b).
-2. Scope of the interim reading (section 3, « What the interim analysis reads and reports »): ratify the default (scalar fields of `eval.json`, no training curves, no `analysis.py`) or state another scope.
-3. Disposition of the covariance correction of the 2026-10-30 declaration (section 3 there), which was to be decided « before any held-out N10-C result is read »: decide it now, or record that it is decided after the look (non-blind).
-4. Time and channel of the reading of 2026-10-30 (open decision 1 of that declaration), if still open.
+**Decisions of the PI (2026-11-04, about 19:10 CET):**
 
-**Signature:** _to be completed by the PI (name, date, time, channel)._
+- [x] Option of section 4.2: **(b)**, the whole campaign of tag `n10c-freeze-20261029` is exploratory.
+- [x] Scope of the interim reading: **full** (section 3): scalar fields of `eval.json`, training curves of `run.json`, `analysis.py` with its intervals and tests, all declared exploratory, without any confirmatory value.
+- [x] Covariance correction of the 2026-10-30 declaration (section 3 there), which was to be decided « before any held-out N10-C result is read »: **not decided now**. It will be decided **after** the interim reading and is therefore a **non-blind** decision, reported as such. Under option (b) it bears on the exploratory analysis only.
+- [ ] Time and channel of the « 0.96 » reading of 2026-10-30 (open decision 1 of that declaration): **still open**, not decided here.
 
 **Records to append, each in its own later commit:**
 
+- [ ] Pull request number and merge time of this amendment on GitHub.
 - [ ] `stopped_by_STOP_file` event line on macM1, end time and final status of `registered-mlp-s0`.
 - [ ] Time of the sync of `registered-mlp-s0` to KXKM-AI.
-- [ ] Launch time of the KXKM-AI evaluation, its `--dry-run` output (guard lines only), the `gpu_guard_refused` event, and the list of the 9 runs with `eval_done: true`, **without their results**.
+- [ ] Launch time of the KXKM-AI evaluation (trigger log), its `--dry-run` output (guard lines only), the `gpu_guard_refused` event, and the list of the 9 runs with `eval_done: true`, **without their results**.
 - [ ] Date and time at which the PI first reads the interim results.
+- [ ] Decision on the covariance correction (after the reading, non-blind).
 - [ ] Decision on resumption (section 6) and its grounds (section 4.3).
