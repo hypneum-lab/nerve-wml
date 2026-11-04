@@ -104,20 +104,19 @@ def _fake_p8c_rows(kernel_rec, stoch_rec, hebb_rec=0.0):
     """Synthetic rows: constant recoveries for every cue level and set."""
     rows = []
     qs = analyse.P8_Q_PRIMARY + analyse.P8_Q_SECONDARY
-    for n in analyse.P8_NS:
-        for a in analyse.P8_ALPHAS:
-            for s in range(32001, 32021):
-                def rec(v):
-                    return {f"rec_q{q:.1f}_{x}": v for q in qs for x in "AB"}
-                common = {"N": n, "alpha": a, "seed": s}
-                rows.append(dict(common, arm="hebb", t=0.0, **rec(hebb_rec)))
-                for t in analyse.P8_T:
-                    rows.append(dict(common, arm="kernel", t=t, **rec(kernel_rec)))
-                    rows.append(dict(common, arm="stoch", kind="matched", t=t, r=0.5, gap=0.0,
-                                     **rec(stoch_rec)))
-                for r in analyse.P8_R:
-                    rows.append(dict(common, arm="stoch", kind="grid", t=None, r=r, gap=0.0,
-                                     **rec(stoch_rec)))
+    for n, a in analyse.P8_CELLS:
+        for s in range(32001, 32021):
+            def rec(v):
+                return {f"rec_q{q:.1f}_{x}": v for q in qs for x in "AB"}
+            common = {"N": n, "alpha": a, "seed": s}
+            rows.append(dict(common, arm="hebb", t=0.0, **rec(hebb_rec)))
+            for t in analyse.P8_T:
+                rows.append(dict(common, arm="kernel", t=t, **rec(kernel_rec)))
+                rows.append(dict(common, arm="stoch", kind="matched", t=t, r=0.5, gap=0.0,
+                                 **rec(stoch_rec)))
+            for r in analyse.P8_R:
+                rows.append(dict(common, arm="stoch", kind="grid", t=None, r=r, gap=0.0,
+                                 **rec(stoch_rec)))
     return rows
 
 
@@ -145,3 +144,10 @@ def test_p8c_end_to_end_equal_arms_not_supported(tmp_path):
 def test_p8c_gate_fails_when_kernel_does_not_recover(tmp_path):
     res = analyse.analyse_p8c(_write(tmp_path, _fake_p8c_rows(0.0, 0.0)))
     assert res["overall_primary"] == "void_gate_failed"
+
+
+def test_p8c_primary_family_has_eight_tests(tmp_path):
+    res = analyse.analyse_p8c(_write(tmp_path, _fake_p8c_rows(1.0, 0.5)))
+    assert len(res["primary_best_vs_best"]) == 8
+    assert len(res["secondary_matched_budget"]) == 8
+    assert len(res["secondary_q01_best_vs_best"]) == 4

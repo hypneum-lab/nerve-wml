@@ -69,9 +69,11 @@ cell. 60 cells.
 
 ### Measures
 
-- **ρ (primary)**: Marinari recognition rate — fraction (of N) of stored
-  patterns whose asynchronous fixed point differs from them in fewer than
-  2 % of the neurons (vendored `hopfield.recognition_rate`).
+- **ρ (primary)**: Marinari recognition rate — number of stored patterns
+  whose asynchronous fixed point differs from them in fewer than 2 % of the
+  neurons, **divided by N, not by P** (upstream convention of
+  `hopfield.recognition_rate`, Marinari et al. Eq. 5; its maximum is
+  α = 0.15, and the 0.02 threshold is in these units).
 - **Recall from a noisy cue (secondary)**: for a fixed subset of
   min(P, 200) stored patterns, a cue with exactly round(q N) flipped spins
   (q ∈ {0.1, 0.2}, sampled without replacement), asynchronous relaxation,
@@ -83,6 +85,13 @@ cell. 60 cells.
   states with the stored patterns (descriptive).
 
 ### Dynamics and code
+
+Upstream `relax()` stops after 10⁵ sweeps **in total per call** (safety cap;
+rows not yet relaxed when it is hit are returned as they are). Smoke check
+(seed 90001, Hebb couplings, relaxation of all stored patterns as in ρ):
+150/150, 300/300, 600/600 rows are fixed points at N = 1 000 / 2 000 /
+4 000, i.e. the cap was not reached. The cap is kept unchanged (verbatim
+upstream code).
 
 Learning, dreaming steps and the asynchronous dynamics are the vendored
 upstream module `experiments/hopfield_dream_conf/vendor/hopfield.py`

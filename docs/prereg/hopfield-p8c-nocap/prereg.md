@@ -32,8 +32,8 @@ artefact of this dose cap. This study removes the cap.
 
 ## Hypothesis (primary, H1)
 
-For at least one cell (N, α, q) with N ∈ {4 096, 16 384}, α ∈ {0.3, 0.4,
-0.5}, cue noise q ∈ {0.2, 0.3}, the kernel at its best t recovers at least
+For at least one cell (N, α, q) with (N, α) ∈ {(4 096, 0.3), (4 096, 0.4),
+(4 096, 0.5), (16 384, 0.5)} and cue noise q ∈ {0.2, 0.3}, the kernel at its best t recovers at least
 0.10 more cues than HU at its best dose (cross-fitted, see below). H1 is
 assessed cell by cell; the global verdict lists the cells.
 
@@ -69,7 +69,8 @@ Asynchronous sign dynamics at T = 0: in each sweep the neurons are visited in
 a fresh random order; s_i flips iff s_i h_i < 0 (h_i = 0 keeps s_i); local
 fields are updated incrementally; a state stops when a full sweep has no flip;
 cap 2 000 sweeps (non-converged states are counted as not recovered and
-reported). The same rule is used for cue relaxation and for HU dream states
+reported). Smoke cells (N = 512–16 384, seeds 99901, 99902, 90002): 0
+non-converged cue relaxations and 0 non-converged dream states. The same rule is used for cue relaxation and for HU dream states
 (implemented in `p8c_nocap.relax_batch`, numba, float32; a batch shares the
 visiting order, each state follows ordinary asynchronous dynamics).
 
@@ -88,7 +89,18 @@ visiting order, each state follows ordinary asynchronous dynamics).
 
 ### Grid
 
-N ∈ {4 096, 16 384} × α ∈ {0.3, 0.4, 0.5} × 20 seeds = 120 cells.
+(N, α) ∈ {(4 096, 0.3), (4 096, 0.4), (4 096, 0.5), (16 384, 0.5)} × 20
+seeds = 80 cells.
+
+**PI decision (2026-11-04, before any confirmatory datum), for cost:** the
+relecture proposed N ∈ {4 096, 16 384} × α ∈ {0.3, 0.4, 0.5}. On kxkm-ai one
+N = 16 384 cell needs ≈ 12 h of stochastic (HU) dreaming (smoke measurement
+below), i.e. ≈ 3.5–4 days for the full N = 16 384 row. The PI kept the full
+α grid at N = 4 096 and restricted N = 16 384 to α = 0.5 (the load where the
+pilot's kernel advantage was largest and where the dose-cap artefact is most
+plausible). No confirmatory or smoke score informed this choice; the smoke
+cells were read for timing only. The driver refuses any other (N, α) pair in
+`--confirmatory` mode (`p8c_nocap.CELLS`).
 
 ### Seeds and RNG
 
@@ -106,7 +118,10 @@ N ∈ {4 096, 16 384} × α ∈ {0.3, 0.4, 0.5} × 20 seeds = 120 cells.
 ### Determinism
 
 Each cell is a pure function of (seed, N, α), single process, single-threaded
-BLAS/numba. Outputs other than timing do not depend on the number of
+BLAS/numba. Within a batch (cue set or HU batch) all states share the random
+visiting order of each sweep; this is a deliberate common-random-numbers
+choice (each state still follows ordinary asynchronous dynamics; the shared
+order removes order noise between arms and cue sets). Outputs other than timing do not depend on the number of
 workers, the order of cells or the core type: checked on kxkm-ai on
 2026-11-04 (smoke seed 99902, N = 2 048, α = 0.3, P-core vs E-core, 26/26
 rows identical; a second N = 2 048 run after a code-only speed change gave
@@ -131,11 +146,11 @@ analysed only if ≥ 16 of 20 seeds enter (otherwise `not_measured`).
 
 ### Secondary contrasts
 
-- **S1 matched budget, no cap (12 tests, q ∈ {0.2, 0.3}):** t̃ = argmax over
+- **S1 matched budget, no cap (8 tests, q ∈ {0.2, 0.3}):** t̃ = argmax over
   T of (kernel − HU at r_kernel(t)) on A; Δ = same difference on B at t̃.
   This is the pilot's comparison with the 0.5 cap removed (t = 5, 10, ∞ now
   measured).
-- **S2 q = 0.1 best vs best (6 tests):** continuity with the pilot's primary
+- **S2 q = 0.1 best vs best (4 tests):** continuity with the pilot's primary
   cue level.
 - Descriptive: per-t and per-r curves, t̂ and r̂ distributions, D_steps,
   Δ_min, gate quantities.
@@ -148,7 +163,7 @@ H1: mean Δ < 0.10 (on 0.10 − Δ). Holm step-down within each family at
 one-sided level 0.025. Reported intervals (descriptive): 95 % percentile
 bootstrap (10 000 resamples, seed 20261104) and Student t 95 %.
 
-### Per-test labels (primary family: 12 tests = 2 N × 3 α × q ∈ {0.2, 0.3})
+### Per-test labels (primary family: 8 tests = 4 (N, α) cells × q ∈ {0.2, 0.3})
 
 - `success`: mean Δ ≥ 0.10 and Holm-adjusted p_sup < 0.025;
 - `below`: Holm-adjusted p_inf < 0.025 (advantage established < 0.10;
@@ -212,9 +227,11 @@ difference ≥ 0.10 with CI lower bound > 0, 20 seeds. Kept, with:
    ∞}; 1.5 and 3 added around the pilot's α = 0.5 transition (t ≈ 1.6–2.0),
    30 dropped (r_kernel(30) ≈ r_kernel(∞) − 0.02)).
 5. **"CI lower bound > 0"** operationalised as Holm-adjusted exact sign-flip
-   p < 0.025 over the 12 primary tests, plus mean ≥ 0.10; `below` and
+   p < 0.025 over the 8 primary tests, plus mean ≥ 0.10; `below` and
    `floor` branches added.
 6. **Host** kxkm-ai (PI decision 2026-11-04); GPU not used.
+7. **N = 16 384 restricted to α = 0.5** (PI decision 2026-11-04, cost; see
+   "Grid").
 
 ## Power (from the pilot variance)
 
@@ -225,19 +242,19 @@ t = 1.8: 0.435, sd 0.026, n = 20). The cross-fitted best-vs-best Δ adds
 selection noise (t̂, r̂ can differ between seeds), so the table covers sd up
 to 0.30. Monte Carlo (normal Δ, one-sided t approximation, 20 000 replicates,
 `python -m experiments.hopfield_dream_conf.power`), per-test power of
-`success`, worst Holm step (0.025/12) / best step (0.025):
+`success`, worst Holm step (0.025/8) / best step (0.025):
 
 | true mean \ sd | 0.03 | 0.06 | 0.10 | 0.20 | 0.30 |
 |---|---|---|---|---|---|
-| 0.10 | 0.507/0.507 | 0.507/0.507 | 0.506/0.507 | 0.194/0.482 | 0.062/0.297 |
-| 0.15 | 1.000/1.000 | 1.000/1.000 | 0.986/0.987 | 0.551/0.850 | 0.196/0.570 |
-| 0.20 | 1.000/1.000 | 1.000/1.000 | 1.000/1.000 | 0.867/0.983 | 0.426/0.807 |
-| 0.30 | 1.000/1.000 | 1.000/1.000 | 1.000/1.000 | 0.999/1.000 | 0.867/0.988 |
+| 0.10 | 0.507/0.507 | 0.507/0.507 | 0.507/0.507 | 0.236/0.482 | 0.082/0.297 |
+| 0.15 | 1.000/1.000 | 1.000/1.000 | 0.987/0.987 | 0.616/0.850 | 0.239/0.570 |
+| 0.20 | 1.000/1.000 | 1.000/1.000 | 1.000/1.000 | 0.901/0.983 | 0.487/0.807 |
+| 0.30 | 1.000/1.000 | 1.000/1.000 | 1.000/1.000 | 1.000/1.000 | 0.901/0.988 |
 
-Power of `below` (true advantage 0 / 0.03 / 0.05): ≥ 0.96 for sd ≤ 0.06;
-0.86/0.46/0.19 (worst step) at sd 0.10. With sd ≤ 0.10, 20 seeds detect a
-true advantage ≥ 0.15 with probability ≥ 0.98 and establish its absence
-(true 0) with probability ≥ 0.86. If the selection noise makes sd ≥ 0.20,
+Power of `below` (true advantage 0 / 0.03 / 0.05): ≥ 0.97 / 0.97 / 0.73 for
+sd ≤ 0.06; 0.90/0.52/0.23 (worst step) at sd 0.10. With sd ≤ 0.10, 20 seeds
+detect a true advantage ≥ 0.15 with probability ≥ 0.98 and establish its
+absence (true 0) with probability ≥ 0.89. If the selection noise makes sd ≥ 0.20,
 the study is underpowered for effects near 0.10–0.15 and an `inconclusive`
 outcome is likely; this is accepted and stated now.
 
@@ -275,7 +292,8 @@ Archive: `electron-server:~/archives/gb300-20261101/hypneum-20261101/pilots/`.
   `experiments/hopfield_dream_conf/requirements-hopfield-conf.txt`
   (hash-pinned, Python 3.12.15), `nice -n 19`, `nohup`, launcher
   `scripts/hopfield_conf/kxkm_launch.sh`: lane A = N = 16 384 (8 workers,
-  memory-bound), lane B = P1bis-ext then N = 4 096 (12 workers); ≤ 20 workers.
+  memory-bound; α = 0.5 only), lane B = P1bis-ext then N = 4 096
+  (12 workers); ≤ 20 workers.
 - **Duration (measured on kxkm-ai smoke cells, 2026-11-04, 3–6 concurrent
   smoke processes):** N = 2 048, α = 0.5: 56 s (P-core); α = 0.3 E-core
   114 s vs P-core 55 s (E-cores ≈ 2× slower). N = 4 096, α = 0.5: 583 s,
@@ -284,13 +302,13 @@ Archive: `electron-server:~/archives/gb300-20261101/hypneum-20261101/pilots/`.
   18.5 states/s (22 209 states, r = 0.073 reached); peak RSS 4.49 GB.
   Extrapolation (D ∝ N, observed 2 048 → 4 096): N = 16 384 needs ≈ 754 000
   HU states for α = 0.5 ≈ 11.3 h + kernel/evaluations ≈ 12–13 h per cell;
-  α = 0.3 / 0.4 ≈ 0.66 / 0.83 of that. N = 16 384: ≈ 630 core-hours for
-  60 cells; lane A limited to 8 workers by memory (8 × 4.5 GB) → **≈ 80–90 h
-  wall (3.5–4 days)**. N = 4 096: ≈ 7.5 core-hours, 12 workers (P/E mix)
-  → ≈ 1 h after the P1bis lane.
+  α = 0.3 / 0.4 ≈ 0.66 / 0.83 of that. N = 16 384, α = 0.5: 20 cells ≈
+  250 core-hours; lane A limited to 8 workers by memory (8 × 4.5 GB) →
+  3 waves (8 + 8 + 4) **≈ 36–42 h wall**. N = 4 096: 60 cells ≈ 7.5
+  core-hours, 12 workers (P/E mix) → ≈ 1 h after the P1bis lane.
 - **HU ceiling per cell:** 18 h of HU time (≈ 1.5× the α = 0.5
   extrapolation); remaining checkpoints `not_measured`.
-- **Wall-time cap:** 120 h after launch (the launcher creates the STOP file);
+- **Wall-time cap:** 72 h after launch (the launcher creates the STOP file);
   finished cells are kept; tests with < 16 seeds are `not_measured`.
 - **Stopping:** `touch /ai/saisail/p1bis-p8c-20261104/STOP`.
 - **Outputs:** `results/hopfield_p8c_nocap/{n4096,n16384}/{cells.jsonl,

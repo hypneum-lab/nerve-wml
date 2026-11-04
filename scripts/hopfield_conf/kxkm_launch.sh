@@ -13,7 +13,7 @@
 # Stop: touch /ai/saisail/p1bis-p8c-20261104/STOP   (all lanes; checked between cells)
 #
 # Lanes (<= 24 worker processes in total, nice 19, single-threaded BLAS/numba):
-#   A  P8c-nocap N = 16384              LANE_A_WORKERS (default 8; memory bound)
+#   A  P8c-nocap N = 16384, alpha = 0.5 LANE_A_WORKERS (default 8; memory bound)
 #   B  P1bis-ext (all N), then P8c-nocap N = 4096   LANE_B_WORKERS (default 12)
 set -u
 TAG=${1:?usage: kxkm_launch.sh <freeze-tag>}
@@ -24,7 +24,7 @@ LANE_A_WORKERS=${LANE_A_WORKERS:-8}
 LANE_B_WORKERS=${LANE_B_WORKERS:-12}
 P8C_MAX_STOCH_SECS=${P8C_MAX_STOCH_SECS:-64800}
 WALL_CAP_P1=${WALL_CAP_P1:-21600}
-WALL_CAP_P8=${WALL_CAP_P8:-432000}
+WALL_CAP_P8=${WALL_CAP_P8:-259200}
 STOP=$W/STOP
 LOG=$W/logs/campaign.log
 ts() { date -u +%Y-%m-%dT%H:%M:%SZ; }
@@ -39,6 +39,8 @@ cd "$REPO" || die "no repo at $REPO"
 [ "$(git rev-parse HEAD)" = "$(git rev-parse "$TAG^{commit}")" ] || die "HEAD is not $TAG"
 [ -z "$(git status --porcelain)" ] || die "working tree not clean"
 REQ=experiments/hopfield_dream_conf/requirements-hopfield-conf.txt
+# Name and version only: wheel hashes were enforced when the venv was built
+# with `uv pip sync --require-hashes --only-binary :all:` from this file.
 want=$(grep -E '^[a-z0-9_.-]+==' "$REQ" | sed 's/ .*//' | tr 'A-Z_' 'a-z-' | sort)
 have=$("$PY" -I -c 'import importlib.metadata as m
 for d in m.distributions(): print(d.metadata["Name"] + "==" + d.version)' | tr 'A-Z_' 'a-z-' | sort)
@@ -65,7 +67,7 @@ WATCH=$!
 laneA() {
   echo "$(ts) START laneA p8c N=16384" >> "$LOG"
   nice -n 19 "$PY" -m experiments.hopfield_dream_conf.p8c_nocap --confirmatory \
-      --out "$W/results/hopfield_p8c_nocap/n16384" --ns 16384 --workers "$LANE_A_WORKERS" \
+      --out "$W/results/hopfield_p8c_nocap/n16384" --ns 16384 --alphas 0.5 --workers "$LANE_A_WORKERS" \
       --max-stoch-secs "$P8C_MAX_STOCH_SECS" --stop-file "$STOP" \
       >> "$W/logs/p8c_n16384.log" 2>&1
   echo "$(ts) STOP laneA rc=$?" >> "$LOG"

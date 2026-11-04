@@ -54,9 +54,9 @@ def main():
           [0.0041, 0.0082, 0.0164], 0.02, 6, inferiority=0.02)
     # P8c-nocap primary: pilot paired sd 0.003-0.028 (matched budget, 200 cues)
     table("P8c-nocap primary success (min effect 0.10)", [0.10, 0.15, 0.20, 0.30],
-          [0.03, 0.06, 0.10, 0.20, 0.30], 0.10, 12)
+          [0.03, 0.06, 0.10, 0.20, 0.30], 0.10, 8)
     table("P8c-nocap primary 'below' (margin 0.10)", [0.0, 0.03, 0.05],
-          [0.03, 0.06, 0.10, 0.20, 0.30], 0.10, 12, inferiority=0.10)
+          [0.03, 0.06, 0.10, 0.20, 0.30], 0.10, 8, inferiority=0.10)
 
 
 if __name__ == "__main__":

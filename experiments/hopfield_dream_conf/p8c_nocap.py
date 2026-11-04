@@ -59,6 +59,9 @@ STUDY_ID = 2
 TAU_D = 100.0
 NS = (4096, 16384)
 ALPHAS = (0.3, 0.4, 0.5)
+# Pre-registered (N, alpha) cells (PI decision 2026-11-04, before any data: N = 16384
+# restricted to alpha = 0.5 for cost).
+CELLS = ((4096, 0.3), (4096, 0.4), (4096, 0.5), (16384, 0.5))
 T_GRID = (0.5, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0, math.inf)
 R_GRID = (0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
 CUE_QS = (0.1, 0.2, 0.3)
@@ -376,8 +379,13 @@ def main(argv=None):
     path = os.path.join(a.out, "cells.jsonl")
     done = done_cells(path)
     # largest N and alpha first (longest tasks first); results do not depend on order
-    tasks = [(n, al, s, a.max_stoch_secs, stopfile) for n in sorted(ns, reverse=True)
-             for al in sorted(alphas, reverse=True) for s in seeds if (n, al, s) not in done]
+    pairs = [(n, al) for n in sorted(ns, reverse=True) for al in sorted(alphas, reverse=True)]
+    if a.confirmatory:
+        pairs = [p for p in pairs if p in CELLS]
+        if not pairs:
+            sys.exit("no pre-registered (N, alpha) cell selected")
+    tasks = [(n, al, s, a.max_stoch_secs, stopfile) for (n, al) in pairs for s in seeds
+             if (n, al, s) not in done]
     with open(os.path.join(a.out, "run_info.json"), "a") as fi:
         fi.write(json.dumps({"ts": time.strftime("%FT%TZ", time.gmtime()), "argv": sys.argv,
                              "n_tasks": len(tasks), "workers": a.workers,

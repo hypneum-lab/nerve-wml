@@ -94,8 +94,7 @@ def analyse_p1bis(out_dir):
 
 
 # ----------------------------------------------------------------- P8c-nocap
-P8_NS = (4096, 16384)
-P8_ALPHAS = (0.3, 0.4, 0.5)
+P8_CELLS = ((4096, 0.3), (4096, 0.4), (4096, 0.5), (16384, 0.5))   # PI decision 2026-11-04
 P8_T = (0.5, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0, "inf")
 P8_R = (0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
 P8_Q_PRIMARY = (0.2, 0.3)
@@ -167,24 +166,23 @@ def analyse_p8c(out_dir):
     rows = [r for p in paths for r in _load(p) if r.get("arm") != "meta"]
     tab = p8c_seed_tables(rows)
     best_d, match_d, detail = {}, {}, {}
-    for n in P8_NS:
-        for a in P8_ALPHAS:
-            for q in P8_Q_PRIMARY + P8_Q_SECONDARY:
-                key = f"N{n}_a{a}_q{q}"
-                bs, ms = [], []
-                det = []
-                for (nn, aa, seed), st in sorted(tab.items()):
-                    if nn != n or aa != a:
-                        continue
-                    b, m = p8c_contrasts(st, q)
-                    if b is not None:
-                        bs.append(b["delta"])
-                        det.append(dict(seed=seed, **b))
-                    if m is not None:
-                        ms.append(m["delta"])
-                best_d[key] = bs if len(bs) >= MIN_SEEDS else []
-                match_d[key] = ms if len(ms) >= MIN_SEEDS else []
-                detail[key] = det
+    for n, a in P8_CELLS:
+        for q in P8_Q_PRIMARY + P8_Q_SECONDARY:
+            key = f"N{n}_a{a}_q{q}"
+            bs, ms = [], []
+            det = []
+            for (nn, aa, seed), st in sorted(tab.items()):
+                if nn != n or aa != a:
+                    continue
+                b, m = p8c_contrasts(st, q)
+                if b is not None:
+                    bs.append(b["delta"])
+                    det.append(dict(seed=seed, **b))
+                if m is not None:
+                    ms.append(m["delta"])
+            best_d[key] = bs if len(bs) >= MIN_SEEDS else []
+            match_d[key] = ms if len(ms) >= MIN_SEEDS else []
+            detail[key] = det
     # gates (alpha = 0.3, N = 4096, q = 0.1)
     kb, hb = [], []
     for (n, a, _seed), st in tab.items():
@@ -197,8 +195,8 @@ def analyse_p8c(out_dir):
              "hebb_mean": float(np.mean(hb)) if hb else None}
     gates["pass"] = bool(kb and hb and np.mean(kb) >= P8_GATE_KERNEL_MIN
                          and np.mean(hb) <= P8_GATE_HEBB_MAX)
-    prim_keys = [f"N{n}_a{a}_q{q}" for n in P8_NS for a in P8_ALPHAS for q in P8_Q_PRIMARY]
-    sec_keys = [f"N{n}_a{a}_q{q}" for n in P8_NS for a in P8_ALPHAS for q in P8_Q_SECONDARY]
+    prim_keys = [f"N{n}_a{a}_q{q}" for n, a in P8_CELLS for q in P8_Q_PRIMARY]
+    sec_keys = [f"N{n}_a{a}_q{q}" for n, a in P8_CELLS for q in P8_Q_SECONDARY]
     prim = stats.family_decisions({k: best_d[k] for k in prim_keys}, 0.0, P8_MIN_EFFECT,
                                   P8_MIN_EFFECT)
     for k in prim_keys:          # floor rule: no arm recovers -> uninformative, not "below"
