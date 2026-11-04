@@ -63,5 +63,12 @@ Git tree `experiments/hopfield_dream_conf` at the merge commit: `902f4e4e54c40a9
 
 ## Freeze record
 
-- Tagger date: to be recorded
-- SWHID (revision): to be recorded
+- Tag: `prereg-hopfield-p1bis-p8c-freeze-20261104` (annotated, object
+  `25280289d0c883d017114eb1ec8249ed8d8ebcba`, target `257e469`)
+- Tagger date: 2026-11-04T17:22:10Z
+- SWHID (revision): `swh:1:rev:257e4698cadd6786d2381cf61d2eef4cdbeb4475`
+- SWHID (release): `swh:1:rel:25280289d0c883d017114eb1ec8249ed8d8ebcba`
+- SWH snapshot: `swh:1:snp:93e91e2fb9b797576941671750e12859c39c29c9`
+- SWH save request 2614082, visit 2026-11-04T17:22:33Z (succeeded)
+- This record is appended after the tag; the hashed table above is the
+  frozen content.
