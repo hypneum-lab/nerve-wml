@@ -1,9 +1,8 @@
 # P8c-nocap — Pre-registration (L0 draft) 2026-11-04: dreaming kernel vs Hebbian unlearning without dose cap
 
 **Status:** L0 draft — NOT frozen. Planned freeze tag
-`prereg-hopfield-p1bis-p8c-<YYYYMMDD>` (one annotated tag shared with
-`docs/prereg/hopfield-p1bis-ext/prereg.md`; the date is the UTC date of tag
-creation). Runs started before the tag push do not count. SWHID recorded in
+`prereg-hopfield-p1bis-p8c-freeze-20261104` (one annotated tag shared with
+`docs/prereg/hopfield-p1bis-ext/prereg.md`). Runs started before the tag push do not count. SWHID recorded in
 `docs/prereg/hopfield-p1bis-ext/freeze-manifest.md` (single manifest for both
 studies) at freeze.
 **Investigator:** Clément Saillant (sole investigator); implementation and

@@ -7,7 +7,7 @@ merge commit before tagging. Fields marked "at freeze" are filled then.
 
 - Studies: `hopfield-p1bis-ext` (`docs/prereg/hopfield-p1bis-ext/prereg.md`),
   `hopfield-p8c-nocap` (`docs/prereg/hopfield-p8c-nocap/prereg.md`)
-- Tag: `prereg-hopfield-p1bis-p8c-<YYYYMMDD>` — at freeze
+- Tag: `prereg-hopfield-p1bis-p8c-freeze-20261104` — at freeze
 - Merge commit, tagger date, SWHID (revision `swh:1:rev:…`) — at freeze
 - SHA-256 of this manifest: recorded in the tag message at freeze
 - Host: kxkm-ai, CPU only, `/ai/saisail/p1bis-p8c-20261104`

@@ -8,7 +8,7 @@
 # hash-pinned requirements, and no STOP file exists.
 #
 # Usage (on kxkm-ai, user electron, AFTER the freeze tag and the PI go):
-#   nohup scripts/hopfield_conf/kxkm_launch.sh prereg-hopfield-p1bis-p8c-YYYYMMDD \
+#   nohup scripts/hopfield_conf/kxkm_launch.sh prereg-hopfield-p1bis-p8c-freeze-20261104 \
 #       > /ai/saisail/p1bis-p8c-20261104/logs/launch.nohup 2>&1 &
 # Stop: touch /ai/saisail/p1bis-p8c-20261104/STOP   (all lanes; checked between cells)
 #

@@ -1,9 +1,9 @@
 # P1bis-ext — Pre-registration (L0 draft) 2026-11-04: dreaming vs two budget-matched controls, clipped Hopfield network
 
 **Status:** L0 draft — NOT frozen. Planned freeze tag
-`prereg-hopfield-p1bis-p8c-<YYYYMMDD>` (one annotated tag for this study and
-the companion `docs/prereg/hopfield-p8c-nocap/prereg.md`, which share code; the
-date is the UTC date of tag creation). Runs started before the tag push do not
+`prereg-hopfield-p1bis-p8c-freeze-20261104` (one annotated tag for this study and
+the companion `docs/prereg/hopfield-p8c-nocap/prereg.md`, which share code; one
+manifest). Runs started before the tag push do not
 count. Software Heritage save of the tagged commit and the SWHID are recorded
 in `docs/prereg/hopfield-p1bis-ext/freeze-manifest.md` at freeze.
 **Investigator:** Clément Saillant (sole investigator); implementation and
@@ -290,7 +290,7 @@ Archive of the pilots: `electron-server:~/archives/gb300-20261101/hypneum-202611
 ## Nothing runs before
 
 PR merged on green CI; freeze manifest with SHA-256 of every protocol, code
-and environment file; annotated tag `prereg-hopfield-p1bis-p8c-<YYYYMMDD>`
+and environment file; annotated tag `prereg-hopfield-p1bis-p8c-freeze-20261104`
 pushed; SWHID recorded; PI explicit go. The launcher checks that the working
 tree is clean and at the tag before starting.
 
