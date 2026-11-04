@@ -248,7 +248,8 @@ their image-text PRH cells) and confirms that the paired $d_z$
 remedy is cheap and inverts the direction of the apparent effect.
 The effective-rank/spectral-entropy diagnostic used elsewhere in
 the main paper is the canonical Roy & Vetterli (2007) measure,
-recently reapplied to LLM hidden-state collapse by [@wei2024differank].
+recently reapplied to LLM evaluation from hidden representations by
+[@wei2024differank].
 
 # 5. Limitations
 
