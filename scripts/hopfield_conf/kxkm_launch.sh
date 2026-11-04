@@ -40,7 +40,8 @@ cd "$REPO" || die "no repo at $REPO"
 [ -z "$(git status --porcelain)" ] || die "working tree not clean"
 REQ=experiments/hopfield_dream_conf/requirements-hopfield-conf.txt
 want=$(grep -E '^[a-z0-9_.-]+==' "$REQ" | sed 's/ .*//' | tr 'A-Z_' 'a-z-' | sort)
-have=$("$PY" -m pip freeze 2>/dev/null | tr 'A-Z_' 'a-z-' | sort)
+have=$("$PY" -I -c 'import importlib.metadata as m
+for d in m.distributions(): print(d.metadata["Name"] + "==" + d.version)' | tr 'A-Z_' 'a-z-' | sort)
 [ "$want" = "$have" ] || die "venv freeze differs from $REQ"
 
 export CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 \
@@ -53,7 +54,12 @@ export CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_
 } >> "$LOG"
 
 # wall-time caps: create the STOP file when exceeded
-( sleep "$WALL_CAP_P8"; [ -e "$STOP" ] || { echo "$(ts) WALL_CAP P8c reached" >> "$LOG"; touch "$STOP"; } ) &
+DONE=$W/logs/.campaign-done
+rm -f "$DONE"
+( end=$((SECONDS + WALL_CAP_P8))
+  while [ $SECONDS -lt $end ]; do sleep 30; [ -e "$DONE" ] && exit 0; done
+  [ -e "$STOP" ] || { echo "$(ts) WALL_CAP P8c reached" >> "$LOG"; touch "$STOP"; }
+) > /dev/null 2>&1 &
 WATCH=$!
 
 laneA() {
@@ -77,10 +83,13 @@ laneB() {
       --max-stoch-secs "$P8C_MAX_STOCH_SECS" --stop-file "$STOP" >> "$W/logs/p8c_n4096.log" 2>&1
   echo "$(ts) STOP laneB-p8c rc=$?" >> "$LOG"
 }
+if [ "${DRY_RUN:-0}" = "1" ]; then
+  echo "$(ts) DRY_RUN: all checks passed, no lane started" | tee -a "$LOG"; touch "$DONE"; exit 0
+fi
 laneA & PA=$!
 laneB & PB=$!
 wait $PA $PB
-kill $WATCH 2>/dev/null
+touch "$DONE"
 for d in hopfield_p1bis_ext hopfield_p8c_nocap/n4096 hopfield_p8c_nocap/n16384; do
   [ -d "$W/results/$d" ] && (cd "$W/results/$d" && sha256sum ./*.jsonl ./run_info.json > SHA256SUMS)
 done
