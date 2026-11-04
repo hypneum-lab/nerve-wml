@@ -1,8 +1,17 @@
 line-length = 100
 target-version = "py312"
 # Archived verbatim as evidence (their SHA-256 is recorded in the manifest).
-extend-exclude = ["experiments/procgen_multiagent_gtm_comm/bench/procgen-builds/*.py"]
+extend-exclude = [
+  "experiments/procgen_multiagent_gtm_comm/bench/procgen-builds/*.py",
+  # Vendored verbatim (MIT, Marinari-Rossi-Zamponi @7e42574); sha256 in the manifest.
+  "experiments/hopfield_dream_conf/vendor/hopfield.py",
+]
 
 [lint]
 select = ["E", "F", "I", "UP", "B", "N"]
 ignore = []
+
+[lint.per-file-ignores]
+# Physics notation (J, X, N, S, H) in the Hopfield studies.
+"experiments/hopfield_dream_conf/*.py" = ["N802", "N803", "N806"]
+"tests/unit/test_hopfield_dream_conf_*.py" = ["N802", "N803", "N806"]
