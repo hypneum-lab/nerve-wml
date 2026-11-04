@@ -1,6 +1,6 @@
 # N10-C — Deviation declaration 2026-11-04: campaign reduced to seed 0 (macM1), KXKM-AI half not launched
 
-**Status:** DRAFT — declaration, not frozen. It changes no registered provision of N10-C. To be signed by the PI (section 6).
+**Status:** DECLARED — signed by the PI on 2026-11-04 at 06:51 CET (section 6); not frozen, it changes no registered provision of N10-C.
 **Declares against:** `docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-25.md` (FROZEN by tag `n10c-freeze-20261029`, commit `99a7cf4`, SWHID `swh:1:rev:99a7cf4bb01d31e8e7f6c99c0e6676f41e6e17bb`), which amends the 2026-10-23 amendment and the locked `docs/milestones/n10c-procgen-multiagent-gtm-comm-2026-05-11.md`; the declaration of 2026-10-30 (`…-amendment-2026-10-30.md`, DRAFT); and the N10-C-bis addendum `docs/milestones/2026-10-25-n10c-bis-control-arms.md` (DRAFT, not frozen).
 **Date drafted:** 2026-11-04 (dated by the GitHub push time of its first commit; git dates are not evidence of time).
 **Investigator:** Clément Saillant (Hypneum Lab, sole investigator).
@@ -92,7 +92,10 @@ Hypotheses, arms, estimands, reading rules, blinding rule, the N10-C-bis addendu
 
 ## 6. PI signature and records to append
 
-- [ ] Decision time confirmed (2026-11-04, about 06:38 CET) and signed.
-- [ ] `stopped_by_STOP_file` event line and times of `registered-mlp-s0` / `registered-atoc-s0` appended here.
-- [ ] Evaluation command of section 3 confirmed and its `attempts.jsonl` lines appended (or another procedure chosen).
+Signed by the PI, Clément Saillant, on 2026-11-04 at 06:51 CET (instruction given in session: « signe la PR et fusionne »), who confirms the decision of section 1.2 (2026-11-04, about 06:38 CET, outcome-blind) and the evaluation procedure of section 3.
+
+Records still to append, each in its own later commit, as they are produced:
+
+- [ ] `stopped_by_STOP_file` event line and times of `registered-mlp-s0` / `registered-atoc-s0` (expected 2026-11-05).
+- [ ] `attempts.jsonl` lines of the 10 seed-0 evaluations on KXKM-AI (section 3), without their results.
 - [ ] Machine table of the 2026-11-01 plan (`.github` PR #24) corrected: macM1 busy until the stop, not until 2026-11-02.
