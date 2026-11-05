@@ -105,7 +105,7 @@ and errors to $\theta$.
 % from figures in Huh et al.; not checked against their text.
 Our measured $0.174$ sits near the lower bound of Huh et al.'s cross-modality range ($0.15$--$0.25$), which extends up to $\sim 0.50$ for same-modality pairs; this placement reflects the structural heterogeneity between ANN and spiking substrates, not a ceiling on PRH validity.
 
-Our \texttt{MI}/\texttt{H} ratio on emitted discrete codes (\S\ref{sec:info-tx}) occupies the slot this family leaves open: we measure, at the discrete protocol-output level, what Kornblith's CKA, Morcos's PWCCA, Moschella's relative representations, and Hosseini et al.'s model-to-brain alignment measure on continuous hidden states. Empirically we observe $\mathrm{MI}/\mathrm{H} \approx 0.953$ versus $\mathrm{CKA}$ on the corresponding argmax one-hots of $0.910$ (\S\ref{sec:info-tx}); the $4.3$-percentage-point gap tracks soft many-to-one code mappings that kernel-alignment metrics miss by construction. Shang et al.~\cite{shang2026displacement} offer a reading of the gap between our post-VQ and pre-VQ figures (\S\ref{sec:info-tx}, Test~(1)): across independently trained encoders, the displacement vectors between samples are largely preserved under a single orthogonal map while absolute positions are not, so pointwise similarity can be weak while shared relational structure is strong. Quantisation onto a common alphabet plausibly retains the latter and discards the former; we have not tested this directly.
+Our \texttt{MI}/\texttt{H} ratio on emitted discrete codes (\S\ref{sec:info-tx}) occupies the slot this family leaves open: we measure, at the discrete protocol-output level, what Kornblith's CKA, Morcos's PWCCA, Moschella's relative representations, and Hosseini et al.'s model-to-brain alignment measure on continuous hidden states. Empirically we observe $\mathrm{MI}/\mathrm{H} \approx 0.953$ versus $\mathrm{CKA}$ on the corresponding argmax one-hots of $0.910$ (\S\ref{sec:info-tx}); the $4.3$-percentage-point gap tracks soft many-to-one code mappings that kernel-alignment metrics miss by construction. CKA is reported here as a comparison point, not as a stand-alone criterion of shared representation: networks differing only by their random initialisation can score a CKA close to zero while model stitching finds them close (up to $3\%$ error; Bansal et al.~\cite{bansal2021stitching}, Table~1, p.~5); two random networks can obtain a higher CKA than two networks trained on the same task, because similarity matrices inherit the similarity of the inputs (survey of Klabunde et al.~\cite{klabunde2025similarity}, App.~C.3, p.~46); and CKA computed from a limited number of units systematically underestimates the population-level value~\cite{kang2025spectral}. Shang et al.~\cite{shang2026displacement} offer a reading of the gap between our post-VQ and pre-VQ figures (\S\ref{sec:info-tx}, Test~(1)): across independently trained encoders, the displacement vectors between samples are largely preserved under a single orthogonal map while absolute positions are not, so pointwise similarity can be weak while shared relational structure is strong. Quantisation onto a common alphabet plausibly retains the latter and discards the former; we have not tested this directly.
 
 \textbf{Adjacent abstraction layers: model IRs and event transports.}
 Two recent lines define communication structure for brain-inspired
@@ -477,7 +477,22 @@ neighbourhood-level one. The mutual-kNN kernel of
 Table~\ref{tab:platonic-knn} measures neighbourhood overlap at small
 $k$, and we report it \emph{relative to a capacity-matched random
 baseline} ($18.8\times$ at $k{=}10$) precisely so the figure is
-null-calibrated in the sense those critiques demand. We therefore claim
+null-calibrated in the sense those critiques demand. Two limits of
+this baseline should be kept in view. First, alignment between
+independently trained networks is not by itself evidence of a shared
+substrate-independent representation: Ziyin et
+al.~\cite{ziyin2025neural} prove that two independently trained deep
+linear networks are, at the global minimum of their entropic loss,
+perfectly aligned layer by layer up to a scaling and a rotation
+(Theorem~8, p.~7). Second, the score of unrelated representations
+depends on sample size and dimension: in the survey of Klabunde et
+al.~\cite{klabunde2025similarity}, orthogonal Procrustes similarity
+between synthetic matrices grows with dimension until $D = N$, and
+the reference score is taken from a row-permuted copy of the same
+representation rather than from independent random tensors
+(App.~F, p.~51). A baseline of two independent Gaussian tensors
+therefore answers a narrower question than a permutation null at the
+same $N$ and $d$. Within these limits, we claim
 that MLP and spiking-LIF substrates share \emph{neighbourhood-level
 relational} structure under the nerve protocol --- not that their
 metric geometry coincides, nor that they converge to a single Platonic
