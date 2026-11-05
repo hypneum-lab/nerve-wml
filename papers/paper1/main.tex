@@ -492,7 +492,15 @@ the reference score is taken from a row-permuted copy of the same
 representation rather than from independent random tensors
 (App.~F, p.~51). A baseline of two independent Gaussian tensors
 therefore answers a narrower question than a permutation null at the
-same $N$ and $d$. Within these limits, we claim
+same $N$ and $d$. We have not made that comparison: the
+$18.8\times$ ratio is not set against the analytic floor
+$\mathbb{E}[\mathrm{mKNN}]=k/(n-1)$ expected under independence
+(Proposition~4.2, Eq.~(4), p.~4 of \cite{aristotelianprh2026}; the
+``chance'' column of Table~\ref{tab:platonic-knn} is $k/N$, the same
+quantity up to the $n-1$ versus $N$ notation, with the figures
+unchanged), nor against an untrained-network arm (same architecture,
+random weights). That published result points the same way as this
+caveat; both comparisons are left to an analysis amendment. Within these limits, we claim
 that MLP and spiking-LIF substrates share \emph{neighbourhood-level
 relational} structure under the nerve protocol --- not that their
 metric geometry coincides, nor that they converge to a single Platonic
