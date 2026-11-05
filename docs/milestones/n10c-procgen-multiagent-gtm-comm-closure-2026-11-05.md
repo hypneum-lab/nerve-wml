@@ -22,7 +22,17 @@ Times are CET (UTC+1). Sources are cited; outcome fields are not reproduced here
 | R7 | Time and channel of the « 0.96 » reading of 2026-10-30 | see section 3 | — |
 | R8 | Decision to stop N10-C for good, with its grounds | 2026-11-05, about 06:33 | section 2 |
 
-Still open after this record: the `stopped_by_STOP_file` event line of the macM1 runner (pid 75468), the end time of `registered-mlp-s0` on macM1 and the removal of the hourly sync cron: macM1 was unreachable over Tailscale and the LAN when this record was drafted. They are appended in a later commit. The covariance correction of the 2026-10-30 declaration (section 3 there) is moot under section 2: no further analysis of this campaign is planned; if one is ever made, the decision is non-blind and is recorded with it.
+macM1 records (read on 2026-11-05 at about 06:45 CET, liveness fields only; macM1 was briefly unreachable over Tailscale and the LAN earlier that morning):
+
+| # | Record | Time | Source |
+|---|---|---|---|
+| M1 | `registered-mlp-s0` training ended, `state: trained` | 2026-11-05 02:34:00 | `macm1:~/scratch/n10c-run2/campaign/attempts.jsonl` |
+| M2 | Runner exit on the STOP file: `{"phase": "campaign", "state": "stopped_by_STOP_file"}`; `registered-atoc-s0` not started | 2026-11-05 02:34:02 | same file |
+| M3 | Hourly cron sync copied `registered-mlp-s0` to KXKM-AI (« synced 1 run(s) ») | 2026-11-05 02:47:00 | `macm1:~/scratch/n10c-run2/sync.log` |
+| M4 | Runner pid 75468 gone; `campaign/STOP` still in place (content `2026-11-04T19:02:45+0100`); `~/.mtplx/paused` absent (day-model pause lifted); `~/scratch/.heavy.lock` present but held by no process. `launcher.state` still reads « running: command pid 75468 », a stale line not rewritten at exit | 2026-11-05 ≈ 06:45 | `ps`, `ls`, `lsof` |
+| M5 | Hourly sync cron line (`47 * * * *`, `sync-to-kxkm.sh`, tag `# n10c-sync`) removed from the macM1 crontab, other lines untouched; backup `~/scratch/n10c-run2/crontab.bak-20261105` | 2026-11-05 ≈ 06:45 | `crontab -l` diff against the backup |
+
+The covariance correction of the 2026-10-30 declaration (section 3 there) is moot under section 2: no further analysis of this campaign is planned; if one is ever made, the decision is non-blind and is recorded with it.
 
 ## 2. Decision: N10-C is stopped for good
 
@@ -83,13 +93,13 @@ Grounds (b)1–4 are consistent with ground (a), but they are not independent of
 
 - **Agent first saw the final value:** 13:12:11 CET (tight; the 13:11:55 display showed 0.96 only as an early curve point at 3M).
 - **PI first saw it:** not earlier than 13:12:25 CET and not later than 14:08:52 CET on the transcript evidence; most likely within minutes of 13:12:25, since the PI had just asked the question.
-- **Absolute lower bound:** 00:57:40 CET (file written). Between 00:57:40 and 13:11:55 no GrosMac Claude Code transcript contains the value or reads `run.json`; the only background job touching the run directory (a stall watcher) read checkpoint modification times only. The hourly sync to KXKM-AI did not cover the run-2 directory before the macM1 crontab was repointed at about 20:36 CET (first sync at 20:47 CET), an automated copy with no reader.
-- **Not checked:** sessions on other hosts (macM1 local sessions, Codex CLI) and any direct terminal look by the PI on macM1; these cannot be excluded from the transcripts and are the residual uncertainty. macM1 was unreachable when this was drafted, so its `sync.log` and local `attempts.jsonl` were not re-read.
+- **Absolute lower bound:** 00:57:40 CET (file written). Between 00:57:40 and 13:11:55 no GrosMac Claude Code transcript contains the value or reads `run.json`; the only background job touching the run directory (a stall watcher) read checkpoint modification times only. The hourly sync to KXKM-AI did not cover the run-2 directory before the macM1 crontab was repointed on the evening of 2026-10-30; its log (`sync.log`) starts at 20:47 CET with « synced 0 run(s) ». Any copy of the run to KXKM-AI is a file copy with no reader.
+- **Not checked:** sessions on other hosts (macM1 local sessions, Codex CLI) and any direct terminal look by the PI on macM1; these cannot be excluded from the transcripts and are the residual uncertainty. On macM1, `attempts.jsonl` confirms only the end of training (`trained` at 00:57:40), and `sync.log` holds no reader.
 
 ## 4. Records still to append
 
-- [ ] macM1: `stopped_by_STOP_file` event line, end time and final status of `registered-mlp-s0`, `launcher.state`, `~/.mtplx/paused` lifted, heavy lock free.
-- [ ] macM1: hourly sync cron (`47 * * * *`, `sync-to-kxkm.sh`) removed, crontab backed up.
+- [x] macM1: `stopped_by_STOP_file` event line, end time and final status of `registered-mlp-s0`, `~/.mtplx/paused` lifted, heavy lock free (section 1, M1–M4).
+- [x] macM1: hourly sync cron (`47 * * * *`, `sync-to-kxkm.sh`) removed, crontab backed up (section 1, M5).
 - [ ] Machine table of the 2026-11-01 plan (`.github` PR #24) corrected (morning declaration, section 6).
 
 ## 5. Signature
