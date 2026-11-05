@@ -175,3 +175,5 @@ Hypotheses, arms, estimands, blinding rule (except the breach declared in sectio
 - [ ] Date and time at which the PI first reads the interim results.
 - [ ] Decision on the covariance correction (after the reading, non-blind).
 - [ ] Decision on resumption (section 6) and its grounds (section 4.3).
+
+**Closure (appended 2026-11-05).** The records above (PR number and merge time, sync of `registered-mlp-s0`, evaluation launch and the 9 runs with `eval_done: true`, first reading of the interim results), the time and channel of the « 0.96 » reading of 2026-10-30, and the PI decision of 2026-11-05 (about 06:33 CET) to stop N10-C for good with no resumption — an outcome-informed decision — are recorded in `docs/milestones/n10c-procgen-multiagent-gtm-comm-closure-2026-11-05.md`. The macM1 records (`stopped_by_STOP_file`, end of `registered-mlp-s0`) are still to append there.
