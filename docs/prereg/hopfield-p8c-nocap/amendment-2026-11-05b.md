@@ -84,3 +84,20 @@ PI. **Declared deviation:** the run starts from a commit that is pushed
 and tagged but not yet merged into `master`. The tag commit contains the
 same scientific code as the original freeze (only this document is
 added).
+
+## 9. Substrate split considered and not adopted
+
+The PI considered running seeds 32017-32020 on macM1 (arm64, Python
+3.12.13, same hash-pinned wheels) and seeds 32001-32016 on kxkm-ai
+(x86_64, Python 3.12.15), conditional on bit-identical output. Test:
+smoke cell seed 99902, N=2048, alpha=0.3 (not a confirmatory seed), same
+code commit on both hosts, all rows compared except the fields `secs`,
+`stoch_secs`, `host`, `pid`, `ts`. Result: **0 of 26 rows identical**
+across platforms (differences at the 1e-7 to 1e-8 relative level in
+floating-point fields). On kxkm-ai the rerun is identical to the smoke
+reference of 2026-11-04 (26 of 26 rows). The condition is not met, so
+**no split is made**: all 20 seeds run on kxkm-ai, one substrate.
+Files (sha256 including timing fields): kxkm-ai
+`5b1ea8fa2afeeb465b3791346510db15ad36b36bf71152147123631719bd57ed`,
+macM1
+`daa99b4c31f81f5431d504072ba7b4a87070ff2a44a8382a24fae4d1cd32b746`.
