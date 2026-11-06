@@ -182,6 +182,29 @@ def test_committed_records_are_ledgered_and_within_the_caps():
         devledger.gate_allowance("pretrain_dev", "trunk"))
 
 
+def test_gb300_g7_entries_are_merged_and_aplus_slots_remain():
+    """GB300 G7 pilot (2026-11-01) entries merged by id or reconstructed;
+    the A+ allowance leaves exactly one run + one rerun per cell (plus the
+    2-slot eng margin for the unrecorded RTX attempt)."""
+    from experiments.procgen_multiagent_gtm_comm.harness import devledger
+    runs = devledger.read()["runs"]
+    gb = [r for r in runs if r.get("note", "").startswith("host GB300")]
+    assert len(gb) == 9
+    gate = [r for r in gb if r["kind"] == "gate_dev"]
+    assert sorted((r["arm"], r["seed"]) for r in gate) == [
+        ("eng", 9101), ("eng", 9101), ("eng", 9101), ("eng", 9103),
+        ("nocomm", 9102)]
+    assert all(r["condition"] == "closed" and r["steps"] == 10_000_000
+               and r["outcome"] == "operator_stop" for r in gate)
+    assert sum(bool(r.get("reconstructed")) for r in gate) == 2
+    by = devledger.counts_by_kind()["gate_dev"]
+    free = {a: devledger.gate_allowance("gate_dev", a) - by.get(a, 0)
+            for a in ("eng", "nocomm")}
+    assert free == {"eng": 6 + 2, "nocomm": 12}
+    used = devledger.counts_by_kind()["pretrain_dev"]["trunk"]
+    assert devledger.gate_allowance("pretrain_dev", "trunk") - used == 2
+
+
 def test_committed_adam_rows_match_amendment():
     from experiments.procgen_multiagent_gtm_comm.harness.gate_report import (
         ADAM_HEADER,
