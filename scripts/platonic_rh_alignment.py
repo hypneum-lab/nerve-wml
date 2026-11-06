@@ -20,11 +20,17 @@ Decision threshold:
   alignment > max(3 x random_baseline, 0.05) => substrates converge
   => local confirmation of Platonic RH on heterogeneous substrates.
 
+Optional untrained-network arm (``--untrained-arm``, issue #110): the
+same two architectures, same seeds, zero training steps, embedded on
+the same held-out batch through the same pipeline. Reported next to the
+trained arm; it carries no threshold and the verdict ignores it.
+
 Does NOT modify any runner or substrate -- uses public APIs directly
 and replicates the run_w2_hard training recipe verbatim.
 """
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -110,8 +116,45 @@ def _train_lif(steps: int, seed: int) -> tuple[LifWML, torch.nn.Linear]:
     return lif, input_encoder
 
 
-def main() -> None:
+def _embed(
+    mlp: MlpWML, lif: LifWML, lif_encoder: torch.nn.Linear, x: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Pre-VQ embeddings used by Test (6), identical for both arms."""
+    with torch.no_grad():
+        return mlp.core(x), lif.input_proj(lif_encoder(x))
+
+
+def untrained_arm(seed: int, n_eval: int, ks: list[int]) -> dict:
+    """Untrained-network arm: same architecture and seed, zero steps.
+
+    Builds MLP and LIF exactly as the trained arm does but with
+    ``steps=0``, embeds the same held-out batch (same task seed, same
+    ``n_eval``) and returns the mutual-kNN score per k with the floor.
+    """
+    mlp0 = _train_mlp(0, seed)
+    lif0, enc0 = _train_lif(0, seed)
+    eval_task = HardFlowProxyTask(dim=16, n_classes=12, seed=seed)
+    x_eval, _ = eval_task.sample(batch=n_eval)
+    emb_mlp0, emb_lif0 = _embed(mlp0, lif0, enc0, x_eval)
+    return {
+        str(k): {
+            "mlp_lif_untrained": mutual_knn(emb_mlp0, emb_lif0, k=k),
+            "floor": mutual_knn_floor(n_eval, k),
+        }
+        for k in ks
+    }
+
+
+def main(argv: list[str] | None = None) -> None:
     import numpy as np
+
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--untrained-arm",
+        action="store_true",
+        help="also report the zero-step (random-weight) arm (issue #110)",
+    )
+    args = parser.parse_args(argv)
 
     n_eval = 1024
     ks = [5, 10, 20, 50]
@@ -126,9 +169,7 @@ def main() -> None:
 
         eval_task = HardFlowProxyTask(dim=16, n_classes=12, seed=seed)
         x_eval, _ = eval_task.sample(batch=n_eval)
-        with torch.no_grad():
-            emb_mlp = mlp.core(x_eval)
-            emb_lif = lif.input_proj(lif_encoder(x_eval))
+        emb_mlp, emb_lif = _embed(mlp, lif, lif_encoder, x_eval)
 
         torch.manual_seed(seed + 1000)
         rand_a = torch.randn(n_eval, 16)
@@ -144,6 +185,12 @@ def main() -> None:
                 "chance":   k / n_eval,
                 "floor":    mutual_knn_floor(n_eval, k),
             }
+        if args.untrained_arm:
+            untrained = untrained_arm(seed, n_eval, ks)
+            for k in ks:
+                per_k[str(k)]["mlp_lif_untrained"] = (
+                    untrained[str(k)]["mlp_lif_untrained"]
+                )
         per_seed[str(seed)] = per_k
 
     aggregated: dict = {}
@@ -162,9 +209,16 @@ def main() -> None:
             "mlp_lif_x_floor": float(np.median(mlp_lif_vals))
             / mutual_knn_floor(n_eval, k),
         }
+        if args.untrained_arm:
+            vals = [per_seed[str(s)][str(k)]["mlp_lif_untrained"] for s in seeds]
+            aggregated[str(k)]["mlp_lif_untrained_median"] = float(np.median(vals))
+            aggregated[str(k)]["mlp_lif_untrained_values"] = vals
 
     results = {
-        "config": {"n_eval": n_eval, "ks": ks, "steps": steps, "seeds": seeds, "d": 16},
+        "config": {
+            "n_eval": n_eval, "ks": ks, "steps": steps, "seeds": seeds, "d": 16,
+            "untrained_arm": args.untrained_arm,
+        },
         "per_seed": per_seed,
         "aggregated": aggregated,
     }
@@ -193,6 +247,13 @@ def main() -> None:
             f"{a['mlp_lif_median']:>20.4f}{iqr_str:>20}{x_rand:>10.1f}"
             f"{a['mlp_lif_x_floor']:>10.1f}"
         )
+
+    if args.untrained_arm:
+        print()
+        print("Untrained arm (zero steps; reported, not used in the verdict):")
+        for k in ks:
+            a = aggregated[str(k)]
+            print(f"{k:>4}{a['mlp_lif_untrained_median']:>20.4f}")
 
     k_focus = 10
     ref = aggregated[str(k_focus)]
