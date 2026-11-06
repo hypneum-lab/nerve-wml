@@ -64,10 +64,11 @@ def _write(tmp_path, recs):
 
 def test_cli_reads_n_eval_of_filtered_rows(tmp_path):
     # Bug of 6e682cc: n_eval came from recs[0]; a leading eng row at n_eval=1 gave k=48.
+    # Since TBD-14 (2026-11-06) the CLI prints no k: k does not come from the pilot.
     flat = [{**r, "success": 0.25} for r in _recs(0.0)]
     lead = {"seed": 9600, "condition": "asym", "arm": "eng", "success": 1.0, "n_eval": 1}
     out = main([_write(tmp_path, [lead, *flat])])
-    assert "n_eval=500" in out and out.endswith(f"k={MIN_K}")
+    assert "n_eval=500" in out and "k=" not in out
 
 
 def test_cli_rejects_heterogeneous_filtered_n_eval(tmp_path):
@@ -77,15 +78,18 @@ def test_cli_rejects_heterogeneous_filtered_n_eval(tmp_path):
         main([_write(tmp_path, recs)])
 
 
-def test_one_arm_per_call():
+def test_pilot_reads_nocomm_only():
+    # TBD-14 closed 2026-11-06: the pilot never reads eng.
     eng = [{**r, "arm": "eng"} for r in _recs(0.05, seed=3)]
     both = _recs(0.0) + eng
-    assert sigma_seed(both, arm="eng") == sigma_seed(eng, arm="eng")
-    with pytest.raises(ValueError):
-        sigma_seed(both, arm="learned")
+    assert sigma_seed(both) == sigma_seed(_recs(0.0))
+    for arm in ("eng", "learned"):
+        with pytest.raises(ValueError):
+            sigma_seed(both, arm=arm)
 
 
-def test_seed_rules_for_paired_d_and_sign_test():
+def test_obsolete_k_mean_and_sign_test():
+    # k_mean is obsolete (TBD-13); kept for the report, value unchanged.
     assert required_seeds_from_sigma_d(0.30) == 9  # no factor 2 when sigma_D is direct
     assert required_seeds_from_sigma_d(0.0) == MIN_K
     assert sign_test_critical(5) == 5 and sign_test_critical(4) is None

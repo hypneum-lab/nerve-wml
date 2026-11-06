@@ -9,6 +9,11 @@ from dataclasses import dataclass
 from typing import Literal
 
 Condition = Literal["asym", "sym"]
+
+# Sym leak check (TBD-15, PI 2026-11-06): gate on eng_sym only, and
+# case D iff the 95 % CI lower bound of D_sym >= SYM_LEAK_DELTA.
+SYM_EPSILON = 0.05
+SYM_LEAK_DELTA = 0.10
 Arm = Literal["eng", "nocomm", "learned", "msg_shuffle"]
 
 

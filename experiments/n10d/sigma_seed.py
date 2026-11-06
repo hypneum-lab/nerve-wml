@@ -2,20 +2,23 @@
 
 L0 DRAFT, not frozen. Written and committed BEFORE the pilot (PI decision
 2026-10-31, item 9); revised 2026-11-06 after the blind contradictor pass.
-Reads the records of ONE arm of condition ``asym`` per call, on the eight
-development seeds 9600-9607: ``nocomm`` by default; ``eng`` only if the PI
-closes TBD-14 that way (amendment of TBD-9). The two arms are never read in
-the same call and D is never computed, so the NH-96 contrast cannot be read
-through this script.
+Reads the records of arm ``nocomm`` of condition ``asym`` only, on the
+eight development seeds 9600-9607 (TBD-14 closed 2026-11-06: the pilot
+never reads ``eng``). D is never computed, so the NH-96 contrast cannot be
+read through this script.
 
 Known limit: a blind asym policy has expectation exactly 1/C, so
 sigma_seed(nocomm/asym) is 0 up to binomial noise (estimate 0 in about 57 %
-of 8-seed pilots, P(chi2_7 < 7) = 0.571). It does not size D (TBD-13/14).
+of 8-seed pilots, P(chi2_7 < 7) = 0.571). It does not size D: it is a
+consistency check (a value clearly above 0 points to a side channel,
+control 4b). k comes from the planning assumption (TBD-13/14), see
+``required_seeds_mc.py``.
 
 Input JSON: list of {"seed", "condition", "arm", "success", "n_eval"}.
 sigma_seed^2 = max(0, sample variance of success across seeds
                       - mean binomial variance p(1-p)/n_eval).
-Also provides the pre-written seed-count formulas (protocol section 4).
+Also provides the sign-test helpers and, for the report only, the former
+seed-count formulas (obsolete since TBD-13 was closed, protocol section 4).
 """
 from __future__ import annotations
 
@@ -26,9 +29,9 @@ import sys
 from statistics import NormalDist
 
 DEV_SEEDS = tuple(range(9600, 9608))
-READABLE_ARMS = ("nocomm", "eng")
-MIN_K = 5  # floor under revision (TBD-13)
-MARGIN = 0.30  # absolute margin, under revision (TBD-12)
+READABLE_ARMS = ("nocomm",)  # TBD-14 closed: the pilot reads nocomm only
+MIN_K = 5  # former floor, obsolete as a rule (TBD-13 closed); report only
+MARGIN = 0.30  # 0.4 * (1 - 1/C), TBD-12 closed 2026-11-06
 ALPHA = 0.05
 POWER = 0.90
 
@@ -65,7 +68,7 @@ def _z_sum() -> float:
 
 
 def required_seeds(sigma: float, p0: float, n_eval: int) -> int:
-    """Independent-arms bound, kept for the report only (protocol section 4).
+    """OBSOLETE (TBD-13 closed): independent-arms bound, report only.
 
     k = max(MIN_K, ceil(((z_{1-alpha} + z_{power}) * sigma_D / margin)^2)),
     sigma_D^2 = 2 * (sigma_seed^2 + p(1-p)/n_eval) with p = 0.5. The factor 2
@@ -78,10 +81,12 @@ def required_seeds(sigma: float, p0: float, n_eval: int) -> int:
 
 
 def required_seeds_from_sigma_d(sigma_d: float, margin: float = MARGIN) -> int:
-    """k for the paired mean when the per-seed sd of D is taken directly.
+    """OBSOLETE k_mean (TBD-13 closed 2026-11-06), kept for the report only.
 
     k = max(MIN_K, ceil(((z_{1-alpha} + z_{power}) * sigma_D / margin)^2)),
-    no factor 2 (sigma_D = 0.30 gives k = 9 at margin 0.30).
+    no factor 2 (sigma_D = 0.30 gives k = 9 at margin 0.30). It is the power
+    of a test of D > 0 when D = margin, which is neither the CI rule nor the
+    sign test of TBD-16; k is set by ``required_seeds_mc.py`` instead.
     """
     return max(MIN_K, math.ceil((_z_sum() * sigma_d / margin) ** 2))
 
@@ -122,8 +127,8 @@ def main(argv: list[str] | None = None) -> str:
         recs = json.load(fh)
     sg = sigma_seed(recs, arm)
     n_eval = pilot_n_eval(recs, arm)
-    return (f"arm={arm} sigma_seed={sg:.4f} n_eval={n_eval} "
-            f"k={required_seeds(sg, 0.25, n_eval)}")
+    # No k printed: k does not come from the pilot (TBD-13/14).
+    return f"arm={arm} sigma_seed={sg:.4f} n_eval={n_eval}"
 
 
 if __name__ == "__main__":
