@@ -1,4 +1,5 @@
 """Synthetic-data tests for the N10-D decision rules (no real result used)."""
+
 import random
 
 import pytest
@@ -94,8 +95,7 @@ def test_sym_case_d_when_ci_lower_clears_delta():
 
 def test_sym_small_gap_is_no_leak_signal():
     eng = [1.0] * K
-    assert sym_leak_status(eng, _noisy([0.98] * K, sd=0.005), n_boot=2000) == (
-        "no leak signal")
+    assert sym_leak_status(eng, _noisy([0.98] * K, sd=0.005), n_boot=2000) == "no leak signal"
 
 
 def test_sym_not_measurable_when_eng_sym_low():

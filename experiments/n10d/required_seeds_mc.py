@@ -40,6 +40,8 @@ PLAN_SD_BLIND = 0.027
 SENSITIVITY_PI = (0.70, 0.75, 0.80)
 MC_SEED = 20261106
 # PI decision 2026-11-06 ~18:00 (follow the sourced analysis): 20 per backend.
+# Rerun of the command above on macM1, 2026-11-06: power 0.966 (global 0.934)
+# at pi = 0.8, 0.899 (0.808) at 0.75, 0.774 (0.599) at 0.70; type I 0.025.
 K_CONFIRM = 20
 
 
