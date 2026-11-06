@@ -28,6 +28,8 @@ D = mean over k seeds of the paired difference; N = 10 000 draws; report observe
 null median, P95, P99 and p = (hits+1)/(N+1). Code: `experiments/n10d/null.py`
 (stdlib). `sigma_seed` (TBD-9, closed): measured on the `nocomm`/`asym` development
 seeds 9600-9607 by `sigma_seed.py` before the freeze, then fixed in the manifest.
+That pilot is development, not confirmatory; its read-out (sigma_seed, sigma_D, k) is
+declared as N10-D blinding breach no. 1 (protocol section 4, "Pilot read-out (declared)").
 `simulate_null(..., paired=False)` keeps the former independent-arm draw as a
 sensitivity check only; it is not the registered null.
 

@@ -1,10 +1,15 @@
 """Extract seed spreads from the N10-D development pilot (stdlib only).
 
 Written and committed BEFORE the pilot (PI decision 2026-10-31, item 9;
-amended 2026-11-06, A4). Reads ONLY the ``nocomm`` and ``eng`` records of
-condition ``asym`` on the eight development seeds 9600-9607. It computes
-spreads only: no arm mean, no per-seed difference and no pairing is ever
-computed or printed, so the NH-96 contrast cannot be read through it.
+amended 2026-11-06, A4; paired sigma_D by PI decision 2026-11-06 16:55
+CET, protocol section 9). Reads ONLY the ``nocomm`` and ``eng`` records
+of condition ``asym`` on the eight development seeds 9600-9607.
+
+Declared blinding breach (protocol section 4, "Pilot read-out"): sigma_D
+is the sd of the per-seed differences S_eng - S_nocomm, so the script
+pairs the two arms. It prints only n_eval, sigma_seed, sigma_D and k;
+it never computes the mean of the differences and never prints a
+per-seed score or difference.
 
 Input JSON: list of {"seed", "condition", "arm", "success", "n_eval"}.
 ``success`` is the evaluation success of the frozen policy on ``n_eval``
@@ -13,10 +18,9 @@ Binomial(n_eval, p)/n_eval draw given the seed.
 
 - sigma_seed (nocomm, asym) calibrates the paired null (null.py):
   sigma_seed^2 = max(0, sample variance across seeds - mean p(1-p)/n_eval).
-- sigma_D bound sizes k: sd(S_eng) + sd(S_nocomm), total sample sd across
-  seeds (binomial term included). It bounds sd(S_eng - S_nocomm) for any
-  covariance (Cauchy-Schwarz), so no pairing is read and no factor 2 is
-  needed.
+- sigma_D sizes k: sample sd (ddof = 1) of D_s = S_eng,s - S_nocomm,s
+  over the development seeds, binomial term included. The two arms must
+  carry the same seed identifiers and, seed by seed, the same n_eval.
 - k is sized for the test actually used: a one-sided sign test,
   Binomial(k, 1/2) under H0, threshold m_k, power P(Bin(k, q) >= m_k).
 """
@@ -64,14 +68,30 @@ def sigma_seed(records: list[dict]) -> float:
     return math.sqrt(max(0.0, statistics.variance(s) - binom))
 
 
-def arm_sd(records: list[dict], arm: str) -> float:
-    """Total sample sd of success across the development seeds of one arm."""
-    return statistics.stdev(r["success"] for r in _rows(records, arm))
+def _paired_differences(records: list[dict]) -> list[float]:
+    """Per-seed S_eng - S_nocomm; never returned by the CLI.
+
+    ValueError if the arms do not carry the same seed identifiers or if
+    the n_eval of a seed differs between the arms.
+    """
+    eng = {r["seed"]: r for r in _rows(records, "eng")}
+    noc = {r["seed"]: r for r in _rows(records, "nocomm")}
+    if eng.keys() != noc.keys():
+        raise ValueError(f"unpaired seeds: eng {sorted(eng)}, nocomm {sorted(noc)}")
+    diffs = []
+    for s in sorted(eng):
+        if eng[s]["n_eval"] != noc[s]["n_eval"]:
+            raise ValueError(
+                f"seed {s}: n_eval eng={eng[s]['n_eval']} "
+                f"nocomm={noc[s]['n_eval']}"
+            )
+        diffs.append(eng[s]["success"] - noc[s]["success"])
+    return diffs
 
 
-def sigma_d_bound(records: list[dict]) -> float:
-    """Upper bound on sd(S_eng - S_nocomm) that never pairs the two arms."""
-    return arm_sd(records, "eng") + arm_sd(records, "nocomm")
+def sigma_d(records: list[dict]) -> float:
+    """Sample sd (ddof = 1) of the paired per-seed differences."""
+    return statistics.stdev(_paired_differences(records))
 
 
 def _binom_tail(k: int, m: int, q: float) -> float:
@@ -112,7 +132,7 @@ def main(argv: list[str]) -> str:
         recs = json.load(fh)
     n_eval = pilot_n_eval(recs, ("nocomm", "eng"))
     sg = sigma_seed(recs)
-    sd = sigma_d_bound(recs)
+    sd = sigma_d(recs)
     k = required_seeds(sd)
     return f"n_eval={n_eval} sigma_seed={sg:.4f} sigma_D={sd:.4f} k={k}"
 

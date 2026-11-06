@@ -1,6 +1,7 @@
 """Synthetic-data tests for the sigma_seed extractor (no real result used)."""
 import json
 import random
+import statistics
 
 import pytest
 
@@ -10,7 +11,7 @@ from experiments.n10d.sigma_seed import (
     main,
     pilot_n_eval,
     required_seeds,
-    sigma_d_bound,
+    sigma_d,
     sigma_seed,
     sign_test_power,
     sign_test_threshold,
@@ -85,11 +86,54 @@ def test_required_seeds_rejects_hopeless_spread():
         required_seeds(5.0)
 
 
-def test_sigma_d_bound_is_blind_to_the_contrast():
+def _correlated(n_eval=500):
+    # Shared seed effect u_s on both arms, small eng-only jitter: the two
+    # arms are strongly correlated, so their sd sum overstates sd(D).
+    u = [-0.21, -0.14, -0.07, 0.0, 0.04, 0.08, 0.13, 0.17]
+    jit = [0.01, -0.01, 0.02, -0.02, 0.0, 0.01, -0.01, 0.0]
+    noc = [{"seed": s, "condition": "asym", "arm": "nocomm",
+            "success": 0.30 + a, "n_eval": n_eval} for s, a in zip(DEV_SEEDS, u)]
+    eng = [{"seed": s, "condition": "asym", "arm": "eng",
+            "success": 0.65 + a + b, "n_eval": n_eval}
+           for s, a, b in zip(DEV_SEEDS, u, jit)]
+    return noc + eng
+
+
+def test_paired_sigma_d_beats_the_bound_on_correlated_seeds():
+    recs = _correlated()
+    arm = {a: [r["success"] for r in recs if r["arm"] == a] for a in ("eng", "nocomm")}
+    bound = statistics.stdev(arm["eng"]) + statistics.stdev(arm["nocomm"])
+    diffs = [e - n for e, n in zip(arm["eng"], arm["nocomm"])]
+    assert sigma_d(recs) == pytest.approx(statistics.stdev(diffs))
+    assert bound == pytest.approx(0.2623, abs=1e-3)
+    assert sigma_d(recs) == pytest.approx(0.0131, abs=1e-3)
+    assert 13 <= required_seeds(bound) <= 16
+    assert required_seeds(sigma_d(recs)) == MIN_K
+
+
+def test_sigma_d_is_blind_to_a_constant_shift():
     base = _recs(0.02) + _eng(0.10)
     shifted = _recs(0.02) + [{**r, "success": r["success"] - 0.3} for r in _eng(0.10)]
-    assert sigma_d_bound(base) == pytest.approx(sigma_d_bound(shifted))
-    assert sigma_d_bound(base) > 0
+    assert sigma_d(base) == pytest.approx(sigma_d(shifted))
+    assert sigma_d(base) > 0
+
+
+def test_unpaired_seeds_rejected():
+    recs = _correlated()
+    eng_9603 = next(r for r in recs if r["arm"] == "eng" and r["seed"] == 9603)
+    eng_9603["seed"] = 9608
+    with pytest.raises(ValueError):
+        sigma_d(recs)
+    recs = [r for r in _correlated() if not (r["arm"] == "eng" and r["seed"] == 9603)]
+    with pytest.raises(ValueError):
+        sigma_d(recs)
+
+
+def test_per_seed_n_eval_mismatch_rejected():
+    recs = _correlated()
+    recs[-1]["n_eval"] = 499
+    with pytest.raises(ValueError, match="n_eval"):
+        sigma_d(recs)
 
 
 def test_cli_reads_n_eval_from_filtered_rows(tmp_path):
