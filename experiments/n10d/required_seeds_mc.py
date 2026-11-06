@@ -1,25 +1,28 @@
 """Seed count k by simulation of the actual decision rule (TBD-13).
 
 L0 DRAFT, not frozen. Written 2026-11-06 from the PI decision on TBD-13
-(multiple-choice in session). Uses no run data: every D_i is drawn from the
-planning assumption below.
+(multiple-choice in session); k raised from 18 to 20 the same day by the
+sourced analysis the PI chose to follow (protocol section 9). Uses no run
+data: every D_i is drawn from the planning assumption below.
 
 Planning assumption (an inference used for planning, not a measurement):
 bimodal seeds; a fraction PLAN_PI = 0.8 learns the engineered code
 (D_i ~ N(0.75, 0.03)), the rest stays blind (D_i ~ N(0, 0.027), the
 binomial sd of a paired difference at n_eval = 500 and p = 1/4). Then
-Delta = 0.60, sigma_D ~ 0.30, q = P(D_i > 0) = 0.90.
+Delta = 0.60, sigma_D = 0.75 * sqrt(pi * (1 - pi)) ~ 0.30, q = 0.90.
 
 Rule simulated (``decision.decide_asym``, TBD-16): A iff mean(d) >= 0.10,
 the lower bound of the 95 % percentile paired bootstrap CI >= margin and
 the one-sided sign test rejects at alpha 0.05. Same quantile index rule as
-``decision._quantile``. k is the smallest value whose per-backend power p
-gives p ** n_backends >= target (conjunction of TBD-10, backends assumed
-independent).
+``decision._quantile``. Global power = p ** n_backends (conjunction of
+TBD-10, backends assumed independent). The CI method is open until the
+freeze (TBD-16); the simulation must be rerun with the method chosen.
 
 Command used for the protocol (macM1, numpy):
     python -m experiments.n10d.required_seeds_mc --sims 20000 --boot 2000
+``--scan`` adds the former search for the smallest k meeting the target.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -34,9 +37,10 @@ PLAN_PI = 0.8
 PLAN_D_LEARNED = 0.75
 PLAN_SD_LEARNED = 0.03
 PLAN_SD_BLIND = 0.027
+SENSITIVITY_PI = (0.70, 0.75, 0.80)
 MC_SEED = 20261106
-# Result of the command above on macM1, 2026-11-06 (power 0.952, global 0.906).
-K_CONFIRM = 18
+# PI decision 2026-11-06 ~18:00 (follow the sourced analysis): 20 per backend.
+K_CONFIRM = 20
 
 
 def draw_d(rng: np.random.Generator, n_sims: int, k: int, pi: float) -> np.ndarray:
@@ -46,8 +50,15 @@ def draw_d(rng: np.random.Generator, n_sims: int, k: int, pi: float) -> np.ndarr
     return np.where(learned, hi, lo)
 
 
-def prob_a(k: int, pi: float = PLAN_PI, n_sims: int = 20_000, n_boot: int = 2_000,
-           margin: float = MARGIN, seed: int = MC_SEED, chunk: int = 200) -> float:
+def prob_a(
+    k: int,
+    pi: float = PLAN_PI,
+    n_sims: int = 20_000,
+    n_boot: int = 2_000,
+    margin: float = MARGIN,
+    seed: int = MC_SEED,
+    chunk: int = 200,
+) -> float:
     """Monte-Carlo P(status A) for one backend with k seeds."""
     rng = np.random.default_rng([seed, k, int(round(pi * 1000))])
     crit = sign_test_critical(k, ALPHA)
@@ -63,15 +74,15 @@ def prob_a(k: int, pi: float = PLAN_PI, n_sims: int = 20_000, n_boot: int = 2_00
         boot = d[np.arange(c)[:, None, None], idx].mean(axis=2)
         boot.sort(axis=1)
         lower = boot[:, i_lo]
-        ok = ((d.mean(axis=1) >= FAILED_FLOOR) & (lower >= margin)
-              & ((d > 0).sum(axis=1) >= crit))
+        ok = (d.mean(axis=1) >= FAILED_FLOOR) & (lower >= margin) & ((d > 0).sum(axis=1) >= crit)
         hits += int(ok.sum())
         done += c
     return hits / n_sims
 
 
-def required_seeds_sim(target: float = 0.90, n_backends: int = 2, k_min: int = 11,
-                       k_max: int = 30, **kw) -> tuple[int, dict[int, float]]:
+def required_seeds_sim(
+    target: float = 0.90, n_backends: int = 2, k_min: int = 11, k_max: int = 30, **kw
+) -> tuple[int, dict[int, float]]:
     """Smallest k with prob_a(k) ** n_backends >= target, and the scanned table."""
     table: dict[int, float] = {}
     for k in range(k_min, k_max + 1):
@@ -81,26 +92,34 @@ def required_seeds_sim(target: float = 0.90, n_backends: int = 2, k_min: int = 1
     raise ValueError(f"no k <= {k_max} reaches {target} for {n_backends} backends")
 
 
+def report(k: int = K_CONFIRM, n_backends: int = 2, **kw) -> dict:
+    """Power at k under the plan and its pi sensitivity, type I at the margin."""
+    power = {str(pi): prob_a(k, pi=pi, **kw) for pi in SENSITIVITY_PI}
+    return {
+        "k": k,
+        "power": power,
+        "global_power": {pi: p**n_backends for pi, p in power.items()},
+        "type1_at_margin": prob_a(k, pi=MARGIN / PLAN_D_LEARNED, **kw),
+        "p_a_under_h0": prob_a(k, pi=0.0, **kw),
+    }
+
+
 def main(argv: list[str] | None = None) -> dict:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--k", type=int, default=K_CONFIRM)
     ap.add_argument("--sims", type=int, default=20_000)
     ap.add_argument("--boot", type=int, default=2_000)
     ap.add_argument("--seed", type=int, default=MC_SEED)
+    ap.add_argument("--scan", action="store_true")
     ap.add_argument("--kmin", type=int, default=11)
     ap.add_argument("--kmax", type=int, default=30)
     a = ap.parse_args(argv)
     kw = {"n_sims": a.sims, "n_boot": a.boot, "seed": a.seed}
-    k_global, table = required_seeds_sim(0.90, 2, a.kmin, a.kmax, **kw)
-    k_one = next((k for k, p in table.items() if p >= 0.90), None)
-    boundary_pi = MARGIN / PLAN_D_LEARNED  # true mean D = margin
-    out = {
-        "k_confirm": k_global, "k_one_backend": k_one,
-        "power": {str(k): p for k, p in table.items()},
-        "global_power": table[k_global] ** 2,
-        "type1_at_margin": prob_a(k_global, pi=boundary_pi, **kw),
-        "p_a_under_h0": prob_a(k_global, pi=0.0, **kw),
-        "sims": a.sims, "boot": a.boot, "seed": a.seed,
-    }
+    out = report(a.k, **kw)
+    if a.scan:
+        k_min_target, table = required_seeds_sim(0.90, 2, a.kmin, a.kmax, **kw)
+        out["scan"] = {"k_min_target": k_min_target, "power": {str(k): p for k, p in table.items()}}
+    out.update({"sims": a.sims, "boot": a.boot, "seed": a.seed})
     print(json.dumps(out, indent=1))
     return out
 
