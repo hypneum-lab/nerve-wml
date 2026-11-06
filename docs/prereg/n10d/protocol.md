@@ -11,7 +11,7 @@ decision 17:12 CET), then reconciled a second time with the head of PR #100 at c
 (PI decisions of 17:05 CET on TBD-10 and TBD-12 to TBD-16, section 0; section 8,
 "Second reconciliation (cb7d66b)"), then by the sourced analysis the PI chose as arbiter
 (~18:00 CET, `analysis-4-points-2026-11-06.md`, section 9), then by the PI decision on
-the primary outcome (21:05 CET, section 9). Nothing was frozen, so the
+the primary outcome (~20:50 CET, section 9). Nothing was frozen, so the
 text is edited in place; the trail is sections 8 and 9.
 **Prepared:** 2026-10-31 (night), by decision of the PI (multiple-choice, 2026-10-31 22:11 CET).
 **Origin:** `docs/milestones/2026-10-25-n10c-bis-control-arms.md`, section "Necessity gate",
@@ -104,7 +104,7 @@ metric "mean of the last 5 logged training values" is dropped: its windows are n
 Binomial(n_eval) and n_eval was undefined for it. This departs from gate G2, whose
 numbers are not compared with N10-D numbers. D = mean over seeds of per-seed
 `S_eng - S_nocomm`, paired by seed. Secondary: `learned - nocomm`, `eng - msg_shuffle`
-(the latter is NWML-N1, secondary exploratory, PI 2026-11-06 21:05, section 9).
+(the latter is NWML-N1, secondary exploratory, PI 2026-11-06 ~20:50, section 9).
 Blind ceiling (exact, `blind_ceiling()`): asym 1/C, sym 1.0. Oracle contrast: section 1.
 
 Quantiles used by the controls (`experiments/n10d/null.py`, measured sigma_seed, the
@@ -393,7 +393,7 @@ Where #115 won:
 - n_eval = 500 (PI, 16:55) over #100's TBD-11 working value.
 - `msg_shuffle` is evaluation only, on the trained eng pair (A9). Alternative (#100): an
   arm trained and evaluated under the derangement; not kept, left to the PI. Closed by
-  the PI decision of 2026-11-06 21:05 CET (section 9): evaluation only.
+  the PI decision of 2026-11-06 ~20:50 CET (section 9): evaluation only.
 - The last-5-logs training summary is dropped (A8, confirmed by the PI); #100 kept it as
   a secondary summary.
 - Latent blind success capped at B0 (A6); #100 clipped to [0, 1]. The table of
@@ -453,7 +453,7 @@ tested; its sign-test table is kept on `sign_test_critical`. New: the sign-test 
 the analysis, B without the sign test is "non concluant", backend combination,
 K_CONFIRM = 20 with the pi sensitivity.
 
-## 9. PI decisions 2026-11-06 (16:55, 17:05, ~18:00 and 21:05 CET)
+## 9. PI decisions 2026-11-06 (16:55, 17:05, ~18:00 and ~20:50 CET)
 
 ### 16:55 CET
 
@@ -484,9 +484,9 @@ TBD-14 and TBD-15 stand, with the additions written in section 0.
 | 3. k and rule (TBD-13, TBD-16) | « Règle unique (TBD-16) : règle IC, A ssi L ≥ 0,30 et test des signes ; k (TBD-13) = 20 par backend par simulation de cette règle (global ≈ 0,93-0,96 à π = 0,8 ; ≈ 0,885 à π = 0,75), méthode d'IC (t apparié ou percentile élargi) fixée au gel et MC rejoué avec elle ; MIN_K = 8 et la table point + signes de PR #115 non retenus (P(A \| D = marge) = 0,17-0,32). » Applied in sections 4 and 5; Monte-Carlo at k = 20 in section 4 |
 | 4. combination (TBD-10) | « Combinaison (TBD-10) : deux A → A ; deux B → B global « plus faible que prédit sur les deux backends » (intersection-union, niveau α), B par backend exigeant U < 0,30, D̂ ≥ 0,10 et le rejet du test des signes ; deux C → C ; autre couple → « non concluant » ; la zone U < 0,30 n'est pas classée C ; §5 et §7 alignés. » Applied in sections 5 and 7 |
 
-### 2026-11-06 21:05 CET (primary outcome, Q3)
+### 2026-11-06 ~20:50 CET (primary outcome, Q3)
 
-PI decision, QCM 21:05-21:10 CET, question Q3 option (a) of the hypotheses refresh of
+PI decision, QCM ~20:50 CET, question Q3 option (a) of the hypotheses refresh of
 2026-11-06 (hypneum-lab/.github PR #30, report section 7).
 
 | item | decision |
