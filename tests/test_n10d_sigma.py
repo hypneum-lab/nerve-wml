@@ -1,9 +1,17 @@
 """Synthetic-data tests for the sigma_seed extractor (no real result used)."""
+import json
 import random
 
 import pytest
 
-from experiments.n10d.sigma_seed import DEV_SEEDS, MIN_K, required_seeds, sigma_seed
+from experiments.n10d.sigma_seed import (
+    DEV_SEEDS,
+    MIN_K,
+    main,
+    pilot_n_eval,
+    required_seeds,
+    sigma_seed,
+)
 
 
 def _recs(sigma, n_eval=500, seed=1, extra_arm=None):
@@ -43,3 +51,23 @@ def test_other_arms_ignored():
 def test_required_seeds_floor_and_monotone():
     assert required_seeds(0.0, 0.25, 500) == MIN_K
     assert required_seeds(0.30, 0.25, 500) > required_seeds(0.15, 0.25, 500) >= MIN_K
+
+
+def test_cli_reads_n_eval_from_filtered_rows(tmp_path):
+    # Foreign row first (other arm, n_eval=1): before the fix the CLI took
+    # recs[0]["n_eval"] and printed k=48 instead of the pilot value.
+    recs = [{"seed": 1, "condition": "asym", "arm": "eng",
+             "success": 0.9, "n_eval": 1}]
+    recs += [{**r, "success": 0.25} for r in _recs(0.0)]
+    path = tmp_path / "pilot.json"
+    path.write_text(json.dumps(recs))
+    assert pilot_n_eval(recs) == 500
+    expected = f"k={required_seeds(0.0, 0.25, 500)}"
+    assert main([str(path)]).endswith(expected)
+
+
+def test_heterogeneous_n_eval_rejected():
+    r = _recs(0.02)
+    r[3]["n_eval"] = 100
+    with pytest.raises(ValueError):
+        pilot_n_eval(r)
