@@ -301,8 +301,9 @@ alphabet (a protocol), not a continuous embedding.
   the CCNeuro 2025 community event. Frames the debate, does not
   present new empirical results.
 
-- **Saxe et al. 2024, "Universality of representation in biological
-  and artificial neural networks"** (bioRxiv 2024.12.26.629294,
+- **Hosseini et al. 2024, "Universality of representation in biological
+  and artificial neural networks"** (Hosseini, Casto, Zaslavsky, Conwell, Richardson, Fedorenko;
+  erratum 2026-11-04: formerly mis-attributed to "Saxe et al."; bioRxiv 2024.12.26.629294,
   also PMC11703180). **Full method verified 2026-04-20** via the PMC
   mirror.
 
@@ -316,8 +317,14 @@ alphabet (a protocol), not a continuous embedding.
   models, and between models and fMRI data. **Not CKA, not MI.**
 
   *Numbers:*
-  - Language — low-agreement sentences: median pairwise model
-    agreement = 0.931; high-agreement: 1.767. Inter-subject ceiling
+  - Language — median pairwise model agreement is 0.931 for the
+    low-agreement set of Experiment 1 (random set 1.094; p. 6) and
+    1.767 for the high-agreement set of Experiment 2 (random set
+    1.097, low-agreement set 0.836; p. 12). The two figures come from
+    different sentence sets and are not one contrast. "Agreement" is
+    2 minus the mean pairwise correlation distance (1 − Pearson r)
+    between model RDMs (Methods, p. 47), not a correlation.
+    Inter-subject ceiling
     0.54. 5/7 models predict high-agreement sentences significantly
     better than low-agreement.
   - Vision — high-agreement images predict brain responses
@@ -329,11 +336,11 @@ alphabet (a protocol), not a continuous embedding.
   *What they don't do:* **continuous representations only.** No
   discrete-code, categorical, or symbolic investigation.
 
-  *Positioning of nerve-wml.* Saxe establishes universality at the
+  *Positioning of nerve-wml.* Hosseini et al. establish universality at the
   continuous-embedding level via RDM Pearson. Our work makes a
   cousin claim at the **discrete-output level via MI/H of emitted
   codes**. Different metric, different granularity, compatible
-  direction — both support a soft universal hypothesis. If Saxe is
+  direction — both support a soft universal hypothesis. If Hosseini et al. are
   the brain-model universality paper, we are the cross-architecture
   discrete-protocol cousin.
 - **Koch et al. 2024, "On Emergent Similarity"** — review of when
@@ -439,8 +446,8 @@ abstracts. Tracking what was actually verified during this session:
 | **Hinton, Vinyals, Dean 2015** (KD) [arXiv:1503.02531](https://arxiv.org/abs/1503.02531) | ✅ PDF fetched, method section extracted | Full loss equation with T² scaling, end-to-end student training, soft class probabilities (not hidden states). KD vs cross-merge distinctions now grounded. |
 | **Kornblith et al. 2019** (CKA) [arXiv:1905.00414](https://arxiv.org/abs/1905.00414) | ✅ Abstract + key invariance claim verified | CKA IS invariant to feature permutation (corrected earlier error). |
 | **Moschella et al. 2022** (Relative Repr) [arXiv:2209.15430](https://arxiv.org/abs/2209.15430) | ✅ **Full method + numbers verified via HuggingFace papers page** | Formula (their Eq. 4), anchor strategies, invariance proof, all 7 experimental tables. **Confirmed: no CKA or MI comparison.** **Confirmed: discrete codebook left as future work (their Fig. 7).** |
-| **Saxe et al. 2024** "Universality…" [bioRxiv 2024.12.26.629294](https://www.biorxiv.org/content/10.1101/2024.12.26.629294v1) | ✅ **Full method + numbers verified via PMC11703180** | Central claim (universality hypothesis), metric (RDA / Pearson-RDM), numerical results (agreement 0.931 / 1.767), continuous-only. Cousin of our MI/H at different granularity. |
-| **Nature MI 2025 editorial** [s42256-025-01139-y](https://www.nature.com/articles/s42256-025-01139-y) | ✅ Confirmed 2-page editorial, not empirical | Just the commentary frame; real content lives in Saxe 2024. |
+| **Hosseini et al. 2024** "Universality…" [bioRxiv 2024.12.26.629294](https://www.biorxiv.org/content/10.1101/2024.12.26.629294v1) | ✅ **Full method + numbers verified via PMC11703180** | Central claim (universality hypothesis), metric (RDA / Pearson-RDM), numerical results (agreement 0.931 in Exp. 1 low-agreement set, 1.767 in Exp. 2 high-agreement set; agreement = 2 − mean RDM correlation distance), continuous-only. Cousin of our MI/H at different granularity. |
+| **Nature MI 2025 editorial** [s42256-025-01139-y](https://www.nature.com/articles/s42256-025-01139-y) | ✅ Confirmed 2-page editorial, not empirical | Just the commentary frame; real content lives in Hosseini et al. 2024. |
 | **Morcos, Raghu, Bengio 2018** (SVCCA/PWCCA) [arXiv:1806.05759](https://arxiv.org/abs/1806.05759) | ⚠️ Abstract extracted | PWCCA = projection-weighted CCA improving SVCCA. Permutation-invariance not discussed in abstract. |
 | Foerster 2016 multi-agent comm, Rueckauer 2017 ANN→SNN, "Codebook Features" | ❌ Cited from memory | Paper should verify before submission but not critical for the core positioning. |
 
@@ -449,7 +456,7 @@ abstracts. Tracking what was actually verified during this session:
 The key empirical outcome of this reading session: **nerve-wml's
 specific combination is not covered by any of the verified voisins.**
 
-| What we do | Moschella 2022 | Saxe 2024 | Kornblith 2019 | Hinton 2015 |
+| What we do | Moschella 2022 | Hosseini et al. 2024 | Kornblith 2019 | Hinton 2015 |
 |---|---|---|---|---|
 | Discrete protocol alphabet (64 codes) | ✗ continuous | ✗ continuous | ✗ continuous | ✗ class logits |
 | MI/H across substrates | ✗ Jaccard/MRR/Cosine | ✗ Pearson RDM | ✗ HSIC kernel | ✗ KL soft labels |
@@ -460,7 +467,7 @@ specific combination is not covered by any of the verified voisins.**
 | Pool-size scaling law w/ plateau | ✗ | ✗ | ✗ | ✗ |
 
 Moschella comes closest on *cross-architecture stitching* but
-stays continuous. Saxe comes closest on *universality at output
+stays continuous. Hosseini et al. come closest on *universality at output
 level* but uses Pearson-RDM and focuses on brain alignment.
 Kornblith defines the representation-similarity family our MI/H
 joins. Hinton's KD is a different problem (student training, soft

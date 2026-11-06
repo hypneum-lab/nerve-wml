@@ -71,34 +71,41 @@ essentials for readers.
 
 The nerve protocol sits at the intersection of six research lines. We relate each briefly below.
 
-\textbf{Predictive coding.} Rao and Ballard~\cite{rao1999predictive} introduced predictive coding as a unifying interpretation of extra-classical receptive-field effects in the visual cortex, where each layer transmits its prediction downstream and receives a residual error upstream. Bastos et al.~\cite{bastos2012canonical} then proposed the canonical microcircuit for predictive coding, mapping predictions to $\gamma$-band activity in superficial layers and errors to $\theta$/$\alpha$-band activity in deep layers. The framing has since been refined: Bastos et
+\textbf{Predictive coding.} Rao and Ballard~\cite{rao1999predictive} introduced predictive coding as a unifying interpretation of extra-classical receptive-field effects in the visual cortex, where each layer transmits its prediction downstream and receives a residual error upstream. Bastos et al.~\cite{bastos2012canonical} then proposed the canonical microcircuit for predictive coding, in which prediction errors are carried forward by superficial-layer $\gamma$-band activity and predictions are carried backward by deep-layer $\alpha$/$\beta$-band activity. The framing has since been refined: Bastos et
 al.~\cite{bastos2020routing} reframe hierarchical message passing as
 \emph{predictive routing} --- a layer- and rhythm-specific mechanism in
 which top-down predictions in deep-layer $\alpha$/$\beta$ rhythms gate
 the $\gamma$-band feedforward channel, so that errors propagate only
 when predictions fail, with Gabhart, Xiong \& Bastos~\cite{gabhart2025predictive} subsequently
-framing predictive coding itself as a cognitive process organised around such rhythm-specific routing.
+contrasting such rhythm-specific routing with classical predictive coding:
+in predictive routing ``there are no explicit prediction error neurons'',
+whereas classical predictive coding posits dedicated error circuitry in
+layers 2/3 (their section on predictive routing).
 The closest computational instantiation
 is the laminar neural-mass Comparator of Ruffini et
-al.~\cite{ruffini2025comparator}, which realises cross-frequency
-$\gamma$/$\theta$ coupling as a laminar Comparator for prediction error evaluation, the substrate of predictive routing in the Bastos et al.~\cite{bastos2020routing} sense.
+al.~\cite{ruffini2025comparator}, in which signal--envelope and
+envelope--envelope cross-frequency coupling implement a hierarchical comparator for prediction error evaluation, the substrate of predictive routing in the Bastos et al.~\cite{bastos2020routing} sense.
 At the population level, Kim et al.~\cite{kim2026crossfreqbursts} show that coupled
 spiking populations self-organise multi-frequency burst patterns that define distinct
 information-routing patterns between populations, a mechanistic precedent for
 frequency-multiplexed routing between modules.
-Our $\gamma$/$\theta$ multiplexing (see \S\ref{sec:method}) is a
-computational transcription of this predictive-routing view rather than
-of the 2012 microcircuit alone: $\gamma$-priority is the engineering
-analogue of the rhythm-specific gating that routes prediction and error
-onto distinct channels.
+Our $\gamma$/$\theta$ multiplexing (see \S\ref{sec:method}) is an
+engineering design inspired by this predictive-routing view, not a
+transcription of it: it keeps the idea of rhythm-specific channels that
+separate prediction and error, but the cited work assigns errors to
+feedforward $\gamma$ and predictions to $\alpha$/$\beta$, with no
+$\theta$ channel, whereas our protocol assigns predictions to $\gamma$
+and errors to $\theta$.
 
-\textbf{Discrete latent codebooks.} van den Oord et al.~\cite{vandenoord2017neural} introduced VQ-VAE, the vector-quantized variational auto-encoder in which a continuous encoder output is snapped to one of $K$ discrete codes. We reuse the commitment-loss training recipe for each WML's local codebook (\S\ref{sec:method}). Zeghidour et al.~\cite{zeghidour2022soundstream} observed that random-init VQ training collapses onto a small subset of codes, and proposed codebook rotation --- re-seeding unused codes with live input points. Our Plan 4a experiments confirm that rotation is necessary for random-init convergence on the $64$-code alphabet (\S\ref{sec:experiments}). Liu et al.~\cite{liu2021dvnc} further demonstrated VQ bottlenecks as inter-module communication channels (DVNC), validating that discretisation improves compositional generalisation when neural modules recombine. More recently, Peng et al.~\cite{peng2025gridlikevq} introduce Grid-like Code Quantization to compress observation-action sequences in world models, drawing on grid-cell attractor dynamics as a biologically-motivated VQ prior. Zhao et al.~\cite{zhao2025channelawarevq} propose channel-aware VQ for semantic communication on discrete channels, framing VQ as a joint source-channel coding problem. Our nerve-wml is orthogonal: we treat the codebook as a fixed protocol alphabet and measure the information-theoretic alignment of substrates emitting into this alphabet, rather than optimising the codebook for a specific communication channel or world-model prior.
+\textbf{Discrete latent codebooks.} van den Oord et al.~\cite{vandenoord2017neural} introduced VQ-VAE, the vector-quantized variational auto-encoder in which a continuous encoder output is snapped to one of $K$ discrete codes. We reuse the commitment-loss training recipe for each WML's local codebook (\S\ref{sec:method}). To improve codebook usage, Zeghidour et al.~\cite{zeghidour2022soundstream} follow Jukebox~\cite{dhariwal2020jukebox} and replace any code vector that has not been assigned an input frame for several batches with an input frame sampled from the current batch (their p.~5); SoundStream neither names this procedure ``codebook rotation'' (our name for it) nor reports a collapse of random-init training. Our Plan 4a experiments report that this dead-code re-seeding is needed for random-init convergence on the $64$-code alphabet (\S\ref{sec:experiments}). Liu et al.~\cite{liu2021dvnc} further demonstrated VQ bottlenecks as inter-module communication channels (DVNC), validating that discretisation improves compositional generalisation when neural modules recombine. More recently, Peng et al.~\cite{peng2025gridlikevq} introduce Grid-like Code Quantization to compress observation-action sequences in world models, drawing on grid-cell attractor dynamics as a biologically-motivated VQ prior. Meng et al.~\cite{meng2025channelawarevq} propose channel-aware VQ for semantic communication on discrete channels, framing VQ as a joint source-channel coding problem. GCQ already keeps its codebook fixed rather than learned (their p.~2; their Table~2, p.~8, compares fixed and learnable codes), so a fixed codebook alone does not set nerve-wml apart. The difference lies in its role: we treat the codebook as a protocol alphabet shared by structurally different substrates and measure the information-theoretic alignment of what they emit into it, rather than optimising the codebook for a specific communication channel (Meng et al.) or deriving it from attractor dynamics as a world-model prior (GCQ). See also the Rome group's modular Hebbian networks, in which coupled associative modules disentangle mixtures of stored patterns~\cite{agliari2026networks,agliari2025ldirectional}; the same group reports a dense extension used as a decoder for message tokens sent as masked pattern mixtures over a noisy channel~\cite{agliari2026dense}.
 
 \textbf{Surrogate-gradient spiking neural networks.} Neftci et al.~\cite{neftci2019surrogate} survey surrogate-gradient training of SNNs, where the non-differentiable Heaviside spike is replaced at back-propagation time by a smooth pseudo-derivative (we use the fast-sigmoid variant). This makes our \texttt{LifWML} implementation directly trainable alongside the differentiable \texttt{MlpWML} through the same task loss, which is the precondition for our polymorphie claim. At the systems level, Liu et al.~\cite{liu2024hybrid} survey \emph{hybrid neural networks} (HNN) --- the fusion of artificial- and spiking-network lineages --- and propose a qualitative taxonomy distinguishing \emph{tight} from \emph{weak} coupling. Their reference systems co-train a single hybrid network on dedicated neuromorphic hardware; nerve-wml instead occupies the \emph{weak-coupling} corner of that taxonomy, keeping each substrate independently trained and sharing only a discrete-code protocol, and it renders the resulting interface falsifiable through formal invariants (N-1--N-5, W-1--W-4) and a measured shared-information criterion rather than leaving the integration qualitative. Spike-native predictive coding is progressing in parallel: PCL+~\cite{ndri2026pclplus} learns delayed recurrent excitatory connections with spike timing-dependent plasticity for unsupervised sequence prediction, and Difference Predictive Coding~\cite{karlsson2026diffpc} trains spiking networks with sparse ternary messages, the closest published analogue to neuroletters on a spiking substrate. Both operate inside a single network; the nerve protocol standardises the message between independently trained modules.
 
-\textbf{Representation similarity and cross-architecture communication.} Kornblith et al.~\cite{kornblith2019similarity} introduced linear and RBF Centered Kernel Alignment (CKA), a Hilbert--Schmidt Independence Criterion-based metric that is invariant to orthogonal transformation and isotropic scaling of hidden representations. Morcos, Raghu, and Bengio~\cite{morcos2018insights} introduced Projection-Weighted CCA (PWCCA) on the same broad question. Both operate on \emph{continuous} hidden states. Moschella et al.~\cite{moschella2022relative} subsequently proposed \emph{relative representations}: encoding each sample as a vector of cosine similarities to a fixed anchor set, which achieves invariance to angle-preserving transformations and enables zero-shot model stitching across independently trained models (their own Table~5 reports, for example, a ViT$\to$ResNet50 stitch accuracy of $4.69\%$ absolute vs $84.46\%$ relative on CIFAR-100). \emph{We state plainly that the existence of cross-architecture representational convergence is not novel to this work:} Moschella et al.\ and the subsequent zero-shot stitching literature established by 2022--2023 that independently trained networks converge to latent spaces differing only by an angle-preserving transform, with stitching achievable \emph{without} retraining. Our contribution is therefore not the observation of convergence per se, but its measurement at the \emph{discrete protocol-output} level across structurally heterogeneous biologically-inspired substrates (\S\ref{sec:info-tx}, \S\ref{sec:contribution-delim}). Their Figure~7 mentions vector-quantised anchors as an alternative similarity function but explicitly leaves the discrete variant as future work. Saxe et al.~\cite{saxe2024universality} argue empirically for a representation-universality hypothesis across biological and artificial networks using representational dissimilarity analysis (Pearson correlation of RDMs), also on continuous representations. Huh et al.~\cite{huh2024platonic} generalise these findings into the \emph{Platonic Representation Hypothesis}: representations across architectures, modalities, and training objectives converge toward a shared statistical model of reality. Our mutual-kNN alignment measurement in \S\ref{sec:info-tx}~(6) situates nerve-wml as an empirical validation of PRH on \emph{structurally heterogeneous biologically-inspired substrates} --- ANN vs spiking LIF with surrogate-gradient --- rather than the vision/language cross-modality pairs that dominate their evidence. We use \emph{biologically-inspired} rather than \emph{biological} to distinguish surrogate-gradient LIF from actual neural recordings, consistent with~\cite{aristotelianprh2026}'s caution against rhetorical overextension of PRH. Our measured $0.174$ sits near the lower bound of Huh et al.'s cross-modality range ($0.15$--$0.25$), which extends up to $\sim 0.50$ for same-modality pairs; this placement reflects the structural heterogeneity between ANN and spiking substrates, not a ceiling on PRH validity.
+\textbf{Representation similarity and cross-architecture communication.} Kornblith et al.~\cite{kornblith2019similarity} brought linear and RBF Centered Kernel Alignment (CKA) to the comparison of neural-network representations; the index itself, a normalised Hilbert--Schmidt Independence Criterion, comes from kernel learning~\cite{cortes2012centered} (Kornblith et al., p.~3), and it is invariant to orthogonal transformation and isotropic scaling of hidden representations. Morcos, Raghu, and Bengio~\cite{morcos2018insights} introduced Projection-Weighted CCA (PWCCA) on the same broad question. Both operate on \emph{continuous} hidden states. Moschella et al.~\cite{moschella2022relative} subsequently proposed \emph{relative representations}: encoding each sample as a vector of cosine similarities to a fixed anchor set, which achieves invariance to angle-preserving transformations and enables zero-shot model stitching across independently trained models (their own Table~6 reports, for example, a weighted F1 of $4.69$ with absolute vs $84.46$ with relative representations on CIFAR-100, stitching a \texttt{vit\_base\_patch16\_224} encoder to a \texttt{vit\_base\_resnet50\_384} decoder). \emph{We state plainly that the existence of cross-architecture representational convergence is not novel to this work:} Moschella et al.\ and the subsequent zero-shot stitching literature established by 2022--2023 that independently trained networks converge to latent spaces differing only by an angle-preserving transform, with stitching achievable \emph{without} retraining. Our contribution is therefore not the observation of convergence per se, but its measurement at the \emph{discrete protocol-output} level across structurally heterogeneous biologically-inspired substrates (\S\ref{sec:info-tx}, \S\ref{sec:contribution-delim}). Their Figure~7 mentions vector-quantised anchors as an alternative similarity function but explicitly leaves the discrete variant as future work. Hosseini et al.~\cite{hosseini2024universality} argue empirically that high-performing artificial networks and brains converge onto the same representations, using stimulus sets of high versus low inter-model agreement to modulate model-to-brain alignment, also on continuous representations. Huh et al.~\cite{huh2024platonic} generalise these findings into the \emph{Platonic Representation Hypothesis}: representations across architectures, modalities, and training objectives converge toward a shared statistical model of reality. Our mutual-kNN alignment measurement in \S\ref{sec:info-tx}~(6) situates nerve-wml as an empirical validation of PRH on \emph{structurally heterogeneous biologically-inspired substrates} --- ANN vs spiking LIF with surrogate-gradient --- rather than the vision/language cross-modality pairs that dominate their evidence. We use \emph{biologically-inspired} rather than \emph{biological} to distinguish surrogate-gradient LIF from actual neural recordings, consistent with~\cite{aristotelianprh2026}'s caution against rhetorical overextension of PRH. % unverified (bib audit 2026-11-04): the 0.15--0.25 range is only readable
+% from figures in Huh et al.; not checked against their text.
+Our measured $0.174$ sits near the lower bound of Huh et al.'s cross-modality range ($0.15$--$0.25$), which extends up to $\sim 0.50$ for same-modality pairs; this placement reflects the structural heterogeneity between ANN and spiking substrates, not a ceiling on PRH validity.
 
-Our \texttt{MI}/\texttt{H} ratio on emitted discrete codes (\S\ref{sec:info-tx}) occupies the slot this family leaves open: we measure, at the discrete protocol-output level, what Kornblith's CKA, Morcos's PWCCA, Moschella's relative representations, and Saxe's RDMs measure on continuous hidden states. Empirically we observe $\mathrm{MI}/\mathrm{H} \approx 0.953$ versus $\mathrm{CKA}$ on the corresponding argmax one-hots of $0.910$ (\S\ref{sec:info-tx}); the $4.3$-percentage-point gap tracks soft many-to-one code mappings that kernel-alignment metrics miss by construction. Shang et al.~\cite{shang2026displacement} offer a reading of the gap between our post-VQ and pre-VQ figures (\S\ref{sec:info-tx}, Test~(1)): across independently trained encoders, the displacement vectors between samples are largely preserved under a single orthogonal map while absolute positions are not, so pointwise similarity can be weak while shared relational structure is strong. Quantisation onto a common alphabet plausibly retains the latter and discards the former; we have not tested this directly.
+Our \texttt{MI}/\texttt{H} ratio on emitted discrete codes (\S\ref{sec:info-tx}) occupies the slot this family leaves open: we measure, at the discrete protocol-output level, what Kornblith's CKA, Morcos's PWCCA, Moschella's relative representations, and Hosseini et al.'s model-to-brain alignment measure on continuous hidden states. Empirically we observe $\mathrm{MI}/\mathrm{H} \approx 0.953$ versus $\mathrm{CKA}$ on the corresponding argmax one-hots of $0.910$ (\S\ref{sec:info-tx}); the $4.3$-percentage-point gap tracks soft many-to-one code mappings that kernel-alignment metrics miss by construction. CKA is reported here as a comparison point, not as a stand-alone criterion of shared representation: networks differing only by their random initialisation can score a CKA close to zero while model stitching finds them close (up to $3\%$ error; Bansal et al.~\cite{bansal2021stitching}, Table~1, p.~5); two random networks can obtain a higher CKA than two networks trained on the same task, because similarity matrices inherit the similarity of the inputs (survey of Klabunde et al.~\cite{klabunde2025similarity}, App.~C.3, p.~46); and CKA computed from a limited number of units systematically underestimates the population-level value~\cite{kang2025spectral}. Shang et al.~\cite{shang2026displacement} offer a reading of the gap between our post-VQ and pre-VQ figures (\S\ref{sec:info-tx}, Test~(1)): across independently trained encoders, the displacement vectors between samples are largely preserved under a single orthogonal map while absolute positions are not, so pointwise similarity can be weak while shared relational structure is strong. Quantisation onto a common alphabet plausibly retains the latter and discards the former; we have not tested this directly.
 
 \textbf{Adjacent abstraction layers: model IRs and event transports.}
 Two recent lines define communication structure for brain-inspired
@@ -137,7 +144,7 @@ across architectures and modalities, including without retraining --- this is th
 representations / stitching result~\cite{moschella2022relative} and the Platonic
 Representation Hypothesis~\cite{huh2024platonic}; (ii) that this convergence can be
 \emph{measured} on continuous hidden states by CKA~\cite{kornblith2019similarity},
-PWCCA~\cite{morcos2018insights}, RDMs~\cite{saxe2024universality}, or mutual-kNN kernels.
+PWCCA~\cite{morcos2018insights}, model-to-brain alignment~\cite{hosseini2024universality}, or mutual-kNN kernels.
 \emph{New here:} (a) the measurement is taken at the \emph{discrete protocol-output}
 level --- entropy-normalised MI on emitted $64$-code tokens, the slot the continuous
 metrics leave open (\S\ref{sec:info-tx}, with a $4.3$pp CKA gap that kernel alignment
@@ -442,7 +449,9 @@ under cosine similarity. Results in Table~\ref{tab:platonic-knn}.
 
 At $k{=}10$, MLP--LIF alignment is $18.8\times$ the random baseline, within
 the $0.15$--$0.25$ range reported by Huh et al.\ for cross-modality model
-pairs (e.g.\ DINOv2 vs CLIP). The signal is monotone across $k$ and stable
+pairs.
+% DINOv2 and CLIP are both vision models in Huh et al., so the former
+% example was dropped (bib audit 2026-11-04); range read from figures. The signal is monotone across $k$ and stable
 across seeds. Combined with the post-VQ $\mathrm{MI}/H{=}0.91$--$0.96$ of
 Test~(1), this situates nerve-wml as an empirical PRH validation on
 structurally heterogeneous substrates at both continuous (pre-VQ) and
@@ -468,7 +477,30 @@ neighbourhood-level one. The mutual-kNN kernel of
 Table~\ref{tab:platonic-knn} measures neighbourhood overlap at small
 $k$, and we report it \emph{relative to a capacity-matched random
 baseline} ($18.8\times$ at $k{=}10$) precisely so the figure is
-null-calibrated in the sense those critiques demand. We therefore claim
+null-calibrated in the sense those critiques demand. Two limits of
+this baseline should be kept in view. First, alignment between
+independently trained networks is not by itself evidence of a shared
+substrate-independent representation: Ziyin et
+al.~\cite{ziyin2025neural} prove that two independently trained deep
+linear networks are, at the global minimum of their entropic loss,
+perfectly aligned layer by layer up to a scaling and a rotation
+(Theorem~8, p.~7). Second, the score of unrelated representations
+depends on sample size and dimension: in the survey of Klabunde et
+al.~\cite{klabunde2025similarity}, orthogonal Procrustes similarity
+between synthetic matrices grows with dimension until $D = N$, and
+the reference score is taken from a row-permuted copy of the same
+representation rather than from independent random tensors
+(App.~F, p.~51). A baseline of two independent Gaussian tensors
+therefore answers a narrower question than a permutation null at the
+same $N$ and $d$. We have not made that comparison: the
+$18.8\times$ ratio is not set against the analytic floor
+$\mathbb{E}[\mathrm{mKNN}]=k/(n-1)$ expected under independence
+(Proposition~4.2, Eq.~(4), p.~4 of \cite{aristotelianprh2026}; the
+``chance'' column of Table~\ref{tab:platonic-knn} is $k/N$, the same
+quantity up to the $n-1$ versus $N$ notation, with the figures
+unchanged), nor against an untrained-network arm (same architecture,
+random weights). That published result points the same way as this
+caveat; both comparisons are left to an analysis amendment. Within these limits, we claim
 that MLP and spiking-LIF substrates share \emph{neighbourhood-level
 relational} structure under the nerve protocol --- not that their
 metric geometry coincides, nor that they converge to a single Platonic
@@ -707,10 +739,11 @@ modest framing of Claim~B than v1.6.0 but empirically grounded.
 \emph{Platonic-vs-Aristotelian caveat (review~\textcircled{1}).} We read this control as a
 guard against over-claiming. A low polymorphism gap and a high MI/H are \emph{not} by
 themselves evidence of a \emph{universal} substrate-agnostic protocol: the Aristotelian
-critique of PRH~\cite{aristotelianprh2026} holds that representational alignment is
-substantially \emph{training-dependent}, arising when substrates share a task, a data
-distribution, and an objective --- exactly the conditions our MLP/LIF/Transformer
-substrates share by construction. The distinct-encoder floor ($0.762$) and shared-encoder
+critique of PRH~\cite{aristotelianprh2026} finds that global spectral similarity largely
+vanishes after null calibration while local neighbourhood agreement survives, so raw
+alignment scores need a calibrated baseline. Alignment may further be inflated when
+substrates share a task, a data distribution, and an objective --- exactly the conditions
+our MLP/LIF/Transformer substrates share by construction. The distinct-encoder floor ($0.762$) and shared-encoder
 ceiling ($0.949$) bound how much of Test~(1)'s alignment is attributable to those shared
 factors rather than to the VQ protocol. We therefore claim only that the protocol
 \emph{extends} measured alignment from shared- to heterogeneous-encoder conditions on these
@@ -819,6 +852,7 @@ underlying cross-substrate alignment is the Platonic effect of Test~(6)
 (and, more broadly, of model stitching and relative representations);
 the contribution here is that it survives a concrete
 digital-communication channel, not only a continuous read-out.
+An attractor-based receiver, which decodes message tokens by associative-memory dynamics and degrades gracefully under strong channel corruption~\cite{agliari2026dense}, is a comparison we have not run.
 Reproducible via \texttt{scripts/transmission\_full\_protocol.py} (data
 \texttt{figures/transmission\_full\_protocol.json}).
 
@@ -949,7 +983,7 @@ natural next step.
 
 \item \textbf{No head-to-head performance benchmark versus prior work.} Plan B (Claim A, \S\ref{sec:related}) differentiates the nerve-wml protocol qualitatively from prior discrete-code inter-module schemes (DVNC~\cite{liu2021dvnc}, NIR~\cite{pedersen2024nir}, AER~\cite{aer2025biohybrid}) in structural terms. No end-to-end accuracy or information-transmission benchmark against these three alternatives exists in this paper.
 
-\item \textbf{AKOrN minimal flavour.} The KuramotoMultiplexer used in ablations (Fig.~7) employs learned oscillation frequency $\omega$, coupling strength $K$, and linear readout over 8--32 Euler steps. This is not equivalent to the production AKOrN implementation of Miyato et al.~(ICLR 2025), which uses phase-aware readout and additional constraints. The synchrony spectral-entropy comparison (Renf 7) should be revisited against the full AKOrN architecture in future work. AKOrN is moreover no longer the strongest oscillator comparator: Kuramoto phase encoding added to vision Transformers improves data and parameter efficiency~\cite{xiao2026kope}, a Winfree oscillator network is competitive on ImageNet-1K~\cite{dai2026wonn}, and self-attention has been recast as a Kuramoto coupling step on the torus~\cite{nunley2026kuramotoattn}. Whether the GTM's behaviour is specific to phase-amplitude coupling or shared by any phase inductive bias is untested against these baselines.
+\item \textbf{AKOrN minimal flavour.} The KuramotoMultiplexer used in ablations (Fig.~7) employs learned oscillation frequency $\omega$, coupling strength $K$, and linear readout over 8--32 Euler steps. This is not equivalent to AKOrN as specified by Miyato et al.~\cite{miyato2025akorn}, a substrate that replaces threshold units with $N$-dimensional unit vectors bound by synchrony through a tangent-projected, renormalised Kuramoto step driven by a data-dependent stimulus, read out by norms of linear projections that are invariant to a global phase shift (their Eqs.~2 and 4--6, pp.~3--4); in their own ablations the scalar-phase case $N=2$ underfits object discovery and Sudoku (their Table~7, p.~21). The synchrony spectral-entropy comparison (Renf 7) should be revisited against the full AKOrN architecture in future work. AKOrN is moreover no longer the strongest oscillator comparator: Kuramoto phase encoding added to vision Transformers improves data and parameter efficiency~\cite{xiao2026kope}, a Winfree oscillator network is competitive on ImageNet-1K~\cite{dai2026wonn}, and self-attention has been recast as a Kuramoto coupling step on the torus~\cite{nunley2026kuramotoattn}. Whether the GTM's behaviour is specific to phase-amplitude coupling or shared by any phase inductive bias is untested against these baselines.
 
 \item \textbf{Seed scope $n=50$.} Robustness holds within seeds 0--49 (Wilcoxon $p < 10^{-15}$ over the measured range), but generalisation to broader seed populations (e.g., 100, 1000+) is conjecture. Renf 11 (currently unmerged on \texttt{feat/deep-verifications}) provides partial evidence by comparing seed windows 0--49 vs.\ 50--99 vs.\ 1000--1049; until those results land on master, the 50-seed claim remains scope-limited.
 
@@ -961,7 +995,7 @@ natural next step.
 
 \item \textbf{Spectral entropy 4-arm ordering is B-dependent.} As documented in \S\ref{sec:limitations} (Renf 10, \texttt{2026-05-20-renf10-batch-sensitivity.md}), the strict 4-arm ordering `null < akorn\_best < gtm < simple\_gating' reported in Renf 7 holds only at batch size B=256. At $B \in \{64, 128, 512\}$ the AKOrN arm exhibits seed-variance $\sigma_{H_\mathrm{spec}} \approx 0.6$ and its rank flips with random initialisation. The robust, B-invariant claim is the two pairwise gaps: `gtm > null' ($\Delta \geq 0.05$ bits, $p < 10^{-15}$ at all $B$) and `gtm $\ll$ simple\_gating' (gap $\geq 1.0$ bits, $p < 10^{-15}$ at all $B$).
 
-\item \textbf{CKNNA is N-dependent metric.} The continuous-kernel nearest-neighbour alignment (Gröger et al.~2026) used to validate Claim B (Platonic Representation Hypothesis on discrete codes, \S\ref{sec:info-tx}) is a function of sample count N and pool size. The reported alignment 0.174 at k=10 (3 seeds) represents cross-substrate heterogeneous ANN vs.\ spiking LIF, not a universal constant. Reproducibility requires exact N, k, and seed specification.
+\item \textbf{CKNNA is N-dependent metric.} The centered kernel nearest-neighbour alignment (CKNNA, introduced by Huh et al.~\cite{huh2024platonic}; null calibration by Gröger et al.~\cite{aristotelianprh2026}) used to validate Claim B (Platonic Representation Hypothesis on discrete codes, \S\ref{sec:info-tx}) is a function of sample count N and pool size. The reported alignment 0.174 at k=10 (3 seeds) represents cross-substrate heterogeneous ANN vs.\ spiking LIF, not a universal constant. Reproducibility requires exact N, k, and seed specification.
 
 \end{enumerate}
 
@@ -1030,6 +1064,11 @@ form of effective rank \cite{royvetterli2007erank}, $H_{\text{spec}} =
 -\sum_i p_i \log p_i$ with $p_i = \sigma_i^2 / \sum_j \sigma_j^2$ ---
 the standard collapse-analysis quantity, recently reapplied to
 representation-evaluation in LLM hidden states \cite{wei2024differank}.
+Diff-eRank reads the quantity in the opposite direction to ours: it
+scores training as the drop in effective rank from an untrained to a
+trained model, read as noise reduction (their Definition~3.4, p.~4),
+whereas we read a higher $H_{\text{spec}}$ as less collapse. We borrow
+the quantity, not their interpretation.
 A batch-size sensitivity sweep over $B \in \{64, 128, 256, 512\}$
 (50 seeds $\times$ 4 arms $\times$ 4 batch sizes; see
 \texttt{docs/superpowers/research/2026-05-20-renf10-batch-sensitivity.md})

@@ -17,8 +17,10 @@ grounds:
    by an angle-preserving transform; cross-architecture/modality stitching works *without*
    training. Cross-substrate representational convergence was therefore established by
    2022--2023 — *before* this work.
-2. **Platonic-vs-Aristotelian debate** (arXiv:2602.14486): if representational alignment is
-   training-dependent (shared task + data + objective), a low polymorphism gap and a high
+2. **Platonic-vs-Aristotelian debate** (arXiv:2602.14486): global spectral similarity largely
+   vanishes after null calibration while local neighbourhoods survive (erratum 2026-11-04:
+   the paper does not call alignment "training-dependent"; that reading was ours). If
+   alignment is inflated by a shared task + data + objective, a low polymorphism gap and a high
    MI/H are *not* evidence of a *universal* protocol. Our MLP/LIF/Transformer substrates
    share task, data, and the Protocol objective by construction, so a degree of alignment
    is expected.
@@ -27,7 +29,7 @@ grounds:
 
 - Moschella relative representations cited with a quantified stitching example, and their
   VQ-anchor "future work" note (§74).
-- Kornblith CKA, Morcos PWCCA, Saxe RDMs, Huh PRH all cited (§74); `aristotelianprh2026`
+- Kornblith CKA, Morcos PWCCA, Hosseini et al. 2024 universality (erratum 2026-11-04: formerly mis-cited as "Saxe RDMs"), Huh PRH all cited (§74); `aristotelianprh2026`
   cited against rhetorical overextension of PRH (§74).
 - §76 already frames the discrete-protocol-output measurement as "the slot this family
   leaves open."

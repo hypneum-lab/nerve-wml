@@ -8,6 +8,8 @@ regenerating `figures/cycle_trace.pdf`.
 
 - Output: **14 pages, 527,718 bytes** (`main.pdf`).
 - Citations: 24/24 resolve; **zero** `Citation undefined` warnings.
+  (Superseded: `refs.bib` now holds 34+ entries; LaTeX resolution is
+  not a content check. See the 2026-11-04 bibliography audit PR.)
 - Boxes: zero Overfull/Underfull warnings.
 
 ## Pre-build figure regeneration
@@ -71,10 +73,10 @@ morcos2018insights, moschella2022relative, ndri2026pclplus,
 neftci2019surrogate, nunley2026kuramotoattn, pedersen2024nir,
 peng2025gridlikevq, platoscave2026, rao1999predictive,
 royvetterli2007erank, ruffini2025comparator,
-saxe2024universality, shang2026displacement,
+hosseini2024universality, shang2026displacement,
 vandenoord2017neural, vock2026adaptivesoc, wei2024differank,
 xiao2026kope, you2026structure, zeghidour2022soundstream,
-zhao2025channelawarevq.
+meng2025channelawarevq.
 
 Zero orphan refs in `refs.bib`.
 

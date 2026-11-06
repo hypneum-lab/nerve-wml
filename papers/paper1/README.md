@@ -1,6 +1,6 @@
 # Paper 1 — Substrate-Agnostic Nerve Protocol
 
-**Status:** 15 pages, 536 KB, 24/24 references resolved, 0 undefined citations. Last built at master commit `5e43fd8` (2026-05-20).
+**Status:** 15 pages, 536 KB, 0 undefined citations (reference count superseded: see the 2026-11-04 bibliography audit). Last built at master commit `5e43fd8` (2026-05-20).
 
 ## Build Instructions
 

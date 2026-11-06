@@ -6,7 +6,8 @@
   year    = {2012},
   volume  = {76},
   number  = {4},
-  pages   = {695--711}
+  pages   = {695--711},
+  doi     = {10.1016/j.neuron.2012.10.038}
 }
 
 @article{rao1999predictive,
@@ -37,14 +38,16 @@
   pages   = {51--63}
 }
 
-@inproceedings{zeghidour2022soundstream,
-  author    = {Zeghidour, Neil and Luebs, Alejandro and Omran, Ahmed
-               and Skoglund, Jan and Tagliasacchi, Marco},
-  title     = {{SoundStream}: An End-to-End Neural Audio Codec},
-  booktitle = {IEEE/ACM Transactions on Audio, Speech and Language Processing},
-  year      = {2022},
-  volume    = {30},
-  pages     = {495--507}
+@article{zeghidour2022soundstream,
+  author  = {Zeghidour, Neil and Luebs, Alejandro and Omran, Ahmed
+             and Skoglund, Jan and Tagliasacchi, Marco},
+  title   = {{SoundStream}: An End-to-End Neural Audio Codec},
+  journal = {IEEE/ACM Transactions on Audio, Speech, and Language
+             Processing},
+  year    = {2022},
+  volume  = {30},
+  pages   = {495--507},
+  doi     = {10.1109/TASLP.2021.3129994}
 }
 
 @inproceedings{kornblith2019similarity,
@@ -77,13 +80,16 @@
   note      = {arXiv:2209.15430; notable top 5\%}
 }
 
-@article{saxe2024universality,
-  author  = {Saxe, Andrew M. and others},
-  title   = {Universality of Representation in Biological and
-             Artificial Neural Networks},
-  journal = {bioRxiv},
-  year    = {2024},
-  note    = {2024.12.26.629294; PMC11703180}
+@misc{hosseini2024universality,
+  author       = {Hosseini, Eghbal and Casto, Colton and Zaslavsky, Noga
+                  and Conwell, Colin and Richardson, Mark
+                  and Fedorenko, Evelina},
+  title        = {Universality of Representation in Biological and
+                  Artificial Neural Networks},
+  year         = {2024},
+  howpublished = {bioRxiv preprint},
+  doi          = {10.1101/2024.12.26.629294},
+  note         = {PMC11703180}
 }
 
 @misc{hinton2015distilling,
@@ -125,6 +131,9 @@
   note          = {Null-calibration via permutation with Type-I guarantees; Proposition~4.1 gives $\mathrm{CKA}$ null baseline of order $O(d/n)$ via random matrix theory; Proposition~4.2 gives $\mathbb{E}[\mathrm{mKNN}(X,Y)] = k/(n-1)$; calibrated score $s_{\text{cal}} = \max((s_{\text{obs}}-\tau_\alpha)/(s_{\max}-\tau_\alpha), 0)$. Spectral metrics (CKA) collapse to null after calibration; local-neighbourhood metrics (mKNN, CKNNA) survive cross-substrate}
 }
 
+% unverified (bib audit 2026-11-04): EUSIPCO 2007 paper has no DOI;
+% Crossref title+author query returned no match. Check the
+% normalisation (sigma_i vs sigma_i^2) against the PDF before submission.
 @inproceedings{royvetterli2007erank,
   author    = {Roy, Olivier and Vetterli, Martin},
   title     = {The Effective Rank: A Measure of Effective Dimensionality},
@@ -134,28 +143,36 @@
   note      = {Effective rank defined as $\exp(H_{\text{spec}})$ where $H_{\text{spec}}$ is the Shannon entropy of normalised singular values}
 }
 
-@misc{wei2024differank,
-  author        = {Wei, Lai and Tan, Zhiquan and Li, Chenghai and Wang, Jindong and Huang, Weiran},
-  title         = {Large Language Model Evaluation via Matrix Nuclear-Norm},
+@inproceedings{wei2024differank,
+  author        = {Wei, Lai and Tan, Zhiquan and Li, Chenghai and
+                   Wang, Jindong and Huang, Weiran},
+  title         = {{Diff-eRank}: A Novel Rank-Based Metric for Evaluating
+                   Large Language Models},
+  booktitle     = {Advances in Neural Information Processing Systems 37
+                   (NeurIPS 2024)},
   year          = {2024},
-  eprint        = {2410.10672},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.CL},
-  note          = {Introduces \emph{Diff-eRank}, an effective-rank-style metric for LLM hidden-state collapse analysis}
+  pages         = {39501--39521},
+  doi           = {10.52202/079017-1248},
+  eprint        = {2401.17139},
+  archivePrefix = {arXiv}
 }
 
+% venue (NeurIPS 2025) not confirmed by arXiv metadata (no journal_ref)
 @inproceedings{peng2025gridlikevq,
-  author    = {Peng and others},
-  title     = {Vector Quantization in the Brain: Grid-like Codes
-               in World Models},
-  booktitle = {Advances in Neural Information Processing Systems
-               (NeurIPS)},
-  year      = {2025},
-  note      = {poster 118501}
+  author        = {Peng, Xiangyuan and Dong, Xingsi and Wu, Si},
+  title         = {Vector Quantization in the Brain: Grid-like Codes
+                   in World Models},
+  booktitle     = {Advances in Neural Information Processing Systems
+                   (NeurIPS)},
+  year          = {2025},
+  eprint        = {2510.16039},
+  archivePrefix = {arXiv},
+  note          = {poster 118501}
 }
 
-@misc{zhao2025channelawarevq,
-  author    = {Zhao and others},
+@misc{meng2025channelawarevq,
+  author    = {Meng, Zian and Li, Qiang and Tang, Wenqian and Yan, Mingdie
+               and Ge, Xiaohu},
   title     = {Channel-Aware Vector Quantization for Robust Semantic
                Communication on Discrete Channels},
   year      = {2025},
@@ -164,13 +181,13 @@
 }
 
 @article{pedersen2024nir,
-  author  = {Pedersen, Jens E. and Abreu, Steven and Jobst, Marcel
+  author  = {Pedersen, Jens E. and Abreu, Steven and Jobst, Matthias
              and Lenz, Gregor and Fra, Vittorio and
-             Bauer, Felix C. and Muir, Dylan R. and Zhou, Peng
-             and Vogginger, Bernhard and Heckel, Kade
-             and Urgese, Gianvito and Manna, Sadasivan
-             and Bil{\'e}n, Sven and Eshraghian, Jason K.
-             and Sheik, Sadique},
+             Bauer, Felix Christian and Muir, Dylan Richard
+             and Zhou, Peng and Vogginger, Bernhard and Heckel, Kade
+             and Urgese, Gianvito and Shankar, Sadasivan
+             and Stewart, Terrence C. and Sheik, Sadique
+             and Eshraghian, Jason K.},
   title   = {Neuromorphic Intermediate Representation: A Unified
              Instruction Set for Interoperable Brain-Inspired
              Computing},
@@ -272,6 +289,16 @@
   note          = {arXiv:2609.27252}
 }
 
+@inproceedings{miyato2025akorn,
+  author        = {Miyato, Takeru and L{\"o}we, Sindy and Geiger, Andreas and Welling, Max},
+  title         = {Artificial {Kuramoto} Oscillatory Neurons},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2025},
+  eprint        = {2410.13821},
+  archivePrefix = {arXiv},
+  note          = {arXiv:2410.13821}
+}
+
 @inproceedings{xiao2026kope,
   author        = {Xiao, Mingqing and Wang, Yansen and Han, Dongqi and Shan, Caihua and Li, Dongsheng},
   title         = {Kuramoto Oscillatory Phase Encoding: Neuro-inspired Synchronization for Improved Learning Efficiency},
@@ -309,6 +336,8 @@
   note          = {arXiv:2605.12732}
 }
 
+% unverified (bib audit 2026-11-04): OpenReview API returned 403 and no
+% exact-title arXiv or Crossref match was found; check by hand.
 @inproceedings{karlsson2026diffpc,
   author    = {Karlsson, Ville and Fianda, Nicklas and K{\"a}m{\"a}r{\"a}inen, Joni-Kristian},
   title     = {Difference Predictive Coding for Training Spiking Neural Networks},
@@ -333,4 +362,101 @@
   howpublished = {bioRxiv preprint},
   doi          = {10.64898/2026.06.05.730524},
   note         = {doi:10.64898/2026.06.05.730524}
+}
+
+@misc{agliari2026dense,
+  author        = {Agliari, Elena and Alessandrelli, Andrea and Barra, Adriano
+                   and Fachechi, Alberto},
+  title         = {Dense auto-hetero associative memories applied to noisy
+                   communication channels},
+  year          = {2026},
+  eprint        = {2609.32605},
+  archivePrefix = {arXiv}
+}
+
+@article{agliari2026networks,
+  author        = {Agliari, Elena and Alessandrelli, Andrea and Barra, Adriano
+                   and Centonze, Martino and Ricci-Tersenghi, Federico},
+  title         = {Networks of {Hebbian} networks: more is different},
+  journal       = {Neural Networks},
+  year          = {2026},
+  volume        = {194},
+  pages         = {108181},
+  doi           = {10.1016/j.neunet.2025.108181},
+  eprint        = {2501.16789},
+  archivePrefix = {arXiv}
+}
+
+@misc{agliari2025ldirectional,
+  author        = {Agliari, Elena and Alessandrelli, Andrea and
+                   Duarte Mourao, Paulo and Fachechi, Alberto},
+  title         = {Multi-channel pattern reconstruction through
+                   {$L$}-directional associative memories},
+  year          = {2025},
+  eprint        = {2503.06274},
+  archivePrefix = {arXiv}
+}
+
+% Added 2026-11-05 (bib audit follow-up). Metadata resolved via the
+% DataCite API (arXiv DOIs) and Crossref (10.1145/3728458).
+@misc{dhariwal2020jukebox,
+  author        = {Dhariwal, Prafulla and Jun, Heewoo and Payne, Christine and
+                   Kim, Jong Wook and Radford, Alec and Sutskever, Ilya},
+  title         = {Jukebox: A Generative Model for Music},
+  year          = {2020},
+  eprint        = {2005.00341},
+  archivePrefix = {arXiv}
+}
+
+@article{cortes2012centered,
+  author        = {Cortes, Corinna and Mohri, Mehryar and
+                   Rostamizadeh, Afshin},
+  title         = {Algorithms for Learning Kernels Based on Centered
+                   Alignment},
+  journal       = {Journal of Machine Learning Research},
+  year          = {2012},
+  volume        = {13},
+  pages         = {795--828},
+  eprint        = {1203.0550},
+  archivePrefix = {arXiv}
+}
+
+@misc{bansal2021stitching,
+  author        = {Bansal, Yamini and Nakkiran, Preetum and Barak, Boaz},
+  title         = {Revisiting Model Stitching to Compare Neural
+                   Representations},
+  year          = {2021},
+  eprint        = {2106.07682},
+  archivePrefix = {arXiv}
+}
+
+@article{klabunde2025similarity,
+  author        = {Klabunde, Max and Schumacher, Tobias and
+                   Strohmaier, Markus and Lemmerich, Florian},
+  title         = {Similarity of Neural Network Models: A Survey of
+                   Functional and Representational Measures},
+  journal       = {ACM Computing Surveys},
+  year          = {2025},
+  volume        = {57},
+  number        = {9},
+  pages         = {242:1--242:52},
+  doi           = {10.1145/3728458}
+}
+
+@misc{kang2025spectral,
+  author        = {Kang, Hyunmo and Canatar, Abdulkadir and Chung, SueYeon},
+  title         = {Spectral Analysis of Representational Similarity with
+                   Limited Neurons},
+  year          = {2025},
+  eprint        = {2502.19648},
+  archivePrefix = {arXiv}
+}
+
+@misc{ziyin2025neural,
+  author        = {Ziyin, Liu and Xu, Yizhou and Chuang, Isaac},
+  title         = {Neural Thermodynamics: Entropic Forces in Deep and
+                   Universal Representation Learning},
+  year          = {2025},
+  eprint        = {2505.12387},
+  archivePrefix = {arXiv}
 }

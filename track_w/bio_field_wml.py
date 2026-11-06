@@ -3,8 +3,9 @@
 Phase 1 (Bellitto, 2024 — Wake-Sleep Continual Learning):
     Internal wake/sleep scheduler. Sleep calls are silent (N-1).
 
-Phase 2 (Lee et al. 2024, Frontiers in Computational Neuroscience,
-    DOI 10.3389/fncom.2024.1338280):
+Phase 2 (inspired by SNN-PC, Lee et al. 2024, Frontiers in Computational
+    Neuroscience, DOI 10.3389/fncom.2024.1338280; the VMP update below is
+    our own construction and does not appear in that paper):
     Variational message passing (VMP) for spiking predictive coding.
     Each neuron maintains a belief (μ, σ) over expected spike counts
     from a ``BioCultureClient``.  On wake calls, a closed-form Gaussian
@@ -187,9 +188,9 @@ class BioFieldWML(nn.Module):
     ) -> tuple[Tensor, Tensor, Tensor]:
         """Closed-form Gaussian variational message-passing update.
 
-        Approximates the Poisson-rate likelihood (Lee et al. 2024) with a
-        Laplace-approximated Gaussian where σ²_obs = max(observed, 1) so
-        the update has a closed form:
+        Approximates a Poisson-rate likelihood (our modelling choice, not
+        taken from Lee et al. 2024) with a Laplace-approximated Gaussian
+        where σ²_obs = max(observed, 1) so the update has a closed form:
 
             μ_post  = (σ²_obs · μ_prior + σ²_prior · obs) /
                       (σ²_obs + σ²_prior)
@@ -197,7 +198,8 @@ class BioFieldWML(nn.Module):
                       (σ²_obs + σ²_prior)
 
         The prediction error is ``observed − μ_prior`` (Poisson rate
-        residual, Lee et al. 2024 eq. 5).
+        residual; Eq. 5 of Lee et al. 2024 is the synaptic current, not
+        this residual).
 
         Mutates ``self._mu`` and ``self._sigma`` in-place and returns
         the new (μ, σ) plus the residual error (all detached, no grad).
