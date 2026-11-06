@@ -474,13 +474,13 @@ def test_gate_ledger_kinds_are_separate_and_capped(tmp_path):
         devledger.reserve("gtm", "registered", 10, path=led)
     with pytest.raises(devledger.SmokeLimitError):
         devledger.reserve("gtm", "registered", 10, path=led)
-    for arm, cap in (("gtm", 20), ("eng", 19), ("nocomm", 6), ("mlp", 4)):
+    for arm, cap in (("gtm", 20), ("eng", 25), ("nocomm", 13), ("mlp", 4)):
         assert devledger.gate_allowance("gate_dev", arm) == cap
         for _ in range(cap):
             devledger.reserve(arm, "registered", 10, kind="gate_dev", path=led)
         with pytest.raises(devledger.SmokeLimitError, match="gate_dev"):
             devledger.reserve(arm, "registered", 10, kind="gate_dev", path=led)
-    for _ in range(8):
+    for _ in range(10):
         devledger.reserve("trunk", "single", 10, kind="pretrain_dev", path=led)
     with pytest.raises(devledger.SmokeLimitError):
         devledger.reserve("trunk", "single", 10, kind="pretrain_dev", path=led)
