@@ -3,7 +3,8 @@
 **Status:** L0 DRAFT on a branch, in a draft PR. Not merged, not tagged, no run made.
 It binds nothing. Open "TBD by PI" items (TBD-10, TBD-11) block the freeze (hypneum-prereg).
 **Amended:** 2026-11-06 after a blind contradictor, every finding checked in source
-(section 8). Nothing was frozen, so the text is edited in place; the trail is section 8.
+(section 8), then by PI decisions of 2026-11-06 16:55 CET (section 9). Nothing was
+frozen, so the text is edited in place; the trail is sections 8 and 9.
 **Prepared:** 2026-10-31 (night), by decision of the PI (multiple-choice, 2026-10-31 22:11 CET).
 **Origin:** `docs/milestones/2026-10-25-n10c-bis-control-arms.md`, section "Necessity gate",
 item G3: on failure of the gate (`eng - nocomm >= 0.20`) N10-C-bis is not frozen and the
@@ -20,14 +21,14 @@ is the hypothesis behind it. No equivalent branch, PR or file existed at 2026-10
 | TBD-1 | CLOSED. Both backends, JaxMARL and EGG. EGG is forked into the `ailiance` org at commit 54eb11c6 with code review. Articulation and divergence rule: section 7 |
 | TBD-2 | CLOSED. The N10-C PPO trunk, adapted to each backend (section 7) |
 | TBD-3 | CLOSED. K=16, C=4, A=16; blind ceiling 1/C = 0.25 (asym) stays exact |
-| TBD-4 | CLOSED. Seeds: pilot 9600+, confirmatory 600+. k derived from sigma_seed by the formula of section 4 (margin 0.30, alpha 0.05, power 0.9, minimum 5). *Amended 2026-11-06 (A4): k sized for the sign test, on a sigma_D bound from the eng and nocomm spreads, minimum 8* |
+| TBD-4 | CLOSED. Seeds: pilot 9600+, confirmatory 600+. k derived from sigma_seed by the formula of section 4 (margin 0.30, alpha 0.05, power 0.9, minimum 5). *Amended 2026-11-06 (A4): k sized for the sign test, minimum 8; sigma_D = sd of the paired per-seed differences (PI decision 2026-11-06 16:55, section 9)* |
 | TBD-5 | CLOSED. D_sym must not exceed the P99 of its calibrated null, with sigma_seed measured on development seeds (no fixed 0.05). *Superseded 2026-11-06 (A5): `sym` leaves H1 (PI decision, `brainstorm-2026-11-01.md` section 0, item 1); sym is a descriptive control with its own gate (section 3)* |
 | TBD-6 | CLOSED. D_asym < 0.10 = failed prediction; "the architecture blocks" is a new hypothesis for a separate amendment (section 5) |
 | TBD-7 | CLOSED. Host: KXKM-AI after N10-C-bis; if possible a second DGX GB300 slot, declared as alternative host. Each arm and each seed stays on ONE host (no mixing inside an arm-seed cell) |
 | TBD-8 | CLOSED. Grouped HITL review at lock time; flax one version back under the 2-week rule (0.12.10). Hashes still to be produced |
-| TBD-9 | CLOSED. Pilot: 8 development seeds 9600-9607, reduced budget. NH-96 scores are not read; only sigma_seed is extracted, by `experiments/n10d/sigma_seed.py`, committed before the pilot. *Amended 2026-11-06 (A4): the script also reads the eng/asym spread; it never computes a mean or a difference* |
+| TBD-9 | CLOSED. Pilot: 8 development seeds 9600-9607, reduced budget. NH-96 scores are not read; only sigma_seed is extracted, by `experiments/n10d/sigma_seed.py`, committed before the pilot. *Amended 2026-11-06 (A4, section 9): the script also reads eng/asym and computes the per-seed differences eng - nocomm to get their sd; it never computes their mean. Declared breach, section 4 "Pilot read-out (declared)"* |
 | TBD-10 | OPEN. Backend-divergence rule (section 7): proposal "status per backend, global conclusion only if both agree" (A17) |
-| TBD-11 | OPEN. Reduced pilot step budget; exact trunk adaptation per backend; environment details marked TBD-11 in section 7. n_eval proposed 500 (A8, to validate) |
+| TBD-11 | OPEN. Reduced pilot step budget; exact trunk adaptation per backend; environment details marked TBD-11 in section 7. n_eval = 500 CLOSED (A8, confirmed by the PI 2026-11-06, section 9) |
 
 ## 1. Question
 
@@ -70,7 +71,7 @@ reported without a decision, and it has its own plumbing gate (control 3). Arms 
 | `msg_shuffle` | evaluation only, on the trained `eng` pair: message of another episode of the same evaluation batch (uniform episode derangement, no label exclusion, `derange_episodes`) | negative control |
 
 Metric (primary, A8): S = success of the frozen policy pair after training, evaluated
-on n_eval = 500 fresh episodes (value to validate, TBD-11), episode seeds disjoint from
+on n_eval = 500 fresh episodes (confirmed by the PI 2026-11-06), episode seeds disjoint from
 the training stream, so S given the seed is Binomial(n_eval, p)/n_eval. The former
 metric "mean of the last 5 logged training values" is dropped: its windows are not a
 Binomial(n_eval) and n_eval was undefined for it. This departs from gate G2, whose
@@ -109,10 +110,14 @@ non-positive; reject if the count is >= m_k, the smallest m with P(Bin(k, 1/2) >
 <= 0.05. Alongside: paired bootstrap 95 % CI of D_asym (10 000 resamples, percentile).
 
 k is fixed in the manifest by a formula written in advance (`required_seeds`,
-`experiments/n10d/sigma_seed.py`, A4): sigma_D = sd(S_eng) + sd(S_nocomm), total
-sample sd over the asym pilot seeds (binomial term included). This bounds
-sd(S_eng - S_nocomm) for any covariance (Cauchy-Schwarz), so no pairing is read and no
-factor 2 is applied. Under the alternative D_i ~ N(0.30, sigma_D), q = P(D_i > 0) =
+`experiments/n10d/sigma_seed.py`, A4; PI decision 2026-11-06, section 9): sigma_D =
+sample sd (ddof = 1) of the paired differences D_s = S_eng,s - S_nocomm,s over the asym
+pilot seeds (binomial term included). The two arms must carry the same seed identifiers
+and the same n_eval per seed, or the script stops. sigma_D feeds `required_seeds`
+directly, with no factor 2 and no sum of bounds (it replaces the former Cauchy-Schwarz
+bound sd(S_eng) + sd(S_nocomm), which overstates sd(D) when seeds are correlated: on
+the synthetic correlated set of `tests/test_n10d_sigma.py` the bound gives k = 13 and
+the paired sd gives k = 8). Under the alternative D_i ~ N(0.30, sigma_D), q = P(D_i > 0) =
 Phi(0.30 / sigma_D); k = the smallest k in [8, 200] with power P(Bin(k, q) >= m_k) >= 0.9;
 above 200 the design needs an amendment. Power is not monotone in k (discrete m_k):
 
@@ -126,8 +131,23 @@ above 200 the design needs an amendment. Power is not monotone in k (discrete m_
 Resulting k: 8 for sigma_D <= 0.20, 13 at 0.25, 16 at 0.30 (tests in
 `tests/test_n10d_sigma.py`). Pilot: 8 development seeds 9600-9607, asym, arms `nocomm`
 and `eng`; the script returns n_eval, sigma_seed (nocomm, binomial-corrected, for the
-null), sigma_D and k, and computes no mean, no difference and no NH-96 score. The pilot
-seeds are never pooled with confirmatory runs. Non-rejection is "non concluant", never "refuted".
+null), sigma_D and k, and computes no mean of D and no NH-96 score. The pilot seeds are
+never pooled with confirmatory runs. Non-rejection is "non concluant", never "refuted".
+
+**Pilot read-out (declared).** The pilot is development, not confirmatory: no NH-96
+result is read from it and no outcome of section 5 is assigned to it. Because sigma_D
+is the sd of eng - nocomm, the script now pairs the two arms; this is declared as
+N10-D blinding breach no. 1 (the repository keeps no N10-D breach register; this
+paragraph is the record, and any later breach takes the next number here). What is
+read: four numbers only, n_eval, sigma_seed, sigma_D and k, printed by
+`experiments/n10d/sigma_seed.py` from the pilot JSON; the PI and the analysis see
+these four numbers and nothing else. What is not read: the mean (or median) of the
+per-seed differences D_s, any per-seed D_s, any per-seed or per-arm success score,
+the eng and nocomm arm means, the sign count, any test or CI; the script computes
+the differences in memory only for their sd and never prints them, and no one opens
+the pilot JSON or the training logs beyond run status. The pilot seeds 9600-9607 are
+excluded from the confirmatory seeds (600+) and from every confirmatory analysis.
+Any further look at the pilot data is a new breach, declared here before the freeze tag.
 
 ## 5. Outcomes and consequences (one decision table, A7; case C closed by TBD-6)
 
@@ -216,7 +236,8 @@ is its finding number) and `VERIFICATION.md` with `verification-{claude,codex}-r
   contrast 0.75 / 0 written as reference (`oracle_contrast`, section 1).
 - A3 (n. 10): `sigma_seed.py` CLI reads n_eval from the filtered rows, error if they differ; CLI test.
 - A4 (n. 3, 4, 14, 16, 17): k sized for the sign test on a sigma_D bound from the eng
-  and nocomm spreads; MIN_K 5 -> 8; table in section 4.
+  and nocomm spreads; MIN_K 5 -> 8; table in section 4. *The bound is replaced by the
+  paired sd of D (PI decision 2026-11-06, section 9).*
 - A5 (n. 5, 11): `sym` out of H1 and paired null, both per PI decisions of
   `brainstorm-2026-11-01.md` section 0 (items 1-2); `nh96-null.md` sections 1-2.
 - A6 (n. 13): latent blind success capped at B0 in `null.py`; `nh96-null.md` section 2.
@@ -238,3 +259,17 @@ is its finding number) and `VERIFICATION.md` with `verification-{claude,codex}-r
 - A20 (`VERIFICATION.md`): Lowe 2019 numbering; no bracket number is used here, nothing else to change.
 
 Not applied: none. Freeze lock (verrou de lecture): not passed; no tag.
+
+## 9. PI decisions 2026-11-06 (16:55 CET)
+
+Taken by the PI on the choices listed in the draft PR (#115) after section 8.
+
+| item | decision |
+|---|---|
+| sigma_D (A4) | CHANGED. sigma_D = sd (ddof = 1) of the paired per-seed differences eng - nocomm on the asym pilot, fed directly to `required_seeds`; the Cauchy-Schwarz bound is dropped. The pairing is a declared blinding breach (section 4, "Pilot read-out (declared)", breach no. 1). MIN_K 8, sign-test table and MAX_K 200 unchanged |
+| n_eval (A8) | CONFIRMED without change: n_eval = 500, eps_sym = 1/n_eval |
+| A10 | CONFIRMED without change: reading "Procgen does not need the message" stays conditional on an N10-D arm in the N10-C harness, outside this protocol (section 2) |
+| Q8 (N10-C-bis vs N10-D) | DEFERRED to the session "point de reprise roadmap v2"; nothing decided here |
+
+No freeze, no tag; the freeze lock (verrou de lecture) is not passed. TBD-10 and the
+rest of TBD-11 stay open.
