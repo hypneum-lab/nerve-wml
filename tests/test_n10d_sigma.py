@@ -1,9 +1,20 @@
 """Synthetic-data tests for the sigma_seed extractor (no real result used)."""
+import json
 import random
 
 import pytest
 
-from experiments.n10d.sigma_seed import DEV_SEEDS, MIN_K, required_seeds, sigma_seed
+from experiments.n10d.sigma_seed import (
+    DEV_SEEDS,
+    MIN_K,
+    main,
+    required_seeds,
+    required_seeds_from_sigma_d,
+    sigma_seed,
+    sign_test_critical,
+    sign_test_power,
+    sign_test_seeds,
+)
 
 
 def _recs(sigma, n_eval=500, seed=1, extra_arm=None):
@@ -43,3 +54,41 @@ def test_other_arms_ignored():
 def test_required_seeds_floor_and_monotone():
     assert required_seeds(0.0, 0.25, 500) == MIN_K
     assert required_seeds(0.30, 0.25, 500) > required_seeds(0.15, 0.25, 500) >= MIN_K
+
+
+def _write(tmp_path, recs):
+    path = tmp_path / "pilot.json"
+    path.write_text(json.dumps(recs))
+    return str(path)
+
+
+def test_cli_reads_n_eval_of_filtered_rows(tmp_path):
+    # Bug of 6e682cc: n_eval came from recs[0]; a leading eng row at n_eval=1 gave k=48.
+    flat = [{**r, "success": 0.25} for r in _recs(0.0)]
+    lead = {"seed": 9600, "condition": "asym", "arm": "eng", "success": 1.0, "n_eval": 1}
+    out = main([_write(tmp_path, [lead, *flat])])
+    assert "n_eval=500" in out and out.endswith(f"k={MIN_K}")
+
+
+def test_cli_rejects_heterogeneous_filtered_n_eval(tmp_path):
+    recs = _recs(0.02)
+    recs[3]["n_eval"] = 100
+    with pytest.raises(ValueError):
+        main([_write(tmp_path, recs)])
+
+
+def test_one_arm_per_call():
+    eng = [{**r, "arm": "eng"} for r in _recs(0.05, seed=3)]
+    both = _recs(0.0) + eng
+    assert sigma_seed(both, arm="eng") == sigma_seed(eng, arm="eng")
+    with pytest.raises(ValueError):
+        sigma_seed(both, arm="learned")
+
+
+def test_seed_rules_for_paired_d_and_sign_test():
+    assert required_seeds_from_sigma_d(0.30) == 9  # no factor 2 when sigma_D is direct
+    assert required_seeds_from_sigma_d(0.0) == MIN_K
+    assert sign_test_critical(5) == 5 and sign_test_critical(4) is None
+    assert sign_test_power(5, 0.9) == pytest.approx(0.9**5)
+    k = sign_test_seeds(0.9)
+    assert k > 5 and sign_test_power(k, 0.9) >= 0.90

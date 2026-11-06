@@ -6,7 +6,11 @@ from .spec import TaskSpec
 
 
 def make_jaxmarl_game(spec: TaskSpec) -> RefGame:
-    """TBD by PI: JaxMARL (MPE simple_reference-like or custom Lewis env)."""
+    """JaxMARL: custom JAX Lewis game with exactly ``spec`` (protocol section 7).
+
+    MPE simple_reference does not fit (3 landmarks asserted, dim_c = 10,
+    reward mixed by local_ratio = 0.5) and is not used. Details: TBD-11.
+    """
     raise NotImplementedError("JaxMARL backend not implemented (L0 skeleton)")
 
 
