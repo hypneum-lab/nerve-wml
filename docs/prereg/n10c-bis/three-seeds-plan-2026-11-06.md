@@ -141,3 +141,118 @@ Corrections à porter dans `MS` avant tout tag :
 - (c) macM1 seul (environ 33 h, déviation de substrat déclarée, pause du second cerveau).
 
 **Coût total estimé (recommandation) :** A+ = 9 runs ≈ 18,6 h GPU KXKM et ≈ 8 h PI. Si A passe et si B' est choisi : + 18 runs ≈ 194 h KXKM (≈ 8,1 j) et ≈ 30 h PI. B complet (54 runs, ≈ 583 h) ne tient pas avant M2.
+
+## 6. Décisions PI du 06/11 (ajout du 06/11, après 13:58 ; ajout seul, les sections 0 à 5 ne sont pas réécrites)
+
+*Ajout en fin de fichier. En cas de conflit avec les sections 0 à 5, cette section l'emporte. Aucun run n'a été lancé. Rien n'est gelé ni tagué. Le statut d'aveuglement de l'en-tête vaut aussi pour cette section.*
+
+### 6.1 Les quatre réponses
+
+| Q | Réponse | Statut |
+|---|---|---|
+| Q1 / Q2 | **Porte A+ en S3-S5 (9-29 nov), comme runs de développement.** Dérogation datée du 06/11 à la règle « aucune campagne GPU avant S6 » de `RM`. Les valeurs des runs A+ ne sont **pas lues avant le gel** (§6.5). B' vient ensuite, seulement si A+ passe et si le PI le choisit à M1. | décidé par le PI, 06/11 13:58 |
+| Q5 | **Hôte mixte macM1 + KXKM-AI.** La déviation de substrat est déclarée **a priori** : `docs/milestones/n10c-bis-substrate-split-2026-11-06.md`. La table cellule → hôte est fixée au §6.2 avant tout run. Le nul apparié reste par graine, à l'intérieur d'un même hôte. | décidé par le PI, 06/11 13:58 |
+| Q3 | Option (a) : graines 9104, 9105 et une graine neuve, **9106**, hors du pilote G7 (9101-9103). | **hypothèse de travail, à confirmer par le PI au go** |
+| Q4 | Option (a) : règle G2 inchangée, D̄ = moyenne des D_s = `eng − nocomm` ≥ 0,20. Elle s'applique avec la porte d'apprentissage d'abord, le contrôle `eng` et le contrôle de bruit `nocomm_rep` du §1.3. Les signes sont rapportés sans test. | **hypothèse de travail, à confirmer par le PI au go** |
+
+Faits à connaître avant de confirmer Q3. Ils viennent de `experiments/procgen_multiagent_gtm_comm/manifest/smoke_ledger.json`, entrées du 25/10, 14:35-16:15 :
+- les graines 9104 et 9105 **ne sont pas vierges** ;
+- leurs troncs ont été préentraînés sur KXKM-AI pendant l'étude Adam (`pretrain_dev`) ;
+- les SHA-256 enregistrés commencent par `894688cd4a62` (9104) et `d4916633ae72` (9105) ;
+- chacune porte 4 runs `gate_dev` : `gtm` et `eng`, condition `registered`, 1 M pas, presets C et C-bc ;
+- les résultats de ces runs ont été lus (`A1025` §4.3) ;
+- aucune n'a de run `nocomm`, ni de run en condition `closed`.
+
+Inférence : ces graines sont « regardées » au sens de `IA:111` pour la condition `registered` à 1 M pas. Elles ne le sont pas pour le contraste G2. Ce statut est déclaré dans la déviation. La graine 9106 n'apparaît nulle part dans le dépôt au 06/11 (`grep`). Elle n'a donc pas de tronc.
+
+### 6.2 Répartition hôtes, cellules et durées (fixée avant tout run)
+
+Règle de répartition, fixée sans référence à aucun résultat :
+- la graine neuve 9106 va sur KXKM-AI, où son tronc sera préentraîné ;
+- des deux graines de l'étude Adam, la plus haute (9105) va sur macM1 ;
+- 9104 reste sur KXKM-AI ;
+- chaque graine reste en bloc sur son hôte, avec ses trois cellules.
+
+| Graine | Hôte | Tronc | Cellules, dans l'ordre | Durée par run | Durée du bloc |
+|---|---|---|---|---:|---:|
+| 9104 | KXKM-AI | existant, `894688cd4a62…` | `eng`, `nocomm`, `nocomm_rep` | 2,07 h | 6,2 h |
+| 9106 | KXKM-AI | à préentraîner (1 M pas, ≈ 6 min) | `nocomm`, `nocomm_rep`, `eng` | 2,07 h | 6,2 h |
+| 9105 | macM1 | existant, `d4916633ae72…`, copié depuis KXKM-AI | `eng`, `nocomm`, `nocomm_rep` | 3,64 h | 10,9 h |
+
+Toutes les cellules sont en condition `closed`, à 10 M pas de paire, avec le preset `fix-c-coin-pretrain` et le type de registre `gate_dev`. L'ordre des bras alterne d'une graine à l'autre, comme pour G7 (`gate_g7_lane.sh:26`).
+
+Sources des durées :
+- **KXKM-AI.** Un run `gate_dev` de 10 M pas sous fix C prend 7 434 s ≈ 2,07 h (`MS:348`). C'est le même chiffre que `run.json` de `kxkm/adam-study/long-fix-c-coin-pretrain-gtm-s9101` (bras `gtm`, condition `registered`). Aucun run `eng` ni `nocomm` en `closed` à 10 M n'a été mesuré sur KXKM-AI. Le préentraînement 1 M d'un tronc dure ≈ 6 min (entrées `pretrain_dev` 9104 et 9105 du registre). Note : la moitié KXKM-AI de N10-C run 2 n'a jamais été lancée (`DEV` §1.1), donc aucune durée de run 2 n'existe pour cet hôte. Le chiffre de 10,8 h par run de 50 M (`A1023:332`) est une planification à 1 290 pas de paire/s, pas une mesure.
+- **macM1.** N10-C run 2 a pris 18,2 h en moyenne par run de 50 M (runs 1-7, 64 844-66 272 s, `DEV:20-26`), soit 3,64 h par 10 M en extrapolant linéairement. Un recoupement indépendant va dans le même sens : le run porte 1 M `macm1/gate/fix-c-coin-pretrain-gtm-macm1-r2` a pris 1 291 s, soit 3,59 h par 10 M. Les deux mesures utilisent les réglages d'hôte macM1 (`codes.HOST_SETTINGS["macm1"]` : pas de micro-batch, pas de `clear_cache`, 1 worker).
+
+| Hôte | Runs | Calcul nominal | Avec une relance par run (au pire) |
+|---|---:|---:|---:|
+| KXKM-AI | 6, plus 1 préentraînement | ≈ 12,5 h | ≈ 18,7 h |
+| macM1 | 3 | ≈ 10,9 h | ≈ 21,8 h |
+| Mur (les deux hôtes en parallèle) | 9 | ≈ 12,5 h | ≈ 21,8 h |
+
+Les 3 runs `nocomm_rep` sont inclus : le chiffrage porte sur 9 runs et non 12. Le brief parlait de « 9 (ou 12 avec `nocomm_rep`) ». Dans ce plan, A+ = 9 runs, `nocomm_rep` compris (§3).
+
+### 6.3 Calendrier S3-S5 (proposé, à dater au go)
+
+Contraintes :
+- **macM1** est rendu au second cerveau. Il fait tourner un job lourd à la fois, sous le verrou `~/scratch/.heavy.lock` (`lockf`). Le modèle de jour est en pause pendant le run (`campaign/macm1/day_model_paused.sh`, refus sous 40 % de mémoire libre).
+- **KXKM-AI.** G5 interdit tout parallélisme avec un autre job GPU à nous. `campaign/kxkm/gpu_wait.sh` l'applique déjà : il attend la fin des sessions `e1s-*`, `n10c-dev-*` et `n10c`, la fin des processus du venv E1-small et la libération d'au moins 9 500 MiB.
+
+| Fenêtre | KXKM-AI | macM1 |
+|---|---|---|
+| S3, lun. 9 – mer. 11 nov | Prérequis (§6.6) fusionnés ; tests sur macM1 | — |
+| S3, jeu. 12 nov (go PI daté) | Préentraînement 9106, puis bloc 9104, puis bloc 9106. Fin nominale ≈ 13 nov matin, si aucun job E1 ne tient la carte | — |
+| S3, ven. 13 nov 20:00 → sam. 14 nov ≈ 07:00 | — | Bloc 9105 (≈ 10,9 h, nuit, modèle de jour en pause) |
+| S4, 16-22 nov | Créneau de relances, ou de rattrapage si des contrôles E1-small ou l'évaluation N10-C graine 0 occupent la carte (ils passent avant, sérialisés par `gpu_wait.sh`) | Nuit de relance si besoin |
+| S5, 23-27 nov | Calcul du verdict catégoriel (§6.5) ; ajout daté à G2 | — |
+| M1, 29 nov | Choix PI B' / N10-D | — |
+
+### 6.4 VRAM
+
+- **Pic MLX** d'un run N10-C sur KXKM-AI (champ `peak_memory_bytes` de `run.json`, réglages 512 / `clear_cache` / 8 workers) : 6,2 à 6,9 Gio sur les 33 records de `docs/superpowers/research/2026-10-25-n10c-gate/kxkm/` ; 6,70 Gio pour les deux runs de 10 M.
+- **Ce qui n'est pas mesuré :**
+  - la condition `closed` ;
+  - le bras `nocomm` ;
+  - le pic côté `nvidia-smi`, qui ajoute le contexte CUDA et le cache de l'allocateur au pic MLX ;
+  - le pic VRAM de N10-C run 2 : il n'existe pas, run 2 n'a tourné que sur macM1.
+  Le pic `nvidia-smi` est **à mesurer sur la première cellule** (instantanés `nvidia-smi -q` avant et après, comme `gate_g7_lane.sh:112`).
+- Le seuil de lane existant réserve 9 500 MiB (`gpu_wait.sh`).
+- **Deux jobs en parallèle sur la carte :** exclu par G5, que la déviation ne lève pas. Les contrôles E1-small et A+ sont sérialisés. Inférence : si le PI voulait lever ce point, il faudrait une deuxième déviation, et la somme « pic `nvidia-smi` A+ + pic E1 + ComfyUI (≈ 0,65 Gio) » devrait rester < 22 Go. Le pic E1 n'est pas connu de ce plan.
+- **macM1** (mémoire unifiée, 32 Go) : 10,27 Gio de pic MLX pour le run porte macM1 de 1 M.
+
+### 6.5 Règle « résultats non lus »
+
+Interprétation proposée, **à confirmer par le PI** :
+- G3 exige un verdict de porte pour décider. Ce verdict ne demande pas de lire des valeurs.
+- Le script de décision (§6.6, point 3) n'imprime donc qu'une catégorie : `PASS`, `FAIL`, `NON MESURABLE (apprentissage)`, `NON MESURABLE (contrôle eng)` ou `NON CONCLUANT (bruit)`.
+- Les courbes, les D_s, D̄, D0_s et les signes restent scellés jusqu'au gel de B' ou de N10-D, ou jusqu'à une déclaration datée du PI.
+- La sortie standard des entraîneurs va dans des fichiers `*.result.sealed.json` (comme G7). Les contrôles de lane n'impriment que `OK` / `FAIL:<condition>`.
+
+### 6.6 Ce qu'il faut avant le lancement
+
+Code : rien n'est fait dans cette PR. Chaque point se fait par un commit séparé et daté, avant le premier run.
+
+1. **Registre (G6).** Sur `master`, `eng` a utilisé 13 de ses 19 crédits et `nocomm` 0 de 6 (`harness/devledger.py:79`).
+   - Besoin de A+ : `eng` 3 runs + ≤ 3 relances = 6 ; `nocomm` 6 runs (`nocomm` + `nocomm_rep`, même bras) + ≤ 6 relances = 12.
+   - Le pilote G7 a pu consommer jusqu'à 6 crédits par bras dans un registre GB300 non fusionné. À vérifier dans `smoke_ledger.final.json` de la session.
+   - Proposition : `eng` 25, `nocomm` 18.
+   - `pretrain_dev` : 8 crédits utilisés sur 8 (`GATE_ALLOWANCE`). Le tronc 9106 demande de passer à 10 (1 run + 1 relance).
+2. **Lanes.** `gate_bis_lane.sh` est figé à 1 M pas, à la condition `registered` et à la graine 9101. `gate_g7_lane.sh` est propre au GB300 (vérifications de capacité de calcul 10.3, ffmpeg, délai d'accès). Il faut deux lanes : `campaign/kxkm/gate_aplus_lane.sh` et `campaign/macm1/gate_aplus_lane.sh`.
+   - Base commune : G7 (ordre fixe, une relance par run, arrêt à la deuxième panne, sortie scellée, `STOP`, vérification des troncs par SHA-256), avec la plage d'attente `gpu_wait.sh` pour KXKM-AI.
+   - Sur macM1 : `day_model_paused.sh --detach` sous `HEAVY_LOCK`.
+   - Le RUNBOOK donne les commandes équivalentes à la main.
+3. **Script de décision.** `harness/gate_report.verdict` est codé en dur pour 1 M pas et une sonde tous les 100 k pas (10 sondes), avec 9101 et `registered` par défaut. Il ne sait pas juger un run de 10 M. Il faut un `harness/gate_g2_decide.py` (k = 3, 10 M, `closed`) avec des tests :
+   - porte d'apprentissage B3 adaptée à 10 M ;
+   - contrôle `eng` (≥ 5 % et au-dessus de son premier log, sur au moins 2 graines) ;
+   - contrôle de bruit (|D0_s| ≥ 0,10 sur au moins 2 graines → non concluant) ;
+   - D̄ ≥ 0,20 ;
+   - sortie catégorielle seule (§6.5).
+4. **`nocomm_rep` ne demande aucun code d'entraînement.** Pour un run de développement, `train.py` ne vérifie pas que le tronc correspond à la graine : le contrôle `expected_trunk_sha256` ne s'applique qu'avec `registration` (`harness/train.py:668-671`). Toute la randomisation dérive de `SeedSequence([seed, arm, condition])` (`harness/codes.py:27`). Donc :
+   - `nocomm_rep` de la graine S = `--arm nocomm --seed S+10 --init-trunk trunk-S`, soit 9114, 9115 et 9116, absentes du dépôt ;
+   - même tronc, même hôte, même code, autre flux (initialisation hors tronc, niveaux, mélange PPO, échantillonnage) ;
+   - le champ `seed` du record vaut S+10 ; l'appariement est porté par le RUNBOOK et par la note du registre.
+   Une relance à graine identique ne mesurerait que le non-déterminisme GPU : elle est écartée.
+   Alternative, si le PI préfère que le record porte S : une option `--stream-salt` ajoutée à la `SeedSequence`. C'est une modification de code, non faite ici.
+5. **Amendement daté de G2** dans `MS` (§4). Il porte k = 3, les graines, `nocomm_rep`, les contrôles du §1.3, les taux d'erreur, la table hôtes du §6.2, la règle du §6.5 et le renvoi à la déviation.
+6. **Go PI daté** dans `docs/prereg/n10c-bis/RUNBOOK-aplus.md`.
