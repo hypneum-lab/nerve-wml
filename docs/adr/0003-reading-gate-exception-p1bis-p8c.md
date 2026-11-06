@@ -1,7 +1,7 @@
 # ADR-0003: reading-gate exception for P1bis and P8c (2026-11-06)
 
-> Status: **Accepted**, PI decision 2026-11-06 17:12 CET (QCM, option
-> "ADR d'exception daté"). Drafted by an agent; to be signed by the PI
+> Status: **Accepted — PI decision 2026-11-06** 17:12 CET (QCM, option
+> "ADR d'exception daté"). Drafted by an agent; signed by the PI
 > (section 8). Studies: `hopfield-p1bis-ext`
 > (`docs/prereg/hopfield-p1bis-ext/prereg.md`) and `hopfield-p8c-nocap`
 > (`docs/prereg/hopfield-p8c-nocap/prereg.md`). Gate source: hypneum-lab/.github
@@ -194,5 +194,7 @@ read.
 
 ## 8. PI signature
 
-- [ ] PI signature (Clément Saillant)
-- Date and time (CET):
+- [x] PI signature (Clément Saillant)
+- Date and time (CET): 2026-11-06 21:13 CET
+
+Signed: Clément Saillant (PI), 2026-11-06 21:13 CET
