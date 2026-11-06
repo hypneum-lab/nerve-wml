@@ -12,6 +12,8 @@ embedding space (cosine similarity), count the intersection size,
 average over the batch. Score in [0, 1], where:
   * 1.0 = identical neighbor structure (self-alignment sanity)
   * k/N ~ 0.01 = chance level (random baseline sanity)
+  * k/(n-1) = exact expected score of two independent representations
+    (analytic floor, see ``mutual_knn_floor``; reported, not a threshold)
   * 0.1-0.5 = typical cross-model pairs in Huh 2024
 
 Decision threshold:
@@ -56,6 +58,23 @@ def mutual_knn(A: torch.Tensor, B: torch.Tensor, k: int = 10) -> float:  # noqa:
     has_b.scatter_(1, knn_b, True)
     overlap = (has_a & has_b).sum(dim=-1).float()
     return (overlap / k).mean().item()
+
+
+def mutual_knn_floor(n: int, k: int) -> float:
+    """Expected ``mutual_knn`` score of two independent representations.
+
+    For row i, the k-NN set of i in B is, under independence and
+    exchangeability of B's rows, a uniform k-subset of the n-1 other
+    points, independent of the k-NN set of i in A. The overlap is then
+    hypergeometric with mean k * k / (n-1); divided by k it gives
+    k / (n-1). Ties have probability zero for continuous embeddings.
+    Groger, Wen, Brbic 2026 (arXiv:2602.14486), Prop. 4.2, Eq. (4).
+
+    This is a reported reference, not a decision threshold (issue #110).
+    """
+    if n < 2 or not 1 <= k <= n - 1:
+        raise ValueError(f"need n >= 2 and 1 <= k <= n-1, got n={n}, k={k}")
+    return k / (n - 1)
 
 
 def _train_mlp(steps: int, seed: int) -> MlpWML:
@@ -123,6 +142,7 @@ def main() -> None:
                 "random":   mutual_knn(rand_a, rand_b, k=k),
                 "mlp_lif":  mutual_knn(emb_mlp, emb_lif, k=k),
                 "chance":   k / n_eval,
+                "floor":    mutual_knn_floor(n_eval, k),
             }
         per_seed[str(seed)] = per_k
 
@@ -138,6 +158,9 @@ def main() -> None:
             "random_median":  float(np.median(random_vals)),
             "random_values":  random_vals,
             "chance":         k / n_eval,
+            "floor":          mutual_knn_floor(n_eval, k),
+            "mlp_lif_x_floor": float(np.median(mlp_lif_vals))
+            / mutual_knn_floor(n_eval, k),
         }
 
     results = {
@@ -155,8 +178,8 @@ def main() -> None:
     print(f"=== Platonic RH mutual_knn (N={n_eval}, {len(seeds)} seeds) ===")
     print()
     header = (
-        f"{'k':>4}{'chance':>10}{'random':>10}"
-        f"{'mlp<->lif median':>20}{'IQR':>20}{'xRandom':>10}"
+        f"{'k':>4}{'chance':>10}{'floor':>10}{'random':>10}"
+        f"{'mlp<->lif median':>20}{'IQR':>20}{'xRandom':>10}{'xFloor':>10}"
     )
     print(header)
     print("-" * len(header))
@@ -165,8 +188,10 @@ def main() -> None:
         iqr_str = f"[{a['mlp_lif_p25']:.4f}, {a['mlp_lif_p75']:.4f}]"
         x_rand = a["mlp_lif_median"] / max(a["random_median"], 1e-9)
         print(
-            f"{k:>4}{a['chance']:>10.4f}{a['random_median']:>10.4f}"
+            f"{k:>4}{a['chance']:>10.4f}{a['floor']:>10.4f}"
+            f"{a['random_median']:>10.4f}"
             f"{a['mlp_lif_median']:>20.4f}{iqr_str:>20}{x_rand:>10.1f}"
+            f"{a['mlp_lif_x_floor']:>10.1f}"
         )
 
     k_focus = 10
