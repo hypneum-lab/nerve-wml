@@ -231,7 +231,7 @@ Interprétation proposée, **à confirmer par le PI** :
 
 ### 6.6 Ce qu'il faut avant le lancement
 
-Code : rien n'est fait dans cette PR. Chaque point se fait par un commit séparé et daté, avant le premier run.
+Code : chaque point se fait par un commit séparé et daté, avant le premier run. **Mise à jour du 06/11 (après rédaction) :** les points 1 à 3 sont faits dans cette PR (commits `293877a`, `caba588`, `34dd433`). Le recalage GB300 donne `nocomm` 13 au lieu de 18 ; détail dans `RUNBOOK-aplus.md` §1.1. Le texte ci-dessous est l'état avant ces commits.
 
 1. **Registre (G6).** Sur `master`, `eng` a utilisé 13 de ses 19 crédits et `nocomm` 0 de 6 (`harness/devledger.py:79`).
    - Besoin de A+ : `eng` 3 runs + ≤ 3 relances = 6 ; `nocomm` 6 runs (`nocomm` + `nocomm_rep`, même bras) + ≤ 6 relances = 12.
