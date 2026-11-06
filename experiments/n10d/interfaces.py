@@ -1,9 +1,13 @@
 """Backend-neutral interfaces for the N10-D environment (stubs).
 
-L0 DRAFT, not frozen (revised 2026-11-06 after the blind contradictor pass).
+L0 DRAFT, not frozen (amended 2026-11-06 after the blind contradictor pass,
+reconciled with PR #100 the same day, protocol section 8).
 A backend (JaxMARL or EGG) implements ``RefGame``; the harness only sees
 these Protocols, so the choice does not change the analysis.
+The environment itself is specified in docs/prereg/n10d/protocol.md,
+section 7 (A11).
 """
+
 from __future__ import annotations
 
 import random
@@ -20,7 +24,10 @@ class RefGame(Protocol):
         """Return the initial observation pair (speaker_obs, listener_obs)."""
 
     def step(self, message: Sequence[int], action: int) -> tuple[Any, float, bool]:
-        """Return (next_obs, team_reward, done). Message length L: TBD-11."""
+        """Return (next_obs, team_reward, done); action = candidate index in [0, C).
+
+        Message length L of the learned arm: TBD-11.
+        """
 
 
 class Sender(Protocol):
@@ -38,44 +45,51 @@ class Channel(Protocol):
         """Map the messages of one batch (one per episode) to listener inputs.
 
         eng: identity of the engineered code; nocomm: zeros of the same length;
-        msg_shuffle: ``messages[perm[i]]`` for episode i, with
-        ``perm = episode_derangement(len(messages), random.Random(batch_seed))``,
-        at training and at evaluation. A fixed permutation of target
-        identities is NOT allowed: the message would stay a function of the
-        target and a listener could learn it.
+        msg_shuffle (evaluation only, on the trained eng pair, A9/A14):
+        ``messages[perm[i]]`` for episode i of the evaluation batch, with
+        ``perm = derange_episodes(len(messages), random.Random(batch_seed))``.
+        It permutes EPISODES, never target identities: a fixed map on
+        identities would keep the message a deterministic function of the
+        target, and a listener could learn it up to 1.0.
         """
 
 
-def episode_derangement(n: int, rng: random.Random) -> list[int]:
-    """Uniform fixed-point-free permutation of the n episodes of a batch.
+def derange_episodes(n_episodes: int, rng: random.Random) -> list[int]:
+    """Uniform random derangement of episode indices (no fixed point).
 
     Each episode receives the message emitted for another episode of the same
-    batch; the marginal of messages and their length are kept. Identical
-    target labels across episodes are not excluded (a 1/K coincidence is not
-    a leak). Rejection sampling from uniform permutations (about e tries).
+    batch; the marginal of messages and their length are kept. No label
+    exclusion: the source episode may share the current target (probability
+    about 1/K, not a leak). An eng-trained listener that guesses uniformly
+    when the message names no candidate then scores 1/K + (1 - C/K) / C
+    = 1/C in expectation: the blind ceiling. Rejection sampling from uniform
+    permutations (about e tries).
     """
-    if n < 2:
-        raise ValueError("a derangement needs at least 2 episodes in the batch")
-    perm = list(range(n))
+    if n_episodes < 2:
+        raise ValueError("a derangement needs at least 2 episodes")
+    perm = list(range(n_episodes))
     while True:
         rng.shuffle(perm)
-        if all(i != p for i, p in enumerate(perm)):
+        if all(i != j for i, j in enumerate(perm)):
             return list(perm)
 
 
 class Trainer(Protocol):
     def train(self, game: RefGame, channel: Channel, seed: int, steps: int) -> Any:
-        """Train and return the frozen policy pair.
+        """Train and return the FROZEN policy pair (no success read here).
 
-        The training curve (mean of the last 5 logs, gate G2 definition) is
-        logged as a secondary summary only; it is not a binomial of n_eval.
+        The former last-5-logs training summary is not a metric (A8).
         """
 
-
-class Evaluator(Protocol):
     def evaluate(
-        self, game: RefGame, channel: Channel, policy: Any, seed: int, n_eval: int
+        self,
+        policy: Any,
+        game: RefGame,
+        channel: Channel,
+        seed: int,
+        n_eval: int,
     ) -> tuple[int, int]:
-        """Primary metric: the frozen policy on n_eval independent episodes
-        (fresh targets and candidate orders, no learning). Return
-        (successes, n_eval). n_eval: TBD-11."""
+        """Primary metric (A8): the frozen policy on n_eval = 500 fresh episodes
+        (fresh targets and candidate orders, episode seeds disjoint from the
+        training stream, no learning). Return (successes, n_eval); S is
+        successes / n_eval, a Binomial(n_eval, p) / n_eval draw given the seed."""

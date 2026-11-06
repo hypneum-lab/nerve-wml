@@ -1,10 +1,12 @@
 """Synthetic-data tests for the N10-D decision rules (no real result used)."""
+
 import random
 
 import pytest
 
 from experiments.n10d.decision import (
     bootstrap_ci,
+    combine_backends,
     decide_asym,
     sign_test_rejects,
     sym_gate,
@@ -41,6 +43,26 @@ def test_asym_rejection_b_when_upper_below_margin():
     assert decide_asym(_noisy([0.15] * K, sd=0.02), n_boot=2000) == "B"
 
 
+def test_asym_b_requires_the_sign_test():
+    # Sourced analysis, point 4 (a): U < margin but only 10/19 positive seeds,
+    # so D > 0 is not shown and the status is "non concluant", not B.
+    d = [0.30] * 10 + [-0.05] * 9
+    assert sum(d) / len(d) >= 0.10
+    assert bootstrap_ci(d, n_boot=2000)[1] < 0.30
+    assert not sign_test_rejects(d)
+    assert decide_asym(d, n_boot=2000) == "non concluant"
+
+
+def test_backend_combination_propagates_identical_verdicts():
+    for s in ("A", "B", "C"):
+        assert combine_backends(s, s) == s
+    for pair in [("A", "B"), ("B", "C"), ("A", "C"), ("A", "invalid")]:
+        assert combine_backends(*pair) == "non concluant"
+        assert combine_backends(*reversed(pair)) == "non concluant"
+    for s in ("non concluant", "invalid", "non mesurable"):
+        assert combine_backends(s, s) == "non concluant"
+
+
 def test_asym_case_c_below_floor():
     assert decide_asym(_noisy([0.02] * K), n_boot=2000) == "C"
 
@@ -73,8 +95,7 @@ def test_sym_case_d_when_ci_lower_clears_delta():
 
 def test_sym_small_gap_is_no_leak_signal():
     eng = [1.0] * K
-    assert sym_leak_status(eng, _noisy([0.98] * K, sd=0.005), n_boot=2000) == (
-        "no leak signal")
+    assert sym_leak_status(eng, _noisy([0.98] * K, sd=0.005), n_boot=2000) == "no leak signal"
 
 
 def test_sym_not_measurable_when_eng_sym_low():
