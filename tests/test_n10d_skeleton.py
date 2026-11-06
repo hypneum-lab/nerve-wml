@@ -3,12 +3,17 @@ import pytest
 
 from experiments.n10d.backends import make_egg_game, make_jaxmarl_game
 from experiments.n10d.null import empirical_p, simulate_null, summarize
-from experiments.n10d.spec import TaskSpec, blind_ceiling
+from experiments.n10d.spec import TaskSpec, blind_ceiling, oracle_contrast
 
 
 def test_blind_ceiling_exact():
     assert blind_ceiling(TaskSpec("asym", 16, 4)) == 0.25
     assert blind_ceiling(TaskSpec("sym", 16, 4)) == 1.0
+
+
+def test_oracle_contrast_is_analytical():
+    assert oracle_contrast(TaskSpec("asym", 16, 4)) == 0.75
+    assert oracle_contrast(TaskSpec("sym", 16, 4)) == 0.0
 
 
 def test_bad_spec_rejected():

@@ -38,3 +38,16 @@ def blind_ceiling(spec: TaskSpec) -> float:
     sym: the listener sees the target, so the ceiling is 1.0.
     """
     return 1.0 / spec.n_candidates if spec.condition == "asym" else 1.0
+
+
+def oracle_contrast(spec: TaskSpec) -> float:
+    """Analytical eng - nocomm contrast of optimal policies (no training).
+
+    Optimal listener with the engineered message: success 1.0; best blind
+    listener: ``blind_ceiling``. With K=16, C=4: 0.75 on asym, 0 on sym.
+    This is the positive-listening quantity Pl of Eccles et al. 2019
+    (arXiv:1912.05676, section 4.1), computed explicitly. N10-D therefore
+    does not test whether information is needed (it is, by construction),
+    only whether the channel plumbing and the PPO trunk realise it.
+    """
+    return 1.0 - blind_ceiling(spec)
