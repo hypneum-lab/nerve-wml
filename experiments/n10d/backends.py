@@ -1,4 +1,5 @@
 """Backend stubs. Imports are lazy and the stubs raise: no dependency is installed."""
+
 from __future__ import annotations
 
 from .interfaces import RefGame

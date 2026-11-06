@@ -22,6 +22,7 @@ a difference); controls 2 and 4 and the sym gate use its quantiles (A9),
 never the P99 of D. On sym, B0 = 1.0 and sigma_seed = 0: every draw is
 exactly 1.0. Same pipeline: N >= 1000 draws, empirical p = (hits+1)/(N+1).
 """
+
 from __future__ import annotations
 
 import random
@@ -47,8 +48,13 @@ def _evaluate(rng: random.Random, p: float, n_eval: int) -> float:
 
 
 def simulate_null(
-    spec: TaskSpec, k_seeds: int, n_eval: int, sigma_seed: float,
-    n_draws: int = 10_000, rng_seed: int = 20261101, paired: bool = True,
+    spec: TaskSpec,
+    k_seeds: int,
+    n_eval: int,
+    sigma_seed: float,
+    n_draws: int = 10_000,
+    rng_seed: int = 20261101,
+    paired: bool = True,
 ) -> list[float]:
     """Draws of D under H0; ``paired=False`` is the sensitivity variant."""
     rng = random.Random(rng_seed)
@@ -65,15 +71,18 @@ def simulate_null(
 
 
 def simulate_level_null(
-    spec: TaskSpec, k_seeds: int, n_eval: int, sigma_seed: float,
-    n_draws: int = 10_000, rng_seed: int = 20261102,
+    spec: TaskSpec,
+    k_seeds: int,
+    n_eval: int,
+    sigma_seed: float,
+    n_draws: int = 10_000,
+    rng_seed: int = 20261102,
 ) -> list[float]:
     """Null of one arm's mean success over k seeds (blind arm at B0)."""
     rng = random.Random(rng_seed)
     p0 = blind_ceiling(spec)
     return [
-        sum(_evaluate(rng, _latent(rng, p0, sigma_seed), n_eval)
-            for _ in range(k_seeds)) / k_seeds
+        sum(_evaluate(rng, _latent(rng, p0, sigma_seed), n_eval) for _ in range(k_seeds)) / k_seeds
         for _ in range(n_draws)
     ]
 
@@ -95,12 +104,16 @@ if __name__ == "__main__":
             r = summarize(simulate_null(spec, 8, 500, sig))
             ind = summarize(simulate_null(spec, 8, 500, sig, paired=False))
             lv = summarize(simulate_level_null(spec, 8, 500, sig))
-            print(f"asym C={c} sigma={sig:.2f} D: median={r.median:+.3f} "
-                  f"P95={r.p95:.3f} P99={r.p99:.3f} indep P99={ind.p99:.3f} "
-                  f"| level P99={lv.p99:.3f} (B0={blind_ceiling(spec):.3f}) "
-                  f"N={r.n_draws}")
+            print(
+                f"asym C={c} sigma={sig:.2f} D: median={r.median:+.3f} "
+                f"P95={r.p95:.3f} P99={r.p99:.3f} indep P99={ind.p99:.3f} "
+                f"| level P99={lv.p99:.3f} (B0={blind_ceiling(spec):.3f}) "
+                f"N={r.n_draws}"
+            )
     spec = TaskSpec("sym", 16, 4)
     r = summarize(simulate_null(spec, 8, 500, 0.0))
     lowest = min(simulate_level_null(spec, 8, 500, 0.0))
-    print(f"sym C=4 sigma=0.00 D: median={r.median:+.3f} P95={r.p95:.3f} "
-          f"P99={r.p99:.3f} | level min={lowest:.3f} (B0=1.000) N={r.n_draws}")
+    print(
+        f"sym C=4 sigma=0.00 D: median={r.median:+.3f} P95={r.p95:.3f} "
+        f"P99={r.p99:.3f} | level min={lowest:.3f} (B0=1.000) N={r.n_draws}"
+    )

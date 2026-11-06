@@ -1,4 +1,5 @@
 """Synthetic-data tests for the sigma_seed extractor (no real result used)."""
+
 import json
 import random
 import statistics
@@ -12,8 +13,8 @@ from experiments.n10d.sigma_seed import (
     main,
     pilot_n_eval,
     required_seeds,
-    sigma_d,
     required_seeds_from_sigma_d,
+    sigma_d,
     sigma_seed,
     sign_test_power,
     sign_test_seeds,
@@ -24,21 +25,32 @@ from experiments.n10d.sigma_seed import (
 def _recs(sigma, n_eval=500, seed=1, extra_arm=None):
     rng = random.Random(seed)
     out = [
-        {"seed": s, "condition": "asym", "arm": "nocomm",
-         "success": min(1, max(0, 0.25 + rng.gauss(0, sigma))), "n_eval": n_eval}
+        {
+            "seed": s,
+            "condition": "asym",
+            "arm": "nocomm",
+            "success": min(1, max(0, 0.25 + rng.gauss(0, sigma))),
+            "n_eval": n_eval,
+        }
         for s in DEV_SEEDS
     ]
     if extra_arm:
-        out.append({"seed": 1, "condition": "asym", "arm": extra_arm,
-                    "success": 0.9, "n_eval": n_eval})
+        out.append(
+            {"seed": 1, "condition": "asym", "arm": extra_arm, "success": 0.9, "n_eval": n_eval}
+        )
     return out
 
 
 def _eng(sigma, centre=0.8, n_eval=500, seed=2):
     rng = random.Random(seed)
     return [
-        {"seed": s, "condition": "asym", "arm": "eng",
-         "success": min(1, max(0, centre + rng.gauss(0, sigma))), "n_eval": n_eval}
+        {
+            "seed": s,
+            "condition": "asym",
+            "arm": "eng",
+            "success": min(1, max(0, centre + rng.gauss(0, sigma))),
+            "n_eval": n_eval,
+        }
         for s in DEV_SEEDS
     ]
 
@@ -66,10 +78,15 @@ def test_other_arms_ignored():
 
 def test_sign_test_table():
     # One-sided alpha = 0.05; ties count as failures.
-    assert {k: sign_test_threshold(k) for k in (5, 8, 10, 12)} == {
-        5: 5, 8: 7, 10: 9, 12: 10}
-    table = {(8, 0.8): 0.503, (8, 0.9): 0.813, (10, 0.8): 0.376,
-             (10, 0.9): 0.736, (12, 0.8): 0.558, (12, 0.9): 0.889}
+    assert {k: sign_test_threshold(k) for k in (5, 8, 10, 12)} == {5: 5, 8: 7, 10: 9, 12: 10}
+    table = {
+        (8, 0.8): 0.503,
+        (8, 0.9): 0.813,
+        (10, 0.8): 0.376,
+        (10, 0.9): 0.736,
+        (12, 0.8): 0.558,
+        (12, 0.9): 0.889,
+    }
     for (k, q), power in table.items():
         assert sign_test_power(k, q) == pytest.approx(power, abs=1e-3)
     assert sign_test_power(5, 0.9) == pytest.approx(0.9**5)
@@ -94,11 +111,14 @@ def _correlated(n_eval=500):
     # arms are strongly correlated, so their sd sum overstates sd(D).
     u = [-0.21, -0.14, -0.07, 0.0, 0.04, 0.08, 0.13, 0.17]
     jit = [0.01, -0.01, 0.02, -0.02, 0.0, 0.01, -0.01, 0.0]
-    noc = [{"seed": s, "condition": "asym", "arm": "nocomm",
-            "success": 0.30 + a, "n_eval": n_eval} for s, a in zip(DEV_SEEDS, u, strict=True)]
-    eng = [{"seed": s, "condition": "asym", "arm": "eng",
-            "success": 0.65 + a + b, "n_eval": n_eval}
-           for s, a, b in zip(DEV_SEEDS, u, jit, strict=True)]
+    noc = [
+        {"seed": s, "condition": "asym", "arm": "nocomm", "success": 0.30 + a, "n_eval": n_eval}
+        for s, a in zip(DEV_SEEDS, u, strict=True)
+    ]
+    eng = [
+        {"seed": s, "condition": "asym", "arm": "eng", "success": 0.65 + a + b, "n_eval": n_eval}
+        for s, a, b in zip(DEV_SEEDS, u, jit, strict=True)
+    ]
     return noc + eng
 
 
@@ -142,8 +162,7 @@ def test_per_seed_n_eval_mismatch_rejected():
 def test_cli_reads_n_eval_from_filtered_rows(tmp_path):
     # Foreign row first (other arm, n_eval=1): before the A3 fix the CLI took
     # recs[0]["n_eval"] and sized k on n_eval=1.
-    recs = [{"seed": 1, "condition": "asym", "arm": "learned",
-             "success": 0.9, "n_eval": 1}]
+    recs = [{"seed": 1, "condition": "asym", "arm": "learned", "success": 0.9, "n_eval": 1}]
     recs += [{**r, "success": 0.25} for r in _recs(0.0)]
     recs += [{**r, "success": 0.9} for r in _eng(0.0)]
     path = tmp_path / "pilot.json"
@@ -177,8 +196,7 @@ def test_cli_refuses_stray_eng_row_with_other_n_eval(tmp_path):
     # Bug of 6e682cc: n_eval came from recs[0]; a leading eng row at n_eval=1
     # gave k=48. With the paired read the stray row is an eng record, so the
     # CLI must stop instead of sizing k on it.
-    lead = {"seed": 9600, "condition": "asym", "arm": "eng",
-            "success": 1.0, "n_eval": 1}
+    lead = {"seed": 9600, "condition": "asym", "arm": "eng", "success": 1.0, "n_eval": 1}
     recs = [lead, *[{**r, "success": 0.25} for r in _recs(0.0)], *_eng(0.0)]
     with pytest.raises(ValueError):
         main([_write(tmp_path, recs)])
@@ -210,8 +228,7 @@ def test_seed_rules_for_paired_d_and_sign_test():
     assert sign_test_power(5, 0.9) == pytest.approx(0.9**5)
     k = sign_test_seeds(0.9)
     assert k > 5 and sign_test_power(k, 0.9) >= 0.90
-    assert {q: sign_test_seeds(q) for q in (0.80, 0.90, 0.95)} == {
-        0.80: 23, 0.90: 11, 0.95: 8}
+    assert {q: sign_test_seeds(q) for q in (0.80, 0.90, 0.95)} == {0.80: 23, 0.90: 11, 0.95: 8}
 
 
 def test_sign_test_k_dominates_the_paired_mean_k():

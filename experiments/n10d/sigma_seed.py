@@ -31,6 +31,7 @@ Binomial(n_eval, p)/n_eval draw given the seed.
   Binomial(k, 1/2) under H0, threshold m_k, power P(Bin(k, q) >= m_k),
   and never below the normal-approximation k of the paired mean.
 """
+
 from __future__ import annotations
 
 import json
@@ -91,10 +92,7 @@ def _paired_differences(records: list[dict]) -> list[float]:
     diffs = []
     for s in sorted(eng):
         if eng[s]["n_eval"] != noc[s]["n_eval"]:
-            raise ValueError(
-                f"seed {s}: n_eval eng={eng[s]['n_eval']} "
-                f"nocomm={noc[s]['n_eval']}"
-            )
+            raise ValueError(f"seed {s}: n_eval eng={eng[s]['n_eval']} nocomm={noc[s]['n_eval']}")
         diffs.append(eng[s]["success"] - noc[s]["success"])
     return diffs
 

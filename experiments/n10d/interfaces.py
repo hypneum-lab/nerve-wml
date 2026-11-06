@@ -7,6 +7,7 @@ these Protocols, so the choice does not change the analysis.
 The environment itself is specified in docs/prereg/n10d/protocol.md,
 section 7 (A11).
 """
+
 from __future__ import annotations
 
 import random
@@ -81,7 +82,12 @@ class Trainer(Protocol):
         """
 
     def evaluate(
-        self, policy: Any, game: RefGame, channel: Channel, seed: int, n_eval: int,
+        self,
+        policy: Any,
+        game: RefGame,
+        channel: Channel,
+        seed: int,
+        n_eval: int,
     ) -> tuple[int, int]:
         """Primary metric (A8): the frozen policy on n_eval = 500 fresh episodes
         (fresh targets and candidate orders, episode seeds disjoint from the

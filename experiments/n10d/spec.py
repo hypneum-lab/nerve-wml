@@ -3,6 +3,7 @@
 Every numeric default marked TBD is a placeholder pending a PI decision
 listed at the top of docs/prereg/n10d/protocol.md. Nothing here is frozen.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

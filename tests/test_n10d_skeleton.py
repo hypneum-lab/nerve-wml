@@ -1,4 +1,5 @@
 """Light tests for the N10-D L0 skeleton (no JAX, torch or EGG)."""
+
 import random
 
 import pytest
@@ -60,8 +61,9 @@ def test_sym_null_is_degenerate_at_zero_sigma():
 def test_single_arm_level_null():
     # PR #100 test_single_arm_null, rewritten on the level null (mean - B0).
     asym = TaskSpec("asym", 16, 4)
-    a = summarize([x - blind_ceiling(asym)
-                   for x in simulate_level_null(asym, 4, 100, 0.0, n_draws=1000)])
+    a = summarize(
+        [x - blind_ceiling(asym) for x in simulate_level_null(asym, 4, 100, 0.0, n_draws=1000)]
+    )
     assert abs(a.median) < 0.03 and a.p99 > 0
     s = simulate_level_null(TaskSpec("sym", 16, 4), 4, 50, 0.0, n_draws=200)
     assert max(s) == 1.0 and min(s) == 1.0
@@ -88,8 +90,7 @@ def test_blind_latent_never_exceeds_ceiling():
 def test_paired_null_is_narrower_than_independent(k_seeds):
     spec = TaskSpec("asym", 16, 4)
     paired = summarize(simulate_null(spec, k_seeds, 100, 0.05, n_draws=1000))
-    indep = summarize(
-        simulate_null(spec, k_seeds, 100, 0.05, n_draws=1000, paired=False))
+    indep = summarize(simulate_null(spec, k_seeds, 100, 0.05, n_draws=1000, paired=False))
     assert paired.p99 < indep.p99
 
 
