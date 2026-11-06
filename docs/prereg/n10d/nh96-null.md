@@ -7,7 +7,9 @@ the rejection criteria. Follows `hypneum-nulls` (items 1-9).
 Amended 2026-11-06 after the blind contradictor (protocol section 8: A5-A9, A18, A19),
 then reconciled the same day with the parallel revision of PR #100 (protocol section 8,
 "Reconciliation 2026-11-06"), a second time at its head cb7d66b (PI decisions of 17:05:
-margin 0.30, CI rule, sym gate on `eng_sym` only, pilot reads `nocomm` only).
+margin 0.30, CI rule, sym gate on `eng_sym` only, pilot reads `nocomm` only), then
+revised by the sourced analysis the PI chose to follow (~18:00, protocol section 9:
+k = 20, B requires the sign test, two B give a global B).
 **Status:** L0 DRAFT, not frozen; the open items of `protocol.md` section 0 apply.
 
 ## 1. Hypotheses (asym only)
@@ -84,7 +86,7 @@ Sensitivity (independent arms, `paired=False`, capped, asym, C=4): D P99 = 0.023
 0.026, 0.041 at sigma_seed = 0.00, 0.02, 0.05. The pre-amendment generator (independent,
 uncapped) gave 0.023, 0.033, 0.062. The sym null is degenerate (P99 = 0 exactly): it
 gives no test for D_sym, which is why sym is descriptive (protocol section 3, sym gate).
-The table is illustrative (k=8); the real k comes from the rule of protocol section 4.
+The table is illustrative (k=8); the real k (20 per backend) is set in protocol section 4.
 
 ## 4. Criteria that make NH-96 fail
 
@@ -92,8 +94,10 @@ There is one decision rule, the table of protocol section 5 (A7); this section o
 restates its rejection rows. With all asym controls of protocol section 3 passed:
 1. Outcome C, failed prediction: the point estimate D_asym < 0.10 (TBD-6). "The
    architecture blocks" is NOT a verdict; it is a new hypothesis for an amendment.
-2. Outcome B, weaker than predicted, NH-96 rejected: D_asym >= 0.10 and the upper
-   bound U of the 95 % paired CI of D_asym < 0.30 (CI rule, TBD-16).
+2. Outcome B, weaker than predicted, NH-96 rejected: D_asym >= 0.10, the upper bound U
+   of the 95 % paired CI of D_asym < 0.30 (CI rule, TBD-16) AND the one-sided sign test
+   rejects (D > 0 shown). A rejection of magnitude, not a non-rejection; on both
+   backends it gives the global B of protocol section 7.
 3. Outcome A, NH-96 supported: the lower bound L of the 95 % paired CI of D_asym
    >= 0.30 AND the one-sided sign test rejects at alpha = 0.05.
 4. Anything else is "non concluant", never "refuted" nor "supported".

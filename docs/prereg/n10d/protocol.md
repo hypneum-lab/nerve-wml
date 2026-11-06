@@ -1,14 +1,17 @@
 # N10-D - asymmetric communication-necessity study (L0 skeleton)
 
 **Status:** L0 DRAFT on a branch, in a draft PR. Not merged, not tagged, no run made.
-It binds nothing. The open "TBD by PI" item TBD-11 blocks the freeze (hypneum-prereg).
+It binds nothing. The open "TBD by PI" items TBD-11 and the CI method of TBD-16 block
+the freeze (hypneum-prereg); the other questions the literature cannot settle are listed
+in section 9, "Open for the PI".
 **Amended:** 2026-11-06 after a blind contradictor, every finding checked in source
 (section 8), then by PI decisions of 2026-11-06 16:55 CET (section 9), then reconciled
 with the parallel revision of PR #100 (section 8, "Reconciliation 2026-11-06"; PI
 decision 17:12 CET), then reconciled a second time with the head of PR #100 at cb7d66b
 (PI decisions of 17:05 CET on TBD-10 and TBD-12 to TBD-16, section 0; section 8,
-"Second reconciliation (cb7d66b)"). Nothing was frozen, so the text is edited in place;
-the trail is sections 8 and 9.
+"Second reconciliation (cb7d66b)"), then by the sourced analysis the PI chose as arbiter
+(~18:00 CET, `analysis-4-points-2026-11-06.md`, section 9). Nothing was frozen, so the
+text is edited in place; the trail is sections 8 and 9.
 **Prepared:** 2026-10-31 (night), by decision of the PI (multiple-choice, 2026-10-31 22:11 CET).
 **Origin:** `docs/milestones/2026-10-25-n10c-bis-control-arms.md`, section "Necessity gate",
 item G3: on failure of the gate (`eng - nocomm >= 0.20`) N10-C-bis is not frozen and the
@@ -36,13 +39,13 @@ registered; OPEN items block the freeze.
 | TBD-9 | CLOSED. Pilot: 8 development seeds 9600-9607, reduced budget. NH-96 scores are not read; only sigma_seed is extracted, by `experiments/n10d/sigma_seed.py`, committed before the pilot. Not amended (TBD-14): the pilot reads `nocomm` only |
 | PI-1 | CLOSED (PI, 2026-11-01, brainstorm PR #102 section 0 item 1). `sym` leaves H1; it stays a leak check reported next to the results |
 | PI-2 | CLOSED (PI, 2026-11-01, brainstorm PR #102 section 0 item 2). The null is paired by seed (seed effect common to both arms), `nh96-null.md` section 2 |
-| TBD-10 | CLOSED (PI decision, QCM in session, 2026-11-06 17:05). Divergence rule of section 7: per-backend statuses and conjunctive combination table (both backends must conclude). k is sized for the global power (section 4, TBD-13) |
+| TBD-10 | CLOSED (PI decision, QCM in session, 2026-11-06 17:05). Divergence rule of section 7: per-backend statuses and conjunctive combination table (both backends must conclude). k is sized for the global power (section 4, TBD-13). *Superseded 2026-11-06 18:30 by sourced analysis (PI decision: follow the analysis): two B give a global B, "weaker than predicted on both backends"; identical verdicts A, B or C propagate, any disagreement is "non concluant" (section 7)* |
 | TBD-11 | OPEN. Deferred until a throughput measurement without score (one cell, macM1 or KXKM). Working values, not decisions: L = 1, 100 logs per run, trunk MLP 2 x 256, pilot budget B/4; observation encoding per backend; evaluation action rule (sampled or argmax). B is not fixed. n_eval = 500 CLOSED (A8, confirmed by the PI 2026-11-06 16:55, section 9) |
 | TBD-12 | CLOSED (PI decision, QCM in session, 2026-11-06 17:05). Absolute margin m = 0.30, written 0.4 x (1 - 1/C). Under the CI rule (TBD-16) a listener at 55 % no longer passes: the CI lower bound of D_asym must reach 0.30 |
-| TBD-13 | CLOSED (PI decision, QCM in session, 2026-11-06 17:05). k by simulation of the actual rule (TBD-16: CI rule + sign test) under the planning assumption of section 4, power >= 0.90 for the conjunction of the two backends (TBD-10): K_CONFIRM = 18 per backend (macM1, 20 000 simulations, 2026-11-06) (section 4, `experiments/n10d/required_seeds_mc.py`). The former k = max(MIN_K, k_mean, k_sign) is obsolete |
-| TBD-14 | CLOSED (PI decision, QCM in session, 2026-11-06 17:05). sigma_D comes from the planning assumption (section 4), not from the pilot. TBD-9 is not amended: the pilot reads `nocomm` only; sigma_seed(nocomm/asym) is a consistency check (control 4b), it does not size k. No sigma is transported to sym |
-| TBD-15 | CLOSED (PI decision, QCM in session, 2026-11-06 17:05). Sym gate on `eng_sym` only: mean over k seeds >= 1 - epsilon, epsilon = 0.05 (`SYM_EPSILON`); `nocomm_sym` not gated. Case D iff the lower bound of the 95 % CI of D_sym >= delta_sym = 0.10 (`SYM_LEAK_DELTA`) |
-| TBD-16 | CLOSED (PI decision, QCM in session, 2026-11-06 17:05). CI rule, section 5: A iff the lower bound of the 95 % paired CI of D_asym >= margin and the sign test rejects; NH-96 rejected iff the upper bound < margin; otherwise "non concluant". Percentile bootstrap for now; BCa or paired t to be fixed at the freeze |
+| TBD-13 | CLOSED (PI decision, QCM in session, 2026-11-06 17:05). k by simulation of the actual rule (TBD-16: CI rule + sign test) under the planning assumption of section 4, power >= 0.90 for the conjunction of the two backends (TBD-10): K_CONFIRM = 18 per backend (macM1, 20 000 simulations, 2026-11-06) (section 4, `experiments/n10d/required_seeds_mc.py`). The former k = max(MIN_K, k_mean, k_sign) is obsolete. *Superseded 2026-11-06 18:30 by sourced analysis (PI decision: follow the analysis): k = 20 per backend, a design constant (global power 0.933-0.964 at pi = 0.8, 0.885 at pi = 0.75 in the analysis; Monte-Carlo rerun at k = 20: 0.934 at pi = 0.8, 0.808 at pi = 0.75); MIN_K removed (section 4)* |
+| TBD-14 | CLOSED (PI decision, QCM in session, 2026-11-06 17:05). sigma_D comes from the planning assumption (section 4), not from the pilot. TBD-9 is not amended: the pilot reads `nocomm` only; sigma_seed(nocomm/asym) is a consistency check (control 4b), it does not size k. No sigma is transported to sym. *Confirmed 2026-11-06 18:30 by the sourced analysis: pi = 0.8 is written as a planning hypothesis with a sensitivity table (section 4); the paired read-out of PR #115 is not kept* |
+| TBD-15 | CLOSED (PI decision, QCM in session, 2026-11-06 17:05). Sym gate on `eng_sym` only: mean over k seeds >= 1 - epsilon, epsilon = 0.05 (`SYM_EPSILON`); `nocomm_sym` not gated. Case D iff the lower bound of the 95 % CI of D_sym >= delta_sym = 0.10 (`SYM_LEAK_DELTA`). *Confirmed 2026-11-06 18:30 by the sourced analysis: `nocomm_sym` is reported with its CI (descriptive, not a gate); epsilon depends on the evaluation action rule (TBD-11)* |
+| TBD-16 | CLOSED (PI decision, QCM in session, 2026-11-06 17:05). CI rule, section 5: A iff the lower bound of the 95 % paired CI of D_asym >= margin and the sign test rejects; NH-96 rejected iff the upper bound < margin; otherwise "non concluant". Percentile bootstrap for now; BCa or paired t to be fixed at the freeze. *Superseded 2026-11-06 18:30 by sourced analysis (PI decision: follow the analysis): the CI rule stays the single decision rule, and B also requires the sign test to reject; the CI method is REOPENED (OPEN): paired t or expanded percentile (Hesterberg 2015), to be fixed before the freeze and the Monte-Carlo rerun with it (section 4)* |
 
 ## 1. Question
 
@@ -114,8 +117,11 @@ Controls (reported next to every result, same pipeline):
 3. Learning gates (floor effects are "not measurable", never "null effect"):
    - asym: `eng` above `blind ceiling + P99_asym` before D_asym is interpreted.
    - sym (TBD-15): mean of `eng_sym` over k seeds >= 1 - epsilon, epsilon = 0.05
-     (`decision.sym_gate`); `nocomm_sym` is not gated. If the gate fails, the sym leak
-     check is "not measurable".
+     (`decision.sym_gate`); `nocomm_sym` is not gated, it is reported with its 95 % CI
+     (descriptive control of the trunk). If the gate fails, the sym leak check is "not
+     measurable". epsilon = 0.05 depends on the evaluation action rule (sampled or
+     argmax, TBD-11): argmax can reach higher levels than sampling (Havrylov & Titov
+     2017, section 3).
    The gates use the arm means; the training curve is never a gate.
 4. Leak audit (A15). (a) A priori, once per backend, before the pilot, committed with
    the environment hash: the asym listener observation holds no field derived from the
@@ -139,29 +145,62 @@ non-positive; reject if the count is >= m_k, the smallest m with P(Bin(k, 1/2) >
 resamples, percentile). Both are combined by the CI rule of section 5 (TBD-16,
 `experiments/n10d/decision.py`).
 
-Planning assumption (TBD-13, TBD-14). This is an inference used for planning, not a
-measurement. Seeds are bimodal: a fraction pi = 0.8 learns the engineered code
-(D_i ~ N(0.75, 0.03)) and the rest stays blind (D_i ~ N(0, 0.027), the binomial sd of a
-paired difference at n_eval = 500). Then Delta = 0.60, sigma_D = 0.30 and
-q = P(D_i > 0) = 0.90. sigma_D is not estimated from the pilot (TBD-14).
+Planning assumption (TBD-13, TBD-14). This is a planning hypothesis, not a measurement;
+no source gives the fraction of learning seeds for a PPO trunk on a Lewis game with
+C = 4 (`analysis-4-points-2026-11-06.md`, point 1). Seeds are bimodal: a fraction pi
+learns the engineered code (D_i ~ N(0.75, 0.03)) and the rest stays blind
+(D_i ~ N(0, 0.027), the binomial sd of a paired difference at n_eval = 500). Under this
+mixture sigma_D = 0.75 sqrt(pi (1 - pi)), a function of the effect itself. Planning value
+pi = 0.8: Delta = 0.60, sigma_D = 0.30, q = P(D_i > 0) = 0.90. Sensitivity in pi:
 
-Rule for k (TBD-13). k is the smallest value at which a simulation of the actual
-decision rule (CI lower bound >= margin, sign test rejects, D_asym >= 0.10) under the
-planning assumption gives a per-backend power p with p^2 >= 0.90 (both backends must
-conclude, TBD-10; independence of the backends is assumed, not shown). Script:
-`experiments/n10d/required_seeds_mc.py`, numpy, seed 20261106, run on macM1 on 2026-11-06
-with `python -m experiments.n10d.required_seeds_mc --sims 20000 --boot 2000`
-(20 000 simulations, 2 000 bootstrap resamples per simulation, same quantile index as
-`decision.py`). Result (fact, simulation only, no run data): per-backend power
-0.812, 0.838, 0.878, 0.875, 0.891, 0.919, 0.947, 0.952 at k = 11 to 18, so
-**K_CONFIRM = 18 per backend** (global power 0.952^2 = 0.906); 0.970, 0.966, 0.977 at
-k = 19, 20, 21 (separate check, same settings). One backend alone would need k = 16.
-The power is not monotone in k because the sign-test critical count moves in steps.
-Type I against the margin (true mean D = 0.30, pi = 0.4) at k = 18: 0.023; P(A) under
-H0 (pi = 0): 0. Monte-Carlo sd of the power about 0.0015. The former rule
-k = max(MIN_K, k_mean, k_sign) is obsolete: k_mean (`required_seeds_from_sigma_d`) gives
-the power of a test of D > 0 at D = margin, which is neither the CI rule nor the sign
-test; the paired-mean floor and the pilot sigma_D of PR #115 are not kept.
+| pi | mean D | sigma_D | q = P(D_i > 0) |
+|---|---|---|---|
+| 0.70 | 0.525 | 0.344 | 0.85 |
+| 0.75 | 0.563 | 0.325 | 0.875 |
+| 0.80 | 0.600 | 0.300 | 0.90 |
+
+sigma_D is not estimated from the pilot (TBD-14): the pilot runs at a reduced budget, so
+it samples another mixture; on 8 bimodal seeds the sd is unstable and degenerate when all
+or no seed learns; and reading it reads part of the effect. The sd of the paired
+differences is computed only after unblinding of the confirmatory runs, as a sensitivity
+analysis. sigma_seed is measured on `nocomm` alone (control 4b).
+
+k (TBD-13): **k = 20 per backend**, a design constant (PI decision ~18:00, following the
+sourced analysis). It is checked, not searched, by a simulation of the actual decision
+rule (D_asym >= 0.10, CI lower bound >= margin, sign test rejects) under the planning
+assumption; global power = p^2 (both backends must conclude, TBD-10; independence of the
+backends is assumed, not shown). Script: `experiments/n10d/required_seeds_mc.py`, numpy,
+seed 20261106, percentile bootstrap. First run (PR #100, macM1, 2026-11-06,
+`--sims 20000 --boot 2000`, scan): per-backend power 0.812, 0.838, 0.878, 0.875, 0.891,
+0.919, 0.947, 0.952 at k = 11 to 18 and 0.970, 0.966, 0.977 at k = 19, 20, 21; type I
+against the margin at k = 18: 0.023. k = 18 met the global target 0.90 only just
+(0.906) and fell to about 0.74 at pi = 0.75 (analysis, point 3). The power is not
+monotone in k (the sign-test critical count moves in steps); the two-point approximation
+of the analysis puts a local peak at k = 20, the Monte-Carlo does not (0.970, 0.966,
+0.977 at k = 19, 20, 21).
+Rerun at k = 20 (fact, simulation only, no run data): macM1, 2026-11-06 18:42 CET, branch
+head 7af254d, `uv run python -m experiments.n10d.required_seeds_mc --sims 20000 --boot 2000`
+(20 000 simulations, 2 000 bootstrap resamples, seed 20261106, 28 s):
+
+| pi | per-backend power | global power p^2 |
+|---|---|---|
+| 0.70 | 0.774 | 0.599 |
+| 0.75 | 0.899 | 0.808 |
+| 0.80 | 0.966 | 0.934 |
+
+Type I against the margin (true mean D = 0.30, pi = 0.4) at k = 20: 0.025; P(A) under H0
+(pi = 0): 0. At pi = 0.75 the Monte-Carlo gives a global power of 0.808, below the 0.885
+of the two-point approximation of the analysis (point 3) and below the 0.90 target: the
+margin of k = 20 against a lower pi is smaller than the analysis stated (open item 1 of
+section 9).
+The CI method is OPEN (TBD-16, two options): the lower bound of a paired t interval, or
+the expanded percentile interval (Hesterberg 2015, arXiv:1411.5279, section 5.3 p. 50:
+the percentile interval under-covers in small samples, one-sided non-coverage 0.077,
+0.048, 0.036 at n = 5, 10, 20 for 0.025 nominal). The method is fixed before the freeze
+and the simulation above is rerun with it. The sign test enters the rule only as a
+condition of A and B; its count and p-value are otherwise reported as secondary,
+descriptive statistics, and it does not size k. The former rules (k = max(MIN_K, k_mean,
+k_sign), the pilot sigma_D of PR #115 with q = Phi(0.30 / sigma_D), MIN_K) are not kept.
 
 Pilot: 8 development seeds 9600-9607, asym; `sigma_seed.py` reads `nocomm` only
 (TBD-14), never computes D, prints no k, reads no NH-96 score. The pilot seeds are
@@ -180,8 +219,17 @@ result has exactly one.
 | 1 | non mesurable | any other asym control (1, 2, 3-asym) fails | no D read, never "supported" |
 | 2 | C | D-hat < 0.10 | failed prediction. "The architecture blocks" is a new hypothesis, reserved to a separate amendment (e.g. a channel wired into the policy input) filed before any new run |
 | 3 | A | L >= 0.30 and the sign test rejects | NH-96 supported: the channel plumbing and the trunk learn the engineered code on this task; never read as "necessity confirmed" (section 1) |
-| 4 | B | U < 0.30 | weaker than predicted; NH-96 rejected (`nh96-null.md` section 4); report D-hat with its CI |
+| 4 | B | U < 0.30 and the sign test rejects | weaker than predicted; NH-96 rejected (`nh96-null.md` section 4): the channel transmits and the trunk learns in part; report D-hat with its CI |
 | 5 | non concluant | anything else (the CI contains 0.30, or the sign test does not reject) | the prediction is neither met nor excluded; report D-hat and CI |
+
+B is a rejection of magnitude (U < 0.30), not a non-rejection; the sign test shows
+D > 0. It is not read as partial necessity (necessity is fixed by construction, section
+1) nor as "the architecture blocks" (that is C). Partial learning is a documented state
+(local optima, Eccles et al. 2019 Table 2; one or two symbols suffice in part, Zhang
+2024), so with every A, B or C the distribution of the per-seed D_i is reported: D-hat
+does not separate "some seeds learn everything" from "each seed learns in part".
+Example: D-hat = 0.20 with U = 0.27 and a rejecting sign test is B; the same with a
+non-rejecting sign test is "non concluant".
 
 Case D (sym, not an H1 outcome, PI-1): sym gate passed (`eng_sym` mean >= 0.95) and the
 lower bound of the 95 % paired CI of D_sym >= 0.10 (TBD-15, `decision.sym_leak_status`).
@@ -203,8 +251,9 @@ required for a plumbing test. It is a PI choice, not derived from data.
 No run, no install, no compute. Missing before the pilot: hashed environments for both
 backends, the real environments (`backends.py` raises), the PPO-trunk adaptation, the
 engineered sender and scripted listener, the a priori leak-audit script (control 4a),
-ledger code. Before the freeze: TBD-11 (throughput measurement without score, then B),
-sigma_seed, the CI method (percentile, BCa or paired t), freeze manifest.
+ledger code. Before the freeze: TBD-11 (throughput measurement without score, then the
+budget; evaluation action rule), sigma_seed, the CI method of TBD-16 (paired t or
+expanded percentile) and the Monte-Carlo rerun with it, freeze manifest.
 
 ## 7. Two backends (TBD-1, TBD-2) and the environment (A11)
 
@@ -232,13 +281,20 @@ seeds list. JaxMARL runs the environment in JAX; EGG (forked, commit 54eb11c6,
 reviewed) in PyTorch; neither is pooled with the other. Each backend gets its own null
 calibration and its own sigma_seed. Each (backend, arm, seed) cell stays on one host.
 
-Divergence rule (TBD-10, closed 2026-11-06 17:05). Each backend gets its own status
-(invalid, non mesurable, A, B, C or non concluant, section 5, plus case D), reported
-separately. Combination: both A -> global A; both C -> global C; any other pair,
-including one invalid or one non mesurable -> global "non concluant". Two non-rejections
-do not establish a common null, and the conjunction is not a Bonferroni correction. If
-the backends disagree, the cause is a separate hypothesis for an amendment, and no
-result is selected after the fact.
+Divergence rule (TBD-10, closed 2026-11-06 17:05, case B amended 18:30 by the sourced
+analysis). Each backend gets its own status, the outcome of section 5 (invalid, non
+mesurable, C, A, B or non concluant, plus case D), reported separately; the statuses are
+the same words as in section 5. Combination (`decision.combine_backends`): identical
+verdicts propagate, both A -> global A; both B -> global B, "weaker than predicted on
+both backends" (the channel transmits and the trunk learns in part; the magnitude
+prediction of NH-96 is rejected, U < 0.30 and the sign test rejects on each backend;
+neither partial necessity nor an architecture block); both C -> global C. Any
+disagreement, and any pair including invalid, non mesurable or non concluant -> global
+"non concluant". A concordant global A or B is a conjunction of per-backend rejections,
+so it holds at level alpha (intersection-union structure); two
+non-rejections do not establish a common null, and the conjunction is not a Bonferroni
+correction. If the backends disagree, the cause is a separate hypothesis for an
+amendment, and no result is selected after the fact.
 
 ## References
 
@@ -249,6 +305,14 @@ result is selected after the fact.
   positive listening Pl, computed explicitly from optimal policies).
 - Lazaridou, Peysakhovich, Baroni 2017, "Multi-Agent Cooperation and the Emergence of
   (Natural) Language", ICLR 2017, arXiv:1612.07182 (section 4, Table 1).
+- Havrylov, Titov 2017, "Emergence of Language with Multi-agent Games: Learning to
+  Communicate with Sequences of Symbols", NeurIPS 2017, arXiv:1705.11192 (section 3).
+- Hesterberg 2015, "What Teachers Should Know About the Bootstrap", Am. Stat. 69:371-386,
+  arXiv:1411.5279 (Table 5, section 5.3).
+- Zhang 2024, "A Combinatorial Approach to Neural Emergent Communication", COLING 2025,
+  arXiv:2410.18806 (abstract, section 3.1).
+Every other source of the sourced analysis, with what was read and what only as an
+abstract: `analysis-4-points-references.tsv`.
 
 Both contradictor passes of 2026-11-06 read these three texts in full
 (`docs/n10d/contradictor-2026-11-06/`, PR #113). References are cited by arXiv id, not
@@ -348,17 +412,91 @@ were adapted to the merged code (`episode_derangement` -> `derange_episodes`;
 
 ### Second reconciliation (cb7d66b)
 
-Recorded in the next commits of this branch.
+After the first reconciliation, PR #100 moved on with three commits: 31bc66e (TBD-10
+and TBD-12 to TBD-16 closed by the PI, QCM in session, 17:05), d719c8e (sym gate on
+`eng_sym` only, CI decision rule, `decision.py`) and cb7d66b (k by Monte-Carlo of that
+rule, `required_seeds_mc.py`, K_CONFIRM = 18). Its owner stopped there. The two branches
+then disagreed on four design points, and the PI (~18:00 CET) chose to follow a sourced
+analysis (`analysis-4-points-2026-11-06.md`, references `analysis-4-points-references.tsv`)
+rather than the resolution rule of the first reconciliation. The head cb7d66b was merged
+into this branch by one merge commit.
 
-## 9. PI decisions 2026-11-06 (16:55 CET)
+Taken from #100: the 17:05 closures of section 0; sigma_D from the planning assumption
+and a pilot that reads `nocomm` only (no breach; `sigma_seed.py` of #100); the sym gate
+on `eng_sym` alone with case D through the CI lower bound of D_sym; the CI rule as the
+single decision rule (`decision.py`, `tests/test_n10d_decision.py`); k by simulation of
+that rule (`required_seeds_mc.py`, `tests/test_n10d_seeds_mc.py`).
+
+Decided by the analysis (one line each; detail in section 9):
+1. sigma_D: #100 kept; pi = 0.8 written as a hypothesis with a sensitivity table; the
+   pilot read-out of #115 (breach no. 1, paired sd, k from the pilot) is withdrawn and
+   the paired sd becomes a post-unblinding sensitivity analysis.
+2. Sym gate: #100 kept, `nocomm_sym` reported with its CI; eps_sym = 1/n_eval on both
+   arms and "gate failure = flag D" withdrawn. On the argument "if both arms pass
+   >= 1 - epsilon then |D_sym| <= epsilon": the arithmetic is right and aimed at the
+   e5fbe88 text, but in #115 flag D was the gate failure itself, so case D was not
+   empty there; the double gate is withdrawn because 1/n_eval sits below the binomial
+   noise of published levels (0.92-0.99) and depends on the evaluation action rule.
+3. k and rule: the CI rule of #100 with k raised from 18 to 20; the point-plus-sign-test
+   table of #115 (P(A | D = margin) = 0.17-0.32) and MIN_K are withdrawn; the CI method
+   is reopened (TBD-16).
+4. Case B: two B propagate as a global B, B requires the sign test, and the internal
+   inconsistency of #100 (section 5 "NH-96 rejected" against section 7 "non concluant"
+   for the same case) is removed: section 7 now uses the statuses of section 5.
+
+Tests: the tests of #100 are kept; #115's paired-read-out tests (`sigma_d`,
+`required_seeds` with MIN_K 8, the "Pilot read-out" CLI tests) go with the code they
+tested; its sign-test table is kept on `sign_test_critical`. New: the sign-test rows of
+the analysis, B without the sign test is "non concluant", backend combination,
+K_CONFIRM = 20 with the pi sensitivity.
+
+## 9. PI decisions 2026-11-06 (16:55, 17:05 and ~18:00 CET)
+
+### 16:55 CET
 
 Taken by the PI on the choices listed in the draft PR (#115) after section 8.
 
 | item | decision |
 |---|---|
-| sigma_D (A4) | CHANGED. sigma_D = sd (ddof = 1) of the paired per-seed differences eng - nocomm on the asym pilot, fed directly to `required_seeds`; the Cauchy-Schwarz bound is dropped. The pairing is a declared blinding breach (breach no. 1). MIN_K 8, sign-test table and MAX_K 200 unchanged |
-| n_eval (A8) | CONFIRMED without change: n_eval = 500, eps_sym = 1/n_eval |
-| A10 | CONFIRMED without change: reading "Procgen does not need the message" stays conditional on an N10-D arm in the N10-C harness, outside this protocol (section 2) |
+| sigma_D (A4) | CHANGED. sigma_D = sd (ddof = 1) of the paired per-seed differences eng - nocomm on the asym pilot, fed directly to `required_seeds`; the Cauchy-Schwarz bound is dropped. The pairing is a declared blinding breach (breach no. 1). MIN_K 8, sign-test table and MAX_K 200 unchanged. *Superseded 2026-11-06 18:30 by sourced analysis (PI decision: follow the analysis): sigma_D from the planning assumption, pilot reads `nocomm` only, no breach, MIN_K removed (point 1 below)* |
+| n_eval (A8) | CONFIRMED without change: n_eval = 500 (still valid), eps_sym = 1/n_eval. *eps_sym = 1/n_eval superseded 2026-11-06 18:30 by sourced analysis (PI decision: follow the analysis): epsilon = 0.05 on `eng_sym` only (point 2 below)* |
+| A10 | CONFIRMED without change: reading "Procgen does not need the message" stays conditional on an N10-D arm in the N10-C harness, outside this protocol (section 2). Still valid |
 | Q8 (N10-C-bis vs N10-D) | DEFERRED to the session "point de reprise roadmap v2"; nothing decided here |
+
+### 17:05 CET (PR #100)
+
+TBD-10 and TBD-12 to TBD-16 closed, PI decision, QCM in session, 2026-11-06 17:05; the
+rows are in section 0. Where the analysis below modifies them (k 18 -> 20 in TBD-13; CI
+method reopened in TBD-16; case B in TBD-10) they are marked "superseded 2026-11-06
+18:30 by sourced analysis (PI decision: follow the analysis)". TBD-12 (margin 0.30),
+TBD-14 and TBD-15 stand, with the additions written in section 0.
+
+### ~18:00 CET
+
+| item | decision |
+|---|---|
+| arbiter | 2026-11-06 ~18:00: follow the sourced analysis `docs/prereg/n10d/analysis-4-points-2026-11-06.md` ("selon l'analyse scientifique et des papiers"); PR #115 then merges into #100 (PI decisions 17:12 and ~18:00) |
+| 1. sigma_D (TBD-14) | « σ_D (TBD-14) : hypothèse de planification bimodale π = 0,8 (Δ = 0,60, σ_D = 0,30), écrite comme hypothèse avec table de sensibilité π ∈ {0,70 ; 0,75 ; 0,80} ; pilote nocomm seul, aucune brèche ; la lecture appariée de PR #115 n'est pas retenue (pilote à budget réduit, σ̂ instable sur 8 graines bimodales, variance fonction de l'effet). » Applied in section 4 |
+| 2. sym gate (TBD-15) | « Porte sym (TBD-15) : `eng_sym` ≥ 0,95 seul ; cas D si la borne basse de l'IC 95 % de D_sym ≥ 0,10 ; `nocomm_sym` rapporté avec son IC (contrôle descriptif du tronc) ; ε = 1/n_eval sur les deux bras non retenu (seuil inférieur au bruit binomial, dépend de la règle d'évaluation TBD-11). » Applied in sections 3 and 5 |
+| 3. k and rule (TBD-13, TBD-16) | « Règle unique (TBD-16) : règle IC, A ssi L ≥ 0,30 et test des signes ; k (TBD-13) = 20 par backend par simulation de cette règle (global ≈ 0,93-0,96 à π = 0,8 ; ≈ 0,885 à π = 0,75), méthode d'IC (t apparié ou percentile élargi) fixée au gel et MC rejoué avec elle ; MIN_K = 8 et la table point + signes de PR #115 non retenus (P(A \| D = marge) = 0,17-0,32). » Applied in sections 4 and 5; Monte-Carlo at k = 20 in section 4 |
+| 4. combination (TBD-10) | « Combinaison (TBD-10) : deux A → A ; deux B → B global « plus faible que prédit sur les deux backends » (intersection-union, niveau α), B par backend exigeant U < 0,30, D̂ ≥ 0,10 et le rejet du test des signes ; deux C → C ; autre couple → « non concluant » ; la zone U < 0,30 n'est pas classée C ; §5 et §7 alignés. » Applied in sections 5 and 7 |
+
+### Open for the PI (not decidable from the literature)
+
+1. pi, the fraction of seeds in which the PPO trunk learns the engineered code on this
+   game: no source gives it for PPO at C = 4; 0.8 and the accepted sensitivity are a PI
+   choice. The Monte-Carlo at k = 20 gives a global power of 0.934 at pi = 0.8 but 0.808
+   at pi = 0.75 (the analysis approximated 0.885) and 0.599 at pi = 0.70 (section 4).
+2. The value of the absolute margin 0.30 (TBD-12): a PI choice, no literature fixes it.
+3. The independence of the two backends, assumed and not shown; if false, the global
+   power changes in a direction the literature does not predict.
+4. The cost per seed (TBD-11): no figure yet; the step from k = 18 to 20 (24 more runs)
+   can only be weighed after the throughput measurement without score.
+5. The evaluation action rule (argmax or sampling, TBD-11): it sets the reachable level
+   of `eng_sym` and `nocomm_sym`, hence the relevance of epsilon = 0.05.
+6. The CI method (paired t, expanded percentile; BCa not read): the literature read
+   leans against the percentile at small n; choice and rerun of the simulation open.
+7. Whether a declared blinding breach is acceptable as a lab policy (hypneum-prereg): a
+   rule of the lab, not a statistical question.
 
 No freeze, no tag; the freeze lock (verrou de lecture) is not passed.
