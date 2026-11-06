@@ -4,7 +4,10 @@
 H1 without `sym` and H0 stated per condition (section 1); paired null (section 2); sym P99
 differs from asym P99 (section 3); one set of criteria, aligned on protocol section 5
 (section 4); "0 by construction" holds for optimal policies only (section 5).
-**Status:** L0 DRAFT, not frozen; open items TBD-12 to TBD-16 of `protocol.md` section 0 apply.
+Update 2026-11-06 (PI decision, multiple-choice in session): margin 0.30, CI rule, sym
+check through a CI bound on D_sym (TBD-12, TBD-15, TBD-16 closed); pilot reads `nocomm`
+only (TBD-14 closed).
+**Status:** L0 DRAFT, not frozen; open item TBD-11 of `protocol.md` section 0 applies.
 
 Source text (catalogue): "Nul qui peut echouer : si la tache asymetrique donne aussi
 moins de 0,1, c'est l'architecture qui bloque." Problem: that sentence explains a
@@ -14,8 +17,9 @@ the rejection criteria. Follows `hypneum-nulls` (items 1-9).
 ## 1. Hypotheses
 
 H1 (prediction, `asym` only; PI-1, 2026-11-01): D_asym meets the confirmation rule of
-`protocol.md` section 5, case A (margin 0.30 or TBD-12; single rule TBD-16; the one-sided
-paired sign test rejects at alpha 0.05), with D = mean over k seeds of `S_eng - S_nocomm`
+`protocol.md` section 5, case A (margin 0.30 = 0.4 x (1 - 1/C), TBD-12; CI rule of TBD-16:
+lower bound of the 95 % paired-bootstrap CI >= margin and the one-sided paired sign test
+rejects at alpha 0.05), with D = mean over k seeds of `S_eng - S_nocomm`
 (paired by seed; S = success of the frozen policy on n_eval independent episodes).
 `sym` is not in H1.
 H0 (null, `asym`): the message carries no usable information; within a seed both arms
@@ -23,8 +27,10 @@ are blind policies with the same expected success, the exact blind ceiling
 B0 = 1/C (`blind_ceiling()`); any difference is binomial evaluation noise plus a seed
 effect common to both arms.
 Sym leak-check null (not a hypothesis of NH-96): both arms at B0 = 1.0. At sigma = 0 every
-draw gives D = 0 exactly, so P99 = 0 and any positive D_sym has p = 1/(N+1); D_sym is read
-only through the audit of `protocol.md` section 5, case D.
+draw gives D = 0 exactly, so P99 = 0 and any positive D_sym has p = 1/(N+1). This null is
+therefore reported descriptively only; it sets no threshold. Since TBD-15 (2026-11-06) the
+sym check gates on `eng_sym` only (mean >= 0.95) and fires case D of `protocol.md` section 5
+iff the lower bound of the 95 % paired-bootstrap CI of D_sym >= delta_sym = 0.10.
 
 ## 2. Construction of the null (same pipeline)
 
@@ -39,9 +45,10 @@ arm-by-seed draw (`paired=False`) is reported for sensitivity only, never used f
 Thresholds on ONE arm (protocol section 3, controls 2-4) use the single-arm null
 `simulate_arm_null` (mean over k seeds of S_arm - B0), not this null of D.
 The sym null uses its own B0 = 1.0; sigma measured on `asym` is not transported to it
-(TBD-14). `sigma_seed` (TBD-9, closed; possible amendment TBD-14): measured on the
-`nocomm` development seeds 9600-9607, by `sigma_seed.py` (one arm per call, D never
-computed) before the freeze, then fixed in the manifest.
+(TBD-14, closed). `sigma_seed` (TBD-9, closed, not amended by TBD-14): measured on the
+`nocomm` development seeds 9600-9607 only, by `sigma_seed.py` (D never computed, no k
+printed) before the freeze, then fixed in the manifest. It is a consistency check; it
+does not size k (protocol section 4).
 Limit, stated plainly: this surrogate null covers evaluation and seed noise, not
 training dynamics. It calibrates the threshold for "above blind", not the size of
 effects a trained pair can reach.
@@ -72,20 +79,20 @@ Consequences. (a) With the paired null the P99 of D no longer grows with sigma_s
 common latent cancels in the difference. (b) The sym P99 differs from the asym P99
 (0.008 against 0.022 paired, 0.035 against 0.063 independent, at sigma = 0.05, C = 4),
 and it is exactly 0 at sigma = 0: a sym bound is never borrowed from asym. (c) The margin
-(0.30 or TBD-12) stays far above every P99 here, so the null does not bind H1; the margin
+(0.30, TBD-12) stays far above every P99 here, so the null does not bind H1; the margin
 and the decision rule do. The table is illustrative (k=8); the real k comes from the rule
 of protocol section 4.
 
 ## 4. Criteria that make NH-96 fail
 
-One set of criteria, the same as `protocol.md` section 5 (TBD-16). NH-96 is rejected
-(not "unlucky") if any holds, with the `asym` controls of protocol section 3 passed:
-1. the rejection side of the single decision rule holds (TBD-16; under option (i): upper
-   bound of the 95 % paired-bootstrap CI of D_asym < margin);
+One set of criteria, the same as `protocol.md` section 5 (TBD-16, CI rule, closed
+2026-11-06). NH-96 is rejected (not "unlucky") if any holds, with the `asym` controls of
+protocol section 3 passed:
+1. the upper bound of the 95 % paired-bootstrap CI of D_asym < margin (0.30), case B;
 2. D_asym < 0.10: failed prediction. The sentence "the architecture
    blocks" is NOT a verdict; it is a new hypothesis for an amendment.
-D_sym is not a rejection criterion (PI-1): D_sym above its paired P99 triggers the audit
-of protocol section 5, case D. Non-rejection with the learning gate failed is
+D_sym is not a rejection criterion (PI-1): a CI lower bound of D_sym >= 0.10 (with the
+`eng_sym` gate passed) triggers the audit of protocol section 5, case D. Non-rejection with the learning gate failed is
 "non mesurable"; any other non-rejection is "non concluant"; neither is "supported".
 
 ## 5. Tautology check (item 4)
