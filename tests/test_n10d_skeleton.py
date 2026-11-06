@@ -4,6 +4,7 @@ import random
 import pytest
 
 from experiments.n10d.backends import make_egg_game, make_jaxmarl_game
+from experiments.n10d.interfaces import derange_episodes
 from experiments.n10d.null import (
     _latent,
     empirical_p,
@@ -60,3 +61,22 @@ def test_paired_null_is_narrower_than_independent():
     paired = summarize(simulate_null(spec, 8, 100, 0.05, n_draws=1000))
     indep = summarize(simulate_null(spec, 8, 100, 0.05, n_draws=1000, paired=False))
     assert paired.p99 < indep.p99
+
+
+def test_msg_shuffle_deranges_episodes_not_targets():
+    rng = random.Random(7)
+    perms = [derange_episodes(50, rng) for _ in range(100)]
+    for perm in perms:
+        assert sorted(perm) == list(range(50))
+        assert all(i != j for i, j in enumerate(perm))
+    assert len({tuple(p) for p in perms}) == 100  # fresh per batch, not fixed
+    # Same target in two episodes must be able to receive different messages:
+    # the shuffled message is not a function of the target identity.
+    targets = [e % 4 for e in range(50)]
+    perm = perms[0]
+    by_target = {}
+    for e, src in enumerate(perm):
+        by_target.setdefault(targets[e], set()).add(targets[src])
+    assert any(len(srcs) > 1 for srcs in by_target.values())
+    with pytest.raises(ValueError):
+        derange_episodes(1, rng)
