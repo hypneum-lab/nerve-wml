@@ -12,6 +12,7 @@ cd nerve-wml
 uv sync --all-extras            # Python 3.12+, torch CPU is enough
 uv run pytest -m "not slow"     # fast tiers L1-L2 (what CI runs)
 uv run pytest                   # full suite incl. L3-L4 golden/integration
+# `uv run python -m pytest ...` is equivalent (lab convention)
 uv run ruff check .
 uv run mypy nerve_core track_p track_w
 ```
@@ -32,6 +33,29 @@ Optional extras: `uv sync --extra mnist` (torchvision), `--extra interpret`
   pass; see the tolerance policy in `tests/golden/test_golden_regressions.py`.
 - Invariants N-1..N-5 / W-1..W-4 (`nerve_core/invariants.py`) are never
   weakened without a spec update.
+
+## Pre-registration and frozen runs
+
+- Confirmatory experiments are pre-registered (`docs/prereg/`,
+  `docs/milestones/`) and frozen by a git tag (e.g.
+  `n10c-freeze-20261024`, `prereg-nh01-confirmatory-20261025`) pushed
+  before the run starts. Only the PI creates or moves freeze tags.
+- A PR must not modify a frozen run, its result artefacts
+  (`results/<run>/`), or a pre-registration / milestone file that a
+  freeze tag covers. Changes after a freeze are written as a new dated
+  amendment file, signed off by the PI, never as an edit in place.
+- Null and negative results are published as they are. Do not tune,
+  re-seed or re-threshold a run to turn a null into a positive; a stopped
+  or exploratory run is recorded as such (see the N10-C closure note in
+  `docs/milestones/`). Errors in published numbers are corrected by a
+  dated erratum (see `docs/superpowers/research/2026-10-25-phase0-truth-errata.md`).
+
+## Where to start
+
+Issues labelled
+[`good first issue`](https://github.com/hypneum-lab/nerve-wml/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
+are scoped for newcomers (documentation fixes, test coverage, CI).
+Open questions and ideas: GitHub Discussions.
 
 ## Commits and branches
 
