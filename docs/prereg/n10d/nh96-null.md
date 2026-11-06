@@ -4,7 +4,10 @@ Source text (catalogue): "Nul qui peut echouer : si la tache asymetrique donne a
 moins de 0,1, c'est l'architecture qui bloque." Problem: that sentence explains a
 failure away instead of defining one. This document gives the calibrated null and
 the rejection criteria. Follows `hypneum-nulls` (items 1-9).
-Amended 2026-11-06 after the blind contradictor (protocol section 8: A5-A9, A18, A19).
+Amended 2026-11-06 after the blind contradictor (protocol section 8: A5-A9, A18, A19),
+then reconciled the same day with the parallel revision of PR #100 (protocol section 8,
+"Reconciliation 2026-11-06"). **Status:** L0 DRAFT, not frozen; the open items of
+`protocol.md` section 0 apply.
 
 ## 1. Hypotheses (asym only)
 
@@ -14,9 +17,14 @@ descriptive control arm (protocol section 3), never a term of H1 or H0.
 H1 (prediction, asym): D_asym >= 0.30, with D = mean over k seeds of
 `S_eng - S_nocomm`, paired by seed, S = evaluation success of the frozen policy on
 n_eval fresh episodes (protocol section 3, A8).
-H0 (null, asym): the message carries no usable information. Neither arm can exceed
-the exact blind ceiling B0 = 1/C (`blind_ceiling()`); per seed both arms share one
-latent success p <= B0, and any difference is evaluation noise.
+H0 (null, asym): the message carries no usable information. Within a seed both arms
+are blind policies; neither can exceed the exact blind ceiling B0 = 1/C
+(`blind_ceiling()`); per seed both arms share one latent success p <= B0, and any
+difference is binomial evaluation noise.
+No H0 is registered on `sym`. Its null (both arms at B0 = 1.0) is degenerate: at
+sigma = 0 every draw gives D = 0 exactly, so P99 = 0 and any positive D_sym would get
+p = 1/(N+1). D_sym is therefore read only through the sym gate and flag D of
+`protocol.md` sections 3 and 5, never through a test.
 
 ## 2. Construction of the null (same pipeline, paired by seed)
 
@@ -24,14 +32,18 @@ Per seed: one latent seed effect u ~ N(0, sigma_seed), shared by both arms (pair
 null, PI decision `brainstorm-2026-11-01.md` section 0, item 2); latent success
 p = clip(B0 + u, 0, B0), bounded above by B0 because no blind policy beats 1/C (A6);
 then each arm is evaluated independently, Binomial(n_eval, p)/n_eval.
+In `asym` an exact blind policy has expectation 1/C, so the game itself does not
+require a latent effect; the common latent is the form decided by the PI, and it
+cancels in the paired difference except through the binomial variance.
 D = mean over k seeds of the paired difference; N = 10 000 draws; report observed D,
 null median, P95, P99 and p = (hits+1)/(N+1). Code: `experiments/n10d/null.py`
 (stdlib). `sigma_seed` (TBD-9, closed): measured on the `nocomm`/`asym` development
 seeds 9600-9607 by `sigma_seed.py` before the freeze, then fixed in the manifest.
+A sigma measured on `asym` is never transported to `sym`.
 That pilot is development, not confirmatory; its read-out (sigma_seed, sigma_D, k) is
 declared as N10-D blinding breach no. 1 (protocol section 4, "Pilot read-out (declared)").
 `simulate_null(..., paired=False)` keeps the former independent-arm draw as a
-sensitivity check only; it is not the registered null.
+sensitivity check only; it is not the registered null and never enters a decision.
 
 Level null (A9): `simulate_level_null` gives the null of one blind arm's mean success
 over k seeds (a level, not a difference). Controls 2 and 4 of protocol section 3 use
@@ -46,7 +58,9 @@ below); the margin 0.30, not the null, binds H1.
 ## 3. Computed before data (k=8 seeds, n_eval=500, K=16; null.py, rng 20261101/02)
 
 Regenerated 2026-11-06 with the amended generator on macM1 (`python3 -m n10d.null`,
-copy of `experiments/n10d/{null,spec}.py`, 2 min 15 s).
+copy of `experiments/n10d/{null,spec}.py`, 2 min 15 s). This table supersedes the one
+of PR #100 (e5fbe88), which was computed with the uncapped generator
+(p = clip(B0 + u, 0, 1)) and is no longer the code (A6).
 
 | condition | C | sigma_seed | D median | D P95 | D P99 | level L99 (B0) |
 |---|---|---|---|---|---|---|
@@ -76,9 +90,11 @@ restates its rejection rows. With all asym controls of protocol section 3 passed
    (TBD-6). "The architecture blocks" is NOT a verdict; it is a new hypothesis for an
    amendment.
 2. NH-96 is supported (outcome A) only if the one-sided sign test rejects at
-   alpha = 0.05 AND D_asym >= 0.30.
+   alpha = 0.05 AND D_asym >= 0.30 AND the lower bound L of the 95 % paired-bootstrap
+   CI of D_asym is > 0 (reconciliation with PR #100, TBD-16).
 3. Anything else is outcome B, "non concluant", never "refuted" nor "supported".
-If any asym control fails the run set is "non mesurable", not "supported".
+If the leak audit (control 4) fails the run set is "invalid"; if another asym control
+fails it is "non mesurable"; neither is "supported".
 D_sym enters no criterion (section 1).
 
 ## 5. Tautology check (item 4)

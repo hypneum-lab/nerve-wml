@@ -45,10 +45,38 @@ def test_backends_are_stubs():
 
 def test_sym_null_is_degenerate_at_zero_sigma():
     # sym: B0 = 1.0 and sigma_seed = 0, so every arm scores exactly 1.0.
+    # Merged with the PR #100 test: both null variants, and any positive
+    # D_sym gets the floor p-value 1/(N+1).
     sym = TaskSpec("sym", 16, 4)
     d = simulate_null(sym, 8, 500, 0.0, n_draws=200)
     assert summarize(d).p99 == 0.0 and set(d) == {0.0}
     assert set(simulate_level_null(sym, 8, 500, 0.0, n_draws=200)) == {1.0}
+    for paired in (True, False):
+        d = simulate_null(sym, 8, 50, 0.0, n_draws=500, paired=paired)
+        assert summarize(d).p99 == 0.0
+        assert empirical_p(0.01, d) == 1 / 501
+
+
+def test_single_arm_level_null():
+    # PR #100 test_single_arm_null, rewritten on the level null (mean - B0).
+    asym = TaskSpec("asym", 16, 4)
+    a = summarize([x - blind_ceiling(asym)
+                   for x in simulate_level_null(asym, 4, 100, 0.0, n_draws=1000)])
+    assert abs(a.median) < 0.03 and a.p99 > 0
+    s = simulate_level_null(TaskSpec("sym", 16, 4), 4, 50, 0.0, n_draws=200)
+    assert max(s) == 1.0 and min(s) == 1.0
+
+
+def test_episode_derangement_has_no_fixed_point():
+    # PR #100 test, on the single derangement function derange_episodes.
+    rng = random.Random(0)
+    for n in (2, 3, 5, 16, 64):
+        for _ in range(50):
+            perm = derange_episodes(n, rng)
+            assert sorted(perm) == list(range(n))
+            assert all(i != p for i, p in enumerate(perm))
+    with pytest.raises(ValueError):
+        derange_episodes(1, rng)
 
 
 def test_blind_latent_never_exceeds_ceiling():
@@ -56,10 +84,12 @@ def test_blind_latent_never_exceeds_ceiling():
     assert max(_latent(rng, 0.25, 0.05) for _ in range(10_000)) <= 0.25
 
 
-def test_paired_null_is_narrower_than_independent():
+@pytest.mark.parametrize("k_seeds", [4, 8])  # 4: PR #100 test, 8: PR #115 test
+def test_paired_null_is_narrower_than_independent(k_seeds):
     spec = TaskSpec("asym", 16, 4)
-    paired = summarize(simulate_null(spec, 8, 100, 0.05, n_draws=1000))
-    indep = summarize(simulate_null(spec, 8, 100, 0.05, n_draws=1000, paired=False))
+    paired = summarize(simulate_null(spec, k_seeds, 100, 0.05, n_draws=1000))
+    indep = summarize(
+        simulate_null(spec, k_seeds, 100, 0.05, n_draws=1000, paired=False))
     assert paired.p99 < indep.p99
 
 

@@ -2,6 +2,7 @@
 import json
 import random
 import statistics
+from statistics import NormalDist
 
 import pytest
 
@@ -12,8 +13,10 @@ from experiments.n10d.sigma_seed import (
     pilot_n_eval,
     required_seeds,
     sigma_d,
+    required_seeds_from_sigma_d,
     sigma_seed,
     sign_test_power,
+    sign_test_seeds,
     sign_test_threshold,
 )
 
@@ -158,3 +161,63 @@ def test_heterogeneous_n_eval_rejected():
     r = _recs(0.02) + _eng(0.05, n_eval=100)
     with pytest.raises(ValueError):
         pilot_n_eval(r, ("nocomm", "eng"))
+
+
+# Tests carried over from PR #100 (e5fbe88), adapted to the paired read-out
+# of the PI decision 2026-11-06 16:55 (protocol section 8, reconciliation).
+
+
+def _write(tmp_path, recs):
+    path = tmp_path / "pilot.json"
+    path.write_text(json.dumps(recs))
+    return str(path)
+
+
+def test_cli_refuses_stray_eng_row_with_other_n_eval(tmp_path):
+    # Bug of 6e682cc: n_eval came from recs[0]; a leading eng row at n_eval=1
+    # gave k=48. With the paired read the stray row is an eng record, so the
+    # CLI must stop instead of sizing k on it.
+    lead = {"seed": 9600, "condition": "asym", "arm": "eng",
+            "success": 1.0, "n_eval": 1}
+    recs = [lead, *[{**r, "success": 0.25} for r in _recs(0.0)], *_eng(0.0)]
+    with pytest.raises(ValueError):
+        main([_write(tmp_path, recs)])
+
+
+def test_cli_rejects_heterogeneous_filtered_n_eval(tmp_path):
+    recs = _recs(0.02) + _eng(0.05)
+    recs[3]["n_eval"] = 100
+    with pytest.raises(ValueError, match="n_eval"):
+        main([_write(tmp_path, recs)])
+
+
+def test_readable_arms_guard():
+    # PR #100 read one arm per call; the paired read keeps the guard that no
+    # arm other than nocomm and eng is ever read.
+    both = _recs(0.0) + _eng(0.05, seed=3)
+    assert sigma_seed(both) == sigma_seed(_recs(0.0))
+    for arm in ("learned", "msg_shuffle"):
+        with pytest.raises(ValueError):
+            pilot_n_eval(both, (arm,))
+
+
+def test_seed_rules_for_paired_d_and_sign_test():
+    assert required_seeds_from_sigma_d(0.30) == 9  # no factor 2 when sigma_D is direct
+    assert required_seeds_from_sigma_d(0.0) == MIN_K
+    assert sign_test_threshold(5) == 5
+    with pytest.raises(ValueError):
+        sign_test_threshold(4)  # 4/4 positive has p = 1/16 > 0.05
+    assert sign_test_power(5, 0.9) == pytest.approx(0.9**5)
+    k = sign_test_seeds(0.9)
+    assert k > 5 and sign_test_power(k, 0.9) >= 0.90
+    assert {q: sign_test_seeds(q) for q in (0.80, 0.90, 0.95)} == {
+        0.80: 23, 0.90: 11, 0.95: 8}
+
+
+def test_sign_test_k_dominates_the_paired_mean_k():
+    # Under D_i ~ N(0.30, sigma_D) the paired-mean floor never binds.
+    for i in range(51):
+        sd = i / 100
+        q = 1.0 if sd == 0 else NormalDist().cdf(0.30 / sd)
+        assert required_seeds(sd) == sign_test_seeds(q)
+        assert required_seeds(sd) >= required_seeds_from_sigma_d(sd)
