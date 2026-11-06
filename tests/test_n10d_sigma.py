@@ -92,10 +92,10 @@ def _correlated(n_eval=500):
     u = [-0.21, -0.14, -0.07, 0.0, 0.04, 0.08, 0.13, 0.17]
     jit = [0.01, -0.01, 0.02, -0.02, 0.0, 0.01, -0.01, 0.0]
     noc = [{"seed": s, "condition": "asym", "arm": "nocomm",
-            "success": 0.30 + a, "n_eval": n_eval} for s, a in zip(DEV_SEEDS, u)]
+            "success": 0.30 + a, "n_eval": n_eval} for s, a in zip(DEV_SEEDS, u, strict=True)]
     eng = [{"seed": s, "condition": "asym", "arm": "eng",
             "success": 0.65 + a + b, "n_eval": n_eval}
-           for s, a, b in zip(DEV_SEEDS, u, jit)]
+           for s, a, b in zip(DEV_SEEDS, u, jit, strict=True)]
     return noc + eng
 
 
@@ -103,11 +103,11 @@ def test_paired_sigma_d_beats_the_bound_on_correlated_seeds():
     recs = _correlated()
     arm = {a: [r["success"] for r in recs if r["arm"] == a] for a in ("eng", "nocomm")}
     bound = statistics.stdev(arm["eng"]) + statistics.stdev(arm["nocomm"])
-    diffs = [e - n for e, n in zip(arm["eng"], arm["nocomm"])]
+    diffs = [e - n for e, n in zip(arm["eng"], arm["nocomm"], strict=True)]
     assert sigma_d(recs) == pytest.approx(statistics.stdev(diffs))
     assert bound == pytest.approx(0.2623, abs=1e-3)
     assert sigma_d(recs) == pytest.approx(0.0131, abs=1e-3)
-    assert 13 <= required_seeds(bound) <= 16
+    assert required_seeds(bound) == 13
     assert required_seeds(sigma_d(recs)) == MIN_K
 
 
