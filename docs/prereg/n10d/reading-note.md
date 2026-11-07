@@ -215,7 +215,15 @@ déclarant insuffisant, p. 4).
      2 états, signaux et actes, un ouvert de conditions initiales du
      réplicateur converge vers des mises en commun partielles ; avec des
      états non équiprobables, des issues « with basically no communication »
-     sont stables sous sélection-mutation (fig. 1) ; le renforcement de
+     sont stables sous sélection-mutation (fig. 1), à condition que les
+     récepteurs mutent assez peu devant les émetteurs (δ/ε < (2p − 1)² dans
+     le jeu binaire tronqué, δ/ε < 2(1 − 2p)²/(1 − 2p + 2p²) dans le jeu
+     complet ; Hofbauer & Huttegger 2008, *J. Theor. Biol.* 254:843-849,
+     doi:10.1016/j.jtbi.2008.07.010, éq. 14 et 18, lu en entier, source
+     primaire de cette phrase de Huttegger 2014, même auteur, donc pas une
+     seconde source indépendante) ; attention : dans ces deux textes p est
+     le poids de l'état le plus probable, pas une valeur p, sans rapport avec
+     le p = 0,400 de Chauhan & Bera ; le renforcement de
      Roth-Erev n'atteint le signalement parfait avec probabilité 1 que dans
      le cas 2 × 2 équiprobable, et synonymes et goulots sont des limites de
      probabilité positive. Aucune probabilité chiffrée pour les jeux de
@@ -264,7 +272,11 @@ déclarant insuffisant, p. 4).
      récepteur qui répond au mieux, c'est-à-dire qu'elle exclut par
      hypothèse l'équilibre d'Eccles ; elle déplace la question vers la vitesse
      d'adaptation du récepteur, sur laquelle sa propre conjecture (§ 8) va
-     dans le sens de 4.4. Avec Huttegger, elle prédit aussi des mises en
+     dans le sens de 4.4. Hofbauer & Huttegger 2008 (§ 4 : un récepteur qui
+     explore beaucoup moins que l'émetteur « might end up not
+     communicating ») en donnent un analogue démontré, dans une autre
+     dynamique (sélection-mutation, jeu binaire) ; une source pour ce lien :
+     **à recouper**. Avec Huttegger, Calvano prédit aussi des mises en
      commun partielles stables plutôt que l'optimum.
    - De Silva & Sigmund vont dans le même sens sur un point précis : dans le
      jeu du messager 2 × 2, le récepteur qui ignore le signal a un bassin
