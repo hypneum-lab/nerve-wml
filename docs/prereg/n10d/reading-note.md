@@ -198,16 +198,71 @@ déclarant insuffisant, p. 4).
    le dépôt. Inférence : la question « le canal porte-t-il l'information
    nécessaire » n'est pas tranchée par Claim B. Question interne, pas de
    littérature attendue.
-4. **Nouveau au tour 2 : un récepteur peut ne pas utiliser un canal appris
-   même quand il est nécessaire.** Fait : Chauhan & Bera, couplage partiel,
-   émetteur appris à 2 bits indistinguable du silence (p = 0,400, n = 25)
-   alors que l'émetteur conçu au même débit atteint 1,000 ; Eccles 2019 §3
-   décrit l'équilibre « récepteur indépendant du canal ». Inférence : le bras
-   `learned` de N10-D peut échouer à découvrir un protocole sans que la
-   tâche ou le canal soit en défaut ; le critère de réfutation du § 5 doit
-   distinguer « canal inutilisé » de « canal inutilisable ». Une source
-   (Chauhan) en lecture partielle + un précédent théorique (Eccles) :
-   **à recouper** pour le chiffre, recoupé pour l'existence du phénomène.
+4. **Un récepteur peut ne pas utiliser un canal appris même quand il est
+   nécessaire (tour 2 ; réécrit le 07/11 après lecture).**
+   Faits, par source :
+   - Chauhan & Bera, arXiv:2609.34373 v2 (lu en partie : pp. 1-9 sur 17 au
+     tour 2 ; résumé, § 1 et § 4.1 relus le 07/11) : arène partiellement
+     couplée, émetteur appris à 2 bits 0,562 ± 0,127 (IQM 0,482) contre
+     silence 0,494 ± 0,124 (IQM 0,368), écart +0,068 ± 0,163, **p = 0,400**,
+     n = 25, borne supérieure unilatérale à 95 % +0,202 ; l'émetteur conçu au
+     même débit atteint une IQM de 1,000 ; les auteurs notent une
+     distribution par graine bimodale.
+   - Eccles et al. 2019 § 3 (lu en partie, pp. 1-5 sur 16) : équilibre où le
+     récepteur ignore le canal.
+   - Huttegger et al. 2014, *PNAS*, doi:10.1073/pnas.1400838111 (lu en
+     entier : texte principal PMC4113927 ; annexe SI non lue) : au-delà de
+     2 états, signaux et actes, un ouvert de conditions initiales du
+     réplicateur converge vers des mises en commun partielles ; avec des
+     états non équiprobables, des issues « with basically no communication »
+     sont stables sous sélection-mutation (fig. 1) ; le renforcement de
+     Roth-Erev n'atteint le signalement parfait avec probabilité 1 que dans
+     le cas 2 × 2 équiprobable, et synonymes et goulots sont des limites de
+     probabilité positive. Aucune probabilité chiffrée pour les jeux de
+     Lewis.
+   - Chernyavskiy et al. 2026, *Technologies*, doi:10.3390/
+     technologies14070432 (lu en partie : § 3.1, § 5, § 6, annexes C.3-C.4 ;
+     annexe E connue par § 5.8 et § 6) : jeu de Lewis 3 × 3, EDO de
+     croyances, pas d'émergence sous le seuil β_c (§ 5.4) ; sans terme de
+     renforcement, échec dans 33 % des scénarios (§ 5.6) ; les auteurs
+     écrivent que l'annexe E ne valide pas leurs théorèmes pour le RL
+     profond (§ 6).
+   - Calvano, Possnig, Tolvanen 2026, arXiv:2602.12035 v1 (lu en entier :
+     § 1-8, annexes A.1-A.4 et B ; preuves non vérifiées ligne à ligne) :
+     émetteur Q-learning tabulaire, récepteur qui connaît la politique
+     courante de l'émetteur et y répond au mieux (§ 3.1) ; avec préférences
+     alignées le babillage se défait et toute limite stable a un bien-être
+     normalisé ≥ 1 − O(1/K) (§ 5) ; K = 21, 1 000 runs : 0,980 à 0,997, la
+     révélation complète n'est jamais atteinte (§ 5, fig. 2) ; l'extension
+     ne couvre qu'un récepteur qui apprend plus vite que l'émetteur
+     (annexe B) ; pour un récepteur plus lent, les auteurs conjecturent une
+     issue moins informative, jusqu'au babillage (§ 8, non démontré).
+   - De Silva & Sigmund 2024, *SIAM Review*, doi:10.1137/23m156402x
+     `[résumé moteur]` (texte sous licence ouverte mais éditeur en HTTP 403
+     pour tout accès automatisé, aucun dépôt) : tutoriel annonçant des issues
+     hors équilibre ; n'appuie rien ici.
+   Inférences :
+   - L'existence du phénomène est **recoupée** par quatre sources de nature
+     différente (MARL continu, MARL discret, théorie des jeux évolutionnaires,
+     EDO), mais aucune ne porte sur PPO avec émetteur et récepteur appris
+     ensemble à K = 16 / C = 4.
+   - La contre-nuance de Calvano ne contredit pas 4.4 : elle suppose un
+     récepteur qui répond au mieux, c'est-à-dire qu'elle exclut par
+     hypothèse l'équilibre d'Eccles ; elle déplace la question vers la vitesse
+     d'adaptation du récepteur, sur laquelle sa propre conjecture (§ 8) va
+     dans le sens de 4.4. Avec Huttegger, elle prédit aussi des mises en
+     commun partielles stables plutôt que l'optimum.
+   - Le chiffre p = 0,400 est **celui de Chauhan & Bera, sans seconde
+     source** : aucune source lue ne rapporte un test « canal appris contre
+     silence » comparable (les 33 % de Chernyavskiy et les 0,980-0,997 de
+     Calvano sont d'une autre nature). C'est un test apparié sur 25 graines
+     à distribution bimodale, pas le constat d'un canal inutilisé dans
+     chaque graine.
+     **à recouper** pour le chiffre ; recoupé pour l'existence.
+   - Conséquence pour § 5 (inchangée) : le critère de réfutation doit
+     distinguer « canal inutilisé » de « canal inutilisable » ; s'y ajoute
+     qu'un verdict sur la moyenne doit être lu avec la distribution par
+     graine.
    v0.3 — Fait : dans hukTsKYu8Y le canal appris est utilisé dans les quatre
    modèles de confirmation (p. 7) ; les auteurs écrivent que l'architecture
    rend l'usage possible sans le produire et que le protocole aurait pu le
