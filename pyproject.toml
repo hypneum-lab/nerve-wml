@@ -14,6 +14,14 @@ dependencies = [
   "scikit-learn>=1.8.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/hypneum-lab/nerve-wml"
+Repository = "https://github.com/hypneum-lab/nerve-wml"
+Issues = "https://github.com/hypneum-lab/nerve-wml/issues"
+Changelog = "https://github.com/hypneum-lab/nerve-wml/blob/master/CHANGELOG.md"
+Documentation = "https://github.com/hypneum-lab/nerve-wml/tree/master/docs"
+DOI = "https://doi.org/10.5281/zenodo.19656342"
+
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
