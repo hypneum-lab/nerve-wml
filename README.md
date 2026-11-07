@@ -38,6 +38,15 @@ handling: `docs/superpowers/research/2026-10-25-phase0-truth-errata.md`.
   historical interface. Bylines reduced to the single PI in
   `.zenodo.json`, `CITATION.cff`, `CONTRIBUTORS.md` and the design spec.
 
+- **Erratum 2026-11-07 — Test 6 embedding is pre-spike (Erratum 3 of
+  the phase 0 errata note).** Paper 1 Test 6 (mutual-kNN, Huh et al.)
+  was described as "ANN vs spiking LIF with surrogate-gradient". The
+  LIF embedding it compares is `lif.input_proj(lif_encoder(x))`, taken
+  before the spiking step, although the LIF network is trained with
+  `spike_with_surrogate`. Scope narrowed in the text: the comparison
+  bears on the affine pre-spike embedding of a surrogate-trained LIF,
+  not on the spike-train representation. No number or verdict changed.
+
 ## 2026-06-04 — External-review response (MI bias + prior art)
 
 Two external-review items answered with merged work and two ADRs; the
@@ -254,7 +263,7 @@ always be read as post-VQ and cited alongside the ≈0.10 continuous value.
 | **MoonsTask** (2nd distribution) | MI/H = **0.74** (3 seeds) | v1.1.4 |
 | **Architecture scale** ($d_\text{hidden}=128$) | Gap AMPLIFIES at d=128 on XOR (arch vs pool scale are orthogonal, **null-controlled n=50**): d=16 edge 0.0099 CI95 [0.0073,0.0125] 43/50, 3.14× a symmetric init-variance null; d=128 edge 0.1204 CI95 [0.1075,0.1326] 49/50, **4.83×** null (CI excludes 0, null symmetric). N×d corner check confirms axes independent: pool-scale (N) leaves d=128 gap ~0.20 regardless of N∈{2,64}; arch-scale (d) amplifies ~6–10× at fixed N. Claim B survives. | `figures/bigger_arch_scaling.pdf`, `papers/paper1/figures/orthogonality_null_n50.json`, `papers/paper1/figures/ortho_corner_check_n10.json`, `scripts/orthogonality_null_replication.py` |
 | **Temporal streaming** (16-token sequence) | MI/H = **0.72** at trained step, **0.71** at filler step — structural alignment | `figures/temporal_info_tx.pdf` |
-| **Platonic RH alignment** (Huh 2024, pre-VQ mutual-kNN) | MLP ↔ LIF = **0.174** at k=10 (18.8× random, 3 seeds); stable across k∈[5,50] | `figures/platonic_rh_alignment.json` |
+| **Platonic RH alignment** (Huh 2024, pre-VQ mutual-kNN) | MLP ↔ LIF = **0.174** at k=10 (18.8× random, 3 seeds); stable across k∈[5,50]. The LIF embedding is taken before the spiking step (`lif.input_proj(lif_encoder(x))`), not the spike trains (Erratum 3, 2026-11-07) | `figures/platonic_rh_alignment.json` |
 | **Real neural data** (Sleep-EDF EEG, v1.6.0) | See paper Test (9); Claim B confirmed on 5-class sleep-stage via `MlpWML.from_spectrogram` + d_hidden=128 | `figures/mi_eeg_d128_spectro.json` |
 | **Frozen-encoder baseline** (review F3, v1.7.0) | Shared MI/H=0.95 (matches nerve-wml Test 1), Distinct MI/H=0.76 (without shared frontend); Claim B reframed as "VQ protocol supplies shared frontend through codebook" | `figures/baseline_frozen_encoder.json` |
 | **Matched-capacity scale sweep** (Sleep-EDF, v1.7.0) | Sweet spot at d=128: MI/H=0.72, MLP=0.82, LIF=0.83, gap=0.006. Scale-invariant polymorphy at d ∈ {32, 64, 128}. d=16 insufficient for LIF convergence on real EEG; d=256 MLP overfits while LIF holds | `figures/eeg_matched_scale_sweep.json` |

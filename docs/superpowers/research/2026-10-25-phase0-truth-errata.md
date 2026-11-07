@@ -131,6 +131,21 @@ point M2).
   nerve-wml contributors" removed from the author line.
 - `papers/paper1/main.tex` already had a single author; unchanged.
 
+## Erratum 3 — Test 6 embedding is taken before the spiking step (2026-11-07)
+
+Added 2026-11-07 (PI decision R5 of the hypotheses refresh, finding
+N-10); the rest of this note is unchanged. Paper 1 presented Test 6
+(mutual-kNN alignment, Huh et al.) as "ANN vs spiking LIF with
+surrogate-gradient". In `scripts/platonic_rh_alignment.py` the LIF
+embedding is `lif.input_proj(lif_encoder(x_eval))` (line 112), two
+`Linear` layers taken before the spiking step, while the LIF network is
+trained with `spike_with_surrogate` (line 85). "Spiking LIF trained with
+surrogate gradient" stays exact; the claim is narrowed: the comparison
+bears on the affine pre-spike embedding of a surrogate-trained LIF, not
+on the spike-train representation. Edited: `papers/paper1/main.tex`
+(abstract, Related Work, Test 6), `README.md`. No number or verdict
+changed.
+
 ## Handling
 
 - Zenodo: no record exists for v1.9.x (see the 2026-10-24 L1a erratum);
