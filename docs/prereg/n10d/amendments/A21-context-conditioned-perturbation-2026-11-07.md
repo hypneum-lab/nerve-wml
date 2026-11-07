@@ -1,6 +1,9 @@
 # A21 — dérangement conditionné au contexte et puissance de la statistique de chute (proposition, 2026-11-07)
 
-- **Statut** : PROPOSITION, rien n'est appliqué. `protocol.md`, la note de
+- **Statut** : PROPOSITION, rien n'est appliqué à `protocol.md`. Trois points
+  ont été tranchés par le PI le 2026-11-07 à 09:28 CET (§ 6) ; le texte
+  d'amendement du § 5 en tient compte, mais il reste à reporter dans
+  `protocol.md`. `protocol.md`, la note de
   lecture et tout autre fichier existant sont inchangés. Ni gel, ni tag, ni run.
 - **Base** : `prereg/n10d-skeleton` à `c0f6760` (PR #100). Les numéros de ligne
   `protocol.md:N`, `spec.py:N`, etc. renvoient à ce commit ; le code est sous
@@ -22,12 +25,12 @@
 2. Fait : aucun code d'environnement n'existe encore (`backends.py:22,27` lèvent) ; ce qui précède est une spécification, pas une implémentation auditée.
 3. Sur `asym`, la seule information privée de l'émetteur est t, c.-à-d. le contenu dont on veut mesurer l'usage ; sur `sym`, l'émetteur ne voit rien de plus que l'auditeur.
 4. Dérivation (§ 2) : sous un dérangement qui tire le message d'un épisode indépendant, le succès attendu vaut exactement 1/C pour **tout** auditeur, quoi que voie l'émetteur ; le conditionnement au contexte ne change pas cette espérance.
-5. Conclusion : le contrôle 1 (dérangement conditionné) est **sans objet** pour N10-D ; on propose à la place deux assertions d'audit (4a) qui garantissent les hypothèses de la dérivation.
-6. S'il était quand même voulu, la version par groupes est dégénérée à n_eval = 500 (≈ 120 épisodes sur 500 groupables par ensemble, ≈ 6 par tuple ordonné) ; la seule version praticable est le « jumeau » à cible retirée dans les candidats (§ 3).
+5. Conclusion : le contrôle 1 (dérangement conditionné) est **sans objet** pour N10-D ; à la place, deux assertions d'audit (4a) qui garantissent les hypothèses de la dérivation (**décidé, PI 2026-11-07 09:28 CET**).
+6. La version par groupes est dégénérée à n_eval = 500 (≈ 120 épisodes sur 500 groupables par ensemble, ≈ 6 par tuple ordonné) ; le « jumeau » à cible retirée parmi les candidats (§ 3.3) est **gardé comme évaluation exploratoire**, hors des verdicts de H1 et de NWML-N1 (décidé 09:28).
 7. Puissance (§ 4, Monte-Carlo 2 000 simulations, k = 20, n_eval = 500, test des signes à α = 0,05, m_k = 15) : l'effet attendu sur `eng` (chute moyenne 0,60 à π = 0,8) est détecté avec une probabilité 0,993 par backend (≈ 0,986 pour les deux).
 8. Effet minimal détectable à puissance 0,9 : chute homogène ≈ 0,028 (sans hétérogénéité entre graines) ou ≈ 0,04 (sd entre graines 0,03) ; en mélange bimodal, fraction de graines « qui utilisent » π ≥ ≈ 0,68 ; risque de première espèce sous chute nulle 0,011.
-9. Coût : **zéro entraînement** en plus (le bras `eng` est déjà entraîné pour H1 ; `msg_shuffle` est déjà prévu en évaluation seule) ; la vérification de puissance elle-même est une simulation. Le jumeau, s'il était retenu, coûterait 40 évaluations de 500 épisodes.
-10. Décisions PI (§ 6) : constater le contrôle 1 sans objet ; ajouter deux assertions d'audit ; faire du rejet sur `eng` la condition de lecture d'un non-rejet sur `learned` ; appariement et taille de lot de `msg_shuffle`.
+9. Coût : **zéro entraînement** en plus (le bras `eng` est déjà entraîné pour H1 ; `msg_shuffle` est déjà prévu en évaluation seule) ; la vérification de puissance elle-même est une simulation. Le jumeau coûte 40 évaluations de 500 épisodes par bras perturbé ; intact, `msg_shuffle` et jumeau sont évalués sur les mêmes 500 épisodes (décidé 09:28).
+10. Décidé le 2026-11-07 09:28 CET (§ 6) : contrôle 1 sans objet + audit 4a + jumeau exploratoire ; rejet de R0 sur `eng` requis pour lire un non-rejet sur `learned` ; appariement sur 500 épisodes. Restent ouverts : `msg_shuffle` sur `learned` et le lien avec NH-113.
 
 ## 1. Ce que voient l'émetteur et l'auditeur (faits)
 
@@ -155,10 +158,11 @@ texte (§ 1, « ce que rien n'énonce ») :
 D'où la proposition A21 (§ 5) : deux assertions d'audit en 4a au lieu d'un
 contrôle de plus.
 
-## 3. Dessin du contrôle 1 s'il était quand même retenu
+## 3. Dessin du contrôle 1 et variante exploratoire retenue
 
-Donné pour que le PI puisse trancher en connaissance de cause ; non recommandé
-(§ 2.4).
+La version par groupes (§ 3.2) n'est pas retenue. La variante « jumeau »
+(§ 3.3) est gardée par le PI comme évaluation **exploratoire** (décision
+2026-11-07 09:28 CET, option b) ; elle n'est pas un contrôle du dessin.
 
 ### 3.1 « Même contexte » opérationnel
 
@@ -184,9 +188,10 @@ des épisodes au mieux : statistique sur ≈ 120 épisodes non représentatifs d
 lot, ou sur ≈ 6. Augmenter n_eval pour remplir les groupes ordonnés demanderait
 de l'ordre de 10⁵ épisodes ; n_eval = 500 est fermé (A8, `protocol.md:44`).
 
-### 3.3 Variante praticable : le jumeau à cible retirée
+### 3.3 Variante praticable : le jumeau à cible retirée (exploratoire, décidée)
 
-Pour chaque épisode i, garder o_i et tirer t*_i uniformément parmi les C
+« Retirée » veut dire **tirée à nouveau** parmi les candidats, pas ôtée de
+l'ensemble : la cible du jumeau reste un des C candidats visibles. Pour chaque épisode i, garder o_i et tirer t*_i uniformément parmi les C
 candidats de i (coïncidence t*_i = t_i permise, comme l'absence d'exclusion
 d'étiquette de `interfaces.py:61-63`) ; l'auditeur reçoit le message que
 l'émetteur gelé émet pour t*_i. C'est un dérangement « de même contexte » à
@@ -199,10 +204,27 @@ tomberait à 0, un auditeur aveugle resterait à 1/C).
 
 Coût : une évaluation de 500 épisodes de plus par (backend, graine, bras
 perturbé), sans entraînement : 2 × 20 = 40 évaluations pour `eng`, 40 de plus
-si on l'applique aussi à `learned`. Risque : aucun gain d'information en
-espérance (§ 2.3) ; un écart observé entre jumeau et `msg_shuffle` signalerait
-une violation de (H-a) à (H-e), ce que les assertions d'audit du § 5 visent
-plus directement.
+si `msg_shuffle` est un jour appliqué à `learned` (point encore ouvert, § 6).
+Évaluée sur les mêmes 500 épisodes que l'évaluation intacte et `msg_shuffle`
+(décision d'appariement, § 5 c).
+
+Statut (décidé 09:28) : **exploratoire**, rapporté à côté des résultats ; il
+ne dépense pas d'α, n'entre ni dans les verdicts A à D de H1 ni dans la
+lecture de NWML-N1, et n'est pas une porte.
+
+Ce qu'il ajoute (inférence) : sous (H-a) à (H-e), son espérance est celle de
+`msg_shuffle`, 1/C (§ 2.3). Il ne mesure donc rien de neuf en espérance ; il
+sert de **vérification** que l'auditeur ne lit pas la cible dans l'ensemble
+des candidats. Mécanisme : avec `msg_shuffle`, le message nomme une identité
+absente des candidats dans ≈ 3/4 des épisodes, et l'auditeur retombe sur sa
+règle de repli, qui ne dépend que des candidats ; avec le jumeau, le message
+nomme toujours un candidat. Si (H-b) tient, les deux valent 1/C. Si
+l'ensemble ou l'ordre des candidats trahit t (H-b violée), le repli peut
+dépasser 1/C sous `msg_shuffle` et pas sous le jumeau, où l'auditeur `eng`
+suit le message. Un écart `msg_shuffle` − jumeau au-dessus du bruit binomial
+(≈ 0,027 par graine) pointe vers une lecture de la cible dans les candidats ;
+un écart dans l'autre sens, vers une autre violation de (H-a) à (H-e). Dans
+les deux cas, c'est un signal d'audit, pas un résultat.
 
 ## 4. Puissance de la statistique de chute sur `eng`
 
@@ -302,54 +324,87 @@ Lecture (inférences) :
   petits MLP (tronc 2 × 256 en valeur de travail, `protocol.md:44`) ; 500
   épisodes devraient prendre des secondes, à mesurer avec TBD-11.
 
-## 5. Texte d'amendement proposé (pour `protocol.md` § 8 ; NON appliqué)
+## 5. Texte d'amendement proposé (pour `protocol.md` § 8 et § 9 ; NON appliqué)
 
-> - A21 (2026-11-07, PI decision 09:17 CET after watch round 2,
->   `veille/tour-2-2026-11-07.md` § 3.2; proposal
->   `amendments/A21-context-conditioned-perturbation-2026-11-07.md`).
->   (a) No context-conditioned derangement control is added. The speaker
->   observes t only (section 7, item 2), so on `asym` its only private
->   information is the target and on `sym` it sees nothing the listener does
->   not. Under independent episodes, a target uniform over the C slots given
->   the listener observation (control 4a), a derangement drawn independently
+Les trois phrases A21-1 à A21-3 traduisent les décisions du PI du 2026-11-07
+09:28 CET ; A21-4 est le constat de puissance qui les justifie. À reporter
+telles quelles en § 8 (liste des amendements) ; la ligne de § 9 suit.
+
+> - **A21-1** (control 1, context-conditioned derangement; PI decision
+>   2026-11-07 09:28 CET, option b). No context-conditioned derangement
+>   control is added: the speaker observes the target identity only (section
+>   7, item 2), and under independent episodes, a target uniform over the C
+>   slots given the listener observation, a derangement drawn independently
 >   of the targets, per-episode listener decisions and valid actions, the
->   expected `msg_shuffle` success is exactly 1/C for any listener and any
->   speaker observation, conditioned on the visible context or not; per-context
->   groups would be degenerate at n_eval = 500 (about 120 of 500 episodes
->   groupable by candidate set, about 6 by ordered tuple).
->   (b) Control 4a gains two assertions, committed with the environment hash:
->   the speaker observation holds the target identity only (no candidate, no
->   order, no episode index; for EGG, the data-file fields read by the sender);
->   at evaluation the listener decides each episode from its own observation
->   and message only (no batch statistics, no cross-episode state).
->   (c) `msg_shuffle` is evaluated on the same 500 evaluation episodes as the
->   intact `eng` evaluation, deranged over the whole 500-episode batch.
->   (d) Power of the perturbation statistic (secondary, NWML-N1, no alpha
->   spent): rule R0 = one-sided sign test at 0.05 (15 of 20) and 95 % CI
->   lower bound of the mean per-seed drop > 0. Planning-model power of R0 on
->   `eng` at k = 20, n_eval = 500: 0.993 per backend at pi = 0.8, 0.970 at
->   0.75; minimal detectable homogeneous drop at power 0.9 about 0.03 (0.04
->   with a between-seed sd of 0.03); about two thirds of seeds under the
->   bimodal model. A non-rejection of R0 on `learned` is reported as "no
->   detectable use" only if R0 rejects on `eng` in the same backend, and
->   always with these detectable sizes. No extra training run; no extra
->   evaluation beyond the 40 `msg_shuffle` evaluations already planned.
+>   expected `msg_shuffle` success is exactly 1/C for any listener, whatever
+>   the speaker observes and whether or not the derangement is conditioned on
+>   the visible context (per-context groups would be degenerate at n_eval =
+>   500). Control 4a gains two assertions, committed with the environment
+>   hash: (i) the speaker observation holds the target identity only (no
+>   candidate, no order, no episode index; for EGG, the data-file fields read
+>   by the sender); (ii) at evaluation the listener decides each episode from
+>   its own observation and message only (no batch statistics, no state shared
+>   across episodes). A twin evaluation is kept as an exploratory evaluation
+>   only: for each evaluation episode the candidates are kept, a twin target
+>   is redrawn uniformly among the C candidates (coincidence allowed), and the
+>   listener receives the frozen speaker's message for the twin target; 40
+>   evaluations per perturbed arm (k = 20 seeds x 2 backends), no training.
+>   Its expectation equals that of `msg_shuffle` (1/C); it checks that the
+>   listener does not read the target from the candidate set. It spends no
+>   alpha, is not a gate, and enters neither the outcomes of section 5 nor the
+>   reading of NWML-N1.
+> - **A21-2** (reading condition of NWML-N1; PI decision 2026-11-07 09:28
+>   CET). Rule R0 on the per-seed drop (one-sided sign test at alpha 0.05,
+>   15 of 20 seeds positive, and lower bound of the 95 % CI of the mean drop
+>   > 0) is the positive power control of the perturbation test: a
+>   non-rejection of R0 on `learned` is read as "no detectable use" only if
+>   R0 rejects on `eng` in the same backend; otherwise the `learned` result is
+>   "non concluant". NWML-N1 stays secondary exploratory and spends no alpha.
+> - **A21-3** (pairing of the perturbed evaluation, section 3 at
+>   `protocol.md:92`; PI decision 2026-11-07 09:28 CET). The intact and every
+>   perturbed evaluation (`msg_shuffle`, twin) of a frozen pair use the same
+>   n_eval = 500 evaluation episodes (same episode seeds), and the
+>   perturbation batch of `Channel.transmit` is the whole set of these 500
+>   episodes.
+> - **A21-4** (power, fact of simulation, no run data). Planning-model power
+>   of R0 on `eng` at k = 20, n_eval = 500: 0.993 per backend at pi = 0.8,
+>   0.970 at 0.75; minimal detectable homogeneous drop at power 0.9 about
+>   0.03 (0.04 with a between-seed sd of 0.03); about two thirds of learning
+>   seeds under the bimodal model; type I 0.011. No extra training run; the
+>   40 `msg_shuffle` evaluations are already planned.
 
-## 6. Ce que le PI doit décider
+Ligne proposée pour `protocol.md` § 9 (nouvelle sous-section « 2026-11-07
+09:28 CET (A21) ») :
 
-1. **Contrôle 1** : (a, recommandé) le constater sans objet et ajouter les deux
-   assertions d'audit 4a (§ 5 b) ; (b) garder en plus le jumeau à cible retirée
-   (§ 3.3) comme évaluation exploratoire, 40 évaluations par bras ; (c) ne rien
-   ajouter.
-2. **Condition de lecture de NWML-N1** : faire du rejet de R0 sur `eng` (même
-   backend) la condition pour lire un non-rejet sur `learned` comme « pas
-   d'usage détectable » (§ 5 d), ou garder NWML-N1 purement descriptif.
+> | A21 | Control 1 void, two control-4a assertions, twin evaluation kept as
+> exploratory (A21-1); R0 on `eng` required to read a non-rejection on
+> `learned` (A21-2); same 500 episodes and one 500-episode perturbation batch
+> (A21-3). Open: `msg_shuffle` on `learned`; NH-113 wording |
+
+## 6. Décisions du PI
+
+### Décidé (2026-11-07 09:28 CET)
+
+1. **Contrôle 1** : option **(b)**. Déclaré sans objet pour les raisons du
+   § 2 ; deux assertions ajoutées à l'audit 4a (observation de l'émetteur
+   réduite à t ; aucun couplage entre épisodes à l'évaluation) ; jumeau à cible
+   retirée gardé comme évaluation exploratoire, 40 évaluations par bras
+   perturbé, sans entraînement, hors des verdicts de H1 et de NWML-N1 (§ 3.3,
+   A21-1).
+2. **Condition de lecture de NWML-N1** : **oui**. Le rejet de R0 sur `eng`
+   dans le même backend est le contrôle positif de puissance exigé pour lire
+   un non-rejet sur `learned` comme « pas d'usage détectable » ; sinon le
+   résultat est « non concluant » (A21-2).
+4. **Appariement et lot** : **fixé**. Mêmes 500 épisodes pour l'évaluation
+   intacte et les évaluations perturbées, lot de perturbation = les 500
+   épisodes (A21-3, `protocol.md:92`).
+
+### Ouvert pour le PI
+
 3. **`msg_shuffle` sur `learned`** (non décidé, `protocol.md:495`) : les
    tailles détectables du § 4.3 disent ce qu'un non-rejet exclurait
-   (utilisation homogène ≥ 0,03-0,04, ou par plus de ≈ 2/3 des graines).
-4. **Appariement et lot** (§ 5 c) : mêmes 500 épisodes pour intact et dérangé,
-   lot de dérangement = les 500 épisodes ; aujourd'hui non fixé
-   (`protocol.md:92`).
+   (utilisation homogène ≥ 0,03-0,04, ou par plus de ≈ 2/3 des graines). A21-2
+   ne s'applique que si ce point est tranché par oui.
 5. **Lien avec la décision 1 du tour 2** (l. 379-382, NH-113 et la
    « randomisation conditionnelle sur l'état complet ») : si le PI garde cette
    mention, le jumeau du § 3.3 en est la seule forme licenciée par le plan
