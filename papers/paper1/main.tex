@@ -628,7 +628,8 @@ comparison class.
 The principal contribution of nerve-wml relative to DVNC is
 therefore not a headline accuracy or MI advantage on matched
 homogeneous configurations: it is the extension to
-\emph{heterogeneous} substrates (ANN $\leftrightarrow$ spiking LIF)
+\emph{heterogeneous} substrates (ANN $\leftrightarrow$ spiking LIF; for the pre-VQ alignment measurement
+the LIF side is the affine pre-spike embedding, \S\ref{sec:info-tx}~(6))
 where substrate-intrinsic asymmetry produces a reproducible
 plateau gap (Test~5 scaling law) that DVNC's symmetric
 architecture cannot address by design. The shared-codebook
@@ -734,7 +735,8 @@ frontend} --- this is the level of code agreement two matched-
 capacity heads reach when forced to operate on structurally
 different features. (iii) nerve-wml's $0.93$ sits close to the
 shared-encoder ceiling while the substrates are structurally
-distinct (MLP vs spiking LIF): the VQ protocol effectively
+distinct (MLP vs spiking LIF; the LIF side of the Test~(6) comparison is its
+pre-spike embedding, \S\ref{sec:info-tx}~(6)): the VQ protocol effectively
 \emph{supplies a shared frontend through the codebook}, extending
 alignment from shared-encoder to heterogeneous-encoder conditions
 at a level comparable to the shared-encoder floor. This is a more
@@ -853,6 +855,7 @@ the \emph{deployable} discrete protocol: the learned codebook transducer
 and the $\gamma/\theta$ PAC channel are load-bearing end-to-end. We
 frame this as a \emph{consolidation} rather than a new phenomenon --- the
 underlying cross-substrate alignment is the Platonic effect of Test~(6)
+(measured on the pre-spike LIF embedding, \S\ref{sec:info-tx}~(6))
 (and, more broadly, of model stitching and relative representations);
 the contribution here is that it survives a concrete
 digital-communication channel, not only a continuous read-out.
