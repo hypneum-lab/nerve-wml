@@ -30,7 +30,7 @@
 7. Puissance (§ 4, Monte-Carlo 2 000 simulations, k = 20, n_eval = 500, test des signes à α = 0,05, m_k = 15) : l'effet attendu sur `eng` (chute moyenne 0,60 à π = 0,8) est détecté avec une probabilité 0,993 par backend (≈ 0,986 pour les deux).
 8. Effet minimal détectable à puissance 0,9 : chute homogène ≈ 0,028 (sans hétérogénéité entre graines) ou ≈ 0,04 (sd entre graines 0,03) ; en mélange bimodal, fraction de graines « qui utilisent » π ≥ ≈ 0,68 ; risque de première espèce sous chute nulle 0,011.
 9. Coût : **zéro entraînement** en plus (le bras `eng` est déjà entraîné pour H1 ; `msg_shuffle` est déjà prévu en évaluation seule) ; la vérification de puissance elle-même est une simulation. Le jumeau coûte 40 évaluations de 500 épisodes par bras perturbé ; intact, `msg_shuffle` et jumeau sont évalués sur les mêmes 500 épisodes (décidé 09:28).
-10. Décidé le 2026-11-07 09:28 CET (§ 6) : contrôle 1 sans objet + audit 4a + jumeau exploratoire ; rejet de R0 sur `eng` requis pour lire un non-rejet sur `learned` ; appariement sur 500 épisodes. Restent ouverts : `msg_shuffle` sur `learned` et le lien avec NH-113.
+10. Décidé le 2026-11-07 09:28 CET (§ 6) : contrôle 1 sans objet + audit 4a + jumeau exploratoire ; rejet de R0 sur `eng` requis pour lire un non-rejet sur `learned` ; appariement sur 500 épisodes. Puis (09:52-09:58) : définition du jumeau confirmée ; `msg_shuffle` étendu à `learned` (A22) ; le lien avec NH-113 est devenu sans objet.
 
 ## 1. Ce que voient l'émetteur et l'auditeur (faits)
 
@@ -379,7 +379,7 @@ Ligne proposée pour `protocol.md` § 9 (nouvelle sous-section « 2026-11-07
 > | A21 | Control 1 void, two control-4a assertions, twin evaluation kept as
 > exploratory (A21-1); R0 on `eng` required to read a non-rejection on
 > `learned` (A21-2); same 500 episodes and one 500-episode perturbation batch
-> (A21-3). Open: `msg_shuffle` on `learned`; NH-113 wording |
+> (A21-3). `msg_shuffle` on `learned`: see A22 |
 
 ## 6. Décisions du PI
 
@@ -399,17 +399,25 @@ Ligne proposée pour `protocol.md` § 9 (nouvelle sous-section « 2026-11-07
    intacte et les évaluations perturbées, lot de perturbation = les 500
    épisodes (A21-3, `protocol.md:92`).
 
-### Ouvert pour le PI
+### Décidé ensuite (2026-11-07 09:52-09:58 CET)
 
-3. **`msg_shuffle` sur `learned`** (non décidé, `protocol.md:495`) : les
-   tailles détectables du § 4.3 disent ce qu'un non-rejet exclurait
-   (utilisation homogène ≥ 0,03-0,04, ou par plus de ≈ 2/3 des graines). A21-2
-   ne s'applique que si ce point est tranché par oui.
+3. **`msg_shuffle` sur `learned`** : **étendu** à la paire `learned`
+   (décision B-1 (a) de la relecture croisée), secondaire exploratoire, sans
+   α, sous la condition de lecture A21-2. Proposition et phrases
+   d'amendement : `A22-learned-msg-shuffle-2026-11-07.md`. A21-2 s'applique
+   donc.
 5. **Lien avec la décision 1 du tour 2** (l. 379-382, NH-113 et la
-   « randomisation conditionnelle sur l'état complet ») : si le PI garde cette
-   mention, le jumeau du § 3.3 en est la seule forme licenciée par le plan
-   (tirage dans la loi connue de t sachant le contexte de l'auditeur), et le
-   § 2.3 montre qu'elle a la même espérance que `msg_shuffle`.
+   « randomisation conditionnelle sur l'état complet ») : **sans objet**. La
+   mention a été retirée de NH-113 le 2026-11-07 à 09:17 CET (décision PI
+   transmise par le coordinateur ; non vérifiée dans le catalogue depuis ce
+   dépôt). Le jumeau du § 3.3 reste une évaluation exploratoire pour la
+   raison du § 3.3 (vérifier que l'auditeur ne lit pas la cible dans les
+   candidats), sans référence à NH-113.
+6. **Sens de « à cible retirée »** : **confirmé** tel qu'écrit au § 3.3
+   (cible du jumeau tirée à nouveau uniformément parmi les C candidats,
+   coïncidence avec t permise).
+
+Plus aucun point de A21 n'est ouvert.
 
 Ces chiffres reposent sur l'hypothèse de planification bimodale
 (`protocol.md:150-156`) et sur un article lu en partie (tour 2 l. 67-73) ; le
