@@ -101,3 +101,27 @@ Files (sha256 including timing fields): kxkm-ai
 `5b1ea8fa2afeeb465b3791346510db15ad36b36bf71152147123631719bd57ed`,
 macM1
 `daa99b4c31f81f5431d504072ba7b4a87070ff2a44a8382a24fae4d1cd32b746`.
+
+## End record (2026-11-08)
+
+Data record only. No analysis, no verdict and no interpretation is made here.
+
+- End: 2026-11-08T04:43:09Z (`logs/campaign.log`: `STOP laneA(relaunch) rc=0`, then
+  `END relaunch`). Host: kxkm-ai.
+- Tag `prereg-hopfield-p8c-relaunch-20261105`, commit
+  `db4eb5ba5644df8dc5622f53f249c19d52a9d82b`.
+- Cells: 520 lines = 20 seeds (32001-32020) x 26 lines, N=16384, alpha=0.5; 20 of 20 seeds
+  complete (`D_steps` 750830 to 750884).
+- sha256 of the uncompressed `cells.jsonl`:
+  `5b43fb46eb2f3c0dae61b56d65011f0487690db229e3c1fd9d20804d80a12a76`. The repository stores it
+  gzipped, as for `results/nh01*`: `results/hopfield_p8c_nocap/n16384/cells.jsonl.gz`
+  (sha256 `f998cb2765ebbf9ca13dffbc402ebe8b1d7e8c7fc904a0c920938012ac254edc`), with
+  `run_info.json` and `SHA256SUMS` (which lists both hashes).
+- Reproducibility control, try1 (`n16384-try1-ceiling18h`, ceiling 18 h) against this relaunch,
+  as defined in `RELAUNCH.md` (equality only, lines with r <= 0.7 and matched rows): 168 of
+  168 lines with r <= 0.7 identical; matched rows 56 of 56 identical.
+- Duration note: seeds 32017-32020 ran about 48 000 s each, against 77 000 to 81 000 s for
+  the other seeds, because wave 3 had 4 parallel tasks instead of 8.
+- Archive on electron-server: `~/hypneum-archives/p1bis-p8c-20261104-20261108/`
+  (`results/hopfield_p8c_nocap/n16384/`, `logs/campaign.log`, `logs/p8c_n16384.log`,
+  `RELAUNCH.md`).
