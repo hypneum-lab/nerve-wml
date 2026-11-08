@@ -9,6 +9,15 @@
 **Data status at drafting:** no NH-01 code and no run exist. Every number below is fixed before any result.
 **Scope:** pilot (N ≤ 256, CPU). Not the N = 1 000 confirmatory run of the catalogue, and not the VQ-codebook part of NH-01 (MI/H ± 0.02, « fraction parasite du codebook VQ −50 % »), which needs the VQ substrate and is explicitly out of scope here.
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record
+[10.5281/zenodo.24053908](https://doi.org/10.5281/zenodo.24053908) (Hypneum Lab lot of
+2026-11-08, file `prereg-nh01-hopfield-dream-20261025.zip`, SHA-256
+`91b53d196634b27b02bcf8ad4bf304594b4ea233e688c10ad4e4526162480d29`) gives the freeze tag
+`prereg-nh01-hopfield-dream-20261025` (commit `bc2f838919756a8dc2249e577cc5fac0f21cf0d2`,
+`swh:1:rev:bc2f838919756a8dc2249e577cc5fac0f21cf0d2`) a verifiable deposit date, level
+L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag;
+anything dated after the tag in this live file is not in the deposit.
+
 ## Statement (verbatim, EN)
 
 Dreaming is Hebbian unlearning at budget t (the dreamed kernel), distinct from uniform `downscale` and from `recombine`. Operationally for this pilot: in a ±1 Hopfield network, the dreaming kernel of Fachechi, Agliari & Barra (2019) changes the attractor landscape (capacity, spurious attractors) in a way that no uniform multiplicative rescaling of the same Hebbian couplings, at matched synaptic budget, can reproduce.

@@ -16,6 +16,15 @@ for `nocomm`; the 13 `eng` entries are earlier development runs of other designs
 **Decision behind it:** PI multiple-choice decision of 2026-10-31, 21:20 CET: prepare the
 pre-registrations for a 24 h access to one DGX Station GB300 on 2026-11-01.
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record
+[10.5281/zenodo.24053908](https://doi.org/10.5281/zenodo.24053908) (Hypneum Lab lot of
+2026-11-08, file `n10c-bis-g7-gb300-freeze-20261031.zip`, SHA-256
+`3457c8625432bb00645d53d2cab4ae529f48ee905932eb091ca4974de1de2b6f`) gives the freeze tag
+`n10c-bis-g7-gb300-freeze-20261031` (commit `44364dc9820056d808a5a88c9e454bce10c91484`,
+`swh:1:rev:44364dc9820056d808a5a88c9e454bce10c91484`) a verifiable deposit date, level
+L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag;
+anything dated after the tag in this live file is not in the deposit.
+
 ## 0. PI decisions 2026-10-31 (QCM, 22:20–22:26 CET; every earlier TBD is closed)
 
 Recorded before any pilot run. Where the text below conflicts with them, they govern.

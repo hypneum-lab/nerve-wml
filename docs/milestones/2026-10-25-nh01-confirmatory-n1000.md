@@ -7,6 +7,15 @@
 **Data status at drafting:** the pilot results (N ≤ 256) are public in `results/nh01/`; **no N = 1 000 cell has been computed** except the timing probe declared below, whose output is discarded. The pilot informs the predictions; it does not enter the confirmatory statistics.
 **Runs excluded by this amendment:** none (the pilot stands as a pilot; its cells are not re-used).
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record
+[10.5281/zenodo.24053908](https://doi.org/10.5281/zenodo.24053908) (Hypneum Lab lot of
+2026-11-08, file `prereg-nh01-confirmatory-20261025.zip`, SHA-256
+`09d1f8bb9f12950003930b58ef1a42b02d24df0dd8c3399a3ea5a9559375b633`) gives the freeze tag
+`prereg-nh01-confirmatory-20261025` (commit `a000f73addde8ff8ac0f28e72a038ad886848f48`,
+`swh:1:rev:a000f73addde8ff8ac0f28e72a038ad886848f48`) a verifiable deposit date, level
+L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag;
+anything dated after the tag in this live file is not in the deposit.
+
 ## What changes with respect to the pilot (binding)
 
 | Item | Pilot | Confirmatory |

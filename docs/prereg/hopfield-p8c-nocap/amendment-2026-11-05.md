@@ -7,6 +7,15 @@
 (about 20:10 CET). Drafted by an agent. The frozen prereg file is not
 modified by this amendment.
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record
+[10.5281/zenodo.24053908](https://doi.org/10.5281/zenodo.24053908) (Hypneum Lab lot of
+2026-11-08, file `prereg-hopfield-p8c-relaunch-20261105.zip`, SHA-256
+`b561ce5b4a8b40b1688113be2e2212f3c5921fea4052dc613cfb1f3937b6fb75`) gives the freeze tag
+`prereg-hopfield-p8c-relaunch-20261105` (commit `db4eb5ba5644df8dc5622f53f249c19d52a9d82b`,
+`swh:1:rev:db4eb5ba5644df8dc5622f53f249c19d52a9d82b`) a verifiable deposit date, level
+L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag;
+anything dated after the tag in this live file is not in the deposit.
+
 ## 1. Decision
 
 On 2026-11-05 the PI decided to stop the N=16384, alpha=0.5 arm of
