@@ -960,7 +960,7 @@ First stable release. All eleven gates pass on commodity Apple Silicon; the pape
 - **Gate P** — Track-P protocol simulator (`track_p/sim_nerve.py`, `track_p/vq_codebook.py`, `track_p/transducer.py`, `track_p/router.py`). Pilots P1–P4 pass on toy signals.
 - **Gate W** — Track-W WML lab (`track_w/mock_nerve.py`, `track_w/mlp_wml.py`, `track_w/lif_wml.py`). MLP ↔ LIF polymorphism gap 0 % on FlowProxyTask 4-class.
 - **Gate M** — merge pipeline (`bridge/sim_nerve_adapter.py`, `bridge/merge_trainer.py`) retaining 100 % of mock baseline.
-- **Gate M2** — four §13.1 scientific shortcuts resolved: P3 γ-priority ablation (26 % collision without rule), W2 true-LIF polymorphie on HardFlowProxyTask (12.1 % gap — honest), W4 rehearsal CL (forgetting 100 % → 0 %), P1 random-init VQ + codebook rotation (dead codes 39 % → 0 %).
+- **Gate M2** — four §13.1 scientific shortcuts resolved: P3 γ-priority ablation (26 % collision without rule), W2 true-LIF polymorphie on HardFlowProxyTask (12.1 % gap — honest), W4 rehearsal CL (forgetting 100 % → 0 %), P1 random-init VQ + codebook rotation (dead codes 39 % → 0 %). [Erratum 2026-11-08: W2 12.1 % figure superseded, see Unreleased]
 - **Paper v0.2** — ablation table, figures 2–4 (W4 forgetting, P1 dead-code curves, W2 histogram), §Threats, §Reproducibility.
 - **Gate Scale** — W1/W2/W4 pilots at N=16 plus W2 stress at N=32; router strongly connected for all N ∈ {4, 8, 16, 32}.
 - **Gate Interp** — `interpret/` package: semantics extractor (`build_semantics_table`), torch k-means (`cluster_codes_by_activation`), plain-HTML report renderer (`render_html_report`). Cluster entropy > 2 bits on toy data.
@@ -975,7 +975,7 @@ First stable release. All eleven gates pass on commodity Apple Silicon; the pape
 ### Scientific findings (honest)
 
 - **FlowProxyTask 4-class saturates** both MLP and LIF substrates at 1.000 — the 0 % polymorphie gap is a degenerate best case. Documented in paper §Threats.
-- **HardFlowProxyTask (12-class XOR on noise)** exposes real variance: `acc_mlp = 0.547`, `acc_lif = 0.480`, **gap = 12.1 %** — violates < 5 % on non-linear tasks. LIF's cosine-similarity decoder lags the MLP π head. Paper claim is now narrowed to linearly-separable regimes; closing the gap on harder tasks is explicit future work.
+- **HardFlowProxyTask (12-class XOR on noise)** exposes real variance: `acc_mlp = 0.547`, `acc_lif = 0.480`, **gap = 12.1 %** — violates < 5 % on non-linear tasks. LIF's cosine-similarity decoder lags the MLP π head. Paper claim is now narrowed to linearly-separable regimes; closing the gap on harder tasks is explicit future work. [Erratum 2026-11-08: superseded, see Unreleased]
 - **Untrained-LIF INT8 mock-runner delta ≈ 19 %** on random inputs — INT8 quantization of binary-like codebooks is coarse. Trained LIFs are expected to tighten.
 
 ### Infrastructure
