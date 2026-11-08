@@ -1,3 +1,6 @@
+> **Superseded 2026-11-08 by protocol v2 (`docs/prereg/n10d/protocol.md` v2);
+> NH-96 kept as positive control of the intervention machinery (PC3), no α.**
+
 # NH-96 - the null that can fail (L0 draft)
 
 Source text (catalogue): "Nul qui peut echouer : si la tache asymetrique donne aussi
