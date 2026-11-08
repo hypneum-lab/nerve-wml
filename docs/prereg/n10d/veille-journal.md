@@ -240,3 +240,193 @@ tour 1 l'avait signalé non résolu).
   maintenues) ; § 5 (trois points à discuter, dessin inchangé) ; § 6
   (marques « à recouper » 2 → 3, aucune levée ; couverture inchangée ;
   saturation non déclarée).
+
+## Tour 3 — 2026-11-08
+
+User-Agent neutre « hypneum-lab reading-gate », 3 s au moins entre deux
+appels arXiv (notices par `id_list` groupé, un téléchargement HTML par
+tour d'outil), aucune adresse e-mail transmise. Identifiants résolus par API
+avant d'être écrits ; aucun identifiant de mémoire. Les deux tours datés du
+06 et du 07/11 (`veille/tour-1-2026-11-06.md`, `veille/tour-2-2026-11-07.md`,
+après contradicteur) ont été lus avant ce tour ; leurs entrées ne sont pas
+recomptées ici. Le rapport du contradicteur n'a pas été consulté.
+
+Objet du tour : les manques listés en § 6 de la note v0.3 (tri des titres
+hors filtre du tour 2 ; snowball de Marincat, de Chauhan & Bera et de
+l'étude parent de Marincat ; bioRxiv hors neurosciences ; Crossref et
+OpenAlex par mots-clés ; lecture intégrale de PoPLi, Zhang & Emu,
+Marincat § 5-§ 7, Eccles ; second résultat pour 4.4 et 4.2).
+
+### Canaux interrogés
+
+| canal | interrogé | remarque |
+|---|---|---|
+| arXiv API | oui | 3 appels `id_list` (8, 7 et 1 notices) ; 6 textes HTML ouverts |
+| OpenReview | non | rien de neuf à demander ; `OAmBy25HHg` (version ICLR 2027 de Chauhan & Bera) non redemandé |
+| Semantic Scholar (snowball) | oui | 3 sources, 6 appels, 2 × 429 puis 200 |
+| bioRxiv | oui | API `details` **par catégorie**, 10 catégories hors neurosciences, 2024-01-01 → 2026-11-08 ; Europe PMC (`SRC:PPR`) en complément |
+| Crossref (revues) | oui | 7 requêtes `query.bibliographic`, `from-pub-date:2019` |
+| OpenAlex | partiel | 6 requêtes `search`, **4 en HTTP 503** (3 essais chacune) ; résolution de 5 DOI |
+| Thèses / HAL | non | couvert au tour 2 (01/11) et le 07/11 (13 requêtes, 0 gardé) |
+| Code et données | oui | GitHub et Hugging Face : vérification du dépôt d'artefacts de Marincat |
+
+### Requêtes exactes et comptes
+
+| canal | requête | brut |
+|---|---|---:|
+| local | tri des titres du `snowball-tour2.tsv` absents de `snowball-tour1.tsv` et hors filtre par titre (recompte : 184 nouveaux, 77 dans le filtre, **107 hors filtre** ; le tour 2 écrivait 176 / 72 / 104, écart dû aux racines du filtre, `emergen`, `communicat`) | 107 |
+| arXiv | `id_list=2610.22026,2606.03280,2608.20054,2610.33020,2003.02979,2506.06609,2604.03266,2610.15163` | 8 |
+| S2 | `/paper/arXiv:2609.11365/references` ; `/citations` | 42 ; 1 |
+| S2 | `/paper/arXiv:2609.34373/references` ; `/citations` | 18 ; 0 |
+| S2 | `/paper/arXiv:2608.20054/references` ; `/citations` | 35 ; 1 |
+| arXiv | `id_list=2609.17637,2608.16347,2608.13317,2608.11676,2607.11967,2502.07552,2204.12982` | 7 |
+| arXiv | `id_list=2512.05654` | 1 |
+| arXiv (HTML) | 2610.37849, 2607.26773, 2609.11365, 1912.05676, 2608.20054, 2609.17637 | 6 textes |
+| Crossref | `emergent communication multi-agent reinforcement learning listener message ablation` | 40 |
+| Crossref | `positive listening emergent communication causal` | 40 |
+| Crossref | `referential game learned communication no communication baseline` | 40 |
+| Crossref | `Lewis signaling game reinforcement learning receiver ignores signal` | 40 |
+| Crossref | `communication channel use intervention multi-agent permuted message` | 40 |
+| Crossref | `spiking neural network emergent communication heterogeneous agents` | 40 |
+| Crossref | `learned discrete messages between modules spiking and artificial neurons` | 40 |
+| OpenAlex | `spiking emergent communication heterogeneous` ; `signaling game reinforcement learning babbling receiver` (`from_publication_date:2019-01-01`) | 4 763 (40 pris) ; 54 (40 pris) |
+| OpenAlex | `emergent communication listener message ablation causal` ; `positive listening emergent communication` ; `referential game no-communication baseline seeds` ; `learned communication channel intervention multi-agent reinforcement learning` | **503 × 4** |
+| Europe PMC | `(SRC:PPR) AND ("emergent communication" OR "learned communication" OR "referential game" OR "signaling game") AND (spiking OR neuromorphic OR "integrate-and-fire")` | 0 |
+| Europe PMC | `(SRC:PPR) AND "emergent communication" AND (ablation OR intervention OR causal OR shuffled OR permuted)` | 2 |
+| Europe PMC | `(SRC:PPR) AND ("multi-agent" OR "multiagent") AND ("learned messages" OR "communication channel") AND ("reinforcement learning")` | 5 |
+| Europe PMC | `(SRC:PPR) AND "positive listening"` | 1 |
+| bioRxiv | `details/biorxiv/2024-01-01/2026-11-08/<curseur>?category=<c>` pour c ∈ {animal behavior and cognition, evolutionary biology, bioengineering, systems biology, biophysics, bioinformatics, ecology, synthetic biology, scientific communication and education, zoology} ; filtre regex sur titre + résumé (emergent/learned communication, learn to communicate, multi-agent, referential/signaling game, positive listening, message passing + agent/module, spiking + communicat + agent/module/learn, communicat + agent/module + ablat/perturb/intervention/causal) | 60 857 |
+| GitHub / HF | `repos/tokenosopher/populus-evidence-partitioning` (+ README) ; `api/models/tokenosopher/populus-evidence-partitioning-checkpoints` | 1 ; 1 |
+
+Comptes brut → dédoublonné → gardé :
+
+- Titres hors filtre du tour 2 : 107 titres lus → 6 résumés ouverts
+  (2610.22026, 2606.03280, 2608.20054, 2610.33020, 2003.02979, 2506.06609)
+  → **3 gardés** (2608.20054, qui change la note ; 2606.03280 et
+  2610.22026, information). Les 101 autres : infrastructure RL, LLM,
+  caches KV, diffusion, stéganographie, jeux de données ; aucun ne porte sur
+  un canal appris entre agents.
+- Snowball S2 (tour 3) : 97 lignes → 85 identifiants distincts → **54
+  hors `snowball-tour1.tsv` et `snowball-tour2.tsv`** → 22 après filtre par
+  titre élargi (+ `interoperab`, `cross-play`, `protocol`) → 7 résumés lus
+  (2609.17637, 2608.16347, 2608.13317, 2608.11676, 2607.11967, 2502.07552,
+  2204.12982) → **4 gardés** (2609.17637, qui change la note ; 2608.16347,
+  2607.11967, 2204.12982, information). Fichier : `snowball-tour3.tsv`.
+  L'étude parent de Marincat est résolue : arXiv:2608.20054 (citée en
+  amont par 2609.11365, titre conforme) ; sa confirmation préenregistrée
+  est arXiv:2609.17637 (citant aval).
+- Crossref : 280 notices brutes → 237 passent le filtre par titre (filtre
+  trop lâche, « signal » et « message ») → 80 titres relus à la main → 8
+  examinés → 5 DOI résolus par OpenAlex (3 avec résumé) → **1 gardé**
+  (information) : doi:10.1109/wsai70435.2026.11708582. Les autres : réseaux
+  de capteurs, télécoms, neurosciences matérielles, communication
+  référentielle humaine.
+- OpenAlex : 2 requêtes servies (80 notices prises) → 1 gardé
+  (information) : arXiv:2512.05654 ; 4 requêtes en 503 persistant,
+  **non vérifiées**.
+- Europe PMC : 8 notices → 0 gardé (robotique, télécoms, COVID, audition).
+- bioRxiv hors neurosciences : 60 857 notices parcourues dans 10
+  catégories → 143 (98 DOI distincts) correspondances de mots-clés → 0
+  gardée(s) (systèmes multi-agents LLM pour la bio-informatique, fourragement collectif appris, populations cellulaires, cognition sociale ; aucune étude d'un message appris entre agents ni d'une intervention sur un canal).
+- Code et données : dépôt `tokenosopher/populus-evidence-partitioning`
+  (MIT pour le code, CC BY 4.0 pour les données ; dernier push 2026-09-14 ;
+  README lu : scripts, résultats JSON, `PREREGISTRATION.md`, `INCIDENTS.md`,
+  dossier `companion/` pour 2609.11365) et dépôt Hugging Face
+  `tokenosopher/populus-evidence-partitioning-checkpoints` (public, 102
+  fichiers, dernière modification 2026-09-13) → **2 gardés** (code et
+  données, non relancés).
+
+### Entrées gardées (identifiant résolu)
+
+| id résolu | auteurs, année | titre | pourquoi gardé | statut de lecture |
+|---|---|---|---|---|
+| arXiv:2608.20054 | Marincat, 2026 (v3) | What You Can't See Is What You Learn: Slot-Selective Evidence Masking Favors Compositional Generalization in Shared-Genome Language-Model Societies | étude parent de 2609.11365 ; 10 paires restreint/global appariées par initialisation et ordre de données ; nul par retournement de signe exact sur les 5 moyennes par initialisation ; coupure de tous les paquets en test = hasard 10/10 ; transplants même-valeur et contrefactuels, suppression, bruit, mélange inter-exemples ; préenregistrement anonymisé | **lue en partie** : § 3 (architecture) à § 7 (limites) ; § 1-2 en résumé, annexes A-F non lues |
+| arXiv:2609.17637 | Marincat, 2026 (v2) | What You Can't See Is Still What You Learn: A Preregistered Sixty-Society Confirmation That Evidence Masking Drives Compositional Generalization | confirmation préenregistrée, 60 sociétés, 6 strates d'initialisation × 2 ordres, test de retournement de signe à six groupes, contrastes C1-C6, all-cut au hasard 12/12 ; batterie mécanisme non décisionnelle avec cellules intact / même-valeur / contrefactuel / contrefactuel apparié sur l'évidence / suppression (zéro) / **dérangé** (donneur aléatoire de valeur différente) / bruit | **lue en partie** : § 5 (résultats, Table 4) et début de § 6 (Table 5) ; reste non lu |
+| arXiv:2606.03280 | Zhang & Xin, 2026 | A Negative Result on Cross-Model Activation Transfer in a Pythia Multi-Hop Setting | alignement linéaire hors ligne (cosinus ≈ 0,97) insuffisant pour une communication causale utile dans le récepteur ; troisième preprint pour § 3 l. 7, LLM gelés | `[résumé moteur]` |
+| arXiv:2608.16347 | Cardenas Piepereit, 2026 | Architecture-Dependent Causal Transfer of Activation States Across Large Language Models | effet causal préenregistré d'un transfert projeté entre architectures décodeurs ; **nuance** § 3 l. 7 (un alignement appris récupère quelque chose) | `[résumé moteur]` |
+| arXiv:2610.22026 | Deng, Liu, Zhu, 2026 | Augment the Cache, Replace the Activation: A 2x2 Study of Internal-State Sharing | « 2 × 2 » = porteur × mécanisme de fusion, pas nécessité × suffisance ; ne recoupe **pas** § 3 l. 5 | `[résumé moteur]` |
+| arXiv:2607.11967 | Truong & Phan, 2026 | Beyond Coordinate Gauge: An Audited Protocol for Detecting Donor-Specific Functional Fingerprints after Neural Collapse | protocole audité de transplantation entre réseaux indépendants (5 réseaux, 20 paires, p = 0,0083 par permutation exacte) ; distingue détectabilité, transplantabilité, persistance causale | `[résumé moteur]` |
+| arXiv:2204.12982 | Rita, Strub, Grill, Pietquin, Dupoux, 2022 | On the role of population heterogeneity in emergent communication | la structure du langage émergent ne dépend que de l'écart **relatif** de vitesse d'apprentissage entre émetteur et auditeur ; source neuronale pour le lien « vitesse d'adaptation du récepteur » de la note § 4.4 (Hofbauer & Huttegger, Calvano), mais porte sur la structure, pas sur le non-usage | `[résumé moteur]` |
+| doi:10.1109/wsai70435.2026.11708582 | WSAI 2026 (auteurs non lus) | Message Masking and Curriculum Adversarial Training for Robust Emergent Communication in Cooperative Multi Agent Systems | version en actes du travail `uyIn9jZ70C` (tour du 06/11) ; « message masking » = mettre à zéro la copie propre du message dans l'observation de l'auditeur pour forcer la dépendance au canal (raccourci caché) ; information pour § 3 l. 2 | `[résumé moteur]` (OpenAlex) |
+| arXiv:2512.05654 | Jang, Song, Lee, Shim, 2025 | A Note on Emergent Behavior in Multi-agent Systems Enabled by Neuro-spike Communication | synchronisation d'agents hétérogènes par impulsions 1 bit (théorie du contrôle) ; aucun message appris, aucune intervention : **ne touche pas** § 4.2, consigné comme absence | `[résumé moteur]` |
+| GitHub `tokenosopher/populus-evidence-partitioning` ; HF `tokenosopher/populus-evidence-partitioning-checkpoints` | Marincat, 2026 | artefacts de 2608.20054 et 2609.11365 | code MIT, données CC BY 4.0, préenregistrement, 20 checkpoints finaux + cartes d'alignement P1 ; seconde nature (code et données) pour les lignes tenues par Marincat | README lu ; rien relancé |
+
+Lectures ciblées du plan (sources déjà dans la note, lues plus loin à ce
+tour ; détail en § 7 de la note) : 2610.37849 (PoPLi, § 3.1 fin à § 6),
+2607.26773 (Zhang & Emu, travaux liés à conclusion), 2609.11365 (Marincat,
+§ 5-§ 8 et reproductibilité), 1912.05676 (Eccles, § 3 fin, § 4-§ 5).
+
+Non gardés mais relus en résumé (trace) : 2003.02979 (Other-Play,
+méthode de coordination zéro-coup, référence de Chauhan & Bera) ;
+2506.06609 (recollage de modèles, SAE) ; 2610.33020 (confusion soi/autre
+dans des caches partagés, LLM) ; 2608.13317 et 2608.11676 (ponts latents
+sans entraînement ou entre familles de LLM, pas d'audit causal) ;
+2502.07552 (traduction non supervisée de communication émergente) ;
+doi:10.1109/icons62911.2024.00055 (SNN évolués homogènes, essaim) ;
+doi:10.1109/icmi65310.2025.11141291 (méta-RL, protocoles émergents) ;
+doi:10.1007/s10458-024-09665-6 et doi:10.5220/0013383400003905 (titre seul,
+pas de résumé OpenAlex).
+
+### Ce que le tour a changé dans la note (v0.4)
+
+- § 2 : quatre sources passent de « lues en partie » à « corps lu en
+  entier » (PoPLi, Zhang & Emu, Marincat, Eccles) ; deux sources ajoutées
+  « lues en partie » (2608.20054, 2609.17637).
+- § 3 : l. 2 et l. 3a reçoivent la décomposition présence / contenu de
+  Zhang & Emu lue (GSM8K, Qwen3-4B : −1,00 pp = −6,17 pp autre-exemple
+  + 5,17 pp contenu) ; l. 4 reçoit le message **constant** imposé d'Eccles
+  (Table 3), les transplants et la cellule « dérangée » préenregistrée de
+  Marincat (parent et confirmation), avec code et checkpoints publics ;
+  l. 7 (cross-play) passe à **recoupé à la lettre** (article + code et
+  données, dépôt vérifié par API, contenu non relu) ; l. 10 (positive
+  listening partenaire contre étranger) : résultats de PoPLi lus
+  (Δ_PL = 0,615 [0,453 ; 0,751] avec code, −0,027 [−0,112 ; 0,044] sans ;
+  agents LM, émetteur scripté : « pas encore pour des codes appris »).
+- § 4.1 : Marincat (parent et confirmation) combine plan apparié par
+  initialisation × ordre, nul par retournement de signe dans les strates et
+  intervention sur paquets d'agents dont l'interface est apprise ; mais
+  aucun bras entraîné sans canal, backbone gelé, supervision par entropie
+  croisée, paquets continus. L'absence du dessin complet est constatée sur
+  9 sources lues et 7 canaux.
+- § 4.2 : rien de neuf ne touche le cœur (2512.05654, ICONS 2024 : ne
+  touchent pas) ; marque maintenue.
+- § 4.4 : **la marque « chiffre » est levée dans sa formulation
+  reformulée** : Eccles 2019 § 4.1 Table 1 (lu) donne un second résultat
+  chiffré indépendant (0/50 runs sans biais apprennent à utiliser un canal
+  nécessaire, IC de Wilson 0,00-0,07 ; récompense 0,1 = niveau sans
+  communication ; Treasure Hunt : 28 % de runs, IC 0,18-0,42) ; la valeur
+  p = 0,400 et la bimodalité restent propres à Chauhan & Bera.
+- § 5 : deux points à discuter ajoutés (message constant d'Eccles comme
+  précédent du « message gelé » ; retournement de signe par strate de
+  Marincat comme gabarit du nul apparié).
+- § 6 : marques « à recouper » 3 → 2 dans le décompte de la note (5 → 3
+  dans le décompte des tours du 06-07/11) ; couverture 6 canaux sur 6 ;
+  saturation non déclarée.
+
+### Saturation
+
+Entrées nouvelles pertinentes gardées ce tour : 12 (10 identifiants
+résolus + 2 dépôts), sur 427 identifiants nouveaux examinés
+(54 du snowball, 107 hors filtre du tour 2, 80 OpenAlex, 80 titres Crossref
+relus, 8 Europe PMC, 143 (98 DOI distincts) bioRxiv). **Deux** entrées nouvelles
+changent une phrase de la note (2608.20054, 2609.17637), soit
+0,5 % ; le reste de ce que le tour change vient des lectures
+intégrales de sources déjà gardées (Eccles, PoPLi, Zhang & Emu, Marincat).
+Troisième tour consécutif sous 5 % pour les entrées nouvelles du snowball
+(tour 2 : 0,6 % ; 07/11 : 0,8 % ; ici 1 sur 54, 1,9 %), mais chaque tour a
+encore changé la note : **non saturé**.
+
+### Non résolus / inaccessibles
+
+- OpenAlex : 4 requêtes `search` sur 6 en HTTP 503 (3 essais à 5 s) ;
+  l'API `works/<DOI>` a répondu.
+- Semantic Scholar : 2 réponses 429 sur 6 appels, reprise à 5 s, tout a
+  répondu.
+- bioRxiv : l'API `details` sans filtre de catégorie (192 520 notices sur
+  la fenêtre, 30 par page) était trop lente (deux semaines de 2024 en six
+  minutes) ; abandonnée au profit du balayage par catégorie. Les catégories
+  non listées ci-dessus (biologie cellulaire, microbiologie, génomique…)
+  n'ont pas été balayées.
+- Version en actes de Chauhan & Bera (`OAmBy25HHg`) : non redemandée.
+- Annexes non lues : PoPLi A-E ; Eccles A-E ; 2608.20054 A-F ; 2609.17637
+  § 1-4, § 7-9 et annexes.

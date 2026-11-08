@@ -1,0 +1,98 @@
+source	direction	id	annee	titre	premier_auteur	source_api
+arXiv:2609.11365	amont	arXiv:2608.17050	2026	Frozen Memory Is Not Enough: Rethinking External Memory as Extraction	Ming-Yuan Li	s2
+arXiv:2609.11365	amont	arXiv:2608.16347	2026	Architecture-Dependent Causal Transfer of Activation States Across Large Language Models	Fernando Cardenas Piepereit	s2
+arXiv:2609.11365	amont	arXiv:2608.13317	2026	StateBridge: Training-free Hidden-state Alignment for Latent Communication in LLM Multi-Agent Systems	Yan-Wen Peng	s2
+arXiv:2609.11365	amont	arXiv:2608.11676	2026	XBridge: Entity-Grounded Latent Bridge for Heterogeneous LLM Communication	Wooseong Yang	s2
+arXiv:2609.11365	amont	arXiv:2608.09521	2026	One Adapter Pair per Model: A Universal Activation Interface for Language Models	Su-Hyeon Kim	s2
+arXiv:2609.11365	amont	arXiv:2608.04893	2026	When Does Latent Communication Pay? A Causal Audit of Relayed KV Caches in Multi-Agent LLMs	Jiaming Cheng	s2
+arXiv:2609.11365	amont	arXiv:2608.03644	2026	Is Inter-Seed Cross-Play Enough? Evaluating the Robustness of Zero-Shot Coordination Algorithms to Implementation Details	Maksymilian Wolski	s2
+arXiv:2609.11365	amont	arXiv:2607.27617	2026	Hidden APIs in Language Models: Discovering Reusable Causal Interfaces from Forked Futures	Si-Yuan Ma	s2
+arXiv:2609.11365	amont	arXiv:2607.26773	2026	Do Latent Channels Actually Communicate? A Causal Audit of Latent Multi-Agent LLM	Hui-Xiang Zhang	s2
+arXiv:2609.11365	amont	arXiv:2607.11967	2026	Beyond Coordinate Gauge: An Audited Protocol for Detecting Donor-Specific Functional Fingerprints after Neural Collapse	Xuan Khanh Truong	s2
+arXiv:2609.11365	amont	arXiv:2606.03280	2026	A Negative Result on Cross-Model Activation Transfer in a Pythia Multi-Hop Setting	Pei-Yan Zhang	s2
+arXiv:2609.11365	amont	arXiv:2601.21568	2026	Bridging Functional and Representational Similarity via Usable Information	Antonio Almud'evar	s2
+arXiv:2609.11365	amont	arXiv:2511.00973	2025	Keys in the Weights: Transformer Authentication Using Model-Bound Latent Representations	Ayse S. Okatan	s2
+arXiv:2609.11365	amont	arXiv:2504.14871	2025	Natural Fingerprints of Large Language Models	Teppei Suzuki	s2
+arXiv:2609.11365	amont	arXiv:2502.07552	2025	Unsupervised Translation of Emergent Communication	Ido Levy	s2
+arXiv:2609.11365	amont	arXiv:2501.06164	2025	Model Alignment Search	Satchel Grant	s2
+arXiv:2609.11365	amont	arXiv:2412.15115	2024	Qwen2.5 Technical Report	Qwen An Yang	s2
+arXiv:2609.11365	amont	arXiv:2306.13812	2023	Maintaining Plasticity in Deep Continual Learning	Shibhansh Dohare	s2
+arXiv:2609.11365	amont	arXiv:2305.05821	2023	Context-dependent communication under environmental constraints	Krzysztof Glówka	s2
+arXiv:2609.11365	amont	arXiv:2209.15430	2022	Relative representations enable zero-shot latent space communication	Luca Moschella	s2
+arXiv:2609.11365	amont	arXiv:2209.04836	2022	Git Re-Basin: Merging Models modulo Permutation Symmetries	Samuel K. Ainsworth	s2
+arXiv:2609.11365	amont	arXiv:2205.07802	2022	The Primacy Bias in Deep Reinforcement Learning	Evgenii Nikishin	s2
+arXiv:2609.11365	amont	arXiv:2204.12982	2022	On the role of population heterogeneity in emergent communication	Mathieu Rita	s2
+arXiv:2609.11365	amont	arXiv:2106.07682	2021	Revisiting Model Stitching to Compare Neural Representations	Yamini Bansal	s2
+arXiv:2609.11365	amont	arXiv:2106.02997	2021	Causal Abstractions of Neural Networks	Atticus Geiger	s2
+arXiv:2609.11365	amont	arXiv:2106.00042	2021	A study on the plasticity of neural networks	Tudor Berariu	s2
+arXiv:2609.11365	amont	arXiv:2103.08067	2021	Quasi-Equivalence Discovery for Zero-Shot Emergent Communication	Kalesha Bullard	s2
+arXiv:2609.11365	amont	arXiv:2004.14975	2020	Investigating Transferability in Pretrained Language Models	Alex Tamkin	s2
+arXiv:2609.11365	amont	arXiv:2003.02979	2020	"Other-Play" for Zero-Shot Coordination	Heng-Yuan Hu	s2
+arXiv:2609.11365	amont	arXiv:2002.06305	2020	Fine-Tuning Pretrained Language Models: Weight Initializations, Data Orders, and Early Stopping	Jesse Dodge	s2
+arXiv:2609.11365	amont	arXiv:1912.05671	2019	Linear Mode Connectivity and the Lottery Ticket Hypothesis	Jonathan Frankle	s2
+arXiv:2609.11365	amont	S2:538dbb608312b0a107cf98ccbaca2e0f563e2a61	2019	On Warm-Starting Neural Network Training	Jordan T. Ash	s2
+arXiv:2609.11365	amont	arXiv:1811.09751	2018	Characterizing and Avoiding Negative Transfer	Zirui Wang	s2
+arXiv:2609.11365	amont	DOI:10.1016/j.cognition.2018.03.002	2018	Contextual predictability shapes signal autonomy.	James Winters	s2
+arXiv:2609.11365	amont	arXiv:1711.08856	2017	Critical Learning Periods in Deep Neural Networks	Alessandro Achille	s2
+arXiv:2609.11365	amont	arXiv:1411.5908	2014	Understanding Image Representations by Measuring Their Equivariance and Equivalence	K. Lenc	s2
+arXiv:2609.11365	amont	DOI:10.1016/j.cognition.2011.10.004	2011	The communicative function of ambiguity in language.	S. Piantadosi	s2
+arXiv:2609.11365	amont	DOI:10.1109/TIT.1973.1055037	1973	Noiseless coding of correlated information sources	D. Slepian	s2
+arXiv:2609.11365	amont	DOI:10.52202/079017-0663	2024	Bridging semantics and pragmatics in information-theoretic emergent communication	Eleonora Gualdoni	s2
+arXiv:2609.11365	amont	DOI:10.1109/TIT.1976.1055508	1976	The rate-distortion function for source coding with side information at the decoder	A. Wyner	s2
+arXiv:2609.11365	amont	S2:fef9e06c339145fa37ce5a4a785a833f335af84a		What You Can’t See Is What You Learn: Restricted Evidence Visibility Favors Compositional Generalization in Shared-Genome Language-Model Societies	Narcis Marincat	s2
+arXiv:2609.11365	amont	S2:?		Failure localization		s2
+arXiv:2609.11365	aval	arXiv:2609.17637	2026	What You Can't See Is Still What You Learn: A Preregistered Sixty-Society Confirmation That Evidence Masking Drives Compositional Generalization	Narcis Marincat	s2
+arXiv:2609.34373	amont	arXiv:2602.02035	2026	Bandwidth-Efficient Multi-Agent Communication through Information Bottleneck and Vector Quantization	Ahmad Farooq	s2
+arXiv:2609.34373	amont	arXiv:2511.01554	2025	Learning what to say and how precisely: Efficient Communication via Differentiable Discrete Communication Learning	Aditya Kapoor	s2
+arXiv:2609.34373	amont	arXiv:2508.02912	2025	Communicating Plans, Not Percepts: Scalable Multi-Agent Coordination with Embodied World Models	Brennen A. Hill	s2
+arXiv:2609.34373	amont	arXiv:2410.13341	2024	Limits to scalable evaluation at the frontier: LLM as Judge won't beat twice the data	Florian E. Dorner	s2
+arXiv:2609.34373	amont	arXiv:2204.05669	2022	An Analysis of Discretization Methods for Communication Learning with Multi-Agent Reinforcement Learning	Astrid Vanneste	s2
+arXiv:2609.34373	amont	arXiv:2110.15349	2021	Learning to Ground Multi-Agent Communication with Autoencoders	Toru Lin	s2
+arXiv:2609.34373	amont	arXiv:2108.13264	2021	Deep Reinforcement Learning at the Edge of the Statistical Precipice	Rishabh Agarwal	s2
+arXiv:2609.34373	amont	arXiv:1912.05676	2019	Biases for Emergent Communication in Multi-agent Reinforcement Learning	Tom Eccles	s2
+arXiv:2609.34373	amont	arXiv:1911.06992	2019	Learning Efficient Multi-agent Communication: An Information Bottleneck Approach	R. Wang	s2
+arXiv:2609.34373	amont	arXiv:1905.12561	2019	Anti-efficient encoding in emergent communication	R. Chaabouni	s2
+arXiv:2609.34373	amont	arXiv:1903.05168	2019	On the Pitfalls of Measuring Emergent Communication	Ryan Lowe	s2
+arXiv:2609.34373	amont	arXiv:1711.00937	2017	Neural Discrete Representation Learning	A. van den Oord	s2
+arXiv:2609.34373	amont	arXiv:1707.06347	2017	Proximal Policy Optimization Algorithms	John D. Schulman	s2
+arXiv:2609.34373	amont	arXiv:1706.08502	2017	Natural Language Does Not Emerge ‘Naturally’ in Multi-Agent Dialog	S. Kottur	s2
+arXiv:2609.34373	amont	arXiv:1605.06676	2016	Learning to Communicate with Deep Multi-Agent Reinforcement Learning	Jakob N. Foerster	s2
+arXiv:2609.34373	amont	DOI:10.1109/IROS.2012.6386109	2012	MuJoCo: A physics engine for model-based control	E. Todorov	s2
+arXiv:2609.34373	amont	arXiv:1209.1695	2012	Decentralized Stochastic Control with Partial History Sharing: A Common Information Approach	Ashutosh Nayyar	s2
+arXiv:2609.34373	amont	S2:?		Partially coupled (bimanual, blind)		s2
+arXiv:2608.20054	amont	arXiv:2608.13317	2026	StateBridge: Training-free Hidden-state Alignment for Latent Communication in LLM Multi-Agent Systems	Yan-Wen Peng	s2
+arXiv:2608.20054	amont	arXiv:2608.11676	2026	XBridge: Entity-Grounded Latent Bridge for Heterogeneous LLM Communication	Wooseong Yang	s2
+arXiv:2608.20054	amont	arXiv:2608.12218	2026	Information Abundance Paradox: Long-Context Training Undermines Parametric Knowledge	Arda Uzunouglu	s2
+arXiv:2608.20054	amont	arXiv:2608.04893	2026	When Does Latent Communication Pay? A Causal Audit of Relayed KV Caches in Multi-Agent LLMs	Jiaming Cheng	s2
+arXiv:2608.20054	amont	arXiv:2608.00418	2026	Making Transformers Logical	Ming-Ze Ma	s2
+arXiv:2608.20054	amont	arXiv:2607.27617	2026	Hidden APIs in Language Models: Discovering Reusable Causal Interfaces from Forked Futures	Si-Yuan Ma	s2
+arXiv:2608.20054	amont	arXiv:2607.26773	2026	Do Latent Channels Actually Communicate? A Causal Audit of Latent Multi-Agent LLM	Hui-Xiang Zhang	s2
+arXiv:2608.20054	amont	arXiv:2607.15714	2026	AC-VLA: Robust Out-of-Distribution Action Execution via Compositional Learning	Xiao-Jiang Peng	s2
+arXiv:2608.20054	amont	arXiv:2607.04926	2026	Input Pathways Shape Few-Shot, Not Zero-Shot, Binding in Tiny Transformers: A Fully-Enumerable Study	Yoshiyuki Ootani	s2
+arXiv:2608.20054	amont	arXiv:2604.03266	2026	Emergent Compositional Communication for Latent World Properties	Tomek Kaszy'nski	s2
+arXiv:2608.20054	amont	arXiv:2507.07207	2025	Scaling can lead to compositional generalization	Florian Redhardt	s2
+arXiv:2608.20054	amont	arXiv:2412.15115	2024	Qwen2.5 Technical Report	Qwen An Yang	s2
+arXiv:2608.20054	amont	arXiv:2308.08155	2023	AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation	Qing-Yun Wu	s2
+arXiv:2608.20054	amont	arXiv:2305.14325	2023	Improving Factuality and Reasoning in Language Models through Multiagent Debate	Yilun Du	s2
+arXiv:2608.20054	amont	arXiv:2303.17760	2023	CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society	G. Li	s2
+arXiv:2608.20054	amont	arXiv:2303.02536	2023	Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations	Atticus Geiger	s2
+arXiv:2608.20054	amont	arXiv:2301.04709	2023	Causal Abstraction: A Theoretical Foundation for Mechanistic Interpretability	Atticus Geiger	s2
+arXiv:2608.20054	amont	DOI:10.1162/tacl_a_00524	2022	The Emergence of Argument Structure in Artificial Languages	T. Bosc	s2
+arXiv:2608.20054	amont	arXiv:2209.15342	2022	Emergent Communication: Generalization and Overfitting in Lewis Games	Mathieu Rita	s2
+arXiv:2608.20054	amont	arXiv:2106.08170	2021	How Modular Should Neural Module Networks Be for Systematic Generalization?	Vanessa D'Amario	s2
+arXiv:2608.20054	amont	arXiv:2106.02997	2021	Causal Abstractions of Neural Networks	Atticus Geiger	s2
+arXiv:2608.20054	amont	arXiv:2106.02626	2021	Dynamics of specialization in neural modules under resource constraints	Gabriel B'ena	s2
+arXiv:2608.20054	amont	arXiv:2103.01197	2021	Coordination Among Neural Modules Through a Shared Global Workspace	Anirudh Goyal	s2
+arXiv:2608.20054	amont	arXiv:2004.09124	2020	Compositionality and Generalization In Emergent Languages	R. Chaabouni	s2
+arXiv:2608.20054	amont	arXiv:1910.11424	2019	Capacity, Bandwidth, and Compositionality in Emergent Language Learning	Cinjon Resnick	s2
+arXiv:2608.20054	amont	arXiv:1909.10893	2019	Recurrent Independent Mechanisms	Anirudh Goyal	s2
+arXiv:2608.20054	amont	S2:856fe866bcce5e7a540655bea6ecc7406bdcfcba	2017	Generalization without Systematicity: On the Compositional Skills of Sequence-to-Sequence Recurrent Networks	B. Lake	s2
+arXiv:2608.20054	amont	arXiv:1612.07182	2016	Multi-Agent Cooperation and the Emergence of (Natural) Language	Angeliki Lazaridou	s2
+arXiv:2608.20054	amont	arXiv:1602.05629	2016	Communication-Efficient Learning of Deep Networks from Decentralized Data	H. B. McMahan	s2
+arXiv:2608.20054	amont	arXiv:1207.0580	2012	Improving neural networks by preventing co-adaptation of feature detectors	Geoffrey E. Hinton	s2
+arXiv:2608.20054	amont	arXiv:physics/0004057	2000	The information bottleneck method	Naftali Tishby	s2
+arXiv:2608.20054	amont	S2:?	2019	Systematic generalization: What is required and can it be learned?		s2
+arXiv:2608.20054	amont	S2:?	2016	ModDrop: Adaptive multi-modal gesture recognition		s2
+arXiv:2608.20054	amont	DOI:10.5555/2627435.2670313	2014	Dropout: a simple way to prevent neural networks from overfitting	Nitish Srivastava	s2
+arXiv:2608.20054	amont	S2:?		Low-rank adaptation of large language models		s2
+arXiv:2608.20054	aval	arXiv:2609.17637	2026	What You Can't See Is Still What You Learn: A Preregistered Sixty-Society Confirmation That Evidence Masking Drives Compositional Generalization	Narcis Marincat	s2
