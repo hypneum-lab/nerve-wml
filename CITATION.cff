@@ -6,7 +6,7 @@ abstract: >
   between World Model Language (WML) units. Two concrete substrates
   (MlpWML, LifWML) share the same Nerve Protocol, enabling
   measured cross-substrate polymorphism (0 % gap on linearly
-  separable FlowProxyTask, 12.1 % gap on HardFlowProxyTask, Gate M
+  separable FlowProxyTask, LIF-led 10.7 % gap on HardFlowProxyTask with symmetric readout (erratum 2026-11-08: retracted 12.1 % was a readout-asymmetry bug, see CHANGELOG), Gate M
   merge retaining 1.000 of mock-baseline accuracy). The repository
   provides the reference substrate-portability measurement cited in
   the parent research program's Paper 1 v0.2 §7.4 (dreamOfkiki
