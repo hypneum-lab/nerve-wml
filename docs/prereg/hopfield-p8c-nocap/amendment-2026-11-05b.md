@@ -101,3 +101,182 @@ Files (sha256 including timing fields): kxkm-ai
 `5b1ea8fa2afeeb465b3791346510db15ad36b36bf71152147123631719bd57ed`,
 macM1
 `daa99b4c31f81f5431d504072ba7b4a87070ff2a44a8382a24fae4d1cd32b746`.
+
+## End record (2026-11-08)
+
+Data record only. No analysis, no verdict and no interpretation is made here.
+
+- End: 2026-11-08T04:43:09Z (`logs/campaign.log`: `STOP laneA(relaunch) rc=0`, then
+  `END relaunch`). Host: kxkm-ai.
+- Tag `prereg-hopfield-p8c-relaunch-20261105`, commit
+  `db4eb5ba5644df8dc5622f53f249c19d52a9d82b`.
+- Cells: 520 lines = 20 seeds (32001-32020) x 26 lines, N=16384, alpha=0.5; 20 of 20 seeds
+  complete (`D_steps` 750830 to 750884).
+- sha256 of the uncompressed `cells.jsonl`:
+  `5b43fb46eb2f3c0dae61b56d65011f0487690db229e3c1fd9d20804d80a12a76`. The repository stores it
+  gzipped, as for `results/nh01*`: `results/hopfield_p8c_nocap/n16384/cells.jsonl.gz`
+  (sha256 `f998cb2765ebbf9ca13dffbc402ebe8b1d7e8c7fc904a0c920938012ac254edc`), with
+  `run_info.json` and `SHA256SUMS` (which lists both hashes).
+- Reproducibility control, try1 (`n16384-try1-ceiling18h`, ceiling 18 h) against this relaunch,
+  as defined in `RELAUNCH.md` (equality only, lines with r <= 0.7 and matched rows): 168 of
+  168 lines with r <= 0.7 identical; matched rows 56 of 56 identical.
+- Duration note: seeds 32017-32020 ran about 48 000 s each, against 77 000 to 81 000 s for
+  the other seeds, because wave 3 had 4 parallel tasks instead of 8.
+- Archive on electron-server: `~/hypneum-archives/p1bis-p8c-20261104-20261108/`
+  (`results/hopfield_p8c_nocap/n16384/`, `logs/campaign.log`, `logs/p8c_n16384.log`,
+  `RELAUNCH.md`).
+
+## Pre-registered read-out (2026-11-08)
+
+Data record and application of the pre-registered analysis plan only. PI
+decision of 2026-11-08: the results table and the pre-registered label are
+recorded as the pre-registration defines them; no new dose, no relaunch and
+no statement on a hypothesis beyond the label assigned by the
+pre-registration's own decision rule are made here.
+
+### Analysis run
+
+- Command: `python -m experiments.hopfield_dream_conf.analyse p8c <input_dir>`
+  (frozen code, no modification), run from the checkout of commit
+  `db4eb5ba5644df8dc5622f53f249c19d52a9d82b` (tag
+  `prereg-hopfield-p8c-relaunch-20261105`; abbreviated `db4eb5b`).
+- Host macM1, nice -n 10, 2026-11-08T09:38:10Z to 09:38:20Z. Python 3.12.13
+  arm64, numpy 2.5.4, scipy 1.18.1. The archive run used Python 3.12.15
+  x86_64; floating-point fields may differ at about 1e-7 (see section 9).
+- Inputs (sha256): N=16384 `cells.jsonl`
+  `5b43fb46eb2f3c0dae61b56d65011f0487690db229e3c1fd9d20804d80a12a76`;
+  N=4096 `cells.jsonl`
+  `04556ee957bfb9b82a24e4681851711f92569f24f3f04a1a15a8f937003fbfd0`.
+- Output: `results/hopfield_p8c_nocap/n16384/verdict.json` (copy of the macM1
+  output, listed in `SHA256SUMS`). Every number below is read from it.
+
+### Gate (prereg.md l.177-181)
+
+At N=4096, alpha=0.3, q=0.1: mean kernel recovery on B at t-hat = 1.000
+(threshold >= 0.90); mean Hebb recovery on B = 0.000 (threshold <= 0.05).
+Gate `pass` = true.
+
+### Primary family (8 tests, n = 20 seeds each)
+
+Delta = kernel recovery on B at t-hat minus HU recovery on B at r-hat
+(cross-fitted, prereg.md l.134-144). "kernel B" and "HU B" are the mean
+recoveries on set B of the two selected arms. Holm step-down within the
+family at one-sided level 0.025; exact sign-flip permutation tests;
+bootstrap 10 000 resamples, seed 20261104.
+
+| N | alpha | q | mean Delta | sd | boot 95 % | p_sup (Holm) | p_inf (Holm) | kernel B | HU B | label |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 4096 | 0.3 | 0.2 | 0.0000 | 0.0065 | [-0.0023, 0.0033] | 1 | 7.63e-06 | 0.9988 | 0.9988 | `below` |
+| 4096 | 0.3 | 0.3 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | 0.0000 | 0.0000 | `floor` |
+| 4096 | 0.4 | 0.2 | 0.2925 | 0.0319 | [0.2790, 0.3058] | 7.63e-06 | 1 | 0.3077 | 0.0153 | `success` |
+| 4096 | 0.4 | 0.3 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | 0.0000 | 0.0000 | `floor` |
+| 4096 | 0.5 | 0.2 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | 0.0000 | 0.0000 | `floor` |
+| 4096 | 0.5 | 0.3 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | 0.0000 | 0.0000 | `floor` |
+| 16384 | 0.5 | 0.2 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | 0.0000 | 0.0000 | `floor` |
+| 16384 | 0.5 | 0.3 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | 0.0000 | 0.0000 | `floor` |
+
+The four N=4096 rows are produced by the same frozen code on the N=4096
+cells already analysed on 2026-11-05; the N=4096 alpha=0.4, q=0.2 row has
+mean Delta = 0.2925.
+
+### Labels under the pre-registered rule
+
+Rule as written in `prereg.md` (l.167-172):
+
+> - `success`: mean Δ ≥ 0.10 and Holm-adjusted p_sup < 0.025;
+> - `below`: Holm-adjusted p_inf < 0.025 (advantage established < 0.10;
+>   includes "HU equals or beats the kernel");
+> - `floor`: not `success` and both selected arms have mean recovery on B
+>   < 0.05 (no arm recovers; uninformative, replaces `below`);
+> - `inconclusive`: otherwise.
+
+Confirmatory N=16384 cells (alpha=0.5):
+
+- q=0.2: mean Delta = 0, kernel B = 0, HU B = 0. Not `success`; both
+  selected arms have mean recovery on B < 0.05. Label: `floor`.
+- q=0.3: mean Delta = 0, kernel B = 0, HU B = 0. Not `success`; both
+  selected arms have mean recovery on B < 0.05. Label: `floor`.
+
+In both cells t-hat = 0.5 and r-hat = 0.2 for all 20 seeds (the smallest
+grid values, selected by the tie rule of l.137-138 when every recovery on A is 0).
+
+Decision rule as written in `prereg.md` (l.184-192):
+
+> - **Avantage du noyau soutenu dans les cellules {…}:** gate passes and at
+>   least one primary test is `success`; the cells are listed; no
+>   generalisation beyond them.
+> - **Avantage du noyau non soutenu:** gate passes, no `success`, and every
+>   primary test that is not `floor` is `below` (at least one such test).
+> - **Non concluant:** otherwise (including all-`floor` or any
+>   `not_measured`/`inconclusive` primary test without a `success`).
+
+Code output, field `overall_primary`: `supported_in_cells:N4096_a0.4_q0.2`.
+This string is emitted by the frozen code over the 8-test family; the only
+`success` row is the N=4096, alpha=0.4, q=0.2 row listed above. The two
+N=16384 cells carry the label `floor` and contribute no `success` and no
+`below`.
+
+### Secondary contrasts
+
+S1, matched budget without cap (q in {0.2, 0.3}; floor rule not applied
+for S1, prereg.md l.174):
+
+| N | alpha | q | mean Delta | sd | boot 95 % | p_sup (Holm) | p_inf (Holm) | label |
+|---|---|---|---|---|---|---|---|---|
+| 4096 | 0.3 | 0.2 | 0.5762 | 0.0456 | [0.5560, 0.5950] | 7.63e-06 | 1 | `success` |
+| 4096 | 0.3 | 0.3 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | `below` |
+| 4096 | 0.4 | 0.2 | 0.3075 | 0.0344 | [0.2930, 0.3217] | 7.63e-06 | 1 | `success` |
+| 4096 | 0.4 | 0.3 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | `below` |
+| 4096 | 0.5 | 0.2 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | `below` |
+| 4096 | 0.5 | 0.3 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | `below` |
+| 16384 | 0.5 | 0.2 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | `below` |
+| 16384 | 0.5 | 0.3 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 7.63e-06 | `below` |
+
+S2, q=0.1 best vs best (4 tests):
+
+| N | alpha | q | mean Delta | sd | boot 95 % | p_sup (Holm) | p_inf (Holm) | label |
+|---|---|---|---|---|---|---|---|---|
+| 4096 | 0.3 | 0.1 | 0.0003 | 0.0011 | [0.0000, 0.0008] | 1 | 3.81e-06 | `below` |
+| 4096 | 0.4 | 0.1 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 3.81e-06 | `below` |
+| 4096 | 0.5 | 0.1 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 3.81e-06 | `below` |
+| 16384 | 0.5 | 0.1 | 0.0000 | 0.0000 | [0.0000, 0.0000] | 1 | 3.81e-06 | `below` |
+
+At N=16384, alpha=0.5, q=0.1 the selected arms are t-hat = 3 and r-hat = 0.7
+for all 20 seeds, with mean recovery on B of 1.000 for both the kernel and HU
+(`verdict.json`, `selection_detail`).
+
+### Exploratory dose curves (exploratory, descriptive, not pre-registered)
+
+Source: `n16384_curves_process.txt` (macM1, 2026-11-08), N=16384, alpha=0.5,
+20 seeds, mean recovery on set B.
+Process check: 20 of 20 seeds `complete`, D_steps 750830 to
+750884, `cue_nonconv` total 0, Hebb mean recovery on B 0.0 at q=0.1, 0.2 and 0.3.
+
+Kernel, by t:
+
+| q | 0.5 | 1.0 | 1.5 | 2.0 | 3.0 | 5.0 | 10.0 | inf |
+|---|---|---|---|---|---|---|---|---|
+| 0.1 | 0 | 0 | 0 | 0.7505 | 1.0 | 1.0 | 1.0 | 0.9922 |
+| 0.2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 0.3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+HU, by r:
+
+| q | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 |
+|---|---|---|---|---|---|---|---|---|
+| 0.1 | 0 | 0 | 0 | 0 | 0.5685 | 1.0 | 1.0 | 0.9788 |
+| 0.2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 0.3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+These curves are descriptive; no test, label or threshold is attached to them.
+
+### Not done
+
+- No new dose, no new threshold and no relaunch is proposed or run.
+- No statistic other than those of the frozen `analyse p8c` code and the
+  descriptive curves above was computed.
+- The equality check of try1 against the relaunch is the one recorded in the
+  End record above (168 of 168 and 56 of 56 identical); it was not re-run.
+- The archive run (x86_64) of the analysis was not repeated; this read-out
+  comes from the macM1 run only.
+- No interpretation beyond the pre-registered labels is made in this section.
