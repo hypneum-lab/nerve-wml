@@ -1,0 +1,228 @@
+{
+  "code": "experiments/procgen_multiagent_gtm_comm/analysis.py at 99a7cf4 (unmodified)",
+  "label": "interim, one seed, one host, not pre-registered, exploratory",
+  "adapter_note": "No frozen script builds the results dict from runs; the adapter below (this file) maps eval.json/run.json to the documented input format: R=R_intact, S, bandwidth_bits, time_to_half (None->cap 50M), reached_threshold = time_to_half is not None. seeds=[0].",
+  "calls": [
+    {
+      "call": "primary_report(results)  [registered entry point]",
+      "ok": false,
+      "error": "ValueError: cell ('dial', 'closed'): seeds must be exactly [0, 17, 42, 73, 101, 131] in this order",
+      "trace_tail": [
+        "    raise ValueError(",
+        "        f\"cell {key}: seeds must be exactly {list(SEEDS)} in this order\")",
+        "ValueError: cell ('dial', 'closed'): seeds must be exactly [0, 17, 42, 73, 101, 131] in this order"
+      ]
+    },
+    {
+      "call": "_primary(results)",
+      "ok": false,
+      "error": "KeyError: ('atoc', 'registered')",
+      "trace_tail": [
+        "    return np.asarray(results[(arm, cond)][metric], float)",
+        "                      ~~~~~~~^^^^^^^^^^^^^",
+        "KeyError: ('atoc', 'registered')"
+      ]
+    },
+    {
+      "call": "_secondary(results)",
+      "ok": false,
+      "error": "KeyError: ('atoc', 'registered')",
+      "trace_tail": [
+        "    return np.asarray(results[(arm, cond)][metric], float)",
+        "                      ~~~~~~~^^^^^^^^^^^^^",
+        "KeyError: ('atoc', 'registered')"
+      ]
+    },
+    {
+      "call": "_ni(results)",
+      "ok": true,
+      "result": {
+        "registered": {
+          "eng": {
+            "estimate": 1.0,
+            "fixed": true
+          },
+          "nocomm": {
+            "estimate": 0.0,
+            "fixed": true
+          },
+          "dial": {
+            "estimate": null,
+            "low": null,
+            "high": null,
+            "level": 0.95,
+            "interpretable": null,
+            "numerator": 0.0050000000000000044,
+            "denominator": 0.06
+          },
+          "gtm": {
+            "estimate": null,
+            "low": null,
+            "high": null,
+            "level": 0.95,
+            "interpretable": null,
+            "numerator": 0.025000000000000022,
+            "denominator": 0.06
+          },
+          "mlp": {
+            "estimate": null,
+            "low": null,
+            "high": null,
+            "level": 0.95,
+            "interpretable": null,
+            "numerator": -0.014999999999999958,
+            "denominator": 0.06
+          }
+        },
+        "closed": {
+          "eng": {
+            "estimate": 1.0,
+            "fixed": true
+          },
+          "nocomm": {
+            "estimate": 0.0,
+            "fixed": true
+          },
+          "dial": {
+            "estimate": null,
+            "low": null,
+            "high": null,
+            "level": 0.95,
+            "interpretable": null,
+            "numerator": 0.07500000000000001,
+            "denominator": 0.09000000000000002
+          },
+          "gtm": {
+            "estimate": null,
+            "low": null,
+            "high": null,
+            "level": 0.95,
+            "interpretable": null,
+            "numerator": 0.06,
+            "denominator": 0.09000000000000002
+          }
+        }
+      }
+    },
+    {
+      "call": "_s_report(results)",
+      "ok": true,
+      "result": {
+        "level": 0.95,
+        "intervals": {
+          "('dial', 'closed')": {
+            "mean": 0.07500000000000001,
+            "low": null,
+            "high": null,
+            "level": 0.95
+          },
+          "('eng', 'closed')": {
+            "mean": 0.08500000000000002,
+            "low": null,
+            "high": null,
+            "level": 0.95
+          },
+          "('gtm', 'closed')": {
+            "mean": 0.034999999999999976,
+            "low": null,
+            "high": null,
+            "level": 0.95
+          },
+          "('dial', 'registered')": {
+            "mean": 0.07,
+            "low": null,
+            "high": null,
+            "level": 0.95
+          },
+          "('eng', 'registered')": {
+            "mean": 0.05499999999999999,
+            "low": null,
+            "high": null,
+            "level": 0.95
+          },
+          "('gtm', 'registered')": {
+            "mean": 0.04999999999999999,
+            "low": null,
+            "high": null,
+            "level": 0.95
+          },
+          "('mlp', 'registered')": {
+            "mean": 0.015000000000000013,
+            "low": null,
+            "high": null,
+            "level": 0.95
+          }
+        },
+        "positive_control": "uninterpretable",
+        "interpretable": false,
+        "nocomm_zero_check": {
+          "registered": true,
+          "closed": true
+        }
+      }
+    },
+    {
+      "call": "_threshold_counts(results)",
+      "ok": true,
+      "result": {
+        "dial": {
+          "reached_before_final_eval": 1,
+          "reached_at_final_eval": 0,
+          "never_reached": 0
+        },
+        "eng": {
+          "reached_before_final_eval": 1,
+          "reached_at_final_eval": 0,
+          "never_reached": 0
+        },
+        "gtm": {
+          "reached_before_final_eval": 1,
+          "reached_at_final_eval": 0,
+          "never_reached": 0
+        },
+        "mlp": {
+          "reached_before_final_eval": 1,
+          "reached_at_final_eval": 0,
+          "never_reached": 0
+        },
+        "nocomm": {
+          "reached_before_final_eval": 1,
+          "reached_at_final_eval": 0,
+          "never_reached": 0
+        }
+      }
+    },
+    {
+      "call": "_by_host(results)",
+      "ok": false,
+      "error": "IndexError: index 1 is out of bounds for axis 0 with size 1",
+      "trace_tail": [
+        "    return _metric(results, arm, cond, metric)[idx]",
+        "           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^",
+        "IndexError: index 1 is out of bounds for axis 0 with size 1"
+      ]
+    }
+  ],
+  "primitives": {
+    "welch_ci(R gtm, R mlp), registered, level 0.9833": null,
+    "welch_ci(R gtm, R dial), registered, level 0.9833": null,
+    "welch_ci(R gtm, R atoc)": "cell (atoc, registered) not trained (STOP before registered-atoc-s0)",
+    "fieller_ci(gtm, nocomm, eng), registered": null,
+    "fieller_interpretable(gtm, nocomm, eng), registered": null,
+    "fieller_ci(dial, nocomm, eng), registered": null,
+    "fieller_interpretable(dial, nocomm, eng), registered": null,
+    "one_sample_ci(S gtm), registered, 0.95": null,
+    "one_sample_ci(S dial), registered, 0.95": null,
+    "one_sample_ci(S eng), registered, 0.95": null,
+    "fieller_ci(gtm, nocomm, eng), closed": null,
+    "fieller_interpretable(gtm, nocomm, eng), closed": null,
+    "fieller_ci(dial, nocomm, eng), closed": null,
+    "fieller_interpretable(dial, nocomm, eng), closed": null,
+    "one_sample_ci(S gtm), closed, 0.95": null,
+    "one_sample_ci(S dial), closed, 0.95": null,
+    "one_sample_ci(S eng), closed, 0.95": null,
+    "fieller_ci(mlp, nocomm, eng), registered": null,
+    "pilot_category([None, None, None])": "pilot-interval-unavailable",
+    "cross_play_report": "not computed: needs 6 seeds x 10 cells and cross-seed passes (none exist)"
+  }
+}
