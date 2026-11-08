@@ -4,6 +4,30 @@ All notable changes to `nerve-wml` follow [Keep a Changelog](https://keepachange
 
 ## [Unreleased]
 
+### Docs
+
+- **Erratum 2026-11-08 — W2 "12.1 % gap — honest" (catalogue NWML-M2).**
+  Claim as published: "W2 true-LIF polymorphie on HardFlowProxyTask
+  (12.1 % gap — honest)" and "gap = 12.1 % ... LIF's cosine-similarity
+  decoder lags the MLP pi head" (v0.x entries of this file, Gate M2
+  and `HardFlowProxyTask` bullets; `CITATION.cff` abstract: "12.1 % gap
+  on HardFlowProxyTask"). What is true: with a symmetric learned
+  `emit_head_pi` on `LifWML` the same pilot gives acc_MLP = 0.547,
+  acc_LIF = 0.611, i.e. a 10.7 % gap in the opposite direction (LIF >
+  MLP); the multi-seed scaling is 10.71 % -> 6.71 % -> 2.39 % -> 2.73 %
+  (`papers/paper1/main.tex:340-342`, `README.md` finding 1, spec
+  section 13.1 "RESOLVED"). Root cause: bug (asymmetric readout — MLP
+  had a learned linear head, LIF a fixed cosine decoder against a
+  random codebook), not a substrate limit. The resolution was recorded
+  as a finding in README, paper and spec but never as a dated erratum,
+  and the false figure was not removed from metadata. Where corrected:
+  paper v0.4+, README, spec. Remaining occurrences of the false
+  figure, to be fixed in a follow-up PR (not here): `CITATION.cff:9`
+  (current metadata, the only one that still presents 12.1 % as a
+  measurement), `CHANGELOG.md` v0.x entries on Gate M2 and
+  `HardFlowProxyTask` (historical, kept as record). Refs
+  hypneum-lab/.github#10.
+
 ### Added
 
 - **NH-01 ReScience C submission package (issue #68).** Note
