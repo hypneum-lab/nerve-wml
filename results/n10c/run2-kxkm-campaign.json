@@ -1,0 +1,17 @@
+{
+  "freeze_tag": "n10c-freeze-20261029",
+  "freeze_commit": "99a7cf4bb01d31e8e7f6c99c0e6676f41e6e17bb",
+  "swhid": "swh:1:rev:99a7cf4bb01d31e8e7f6c99c0e6676f41e6e17bb",
+  "manifest_path": "experiments/procgen_multiagent_gtm_comm/manifest/stage2-manifest-fixc.md",
+  "manifest_sha256": "68539232fb1d729703ecd5370aa2bcf8a024c408ef6decce5159ec80268d3640",
+  "amendment_path": "docs/milestones/n10c-procgen-multiagent-gtm-comm-amendment-2026-10-25.md",
+  "amendment_sha256": "dfb3b96f15376a5bbfd2a7f5cc1ea7d8d9e29afb0dde1492f94e2f4a6ec618e7",
+  "manifest_doi": null,
+  "tag_push_time": null,
+  "tag_push_time_note": "GitHub server-recorded push time of the tag not obtained locally: take it from GitHub (and the archival time from Software Heritage); git dates are not evidence of time",
+  "registration": "n10c",
+  "total_pair_steps": 50000000,
+  "trial": false,
+  "host": "kxkm",
+  "created": "2026-11-05T02:47:58+0100"
+}

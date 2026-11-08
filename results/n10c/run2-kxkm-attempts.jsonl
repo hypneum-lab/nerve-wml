@@ -1,0 +1,19 @@
+{"at": "2026-11-05T02:47:58+0100", "run": "registered-gtm-s0", "phase": "eval", "state": "start", "ckpt": "ckpt_50000000.safetensors"}
+{"at": "2026-11-05T02:48:50+0100", "run": "registered-gtm-s0", "phase": "eval", "state": "done", "S": 0.04999999999999999, "R_intact": 0.44}
+{"at": "2026-11-05T02:48:50+0100", "run": "closed-gtm-s0", "phase": "eval", "state": "start", "ckpt": "ckpt_50000000.safetensors"}
+{"at": "2026-11-05T02:49:41+0100", "run": "closed-gtm-s0", "phase": "eval", "state": "done", "S": 0.034999999999999976, "R_intact": 0.435}
+{"at": "2026-11-05T02:49:41+0100", "run": "registered-nocomm-s0", "phase": "eval", "state": "start", "ckpt": "ckpt_50000000.safetensors"}
+{"at": "2026-11-05T02:50:23+0100", "run": "registered-nocomm-s0", "phase": "eval", "state": "done", "S": 0.0, "R_intact": 0.415}
+{"at": "2026-11-05T02:50:23+0100", "run": "closed-nocomm-s0", "phase": "eval", "state": "start", "ckpt": "ckpt_50000000.safetensors"}
+{"at": "2026-11-05T02:51:04+0100", "run": "closed-nocomm-s0", "phase": "eval", "state": "done", "S": 0.0, "R_intact": 0.375}
+{"at": "2026-11-05T02:51:04+0100", "run": "registered-dial-s0", "phase": "eval", "state": "start", "ckpt": "ckpt_50000000.safetensors"}
+{"at": "2026-11-05T02:51:54+0100", "run": "registered-dial-s0", "phase": "eval", "state": "done", "S": 0.07, "R_intact": 0.42}
+{"at": "2026-11-05T02:51:54+0100", "run": "closed-dial-s0", "phase": "eval", "state": "start", "ckpt": "ckpt_50000000.safetensors"}
+{"at": "2026-11-05T02:52:39+0100", "run": "closed-dial-s0", "phase": "eval", "state": "done", "S": 0.07500000000000001, "R_intact": 0.45}
+{"at": "2026-11-05T02:52:39+0100", "run": "registered-eng-s0", "phase": "eval", "state": "start", "ckpt": "ckpt_50000000.safetensors"}
+{"at": "2026-11-05T02:53:13+0100", "run": "registered-eng-s0", "phase": "eval", "state": "done", "S": 0.05499999999999999, "R_intact": 0.475}
+{"at": "2026-11-05T02:53:13+0100", "run": "closed-eng-s0", "phase": "eval", "state": "start", "ckpt": "ckpt_50000000.safetensors"}
+{"at": "2026-11-05T02:53:48+0100", "run": "closed-eng-s0", "phase": "eval", "state": "done", "S": 0.08500000000000002, "R_intact": 0.465}
+{"at": "2026-11-05T02:53:48+0100", "run": "registered-mlp-s0", "phase": "eval", "state": "start", "ckpt": "ckpt_50000000.safetensors"}
+{"at": "2026-11-05T02:54:35+0100", "run": "registered-mlp-s0", "phase": "eval", "state": "done", "S": 0.015000000000000013, "R_intact": 0.4}
+{"at": "2026-11-05T02:54:35+0100", "phase": "campaign", "state": "gpu_guard_refused", "free_gb": 21.71875, "min_free_gb": 1000.0, "next_run": "registered-eng-s73"}
