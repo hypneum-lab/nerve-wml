@@ -18,7 +18,7 @@
 | Tag (tag object -> commit) | `n10c-freeze-20261024` (`91e1dddc` -> `2ce4214b9e587328c3c4eab64dce4650409edd7d`) | `n10c-freeze-20261029` (`b14717b7` -> `99a7cf4bb01d31e8e7f6c99c0e6676f41e6e17bb`) |
 | SWHID | `swh:1:rev:2ce4214b9e587328c3c4eab64dce4650409edd7d` | `swh:1:rev:99a7cf4bb01d31e8e7f6c99c0e6676f41e6e17bb` |
 | Manifest | `manifest/stage2-manifest.md`, SHA-256 `1bddf9cae688…b230` | `manifest/stage2-manifest-fixc.md`, SHA-256 `68539232fb1d…3640` |
-| Amendment | 2026-10-23, SHA-256 `0114dac7e277…d59b` | 2026-10-25, SHA-256 `dfb3b96f15376a5b…c6e7` (full: `dfb3b96f15376a5bbfd2a7f5cc1ea7d8d9e29afb0dde1492f94e2f4a6ec618e7`) |
+| Amendment | 2026-10-23, SHA-256 `0114dac7e277…d59b` | 2026-10-25, SHA-256 `dfb3b96f15376a5b…18e7` (full: `dfb3b96f15376a5bbfd2a7f5cc1ea7d8d9e29afb0dde1492f94e2f4a6ec618e7`) |
 | Status | stopped 2026-10-25 about 08:50 (PI decision, trunk collapse found in the first two runs); **excluded from all analyses** | seed 0 only, stopped, see section 2 |
 
 Sources: `run2-kxkm-campaign.json` (this PR) for run 2; the PI's `RUNBOOK.md` and `kxkm`/`macm1` `campaign.json` for run 1 (run 1 files are in the ES archive, section 6). Both `campaign.json` carry `tag_push_time: null`: the GitHub server-recorded push time of the tags was **not obtained** and is not reported here.
@@ -107,7 +107,7 @@ Notes that follow from the files, without interpretation:
 
 ### 3.1 Output of the frozen analysis code
 
-`experiments/procgen_multiagent_gtm_comm/analysis.py` at `99a7cf4`, unmodified, run on the 9 runs through an adapter (file `results/n10c/frozen_analysis_output.json`, produced on 2026-11-05 by the interim analysis, SHA-256 `649d5d13…ac56` (see section 6)):
+`experiments/procgen_multiagent_gtm_comm/analysis.py` at `99a7cf4`, unmodified, run on the 9 runs through an adapter (file `results/n10c/frozen_analysis_output.json`, produced on 2026-11-05 by the interim analysis, SHA-256 `649d5d13…0a69` (see section 6)):
 
 | Call | Result |
 |---|---|
