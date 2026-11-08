@@ -430,3 +430,84 @@ encore changé la note : **non saturé**.
 - Version en actes de Chauhan & Bera (`OAmBy25HHg`) : non redemandée.
 - Annexes non lues : PoPLi A-E ; Eccles A-E ; 2608.20054 A-F ; 2609.17637
   § 1-4, § 7-9 et annexes.
+
+## Rapport du contradicteur — 2026-11-08
+
+Pièces hors dépôt (dossier `hypneum-reviews/2026-11-08-n10d-contradictor/`,
+non copiées ici) : `brief-n10d-2026-11-08.md`,
+`contradictor-report-n10d-2026-11-08.md` (SHA-256
+`d1e5f9c63efef3ac13306ec2388aa1bc479404294cc178ea7cb9872e54e7e696`),
+`options-n10d-causal-2026-11-08.md`, `decisions-n10d-causal-2026-11-08.md`
+(QCM 16:30-16:45 CET). Relecteur : Claude Opus à contexte vierge (Codex en
+quota), brief sans la note, le journal ni les snowballs ; lecture seule de
+`github/master` a6a638d et de la branche `prereg/n10d-skeleton` (e0c64a8).
+§ 0 du rapport : aucun fichier interdit ouvert ; le cache local des papiers
+arXiv a été lu ; les positions du labo lui sont parvenues par `protocol.md`
+§ 1, A21 et A22 (l'identifiant 2609.34373 vient d'A22, résolu et lu
+indépendamment).
+
+### Identifiants apportés par le rapport, résolus de nouveau ici (08/11)
+
+| identifiant | résolution (API) | statut de lecture |
+|---|---|---|
+| arXiv:1905.13687 (v3) | « Entropy Minimization In Emergent Languages », Kharitonov, Chaabouni, Bouchacourt, Baroni, soumis le 2019-05-31 ; ICML 2020, PMLR 119 ; arXiv `id_list` | contradicteur : lu en entier ; note : § 3.3, § 4.1, § 7 du supplément (recherche ciblée). Déjà dans `snowball-tour1.tsv` (aval de Lowe, ancien titre « Information Minimization… »), non gardé au filtre par titre. |
+| arXiv:2609.34373 (v2) | « Emergence, Not Bandwidth: Physical Coupling and the Limits of Learned Multi-Agent Communication », Chauhan, Bera, 2026-09-28 ; arXiv `id_list` | lue au tour 2 (pp. 1-9) ; texte intégral fouillé le 08/11 (aucune intervention sur le message en test) |
+| hal-03100681 (v1) | « Studying the joint role of partial observability and channel reliability in emergent communication », Villecroze, Moulin-Frier, 1st SMILES workshop, ICDL 2020 ; type COMM ; HAL `search/?q=halId_s:` ; PDF `hal.science/hal-03100681/file/workshop_smiles_2020.pdf` | contradicteur : lu en entier (7 p.) ; note : **lu en entier** (7 p.), SHA-256 commençant par `7e9763b6ab21872a` |
+| EGG commit 54eb11c6 (`facebookresearch/EGG`) | `egg/zoo/language_bottleneck/guess_number/`, `intervention.py` (`intervention_message` randperm l. 121-124, `intervention_input` l. 200-201), d'après le rapport | **non vérifié** ici (dépôt non ouvert dans cette version) |
+| arXiv:1605.06676 Foerster et al. ; arXiv:2303.10733 Lo et al. 2023 | cités au § 3 du rapport comme antériorités de méthode | non résolus ni lus ici → tour 4 |
+| Lewis : Huttegger, Skyrms, Smead, Zollman 2010 (doi:10.1007/s11229-009-9477-0) ; Barrett 2006 (eScholarship `uc/item/5xr0b0vp`) ; Pawlowitsch 2008 (doi:10.1016/j.geb.2007.08.009) ; Catteeuw & Manderick 2014 (doi:10.1080/09540091.2014.885303) ; Moreno & Baggio 2015 (doi:10.1111/cogs.12191) | § 1.5 du rapport ; chiffres Huttegger et Barrett lus par extraits par le contradicteur | non résolus ni lus ici ; touchent § 4.4 (pooling partiel) → tour 4 |
+| Marzi 1999 (doi:10.1016/s0361-9230(99)00174-4) | § 1.7 du rapport, titre seul (Poffenberger) | non résolu ici ; hors question retenue |
+
+### Requêtes du contradicteur sans trouvaille (§ 4 du rapport ; non refaites ici)
+
+- arXiv : `abs:"emergent communication" AND abs:"asymmetric information"`
+  (0) ; `abs:"emergent communication" AND (abs:"information asymmetry" OR
+  abs:"private information" OR abs:"partial observability")` (11) ;
+  `abs:"positive listening" OR abs:"causal influence of communication" OR
+  …` (296) ; `ti:"Lewis games" OR ti:"Lewis game" OR ti:"Lewis signaling"`
+  (2).
+- OpenReview `notes/search` : « communication necessity emergent »,
+  « information asymmetry emergent communication », « message ablation
+  listener ignores » (10 chacune).
+- Crossref : Lewis partial pooling ; Barrett ; Poffenberger.
+- HAL : `"communication émergente" OR "emergent communication"` (21
+  notices, sans filtre de type ; c'est par là que hal-03100681 est sorti,
+  alors que les requêtes HAL du tour 2 portaient `fq=docType_s:THESE`).
+- theses.fr ; Exa (3 requêtes).
+- Non cherché par le contradicteur : neurosciences du workspace.
+
+### Canaux bloqués ou non vérifiés (rapport § 4)
+
+- Semantic Scholar 429 et OpenAlex « Anonymous search is paused » :
+  descente de citations de 1905.13687 et de 2609.34373 **non faite** (ni
+  par le contradicteur, ni dans cette version) → tour 4.
+- OpenReview `OAmBy25HHg` (Chauhan & Bera en actes) : 403.
+- Non lus : Hill et al. 2025 arXiv:2508.02912 ; Rita 2022 arXiv:2209.15342
+  / hal-03831908 ; thèses Chaabouni tel-03536320 et Polytechnique s275563 ;
+  annexes A-F de Chauhan & Bera.
+
+### Ce que le rapport a changé dans la note (v0.5)
+
+- § 1 : NH-96 tranchée par construction (A21 § 2.3, relu) et par trois
+  résultats publiés ; question retenue V1 (+ V2) ; l'inférence de la v0
+  confirmée de l'extérieur.
+- § 2 : Kharitonov (passages) et Villecroze (PDF HAL en entier) ajoutés.
+- § 3 : quatre lignes (message redondant ignoré, recoupé ; graines
+  réussies seules, pratique ; émetteur fixé → message utilisé même en
+  voyant la cible, **à recouper** ; Chauhan sans intervention sur le
+  message, vérifié).
+- § 4 : reste ouvert = V1/V2 et le modérateur fixé / appris (inférence) ;
+  point 1 reclassé en contrôle positif.
+- § 5 : dessin minimal remplacé par D-2 restreint + D-3 (résumé ; renvoi au
+  protocole v2, PR #100).
+- § 6 : saturation non ; marques « à recouper » 2 → 3 ; couverture 6/6,
+  HAL hors thèses à refaire.
+
+### Tour 4 (à faire)
+
+- Descente de citations de 1905.13687 et 2609.34373 (S2 avec repli
+  OpenAlex `works/<id>` et Crossref), snowball de hal-03100681, HAL hors
+  thèses sur les formulations du tour 2 ; 3 s entre appels arXiv ; chaque
+  identifiant résolu par API avant citation.
+- Pas de nouveau contradicteur avant le protocole v2 ; le prochain brief
+  portera sur le protocole v2 (décisions du 08/11, « Suite »).

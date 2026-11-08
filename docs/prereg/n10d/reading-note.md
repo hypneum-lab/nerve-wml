@@ -1,4 +1,4 @@
-# Note de lecture — N10-D (v0.4, 2026-11-08)
+# Note de lecture — N10-D (v0.5, 2026-11-08)
 
 Statut : brouillon de lecture, verrou **non passé** (seul le PI le déclare,
 après le contradicteur). Ce document ne modifie ni `protocol.md` (PR #100,
@@ -31,7 +31,16 @@ Chauhan & Bera et de l'étude parent de Marincat résolue en
 arXiv:2608.20054, bioRxiv hors neurosciences par catégorie, Crossref et
 OpenAlex par mots-clés ; lecture intégrale du corps de PoPLi, de Zhang &
 Emu, de Marincat et d'Eccles ; détail dans `veille-journal.md`, tour 3).
-Le rapport du contradicteur n'est pas intégré dans cette version.
+v0.5 (08/11, après 16:45) : amendée en réponse au rapport du contradicteur
+aveugle (Claude Opus à contexte vierge, Codex en quota ; brief sans la
+note) et aux 12 décisions PI du 2026-11-08. Pièces archivées hors dépôt
+(non copiées ici) : `contradictor-report-n10d-2026-11-08.md` (SHA-256
+`d1e5f9c63efef3ac13306ec2388aa1bc479404294cc178ea7cb9872e54e7e696`),
+`decisions-n10d-causal-2026-11-08.md` (QCM 16:30-16:45 CET),
+`options-n10d-causal-2026-11-08.md`, `brief-n10d-2026-11-08.md`, dossier
+`hypneum-reviews/2026-11-08-n10d-contradictor/`. Les trois identifiants
+que le rapport ajoute ont été résolus de nouveau par API par l'auteur de
+la note avant d'être cités (arXiv `id_list`, HAL `halId_s`, 08/11).
 
 ## 1. Question que la campagne prétend trancher (une phrase)
 
@@ -70,6 +79,91 @@ restreinte exactement au hasard (1/17), et l'auteur écrit (§ 6) que les
 audits destructifs « établissent la nécessité du canal mais pas le
 contenu ». Inférence : troisième formulation, par une troisième équipe, du
 même statut pour `eng − nocomm` ; rien de neuf sur la question ouverte.
+
+### v0.5 — Question tranchée, question retenue
+
+Fait (rapport du contradicteur § 1.1 ; vérifié sur A21 § 2.3 de la
+branche `prereg/n10d-skeleton`, e0c64a8) : sous un dérangement qui tire le
+message d'un épisode indépendant, « E[S_msg_shuffle] = 1/C pour tout
+auditeur », quoi que voie l'émetteur ; `spec.py:39-46` code ce plafond
+aveugle. Fait : sur `asym`, la nécessité du message et son usage par tout
+auditeur qui réussit sont donc des conséquences de la construction, non
+des hypothèses à tester ; le même argument vaut pour le message figé et
+le canal à zéro (options § 0). Inférence (reprise du rapport) : la seule
+question empirique qui reste sur `asym` est « l'apprenant apprend-il à
+décoder ? », qui est une question d'optimisation, pas d'usage causal.
+
+Fait (arXiv:1905.13687, Kharitonov, Chaabouni, Bouchacourt et Baroni,
+2020, ICML, PMLR 119 ; résolu par API le 08/11 ; § 3.3, § 4.1 et § 7 du
+supplément lus par l'auteur de la note dans le texte intégral, le reste
+non lu) : dans Guess Number (entier de 8 bits, le récepteur en voit k),
+« a more nuanced protocol is only developed when it is necessary »
+(§ 4.1) ; à k = 8, l'information que porte le message est « entirely
+ignored by Receiver » : les messages brouillés entre entrées laissent la
+performance inchangée (§ 4.1) ; le brouillage « preserves the marginal
+distribution of Sender's messages, but destroys all the information
+Sender transmits » (§ 7) ; seuls les runs à précision > 0,99 sont
+analysés (§ 3.3) ; REINFORCE réussit dans ≈ 20 % des runs, Gumbel-Softmax
+et SCG dans plus de 50 % (§ 4.1).
+
+Fait (arXiv:2609.34373, Chauhan et Bera, 2026, v2 ; résolu par API le
+08/11 ; corps lu au tour 2, pp. 1-9) : sur l'arène non couplée, le canal
+conçu atteint 0,999 ± 0,001, le silence 0,000 (« The floor is a strategy,
+not a failed learner », § 3.4), le plancher scripté sans canal 0,242 ±
+0,037 et l'émetteur appris gagne +0,740 ± 0,038 contre ce plancher
+(25 graines appariées). Fait : le texte intégral ne contient aucune
+intervention sur le message en test (recherche du texte le 08/11 :
+« ablation » et « intervention » 0 occurrence ; « shuffled » 3
+occurrences, toutes sur le nul d'alignement du cross-play).
+
+Fait (hal-03100681, Villecroze et Moulin-Frier, 2020, atelier SMILES,
+ICDL 2020 ; résolu par l'API HAL le 08/11 ; **PDF de 7 pages lu en
+entier** par l'auteur de la note, SHA-256 commençant par
+`7e9763b6ab21872a`, non copié dans le dépôt) : grille 11 × 11, auditeur
+A3C à entrée pixel ; § V-A : sans biais, aucune émergence après
+3 × 10^8 pas ; § V-B, émetteur remplacé par un **oracle fixé** qui dit la
+direction à prendre : « with any view size, the listener uses almost
+exclusively the communication channel and neglects the visual input even
+when it is able to see the target » (gradients, Fig. 3a) ; § V-C : CIC =
+information mutuelle message-action calculée par contrefactuels,
+« Without noise, CIC is maximal whatever the observability is », et
+l'observabilité ne réduit le CIC que si le canal est bruité (Fig. 4,
+10 graines) ; § V-D : avec un émetteur **appris** (MLP), l'apprentissage
+conjoint ne converge pas (Fig. 5, 10 graines) ; § V-E : le biais de
+signalisation positive d'Eccles le fait converger « most of the time ».
+
+Inférence : la question de `P100` § 1 (NH-96, `eng − nocomm` grand sur
+`asym`, nul sur `sym`) est tranchée par construction (A21 § 2.3) et
+confirmée par trois résultats publiés de trois équipes (2020, 2020,
+2026) ; la campagne ne l'adopte plus comme question primaire (décisions
+PI Q8 et 1 du 08/11). Inférence : l'inférence de la v0 de cette note
+(« la question scientifiquement ouverte n'est pas celle-là mais l'usage
+causal du canal ») est confirmée de l'extérieur par un relecteur qui
+n'avait pas accès à la note.
+
+**Question retenue (décisions PI 1 et 2, formulation des options § A) :**
+
+- **V1.** Sur la jumelle symétrique, où son observation propre suffit,
+  l'auditeur PPO entraîné face à l'émetteur conçu fixé (`eng_sym`)
+  choisit-il le candidat nommé par le message plutôt que celui que
+  désigne son propre champ t, quand les deux sont mis en conflit,
+  au-delà du taux placebo, avec une borne basse d'IC apparié ≥ δ_use ?
+  Réfutée (« message ignoré ») si la borne haute est < δ_eq (TOST) ;
+  sinon non concluant.
+- **V2.** Cet indice de dépendance au message diffère-t-il entre
+  émetteur fixé (`eng_sym`) et émetteur appris conjointement
+  (`learned_sym`), à tronc, graines et budget égaux ?
+- V1 et V2 sont co-primaires sous Holm, α = 0,01 ; l'ancienne H1 sur
+  `asym` devient un contrôle positif de la machinerie, sans α
+  (décision 3).
+
+Inférence : Kharitonov (émetteur appris, k = 8 : message ignoré) et
+Villecroze (émetteur oracle fixé : message utilisé même en voyant la
+cible) sont les deux pôles de V2 ; aucune des deux sources ne compare
+les deux émetteurs sur la même tâche, ni ne met message et observation
+propre en conflit épisode par épisode. Le modérateur « émetteur fixé
+contre appris » n'a été trouvé écrit nulle part : c'est une inférence
+(voir § 4).
 
 ## 2. Sources primaires lues en entier
 
@@ -123,6 +217,14 @@ sources, snowball du tour 3) :
 | arXiv:2608.20054 Marincat, 2026 (v3 ; étude parent de 2609.11365) | § 3 (architecture, tâche, traitement), § 4 (plan apparié, unité statistique), § 5 (résultats, Tables 1-2, exception globale, stratification post hoc), § 6 (mécanisme : transplants), § 7 (limites) ; § 1-2 en résumé ; annexes A-F non lues | Quatre cellules sur un Qwen2.5-0.5B **gelé** + une LoRA partagée de rang 8 et trois projections (lecteur, écrivain, bouche), ≈ 4,32 M paramètres appris, supervision par entropie croisée sur le jeton de réponse, paquets **continus** 2 × 896 ; **dix paires jumelles** (5 initialisations × 2 ordres de données, mêmes octets d'initialisation et même flux, hachés), seuls les masques d'attention diffèrent ; seuils préenregistrés (préenregistrement anonymisé fourni) ; inférence groupée par initialisation : cinq moyennes par strate, bootstrap par grappes, **test de retournement de signe exact sur les cinq moyennes par initialisation**, p = 0,0625 = minimum atteignable (§ 4-§ 5.1) ; 9/10 paires > 0,20 aux deux profondeurs, médianes 0,7648 / 0,6050 ; **tous les paquets coupés en test → exactement 1/17 pour les dix sociétés restreintes** ; conjonction préenregistrée formellement **échouée** (médiane 0,6988 < 0,70) ; § 6 : sur six sociétés choisies après coup, transplant même-valeur 0,94-1,00, suppression ou bruit de même norme ≤ 0,11, mélange inter-exemples 0,07-0,11, contrefactuel 0,74-1,00 ; le seul modèle global performant : même-valeur 0,12-0,25 (code enchevêtré par épisode) ; limites : une architecture, 17 états, 10 trajectoires non indépendantes, confusion rôle / évidence non levée. |
 | arXiv:2609.17637 Marincat, 2026 (v2 ; confirmation préenregistrée) | § 5 (résultats, Table 4, contrastes C1-C6, dépendance au canal) et début de § 6 (batterie mécanisme, Table 5) ; § 1-4, § 7-9 et annexes non lus | Soixante sociétés, cinq conditions, six strates d'initialisation × deux ordres ; **test de retournement de signe à six groupes**, intervalles bootstrap par grappes ; C1 (masqué + marqueurs contre global + marqueurs) : 12/12 trajectoires > 0,20, médianes +0,846 / +0,859, p = 0,03125 ; C6 (sans marqueurs) : 12/12, +0,884 / +0,917 ; toutes les trajectoires masquées à 0,0588 = hasard quand tous les paquets sont coupés ; C2 (marqueurs sous visibilité globale) échoue, aucun modèle G+ ne suit les marqueurs ; bras « remplissage neutre » non concluant. § 6 : batterie **non décisionnelle**, banque gelée (816 épisodes), cellules intact / même-valeur / contrefactuel (+3) / contrefactuel apparié sur l'évidence / suppression (zéro) / **« dérangé »** (donneur aléatoire de valeur différente) / bruit ; cas conditionnés au succès (« do not establish mediation »). |
 
+Lues en v0.5 (après le rapport du contradicteur ; identifiants résolus
+de nouveau par API le 08/11 avant citation) :
+
+| id résolu | auteurs, année | pages lues | ce qu'elle établit |
+|---|---|---|---|
+| hal-03100681 (v1, déposé le 6 janvier 2021) | Villecroze, Moulin-Frier, 2020 (1st SMILES workshop, ICDL 2020) | **PDF HAL de 7 pages lu en entier** (résumé, § I-VI, Fig. 1-6 ; références non lues) ; SHA-256 commençant par `7e9763b6ab21872a` ; le PDF n'est pas copié dans le dépôt | Grille 11 × 11, auditeur A3C à entrée pixel, message discret one-hot du pas précédent ; § V-A : sans biais, aucune émergence en 3 × 10^8 pas ; § V-B : face à un oracle fixé (direction à prendre), l'auditeur « uses almost exclusively the communication channel and neglects the visual input even when it is able to see the target » ; § V-C : CIC par contrefactuels, maximal sans bruit quelle que soit l'observabilité, réduit par l'observabilité **ou** le bruit (Fig. 4, 10 graines) ; § V-D : émetteur appris simplifié, pas de convergence (Fig. 5, 10 graines) ; § V-E : biais de signalisation positive → convergence « most of the time ». Pas de conflit message / observation, pas de nul apparié, pas d'émetteurs appris et fixé comparés sur la même tâche. |
+| arXiv:1905.13687 (v3) | Kharitonov, Chaabouni, Bouchacourt, Baroni, 2020 (ICML, PMLR 119) | texte intégral ouvert ; **lus : § 3.3, § 4.1 (Guess Number), § 7 du supplément** (recherche ciblée) ; § 1-2, § 4.2 (MNIST), § 5-6, § 8 non lus | Guess Number (8 bits, le récepteur voit k bits) : entropie du message proche du minimum nécessaire ; à k = 8 l'information du message est « entirely ignored by Receiver » (messages brouillés, performance inchangée) ; le brouillage conserve la marginale et détruit l'information (§ 7) ; seuls les runs à précision > 0,99 sont analysés (§ 3.3) ; REINFORCE ≈ 20 % de succès, GS et SCG > 50 %. Lu en entier par le contradicteur ; lecture partielle de l'auteur de la note. Fait : l'identifiant figurait déjà dans `snowball-tour1.tsv` (aval de Lowe, sous le titre « Information Minimization In Emergent Languages ») et n'avait pas passé le filtre par titre. |
+
 Lue en résumé seulement :
 
 | id | source | statut |
@@ -143,6 +245,10 @@ Lue en résumé seulement :
 | Messages discrets appris entre modules ou agents spécialisés. | 2107.02367 (article, modules spécialistes) ; 2609.34373 Table 2-3 (canal VQ de 2 bits, 25 graines, 0,983 contre silence 0,000 sur l'arène non couplée : un canal discret par VQ transmet quand il est nécessaire) | **recoupé, périmètre réduit** : agents MARL, pas modules spécialistes Transformer ; hukTsKYu8Y ne touche pas cette ligne (paquets **continus** de 640 dimensions, Table 2 p. 18) ; la veille interne `VEI:70-105` dérive de l'article et ne compte plus |
 | Un code fixe décodé par attracteurs résiste à un fort bruit de canal sans aucun apprentissage. | 2609.32605 (article ; lu) ; 2610.08612 (article, même groupe) ; 1407.6029 Fiete, Schwab, Tran `[résumé moteur]` (autre groupe : réseaux de Hopfield binaires construits comme décodeurs de tout code neuronal bruité, taux d'erreur asymptotiquement nul à taux d'information 1/log n) | **recoupé** par un groupe indépendant, mais le second groupe en résumé seulement et sur un réseau **construit** (non appris) ; 10.1038/339693a0 Sourlas 1989 (notice Crossref seule) n'est qu'un précédent de principe, non utilisé |
 | Positive listening partenaire contre étranger comme test d'usage. | 2610.37849 Denamganaï 2026 (lu pp. 1-6 ; v0.4 : **corps lu en entier**, § 4 résultats : Δ_PL = 0,615 [0,453 ; 0,751] avec code, −0,027 [−0,112 ; 0,044] sans ; Table 2 : trois conditions avec code au-dessus de zéro, trois sans à zéro ; § 5 : agents LM gelés, émetteur **scripté**, « not yet for learned or emergent codes ») ; 1903.05168 §3 (définition) ; dépôt `Near32/PartnerOutsiderPositiveListening` (code, README lu) | recoupé sur la notion et la méthode de remplacement ; v0.4 : résultats lus, **portée** : codes instruits dans des LLM, pas codes appris ; le bootstrap porte sur sessions et tours, pas sur des graines d'entraînement |
+| v0.5 — Un récepteur qui peut réussir seul ignore un message redondant ; l'émetteur appris continue pourtant d'encoder. | 1905.13687 § 4.1 et § 7 (lu, passages ; k = 8 : messages brouillés sans effet, émetteur appris) ; 1912.05676 Eccles § 3 (équilibre où le récepteur ignore le canal, lu) ; 2609.34373 § 4.1 (couplage rigide : aucun canal ne bat le silence, lu) ; hal-03100681 § V-C (l'observabilité réduit le CIC quand le canal est bruité, lu) | **recoupé** (quatre équipes, jeux et algorithmes différents) ; apporté par le contradicteur (Kharitonov), vérifié dans le texte par l'auteur de la note |
+| v0.5 — Les analyses de protocole ne portent que sur les graines qui ont réussi. | 1905.13687 § 3.3 (« We select the runs that achieved a high level of performance », lu) ; pratique inverse : 2609.34373 (25 graines, toutes rapportées) et 2608.20054 (dix paires, toutes rapportées) | observation de pratique, une source pour la sélection ; la décision PI 11 (aucune exclusion par graine) prend le contre-pied |
+| v0.5 — Face à un émetteur oracle **fixé**, l'auditeur utilise le message même quand il voit la cible. | hal-03100681 § V-B et § V-C (lu en entier par le contradicteur, puis par l'auteur de la note sur le PDF HAL ; grille 11 × 11, A3C, oracle directionnel, 10 graines) | **à recouper** : une seule source (deux lecteurs ne font pas deux sources) ; c'est le pôle « fixé » de V2 ; il manque une seconde équipe avec émetteur fixé et auditeur qui voit la cible |
+| v0.5 — Chauhan & Bera n'interviennent pas sur le message en test. | 2609.34373 texte intégral (recherche du 08/11 : « ablation » 0, « intervention » 0, « shuffled » 3 occurrences, toutes sur le nul d'alignement § 3.4 et § 4.5) ; corps lu au tour 2 | **vérifié** (constat d'absence dans une source, pas une affirmation à recouper) ; conséquence : la ligne « couplage rigide » (§ 3 l. 6) mesure la valeur du canal, pas son usage causal |
 | Une mesure d'usage fondée sur le zéro reste pratiquée. | `SudarshanHegde326/emergent-comm-usage-marl`, `scripts/analysis/spread_ablation.py` (mémoire MSc, 3 graines, ablation par message mis à zéro) `[README et début du script lus]` | observation de pratique, une source de code ; ne pas en tirer de conclusion |
 
 v0.3, lignes non touchées par hukTsKYu8Y (fait, après lecture des pp. 1-38) :
@@ -154,6 +260,37 @@ contre étranger ; pratique du zéro (le papier utilise OFF comme échelon 1 en 
 déclarant insuffisant, p. 4).
 
 ## 4. Reste ouvert
+
+v0.5 — Ce qui reste ouvert après le rapport du contradicteur et les
+décisions PI du 08/11 (constats ; le verrou n'est pas déclaré passé) :
+
+- **V1** (usage du message sur `sym` face à l'émetteur fixé, conflit
+  message / champ t contre placebo) et **V2** (différence de cet indice
+  entre émetteur fixé et émetteur appris). Fait : aucune des 11 sources
+  lues (9 du tour 3, plus Kharitonov et Villecroze) ne met le message et
+  l'observation propre de l'auditeur en conflit épisode par épisode avec
+  un nul apparié par graine ; Kharitonov brouille les messages entre
+  entrées (k = 8, émetteur appris), Villecroze mesure un CIC par
+  contrefactuels face à un oracle, Eccles impose un message constant
+  (canal nécessaire), Cheng, Gazzaev, Zhang & Emu et Marincat
+  interviennent sur des backbones gelés. Inférence : l'espace vide est
+  étroit (options § A) mais **non recoupé** : la descente de citations de
+  1905.13687 et de 2609.34373 n'a pas été faite (Semantic Scholar 429
+  pour le contradicteur ; non refaite dans cette version) → tour 4.
+- **Le modérateur « émetteur fixé contre appris »** (V2). Fait :
+  Kharitonov (appris → ignoré) et Villecroze (fixé → utilisé) sont lus
+  dans deux tâches, deux algorithmes, deux équipes. Inférence : qu'un
+  auditeur dépende davantage d'un émetteur fixé que d'un émetteur appris
+  conjointement, à tâche égale, n'a été trouvé **écrit nulle part** ; la
+  direction attendue de V2 est une inférence de la note, pas une
+  affirmation publiée.
+- Le point 1 ci-dessous (usage causal du canal `learned` sur `asym` avec
+  nul apparié) est **reclassé** : sur `asym`, l'usage est un corollaire
+  du succès (§ 1, v0.5) ; ce qui en survit est le contrôle positif de la
+  machinerie (décision 3 : `eng_asym` sous dérangement doit chuter de
+  S − 1/C, plus un agent scripté « message seul ») et la méthode du nul
+  apparié, transportée sur `sym` (décision 2). Le texte des points 1 à 4
+  est conservé tel quel pour l'historique.
 
 1. **Usage causal du canal `learned` sur une tâche asymétrique nécessaire par
    construction, avec un nul qui tient compte de la covariance de graine.**
@@ -405,33 +542,94 @@ déclarant insuffisant, p. 4).
    Huttegger 2008, pour le rôle de l'asymétrie de vitesse ; mais elle porte
    sur la **structure** du langage, pas sur le non-usage du canal, et n'est
    lue qu'en résumé : le lien reste **à recouper**.
+   v0.5 — Fait : Kharitonov et al. 2020 (§ 4.1, lu) rapportent un
+   récepteur qui ignore entièrement un message qu'un émetteur appris
+   continue d'encoder, quand sa propre entrée suffit (k = 8). Inférence :
+   troisième source lue, d'une troisième équipe, pour l'existence du
+   non-usage ; elle porte sur un canal **redondant**, pas sur un canal
+   nécessaire inutilisé (Eccles Table 1, Chauhan couplage partiel) ; la
+   sous-marque « vitesse d'adaptation » n'est pas touchée.
 
 Ce qui n'est **pas** ouvert : `eng − nocomm` sur asym avec émetteur conçu
-(`P100` §1 le dit lui-même).
+(`P100` §1 le dit lui-même) ; v0.5 : plus largement, sur `asym`, la
+nécessité du message et son usage par tout auditeur qui réussit, pour
+tout émetteur (A21 § 2.3 ; rapport du contradicteur § 1.1 ; options § 0).
+La seule question qui y reste, « l'apprenant apprend-il à décoder ? »,
+est une question d'optimisation (Eccles Table 1 : 0/50 sous REINFORCE
+sans biais ; Kharitonov § 4.1 : REINFORCE ≈ 20 %, GS et SCG > 50 %), non
+d'usage causal.
 
 ## 5. Dessin minimal qui tranche la question ouverte
 
-Détail et alternatives : `brainstorm-2026-11-01.md`. Dessin minimal retenu
-pour discussion (rien ne part avant le verrou) :
+v0.5 — Le dessin minimal des versions v0 à v0.4 (bras `learned` et
+`nocomm` sur `asym`, interventions permuté / gelé / zéro / restauration,
+nul par permutation des étiquettes de bras dans chaque graine) est
+**remplacé** par les dessins D-2 restreint et D-3 des options du 08/11,
+tels que fixés par les 12 décisions PI. Le protocole lui-même n'est pas
+réécrit ici : il le sera dans `protocol.md` v2 (PR #100, brouillon L0,
+par un autre agent dans une PR séparée) ; ce qui suit en est le résumé
+de lecture, sans valeur normative. Rien ne part avant le verrou et avant
+un nouveau contradicteur aveugle sur le protocole v2.
 
-- **Bras.** Sur la tâche `asym` de `P100` (K = 16, C = 4, A = 16), bras
-  `learned` et `nocomm` **entraînés de zéro**, appariés par graine (Lowe §6.2) ;
-  sur chaque agent `learned` entraîné, interventions en test : message permuté
-  entre épisodes, message gelé (constant), canal mis à zéro, plus restauration.
-  `eng` et `msg_shuffle` restent des contrôles de chaîne.
-- **Nul.** Permutation des étiquettes de bras **à l'intérieur de chaque graine**
-  (nul apparié qui conserve la covariance de graine), plus le nul substitut
-  binomial de `P100` §2 recalibré avec une composante de graine commune aux
-  deux bras. `sym` sort de H1 (décision PI) et reste un contrôle de fuite.
-- **Critère.** Usage causal soutenu si la chute permuté-contre-intact sur
-  `learned` dépasse le P99 du nul apparié **et** si la restauration ramène la
-  performance intacte ; réfuté si l'IC 95 % apparié de la chute contient 0
-  alors que `learned − nocomm` dépasse le P99 (gain sans usage du message).
-- **Coût.** Non mesuré. Inférence : un jeu référentiel K = 16 sous JaxMARL ou
-  EGG est d'un ordre de grandeur bien inférieur à un run Procgen N10-C
-  (≈ 10,8 h par run sur KXKM, `MS:179`). Hypothèse de travail à mesurer au
-  pilote : ≤ 1 h GPU par run, ≈ 10-20 h GPU au total ; ≈ 15-25 h humaines
-  (environnements réels manquants, `P100` §6).
+- **Question et bras.** V1 sur `eng_sym` (émetteur conçu fixé, auditeur
+  PPO entraîné) ; V2 = Δρ entre `eng_sym` et `learned_sym` (bras
+  confirmatoire, décision 4), co-primaires sous Holm α = 0,01
+  (décision 1). `nocomm_sym` sert de porte de suffisance (l'observation
+  propre suffit : `nocomm_sym` ≥ ε, TBD-15, sinon « non mesurable »,
+  décision 7). `eng_asym` sous dérangement devient le **contrôle
+  positif** de la machinerie (chute attendue de S − 1/C), sans α
+  (décision 3).
+- **Cinq conditions d'évaluation** sur les mêmes 500 épisodes par
+  graine : intact ; `msg_shuffle` (dérangement) ; **conflit** (champ t
+  intact, message conçu pour un t′ parmi les C − 1 autres candidats
+  visibles) ; **champ t dérangé** (analogue de `intervention_input` de
+  Kharitonov, restreint au champ t) ; **placebo** (message intact,
+  candidat t″ ≠ t désigné d'avance).
+- **Statistique.** ρ_i = P(action = t′ | conflit) − P(action = t″ |
+  placebo) par graine i (décision 2) ; Δρ pour V2.
+- **Nuls.** V1 : échange conflit / placebo par épisode **à l'intérieur de
+  chaque graine**, B = 10 000 ; V2 : permutation des étiquettes de bras
+  dans chaque indice de graine, B = 10 000 (options § B).
+- **Ordre d'exécution (corrige F1 du rapport).** Audit 4a → contrôles
+  scriptés qui peuvent échouer (« message seul » ρ ≈ 1, « champ t seul »
+  ρ ≈ 0) → contrôle positif `eng_asym` → portes au niveau du bras
+  (`eng_sym` ≥ 0,95 ; `nocomm_sym` ≥ ε ; décodabilité de `learned_sym`
+  par information mutuelle ou sonde linéaire, décision 4) → primaires.
+  Les portes sont au niveau du **bras**, jamais par graine ; toutes les
+  graines sont rapportées (décision 11).
+- **« Ignoré » = TOST** avec δ_eq fixée et justifiée avant gel (sd du
+  pilote + bruit binomial ≤ 0,022 à 500 épisodes, décision 8) ;
+  « dominant » si la borne basse de ρ ≥ δ_use.
+- **k = 25 graines appariées par backend** ; puissance Monte-Carlo sur ρ
+  et Δρ après pilote, montée par amendement avant gel si < 0,80
+  (décision 10). **Deux backends** (EGG et JaxMARL), côte à côte,
+  conjonctifs (décision 9, TBD-10).
+- **Encodage** du message gelé au gel ; résultat déclaré spécifique à cet
+  encodage (décision 5). **Restauration et message figé retirés**
+  (triviaux à L = 1 sans état, décision 6) ; le zéro n'est plus une
+  condition.
+- **Hôtes et coût.** Tout sur macM1 (CPU/MPS) : pilote, entraînements,
+  évaluations, nuls ; lockf, oMLX en pause, données T7, archives ES + T7
+  (décision 12). Durée non mesurée : pilote de débit obligatoire (go PI)
+  avant tout chiffre ; JaxMARL/Metal à valider au pilote. 0 entraînement
+  supplémentaire pour V1 si les bras `sym` existent ; `learned_sym`
+  coûte k × 2 runs (options § B, D-3).
+
+Fait : les points F1 (porte 3-asym rendant NH-96 irréfutable), F2
+(`nocomm` estime une constante), F3 (usage sur la jumelle non mesuré) et
+F7 (randperm contre dérangement ; appariement des épisodes) du rapport
+sont traités par cet ordre d'exécution, par le passage de la question
+sur `sym`, par les conditions conflit / placebo et par le nul par
+échange apparié ; F4 (étiquette « fuite » → « asymétrie
+d'optimisation »), F5 (π = 0,8 sans source) et F6 (budget B par règle)
+relèvent du protocole v2. Inférence : rien dans ce résumé n'est un
+protocole ; TBD-10, TBD-15, δ_eq et δ_use restent à fixer avant gel.
+
+Historique des points à discuter (v0.2 à v0.4, écrits pour le dessin
+antérieur ; conservés tels quels ; plusieurs sont absorbés par les
+décisions du 08/11 : 25 graines, porte au niveau du bras, retrait du
+zéro, de la restauration et du message gelé, nul apparié dans chaque
+graine) :
 
 Points à discuter issus du tour 2 (inférences, rien n'est modifié dans le
 dessin) :
@@ -494,6 +692,24 @@ dans le dessin) :
   l'usage, ou tâche non apprise).
 
 ## 6. Trois tests du verrou
+
+État v0.5 (2026-11-08, après le rapport du contradicteur et les 12
+décisions PI ; constats seulement, le verrou n'est pas déclaré passé) :
+
+| test | état | ce qui manque |
+|---|---|---|
+| Saturation | **non déclarée.** Le contradicteur, sans la note, a apporté **3 sources qui changent la note** (1905.13687 ; hal-03100681 ; la relecture analytique d'A21 § 2.3 ; 2609.34373 était déjà lue mais sa portée est révisée) : § 1 réécrit (question tranchée, question retenue), § 3 quatre lignes, § 4 reclassé, § 5 remplacé. Un tour mené par un lecteur indépendant a donc encore changé la note : saturation **non**. Fait : les deux sources nouvelles datent de 2020 et étaient dans le périmètre des tours 1 à 3 ; 1905.13687 figurait dans `snowball-tour1.tsv` (aval de Lowe) et n'a pas passé le filtre par titre ; hal-03100681 n'est pas sorti des requêtes HAL du tour 2, restreintes à `docType_s:THESE`. | Descente de citations de 1905.13687 et de 2609.34373 (S2 429 côté contradicteur, non refaite ici) ; snowball de hal-03100681 ; un tour sans entrée qui change la note **sur la question retenue V1/V2** (le périmètre a changé, le compteur repart) ; annexes listées en v0.4. |
+| Recoupement | **une marque ajoutée, aucune levée, décompte 2 → 3.** Marques de la v0.4 : § 3 l. 5 (plan 2 × 2) et § 4.2 (substrats hétérogènes), maintenues, rien ne les touche. Ajoutée : § 3 « émetteur fixé → message utilisé même en voyant la cible » (hal-03100681 seul ; lu par le contradicteur puis par l'auteur de la note sur le PDF HAL, donc plus de seconde main, mais une seule source). Non marquées mais à une source : la sélection des graines réussies (pratique, Kharitonov) ; le modérateur fixé / appris de V2 (inférence, aucune source). Hors tableau : § 3 l. 6 (couplage rigide) toujours deux preprints ; sous-marque § 4.4 « vitesse d'adaptation » maintenue. | Pour la nouvelle marque : une seconde équipe avec émetteur fixé et auditeur qui voit la cible (à chercher au tour 4 dans la descente de 1905.13687 et dans les travaux liés de hal-03100681). Pour § 3 l. 5 et § 4.2 : comme en v0.4. Pour § 3 l. 6 : version en actes de Chauhan & Bera. |
+| Couverture | **6 canaux sur 6, inchangée en nombre ; un canal révélé insuffisant.** HAL avait été interrogé (tour 2, 07/11) avec le filtre thèses : hal-03100681 (communication d'atelier, type COMM) n'est sorti qu'avec la requête du contradicteur (`"communication émergente" OR "emergent communication"`, 21 notices, sans filtre). Le contradicteur a aussi interrogé arXiv (4 requêtes), OpenReview (3), Crossref (Lewis, Barrett, Poffenberger), theses.fr et Exa ; il n'a pas cherché les neurosciences du workspace (§ 4 du rapport). | HAL hors thèses (articles et communications) sur toutes les formulations du tour 2 ; OpenReview `OAmBy25HHg` 403 ; Hill et al. 2025 arXiv:2508.02912, Rita 2022 (arXiv:2209.15342 / hal-03831908), thèses Chaabouni tel-03536320 et Polytechnique s275563 non lues ; annexes A-F de Chauhan & Bera ; neurosciences du workspace. |
+
+Pour passer le verrou, d'après ces constats (inférence, liste non
+décisionnelle) : un tour 4 limité à la question retenue (descente de
+citations de 1905.13687 et 2609.34373, snowball de hal-03100681, HAL hors
+thèses) sans entrée qui change la note ; une seconde source pour la
+nouvelle marque § 3 ; le protocole v2 écrit (PR #100) ; le pilote de
+débit macM1 (go PI) et la puissance Monte-Carlo sur ρ et Δρ ; puis un
+**nouveau contradicteur aveugle sur le protocole v2** avant tout gel
+(décisions du 08/11, « Suite »).
 
 État v0.4 (tour 3, 2026-11-08 ; constats seulement, le verrou n'est pas
 déclaré passé) :
@@ -559,3 +775,8 @@ déclaré passé) :
 | 2026-11-08 (tour 3) | arXiv:2610.22026, 2606.03280, 2610.33020, 2003.02979, 2506.06609, 2604.03266, 2610.15163, 2608.16347, 2608.13317, 2608.11676, 2607.11967, 2502.07552, 2204.12982, 2512.05654 | `[résumé moteur]` (notices arXiv API, `id_list`) |
 | 2026-11-08 (tour 3) | doi:10.1109/wsai70435.2026.11708582, doi:10.1109/icons62911.2024.00055, doi:10.1109/icmi65310.2025.11141291 | `[résumé moteur]` (OpenAlex) ; doi:10.1007/s10458-024-09665-6 et doi:10.5220/0013383400003905 : titre seul |
 | 2026-11-08 (tour 3) | GitHub `tokenosopher/populus-evidence-partitioning` ; HF `tokenosopher/populus-evidence-partitioning-checkpoints` | README (60 premières lignes) ; métadonnées HF (102 fichiers, public) ; rien relancé |
+| 2026-11-08 16:00-16:45 (v0.5) | `brief-n10d-2026-11-08.md` ; `contradictor-report-n10d-2026-11-08.md` (SHA-256 `d1e5f9c6…`, 395 lignes) ; `options-n10d-causal-2026-11-08.md` ; `decisions-n10d-causal-2026-11-08.md` (hors dépôt, dossier `hypneum-reviews/2026-11-08-n10d-contradictor/`) | brief lu en entier ; rapport lu en entier (§ 0 contamination, § 1.1-1.7, F1-F7, § 3, § 4 non vérifié, § 5 verdict) ; options § 0, § A, § B (D-2, D-3) ; les 12 décisions |
+| 2026-11-08 (v0.5) | A21 (`prereg/n10d-skeleton`, e0c64a8) | § 2.3 relu (E[S_msg_shuffle] = 1/C pour tout auditeur) |
+| 2026-11-08 (v0.5) | arXiv:1905.13687 Kharitonov et al. (texte intégral ; notice API relue) | § 3.3, § 4.1, § 7 du supplément (recherche ciblée) ; reste non lu |
+| 2026-11-08 (v0.5) | hal-03100681 Villecroze & Moulin-Frier (PDF HAL ; notice API `halId_s` relue ; SHA-256 commençant par `7e9763b6ab21872a`) | **7 pages lues en entier** (résumé, § I-VI, Fig. 1-6) ; références non lues ; PDF non copié dans le dépôt |
+| 2026-11-08 (v0.5) | arXiv:2609.34373 Chauhan & Bera (texte intégral ; notice API relue) | recherche du texte pour « ablation », « intervention », « shuffled », « floor is a strategy », « 0.740 » ; rien de nouveau lu au-delà du tour 2 |
