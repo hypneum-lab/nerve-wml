@@ -9,6 +9,15 @@ binary and has no network code; (2) the rescience-nh01 condition does not apply 
 
 **Without an aarch64 wheel (sdist, built on the host):** gym 0.26.2, glcontext 3.1.0, glfw 1.12.0, moderngl 5.13.0, imageio-ffmpeg 0.3.0; Procgen 0.10.7 is a source build (kit PR #101, not in these files).
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record
+[10.5281/zenodo.24053908](https://doi.org/10.5281/zenodo.24053908) (Hypneum Lab lot of
+2026-11-08, file `n10c-bis-g7-gb300-freeze-20261031.zip`, SHA-256
+`3457c8625432bb00645d53d2cab4ae529f48ee905932eb091ca4974de1de2b6f`) gives the freeze tag
+`n10c-bis-g7-gb300-freeze-20261031` (commit `44364dc9820056d808a5a88c9e454bce10c91484`,
+`swh:1:rev:44364dc9820056d808a5a88c9e454bce10c91484`) a verifiable deposit date, level
+L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag;
+anything dated after the tag in this live file is not in the deposit.
+
 ### `requirements-gb300-n10c-bis-gate-cuda12.txt`
 
 | package | version | source | file | latest upload |

@@ -6,6 +6,15 @@
 **Date drafted:** 2026-10-27 (dated by the GitHub push time of the tag).
 **Data status at drafting:** no correlated-pattern cell exists except the declared timing probe (seed 998, output discarded, no capacity read). Results of the pilot and of the confirmatory run (independent patterns, seeds 0–9) are known and inform the predictions.
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record
+[10.5281/zenodo.24053908](https://doi.org/10.5281/zenodo.24053908) (Hypneum Lab lot of
+2026-11-08, file `prereg-nh01-correlated-20261027.zip`, SHA-256
+`229e3a7a24e9e0f728df0f8b0f2b5726b9689acc434679e05a95bb08c4ee4598`) gives the freeze tag
+`prereg-nh01-correlated-20261027` (commit `df9a1e7634113599c9b38cb4259068a29a5bdd2a`,
+`swh:1:rev:df9a1e7634113599c9b38cb4259068a29a5bdd2a`) a verifiable deposit date, level
+L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag;
+anything dated after the tag in this live file is not in the deposit.
+
 ## Question
 
 Catalogue NH-01 (R1/C6, R7) anticipates that the dreaming kernel matters most on correlated data. Does the capacity gain of the dreaming kernel over Hebb, and its distinction from a matched uniform shrink, change when the stored patterns are correlated? In particular, does the gain decrease with correlation?

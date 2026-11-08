@@ -13,6 +13,15 @@ drafting delegated to an agent; the researcher merges and tags.
 has been computed. Smoke cells with seeds ≥ 90 000 exist (listed under
 "Pilots and smoke runs"); they are not analysed and never pooled.
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record
+[10.5281/zenodo.24053908](https://doi.org/10.5281/zenodo.24053908) (Hypneum Lab lot of
+2026-11-08, file `prereg-hopfield-p1bis-p8c-freeze-20261104.zip`, SHA-256
+`fae1997be8957b6bcc063c12ffbf24fc8dc7b5a162a65c2365da8c2bc1b89772`) gives the freeze tag
+`prereg-hopfield-p1bis-p8c-freeze-20261104` (commit `257e4698cadd6786d2381cf61d2eef4cdbeb4475`,
+`swh:1:rev:257e4698cadd6786d2381cf61d2eef4cdbeb4475`) a verifiable deposit date, level
+L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag;
+anything dated after the tag in this live file is not in the deposit.
+
 ## Scientific question
 
 In a Hopfield network with clipped couplings (|J_ij| ≤ A = 0.4) storing

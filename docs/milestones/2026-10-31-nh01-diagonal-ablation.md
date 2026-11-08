@@ -18,6 +18,15 @@ with seeds 200–209 has been computed.** The confirmatory results inform the
 fixed values of t\* and the positive-control target; they do not enter the
 ablation statistics.
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record
+[10.5281/zenodo.24053908](https://doi.org/10.5281/zenodo.24053908) (Hypneum Lab lot of
+2026-11-08, file `prereg-nh01-diagonal-20261031.zip`, SHA-256
+`4a6a307c81167fdee1c2a5ba388943dbcdac630fb29a4c75401208ec0634877a`) gives the freeze tag
+`prereg-nh01-diagonal-20261031` (commit `6e1b0069c49750f7cb2a01dff832a257c6157a6e`,
+`swh:1:rev:6e1b0069c49750f7cb2a01dff832a257c6157a6e`) a verifiable deposit date, level
+L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag;
+anything dated after the tag in this live file is not in the deposit.
+
 ## Scientific question
 
 The confirmatory study (N = 1 000, seeds 0–9, T = 0, cue with

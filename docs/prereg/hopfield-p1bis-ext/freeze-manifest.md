@@ -27,6 +27,17 @@ this one; the tag is never moved.
   @`7e4257489efd763560a6df0e4456da0fa428cc9d`, `hopfield.py` (MIT)
 - Confirmatory seeds: 31001–31020 (P1bis-ext), 32001–32020 (P8c-nocap)
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record
+[10.5281/zenodo.24053908](https://doi.org/10.5281/zenodo.24053908) (Hypneum Lab lot of
+2026-11-08, files `prereg-hopfield-p1bis-p8c-freeze-20261104.zip` SHA-256
+`fae1997be8957b6bcc063c12ffbf24fc8dc7b5a162a65c2365da8c2bc1b89772` and `prereg-hopfield-p8c-relaunch-20261105.zip` SHA-256
+`b561ce5b4a8b40b1688113be2e2212f3c5921fea4052dc613cfb1f3937b6fb75`) gives the freeze tags
+`prereg-hopfield-p1bis-p8c-freeze-20261104` (commit `257e4698cadd6786d2381cf61d2eef4cdbeb4475`,
+`swh:1:rev:257e4698cadd6786d2381cf61d2eef4cdbeb4475`) and `prereg-hopfield-p8c-relaunch-20261105` (commit
+`db4eb5ba5644df8dc5622f53f249c19d52a9d82b`, `swh:1:rev:db4eb5ba5644df8dc5622f53f249c19d52a9d82b`) a verifiable deposit date,
+level L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was
+at the tags; anything dated after the tags in this live file is not in the deposit.
+
 ## Files at the merge commit (this manifest excluded)
 
 | File | SHA-256 |
