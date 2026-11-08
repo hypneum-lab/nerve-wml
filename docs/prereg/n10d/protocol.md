@@ -24,11 +24,14 @@ V2 (co-primary, modulator): Does the message-dependence index ρ differ between
 the engineered sender (`eng_sym`) and the jointly trained sender (`learned_sym`), at the
 same trunk, seed set and training budget?
 
-The two questions are co-primaries under Holm FWER α = 0.01 applied to {ρ_eng,
-Δρ}, where ρ_eng is the mean per-seed ρ for `eng_sym` and Δρ is the two-sample
-contrast ρ(eng_sym) − ρ(learned_sym). V1 is tested first in the Holm order; V2
-proceeds only if V1 rejects at α/2 = 0.005 (or if the two-step Holm rule permits
-it after V1 rejection).
+The two questions are co-primaries under a fixed, pre-specified hierarchical
+procedure at FWER 0.01 applied to {ρ_eng, Δρ}, where ρ_eng is the mean per-seed ρ
+for `eng_sym` and Δρ is the two-sample contrast ρ(eng_sym) − ρ(learned_sym). V1 is
+tested first in a fixed, pre-specified hierarchical order (not data-dependent); V2
+only if V1 rejects: V1 at α₁ = 0.005, then V2 at α₂ = 0.01. This is more
+conservative than classical Holm (which orders by p-value), controls FWER ≤ 0.01,
+and reflects the gating: V2 (modulator) is meaningful only if V1 (message use)
+rejects.
 
 NH-96 ("channel plumbing and trunk learn the engineered code on asym") is not a
 primary. `eng_asym` is the positive control of the intervention machinery (section 3,
@@ -243,7 +246,10 @@ If this fails: the listener cannot succeed via its own field on this arm/backend
 combination; the question "which path does the listener use?" is ill-posed.
 Outcome: "non mesurable" for both V1 and V2.
 ε (TBD-15): working value 0.75; exact value set before the freeze after the pilot
-nocomm_sym distribution and the evaluation action rule (TBD-11) are known.
+nocomm_sym distribution and the evaluation action rule (TBD-11) are known. Note:
+ε = 0.75 gives threshold 1 − 0.75 = 0.25 = 1/C for C = 4, meaning any learning seed
+would pass; the final value must be strictly > 1/C + a margin established from the
+pilot `nocomm_sym` distribution.
 
 **G2 — decodability of `learned_sym` (TBD-15 linked):**
 MI(message; t) or a linear probe accuracy for `learned_sym`, measured on CPU,
@@ -275,18 +281,32 @@ under any episode derangement is exactly 1/C). With S_intact ≈ 1 on `asym`, th
 expected drop is ≈ 0.75. If PC3 fails: the message-shuffle pipeline is broken on
 this backend.
 
+Pass criterion: the observed drop S_intact − S_msg_shuffle on `eng_asym` must exceed
+0.50 (two thirds of the oracle contrast 0.75). Working value; refined after the pilot
+and committed before the freeze. If S_intact < 0.90 on `eng_asym` (learning
+incomplete), the threshold becomes 0.5 × (S_intact − 1/C).
+
 ### 6.3 Primaries (read only after G1, G2, PC1–PC3 pass)
 
 Read ρ(eng_sym) for V1 and Δρ for V2 from the outcome table (section 7).
-Apply Holm correction at FWER 0.01: test V1 at level α_1 = 0.01 / 2 = 0.005;
-if V1 rejects, test V2 at level α_2 = 0.01.
+Apply the hierarchical procedure of section 1: test V1 at α₁ = 0.005 using null 1
+p-value; if V1 rejects, test V2 at α₂ = 0.01 using null 2 p-value.
 
 ## 7. Outcome table
 
-D1 = mean_i(ρ_i(eng_sym)); L1, U1 = lower and upper bounds of its 95 % CI.
-D2 = Δρ; L2, U2 = lower and upper bounds of its 95 % CI.
-CI method: 95 % bootstrap percentile or paired t; method fixed before the freeze and
+D1 = mean_i(ρ_i(eng_sym)); L1, U1 = lower and upper bounds of its 99 % CI
+(level follows α₁ = 0.005).
+D2 = Δρ; L2, U2 = lower and upper bounds of its 98 % CI
+(level follows α₂ = 0.01).
+CI method: bootstrap percentile or paired t; method fixed before the freeze and
 the Monte-Carlo power rerun with it (section 8).
+
+**Decision rule:** the formal test is the permutation p-value. V1 rejects if
+p₁ < α₁ = 0.005 (null 1); V2 rejects if p₂ < α₂ = 0.01 (null 2, only if V1
+rejects). The CI does not determine whether V1 or V2 rejects; it classifies the
+outcome among passing results only: a CI bound crossing δ_use or δ_eq gives the
+outcome label (rows 2–3 and Δρ rows below) but the threshold that triggers the
+report is the p-value gate.
 
 Rows are checked in this order; the first that holds is the outcome.
 
@@ -299,13 +319,15 @@ Rows are checked in this order; the first that holds is the outcome.
 | 3 | message ignored | V1 | U1 < δ_eq (TOST, TBD-17) | listener does not use message within the equivalence margin |
 | 4 | non concluant | V1 | otherwise | uncertainty; report D1 and CI |
 | — | Δρ positive | V2 | L2 ≥ δ_use (TBD-16) | jointly trained sender yields less message dominance |
+| — | Δρ negative | V2 | U2 ≤ −δ_use (TBD-16) | jointly trained sender yields more message dominance than the engineered sender |
 | — | Δρ null | V2 | U(|D2|) < δ_eq (TOST, TBD-17) | no detectable difference between sender types |
 | — | non concluant | V2 | otherwise | report D2 and CI |
 
 δ_use (TBD-16) and δ_eq (TBD-17) are set after the pilot and before the freeze.
 Justification procedure: the between-seed sd of ρ from the pilot, combined with the
 maximum binomial noise at n_eval = 500 (sd ≤ sqrt(0.25 / 500) ≈ 0.022 per proportion
-term), determines the achievable precision. Both "message dominant" and "message
+term), determines the achievable precision. The per-seed sd of ρ_i (difference of
+two proportions) is at most √2 × 0.022 ≈ 0.032. Both "message dominant" and "message
 ignored" must remain achievable for some ρ value after δ_eq and δ_use are set:
 δ_eq < δ_use, with a gap of at least a few times the noise floor.
 
@@ -340,10 +362,12 @@ pilot (unlike v1, where the bimodal pi = 0.80 assumption was used before any pil
 
 ### 8.3 CI method
 
-95 % bootstrap percentile or paired t for ρ (V1) and for Δρ (V2). Method fixed
-before the freeze; the Monte-Carlo power is rerun with the chosen method. The choice
-follows the same reasoning as v1 TBD-16 (Hesterberg 2015, arXiv:1411.5279, section
-5.3: percentile under-covers at small n; paired t needs normality).
+Bootstrap percentile or paired t for ρ (V1, 99 % CI) and for Δρ (V2, 98 % CI).
+Method fixed before the freeze; the Monte-Carlo power is rerun with the chosen method.
+The choice follows the same reasoning as v1 TBD-16 (Hesterberg 2015, arXiv:1411.5279,
+section 5.3: percentile under-covers at small n; paired t needs normality). CI level
+follows α: 99 % for V1 (α₁ = 0.005) and 98 % for V2 (α₂ = 0.01). These are wider
+than the nominal 95 % — they classify outcomes, not the rejection test.
 
 ## 9. Backends
 
@@ -398,16 +422,15 @@ Missing before the freeze:
 
 | id | status | description |
 |---|---|---|
-| TBD-11 | OPEN | Throughput measurement without score (macM1, one cell of one arm, one backend, no score read). Needed to bound run time and to establish JaxMARL / Metal viability. Working values: L = 1, 100 logs/run, trunk MLP 2 × 256, n_eval = 500. Training budget B not fixed. |
+| TBD-11 | OPEN | Throughput measurement without score (macM1, one cell of one arm, one backend, no score read). Needed to bound run time and to establish JaxMARL / Metal viability. Working values: L = 1, 100 logs/run, trunk MLP 2 × 256, n_eval = 500. Training budget B not fixed. B fixed from the pilot as the smallest budget at which eng_sym and nocomm_sym success plateau (change < 0.01 over the last 20 % of steps on all pilot seeds), committed before the freeze. |
 | TBD-15 | OPEN | ε for gate G1 (mean `nocomm_sym` ≥ 1 − ε). Working value 0.75; conservative. Exact value set before the freeze from the pilot `nocomm_sym` distribution and the evaluation action rule (TBD-11). Also covers the decodability threshold for gate G2. |
 | TBD-16 | OPEN | δ_use: CI lower bound threshold for outcome "message dominant". Set after pilot, before freeze; justified by pilot between-seed sd and binomial noise floor (max ≈ 0.022 per proportion). |
 | TBD-17 | OPEN | δ_eq: TOST upper bound for outcome "message ignored". Same justification as TBD-16; δ_eq < δ_use required so both outcomes remain achievable. |
 
 ## 13. References
 
-- Kharitonov, Chaabouni, Bouchacourt, Baroni 2020, "Finding a generalizable solution
-  for a referential game using minimal symbol inventories", ICML 2020, PMLR v119,
-  arXiv:1905.13687.
+- Kharitonov, Chaabouni, Bouchacourt, Baroni 2020, "Entropy Minimization In Emergent
+  Languages", ICML 2020, PMLR v119, arXiv:1905.13687.
 - Villecroze, Moulin-Frier 2020, "When and why emergent communication is non-trivially
   compositional", SMILES workshop @ ICDL 2020, hal-03100681.
 - Chauhan, Bera 2026, "Emergence, Not Bandwidth: Physical Coupling and the Limits of

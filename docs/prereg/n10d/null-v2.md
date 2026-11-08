@@ -113,7 +113,9 @@ Report: observed Δρ, null median, null P95, null P99, two-sided empirical p.
 
 ### 3.1 Outcomes (from protocol.md section 7)
 
-Given the 95 % CI [L, U] of the mean per-seed ρ:
+Given the CI [L, U] of the mean per-seed ρ (99 % for V1, 98 % for V2; level follows
+α — wider than the nominal 95 % because the CI classifies outcomes, not the rejection
+test, whose threshold is the permutation p-value):
 
 ```
 if L >= delta_use:
@@ -163,10 +165,11 @@ protocol PR is merged. No Python file is modified here.
 
 - Add outcome type: `Outcome = Literal["message_dominant", "message_ignored",
   "non_concluant", "non_mesurable"]`.
-- Add `decide_v1(rho_seeds, delta_use, delta_eq, ci_method) -> Outcome` using the
-  CI and TOST rules of section 3 above.
-- Add `decide_v2(rho_eng, rho_learned, delta_use, delta_eq, ci_method) -> Outcome`
-  using Δρ and the same TOST structure.
+- Add `decide_v1(rho_seeds, delta_use, delta_eq, ci_method, ci_level=0.99) -> Outcome`
+  using the CI and TOST rules of section 3 above (ci_level=0.99 for α₁=0.005).
+- Add `decide_v2(rho_eng, rho_learned, delta_use, delta_eq, ci_method, ci_level=0.98)
+  -> Outcome` using Δρ and the same TOST structure (ci_level=0.98 for α₂=0.01).
+  Never hardcode 0.95; pass ci_level explicitly.
 - Deprecate or archive v1 `decide_asym`, `combine_backends` (keep them for the
   NH-96 PC3 control).
 
