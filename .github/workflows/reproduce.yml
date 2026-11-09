@@ -53,12 +53,10 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
 
-      # --frozen installs exactly what uv.lock pins without
-      # re-resolving. (--locked currently fails: the lock still
-      # records the package's own version as 1.9.2 vs 1.10.0 in
-      # pyproject.toml; no third-party pin differs.)
-      - name: Sync dependencies (frozen lockfile)
-        run: uv sync --all-extras --frozen
+      # --locked installs exactly what uv.lock pins and fails if
+      # the lockfile is out of date with pyproject.toml.
+      - name: Sync dependencies (locked lockfile)
+        run: uv sync --all-extras --locked
 
       - name: Run Gate W pilot (README reproduce command)
         run: |
