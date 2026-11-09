@@ -1,10 +1,11 @@
 name: reproduce
 
 # Runs the README "Reproduce in one command" target (Gate W =
-# Claim A, MLP/LIF polymorphism, spec section 8.3) on a clean
-# ubuntu-latest runner and compares the JSON report against the
-# values committed in .github/reproduce/gate_w_expected.json.
-# The badge in the README is green only if every metric matches.
+# Claim A, MLP/LIF polymorphism, spec section 8.3) on clean
+# ubuntu-latest (x86_64) and macos-latest (arm64) runners and
+# compares each JSON report against the values committed in
+# .github/reproduce/gate_w_expected.json. The badge in the README
+# is green only if every metric matches on both runners.
 
 on:
   push:
@@ -29,7 +30,12 @@ concurrency:
 
 jobs:
   gate-w:
-    runs-on: ubuntu-latest
+    name: gate-w (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     env:
       # README: without it the run is 10-25x slower (torch
@@ -70,5 +76,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gate-w-report
+          name: gate-w-report-${{ matrix.os }}
           path: gate_w_report.json
