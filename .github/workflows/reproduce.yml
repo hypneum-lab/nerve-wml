@@ -1,0 +1,80 @@
+name: reproduce
+
+# Runs the README "Reproduce in one command" target (Gate W =
+# Claim A, MLP/LIF polymorphism, spec section 8.3) on clean
+# ubuntu-latest (x86_64) and macos-latest (arm64) runners and
+# compares each JSON report against the values committed in
+# .github/reproduce/gate_w_expected.json. The badge in the README
+# is green only if every metric matches on both runners.
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+    paths:
+      - ".github/workflows/reproduce.yml"
+      - ".github/reproduce/**"
+      - "scripts/track_w_pilot.py"
+      - "track_w/**"
+      - "nerve_core/**"
+      - "pyproject.toml"
+      - "uv.lock"
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"  # weekly, Monday 04:17 UTC
+
+concurrency:
+  group: reproduce-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-w:
+    name: gate-w (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      # README: without it the run is 10-25x slower (torch
+      # intra-op thread contention on shared CPU hosts).
+      OMP_NUM_THREADS: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      # --frozen installs exactly what uv.lock pins without
+      # re-resolving. (--locked currently fails: the lock still
+      # records the package's own version as 1.9.2 vs 1.10.0 in
+      # pyproject.toml; no third-party pin differs.)
+      - name: Sync dependencies (frozen lockfile)
+        run: uv sync --all-extras --frozen
+
+      - name: Run Gate W pilot (README reproduce command)
+        run: |
+          set -o pipefail
+          start=$(date +%s)
+          uv run python scripts/track_w_pilot.py | tee gate_w_report.json
+          echo "duration_s=$(( $(date +%s) - start ))"
+
+      - name: Compare against committed expected values
+        run: >
+          uv run python .github/reproduce/compare.py
+          gate_w_report.json .github/reproduce/gate_w_expected.json
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-w-report-${{ matrix.os }}
+          path: gate_w_report.json

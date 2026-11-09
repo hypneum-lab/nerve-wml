@@ -2,6 +2,9 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19656342.svg)](https://doi.org/10.5281/zenodo.19656342)
 [![OSF](https://img.shields.io/badge/OSF-10.17605%2FOSF.IO%2FQ6JYN-lightgrey)](https://doi.org/10.17605/OSF.IO/Q6JYN)
+[![reproduce](https://github.com/hypneum-lab/nerve-wml/actions/workflows/reproduce.yml/badge.svg)](https://github.com/hypneum-lab/nerve-wml/actions/workflows/reproduce.yml)
+
+_The **reproduce** badge is green when clean `ubuntu-latest` (x86_64) and `macos-latest` (arm64) CPU runners, from `uv.lock`, each re-run the "Reproduce in one command" target below (`OMP_NUM_THREADS=1 uv run python scripts/track_w_pilot.py`, Gate W only, seed 0) and every metric of both JSON reports equals [`.github/reproduce/gate_w_expected.json`](.github/reproduce/gate_w_expected.json) to an absolute tolerance of 1e-9 (the metrics are ratios of integer counts, so this is an exact-match check). It runs on every push to `master`, weekly, and on demand. It does not cover the other gates, the multi-seed or slow runs, the paper figures, or any pre-registered confirmatory result._
 
 **Substrate-agnostic nerve protocol for inter-module communication in hybrid neural systems.**
 

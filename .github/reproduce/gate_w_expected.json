@@ -1,0 +1,9 @@
+{
+  "w1_accuracy": 1.0,
+  "w2_acc_mlp": 1.0,
+  "w2_acc_lif": 1.0,
+  "w2_polymorphie_gap": 0.0,
+  "w3_gain_over_baseline": 0.391304347826087,
+  "w4_forgetting": 0.0,
+  "all_passed": true
+}
