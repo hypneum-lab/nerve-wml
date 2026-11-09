@@ -76,9 +76,22 @@ GATE_KINDS = ("gate_dev", "pretrain_dev")
 # rerun per failed run of G2 (a crashed attempt still uses a slot), so 2k
 # slots per arm; k = 3 seeds (9101-9103). eng had used 13 of 13:
 # eng 13 + 6 = 19, nocomm 6.
-GATE_DEV_ALLOWANCE = {"gtm": 20, "eng": 19, "nocomm": 6, "gtm_mis": 3,
+# N10-C-bis necessity gate A+ (plan docs/prereg/n10c-bis/three-seeds-plan-
+# 2026-11-06.md section 6.6, RUNBOOK-aplus.md; PI decision 2026-11-06,
+# before any A+ run): k = 3 development seeds (9104, 9105, 9106), condition
+# closed, 10M pair-steps, arms eng, nocomm and nocomm_rep (= nocomm on seed
+# S+10 with the trunk of S); one run per cell plus one rerun per failed run
+# (G2): eng 3 + 3, nocomm 6 + 6. Recalibrated 2026-11-06 on the GB300 G7
+# ledger (not merged before; its clone ledger was not repatriated): the
+# repatriated lane snapshots and logs give 4 eng and 1 nocomm gate_dev
+# reservations, now merged in manifest/smoke_ledger.json (2 of them
+# reconstructed); a later RTX PRO 2000 attempt of the G7 lane (about 17:00Z,
+# OOM, at most 2 eng slots: attempt + rerun of seed 9101) left no record and
+# is covered by a margin of 2. eng 13 + 4 + 2 + 6 = 25; nocomm 1 + 12 = 13.
+# pretrain_dev: the trunk of the new seed 9106 (1 run + 1 rerun): 8 + 2 = 10.
+GATE_DEV_ALLOWANCE = {"gtm": 20, "eng": 25, "nocomm": 13, "gtm_mis": 3,
                       "eng_gtmrx": 3, "gtm_warm": 3, "vq": 3}
-GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 8}
+GATE_ALLOWANCE = {"gate_dev": 4, "pretrain_dev": 10}
 GATE_MAX_STEPS = {"gate_dev": 10_000_000}
 
 
