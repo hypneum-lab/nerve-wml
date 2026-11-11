@@ -1,8 +1,14 @@
 # Pre-registration (L0, draft) — P3r: which offline operation suits a saturating one-way memory
 
 **Status:** L0 draft written on 2026-11-11 at the request of the PI,
-as the reformulation of candidate P3. Nothing is frozen, nothing has
-been run, no catalogue number is assigned. Drafted by an agent.
+as the reformulation of candidate P3; revised the same evening on the
+PI's decisions: **P3r-b is the only hypothesis; P3r-a becomes the
+positive control of the instrument; P3r-c is dropped.** The reading
+gate applies (Parisi 1986 and Tononi-Cirelli 2003 are paywalled and
+wait for a PI decision on access; the 2014 review is read); a CPU run
+may happen before M3, results read after the method note. Nothing is
+frozen, nothing has been run, no catalogue number is assigned.
+Drafted by an agent.
 
 ## 1. Question, in plain words
 
@@ -33,10 +39,17 @@ depends on two properties of the circuit:
   untouched; with a fixed threshold, the weakest ones fall below it.
   The first statement below is close to an analytical fact; the
   simulation checks it, it does not discover it.
-- Prior art, **not read**: memories with bounded synapses that forget
-  (Parisi 1986, listed in the library as to fetch; Amit and Fusi);
-  synaptic-scaling models; the synaptic homeostasis hypothesis of
-  sleep, cited from memory in the working document. The lab already
+- Prior art. **Read**: Tononi and Cirelli 2014 (library note of
+  2026-11-04, `references/notes/doi-10.1016_j.neuron.2013.12.025.md`):
+  SHY states renormalisation by **down-selection**, with three
+  computational variants (proportional reduction with a threshold;
+  depression-biased STDP sparing strong synapses; protection of
+  co-activated synapses); the « rescale » arm below is the first
+  variant, the « random reset » arm is none of them. **Not read,
+  paywalled** (listed in `library/references/to-fetch/`): Parisi 1986,
+  « A memory which forgets » (J. Phys. A 19, L617), the palimpsest with
+  bounded synapses; Tononi and Cirelli 2003, the first statement of
+  SHY. Not resolved: Amit and Fusi on bounded synapses. The lab already
   vendors a model with bounded synapses and dreaming
   (`experiments/hopfield_dream_conf/vendor/hopfield.py`, Marinari,
   Rossi, Zamponi), which is a recurrent relative of this question.
@@ -70,48 +83,60 @@ depends on two properties of the circuit:
   `old`: the same for the first session; both as balanced accuracy,
   16 seeds.
 
-## 4. Statements and decision rule (to fix before any run)
+## 4. Statements and decision rule (to fix before any run; revised 2026-11-11 evening)
 
 Equivalence and difference are read on 99 % bootstrap intervals over
 seeds, margin 0.05 of balanced accuracy.
 
-- **P3r-a (interaction with the read-out), graded synapses.** With
-  proportional inhibition, `old` under rescale is equivalent to `old`
-  under no operation while `new` is higher by more than the margin.
-  With a fixed threshold, `old` under rescale is lower than under no
-  operation by more than the margin. Supported iff both hold;
-  refuted iff rescale preserves `old` with a fixed threshold or loses
-  it with inhibition.
-- **P3r-b (the claim of the sleep hypothesis), graded synapses with
-  inhibition.** At equal weight removed, `old` is higher under
+- **Gate 0 (saturation).** In the no-operation, graded, fixed-threshold
+  arm, `new` at the last session is below `new` at the first by more
+  than the margin. Otherwise the memory did not saturate and the
+  verdict is `non_test`.
+- **Gate 1 (positive control of the instrument, former P3r-a), graded
+  synapses.** Expected and required: with proportional inhibition,
+  `old` under rescale is equivalent to `old` under no operation while
+  `new` is higher by more than the margin; with a fixed threshold,
+  `old` under rescale is lower than under no operation by more than
+  the margin. Both halves follow from the signal-to-noise argument of
+  section 2; a simulator that does not show them is not trusted, and
+  the verdict is `non_test`. No hypothesis is attached.
+- **P3r-b (the only hypothesis), graded synapses with proportional
+  inhibition.** At equal total weight removed, `old` is higher under
   rescale than under random reset by more than the margin, with `new`
-  equivalent. Two-sided: supported, refuted (reset at least as good),
-  or inconclusive.
-- **P3r-c (switch synapses), descriptive.** With binary synapses only
-  the random reset is defined. Reported: whether `old` decays with
-  the number of sessions since learning (a palimpsest), with and
-  without inhibition. No verdict.
-- **Gate.** In the no-operation, graded, fixed-threshold arm, `new`
-  at the last session is below `new` at the first by more than the
-  margin. Otherwise the memory did not saturate and every verdict is
-  `non_test`.
+  equivalent. Two-sided: supported, refuted (reset at least as good on
+  `old`, or `new` not equivalent), or inconclusive.
+- Dropped (PI, 2026-11-11): the descriptive P3r-c on switch synapses.
+  The binary-synapse code path is not written.
+
+**Tautology check (2026-11-11).** P3r-b is closer to a calculation
+than the draft of this morning said. With proportional inhibition a
+rescale leaves every relative weight unchanged, so `old` is untouched
+by construction; a random reset of a fraction eps of the synapses
+multiplies each memory's signal and interference by (1 - eps) **in
+expectation** and the inhibition follows, so the only loss on `old`
+comes from the **binomial variance** of the deletion on the weakest
+memories. The size of that term is computable before any run (number
+of active inputs, K, eps, read-out margin). **Required before a
+freeze:** that analytic estimate, written in this section; if it falls
+under the 0.05 margin, P3r-b is a null by construction and goes back
+to a note (PI decision). The `new` half is the open part: rescale frees
+room in every synapse, reset frees full room in a fraction eps of them
+and none elsewhere.
 
 ## 5. What each verdict changes
 
-- **P3r-a supported:** the downscaling motif of the dream axis gets a
-  statement of scope: free where the read-out is normalised, harmful
-  where it is not. It is the associative-memory counterpart of C1.
+- **Gate 1 passes:** the instrument reproduces what the signal-to-noise
+  argument says (free where the read-out is normalised, harmful where
+  it is not); this is reported as a control, not as a result.
 - **P3r-b supported:** one constructed case where a rescaling beats a
   random reset; refuted: the motif has no advantage over forgetting
   even in the case built for it, and should leave the lab's
   biological analogies.
-- **P3r-c:** tells whether "sleep as rescaling" can be said at all of
-  a switch-like plasticity, or only "sleep as random forgetting".
 
 ## 6. Known weaknesses of this draft
 
-- P3r-a is nearly a calculation. If the PI wants only results that
-  could surprise, P3r-b is the one test worth running.
+- P3r-a was nearly a calculation and is now the positive control;
+  P3r-b may be one too at second order (tautology check, section 4).
 - The model is a toy; it claims nothing about the octopus. The
   mapping of "proportional inhibition" to the complex amacrine cells
   is the authors' own hypothesis in Bidel et al., not a finding.
@@ -126,5 +151,8 @@ seeds, margin 0.05 of balanced accuracy.
 ## 7. Cost, and what is not done
 
 CPU only, numpy, minutes. Not done: the code; the calibration of K;
-the reading of the references of section 2; a decision of the PI on
-whether this is worth a run or stays a note.
+the analytic estimate of the P3r-b effect size (section 4); the
+reading of Parisi 1986 and Tononi-Cirelli 2003 (paywalled, PI
+decision on access). Decided by the PI on 2026-11-11 (evening): P3r-b
+only, P3r-a as control, P3r-c dropped; reading gate applies; CPU run
+allowed before M3, results read after the method note.
