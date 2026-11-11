@@ -49,7 +49,29 @@ depends on two properties of the circuit:
   paywalled** (listed in `library/references/to-fetch/`): Parisi 1986,
   « A memory which forgets » (J. Phys. A 19, L617), the palimpsest with
   bounded synapses; Tononi and Cirelli 2003, the first statement of
-  SHY. Not resolved: Amit and Fusi on bounded synapses. The lab already
+  SHY. Not resolved: Amit and Fusi on bounded synapses.
+- **Read in full on 2026-11-11 (evening)**: Lepre 2026, « Thermodynamics
+  of Forgetting in a Bounded Hopfield Network », arXiv:2611.08258
+  (library note). Facts: the Parisi palimpsest (hard clipping at +/- A,
+  increments 1/sqrt(N)) has its memory horizon maximised at A = 0.351
+  with x_c = 0.0405 N patterns at T = 0 (pp. 20-21; asymptotic, the
+  N = 1 000 value is lower), falling by a factor ten between T = 0 and
+  T = 0.6; the optimum bound 0.041 at A = 0.354 is due to van Hemmen,
+  Keller and Kühn 1988, not to Parisi 1986 (p. 21). The paper contains
+  **no offline operation**, no dilution, no rescaling: it does not
+  decide P3r-b. Its signal-to-noise decomposition (remark 4, p. 18:
+  age enters the signal only, the noise is the same for every memory)
+  gives the reader's expectation for the Hopfield analogue: a
+  proportional reduction J -> (1 - eps) J is exactly neutral at T = 0
+  and a heating T -> T / (1 - eps) at T > 0 (the counter-evidence of
+  dream-of-kiki PR #100 again); a random reset of a fraction eps adds
+  a Sherrington-Kirkpatrick noise term of variance eps (1 - eps) A^2 / 3,
+  about 0.053 A^2 at eps = 0.2, of the same order as the clipping noise
+  0.052 A^2. **Reader's inference:** the sign of P3r-b is expected in
+  the recurrent analogue, not its size; the lab's model (non-negative
+  sparse weights in [0, 1], zero as a floor) is not the paper's, so
+  the analytic estimate required by section 4 still has to be done on
+  the lab's model. The lab already
   vendors a model with bounded synapses and dreaming
   (`experiments/hopfield_dream_conf/vendor/hopfield.py`, Marinari,
   Rossi, Zamponi), which is a recurrent relative of this question.
