@@ -96,14 +96,16 @@ below 1. The design below is revised accordingly.
 
 - **Networks.** Binary units, zero diagonal, zero temperature,
   asynchronous updates in a random order. Kernels at t = 0 (Hebbian)
-  and **t = 1 (primary dreamed arm, alpha_c about 0.4, so alpha stays
-  under 0.64 over the whole r grid)**; t = 10 (`T_PRIMARY` of NH-01)
-  is kept as a **secondary arm at r = 1.15 only**, where alpha is about
-  1.0 (flagged: at the edge of P = N), and dropped at r = 1.3 and 1.6
-  (P > N, section 2). Sizes N = 512 and 2 048. [Revision of
-  2026-11-11 evening; the PI may prefer t = 3, alpha_c about 0.6 by the
-  fitted curve, as the primary dreamed arm; the capacity step 0
-  measures it anyway.]
+  and **t = 1 (primary dreamed arm, alpha_c about 0.4 printed by
+  Fachechi 2019, so alpha stays between 0.46 and 0.64 over the whole r
+  grid)**. Secondary, descriptive, bounded arms: **t = 3 at r = 1.15
+  and 1.3 only** (alpha_c about 0.6 by the fitted curve of Fachechi
+  2019, not printed, measured at step 0; r = 1.6 would reach alpha of
+  about 0.96) and **t = 10 (`T_PRIMARY` of NH-01) at r = 1.15 only**,
+  where alpha is about 1.0 (flagged: at the edge of P = N); t = 10 is
+  dropped at r = 1.3 and 1.6 (P > N, section 2). Sizes N = 512 and
+  2 048. **Decided by the PI on 2026-11-11 (evening): t = 1 primary,
+  t = 3 and t = 10 secondary and bounded.**
 - **Step 0 bis, analytic positive control of the code.** The same
   simulator run in **parallel** dynamics on the Hebbian kernel at
   N = 2 048, alpha = 0.179 (r = 1.3), cues 0.4, 0.6, 0.8, must
@@ -190,7 +192,7 @@ CPU only, numpy; estimated minutes to a few hours [to measure on the
 calibration step]. Not done: the code (per-step recording does not
 exist in the NH-01 runner; step 0 bis to add); the reading of Amari
 and Maginu 1988 (paywalled, PI decision on access) and Kinzel 1986
-(identifier to resolve); the PI's choice of the primary dreamed arm
-(t = 1 as written, or t = 3). Decided by the PI on 2026-11-11
+(identifier to resolve); the PI's choice of the primary dreamed arm is made (t = 1, 2026-11-11
+evening). Decided by the PI on 2026-11-11
 (evening): the reading gate applies; a CPU run is allowed before M3;
 results are read after the method note.
