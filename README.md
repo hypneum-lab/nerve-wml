@@ -75,8 +75,8 @@ README. See [`CHANGELOG.md`](CHANGELOG.md) and the ADRs for detail.
 ## 2026-05-20 — Gap-analysis remediation sprint
 
 Reinforcement sprint that hardened the empirical claims via systematic
-statistical scrutiny. **97 commits, 13 PRs merged**, +458 fast-suite
-tests passing (from 385 baseline). Detailed entry in [`CHANGELOG.md`](CHANGELOG.md).
+statistical scrutiny. **97 commits, 13 PRs merged**; see
+[`CHANGELOG.md`](CHANGELOG.md) for the full entry.
 
 **6 initial claims revised** under scrutiny:
 
@@ -394,7 +394,7 @@ Ubuntu and all tests pass.
 ## Run the suite
 
 ```bash
-uv run pytest -m "not slow"    # 808 tests selected (854 collected, 46 slow) at 1.9.4; CPU-host timing below
+uv run pytest -m "not slow"    # 1023 tests selected (1069 collected, 46 slow) — 2026-11-20, `1d106a9`
 uv run pytest                  # full suite incl. paper figure rendering
 uv run pytest --cov=nerve_core --cov=track_p --cov=track_w --cov=bridge --cov=harness --cov=interpret --cov=neuromorphic
 ```
@@ -410,7 +410,7 @@ uv run pytest --cov=nerve_core --cov=track_p --cov=track_w --cov=bridge --cov=ha
   w2_polymorphie_gap 0.0, w3_gain_over_baseline 0.3913, w4_forgetting 0.0, all_passed true` (`torch.manual_seed(0)`, CPU).
 - **Duration & host** — 24 s on Ubuntu 24.04, 8 vCPU, no GPU, Python 3.14, torch 2.11 CPU build, commit `a894f7b`.
   Without `OMP_NUM_THREADS=1` the same test took 2.5–10.5 min on that shared host (torch intra-op thread
-  contention). The CI command `uv run pytest -m "not slow"` (808 tests selected) exceeded 15 min there — not a one-command target on CPU.
+  contention). The CI command `uv run pytest -m "not slow"` exceeded 15 min there — not a one-command target on CPU.
 - **Full reproduction** — all 11 gate pilots and the figure scripts: "Reproduce the gate numbers" and
   "Reproduce the v1.1 / v1.2 findings" below; golden NPZs live in `tests/golden/` (see its `README.md`).
 
