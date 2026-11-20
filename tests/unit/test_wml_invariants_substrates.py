@@ -17,7 +17,7 @@ All tests are L1 (fast, no slow marker). No substrate code is modified.
 """
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 import torch
