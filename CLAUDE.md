@@ -21,7 +21,7 @@ uv sync --all-extras        # install
 uv run pytest               # 854 tests collected at 1.9.4 (46 marked slow; remainder unlabelled)
 uv run pytest -m "not slow" # skip long tests
 uv run ruff check .
-uv run mypy nerve_core track_p
+uv run mypy nerve_core track_p track_w nerve_wml harness
 ```
 
 ## Scientific protocol

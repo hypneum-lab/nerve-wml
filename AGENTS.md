@@ -22,7 +22,7 @@ uv sync --all-extras
 uv run pytest                 # full
 uv run pytest -m "not slow"   # skip L3-L4
 uv run ruff check .
-uv run mypy nerve_core track_p
+uv run mypy nerve_core track_p track_w nerve_wml harness
 ```
 
 ## Conventions
