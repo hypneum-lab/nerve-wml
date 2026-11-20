@@ -126,8 +126,14 @@ def test_w3_no_routing_access(label: str, factory: Callable) -> None:
     Full instrumentation of live step() calls is an integration-test concern
     (see tests/integration/). This unit test confirms the invariant helper
     itself does not spuriously reject substrates.
+
+    Coverage note: the parametrised substrate is only instantiated here,
+    not stepped; the helper receives an empty access log, so this test
+    is vacuously green by construction and does NOT establish W-3 for
+    the substrate. W-3 at substrate level needs step() instrumentation.
     """
-    # Empty log → no routing_weight access was recorded.
+    _ = factory()  # construction only; see coverage note above
+    # Empty log -> no routing_weight access was recorded.
     assert_w3_no_routing_access_in_step([])
 
 

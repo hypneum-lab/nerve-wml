@@ -53,5 +53,4 @@ jobs:
         run: uv run pytest -m "not slow" --no-cov
 
       - name: Validate doc-truth (N4 Task 5)
-        continue-on-error: true
         run: uv run python scripts/check_status_truth.py

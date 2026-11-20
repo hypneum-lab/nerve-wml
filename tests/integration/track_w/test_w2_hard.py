@@ -14,8 +14,10 @@ Platform gap measurements (torch.manual_seed(0), steps=800, CPU):
 The gap difference is caused by numerical divergence in Python 3.14
 (different float evaluation order / hash randomisation internals
 affecting torch RNG on CPU). The 0.05 threshold is a scientific
-contract (issue #85) and must NOT be changed. The test is skipped
-on Python 3.13+ where the divergence is reproducible; see #85.
+contract (issue #85) and must NOT be changed. On Python 3.13+ the
+test is marked xfail(strict=True): it still runs, a failure is
+expected and recorded as ``x``, and an unexpected pass (e.g. after a
+torch RNG fix) fails the suite so the mark gets removed; see #85.
 """
 import sys
 
@@ -27,6 +29,12 @@ from scripts.track_w_pilot import run_w2_hard
 _PY313_PLUS = sys.version_info >= (3, 13)
 
 
+@pytest.mark.xfail(
+    condition=_PY313_PLUS,
+    strict=True,
+    reason="gap > 0.05 not guaranteed on Python >= 3.13 "
+    "(measured 0.039 on 3.14/torch 2.11 CPU, see #85)",
+)
 def test_w2_hard_produces_measurable_gap():
     """On the hard XOR task, the observed gap between substrates is
     non-trivial (> 5 %) but both beat the linear-probe plateau.
@@ -37,14 +45,10 @@ def test_w2_hard_produces_measurable_gap():
 
     Platform contract: gap > 0.05 holds on Python 3.12 (CI baseline).
     On Python 3.14 the same seed yields gap ≈ 0.039 due to numerical
-    divergence (documented in #85); the test is skipped there to avoid
-    a false-negative without changing the scientific threshold.
+    divergence (documented in #85); the test is xfail(strict=True)
+    there, so the platform sensitivity stays visible without changing
+    the scientific threshold.
     """
-    if _PY313_PLUS:
-        pytest.skip(
-            "gap > 0.05 not guaranteed on Python ≥ 3.13 "
-            "(measured 0.039 on 3.14/torch 2.11 CPU — see #85)"
-        )
     torch.manual_seed(0)
     report = run_w2_hard(steps=800)
     # Both beat random baseline (1/12 ≈ 0.083).

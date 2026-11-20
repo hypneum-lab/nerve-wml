@@ -388,8 +388,11 @@ UV_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu uv sync --all-extras
 ```
 
 This is a workaround until an explicit CPU source is added to
-`pyproject.toml` (tracked in issue #83). The CI runs the CUDA wheel on
-Ubuntu and all tests pass.
+`pyproject.toml` (tracked in issue #83). It resolves a different set of
+torch wheels than the committed `uv.lock` (which records the CUDA
+build), so it is NOT the locked, reproducible environment: do not
+combine it with `--locked`, and do not use it to regenerate `uv.lock`.
+The CI runs the CUDA wheel on Ubuntu and all tests pass.
 
 ## Run the suite
 
