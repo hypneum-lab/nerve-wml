@@ -10,7 +10,7 @@ Guidance for AI coding agents (Claude Code, Aider, Cursor, etc.) working in this
 
 - Language: Python 3.12+ (>=3.12 required in `pyproject.toml`)
 - Runtime: `uv` (sync via `uv sync --all-extras`)
-- Test: `pytest` — 854 tests collected at 1.9.4 on Linux (46 marked `slow`; `-m "not slow"` selects 808)
+- Test: `pytest` — 1069 tests collected, 46 slow — 2026-11-20, `1d106a9`
 - Build: `hatchling`; wheels packaged from `nerve_core/`, `track_p/`, `track_w/`, `bridge/`, `harness/`, `interpret/`, `neuromorphic/`, `nerve_wml/`
 - Core deps: `torch>=2.3`, `numpy>=1.26`, `scipy>=1.17.1`, `scikit-learn>=1.8.0`
 - Optional extras: `[mnist]` (torchvision), `[interpret]` (mne — moved out of core in N5 Task 9)
@@ -19,10 +19,10 @@ Guidance for AI coding agents (Claude Code, Aider, Cursor, etc.) working in this
 
 ```bash
 uv sync --all-extras
-uv run pytest                 # full
-uv run pytest -m "not slow"   # skip L3-L4
+uv run pytest                 # 1069 tests collected, 46 slow — 2026-11-20, `1d106a9`
+uv run pytest -m "not slow"   # 1023 tests selected — 2026-11-20, `1d106a9`
 uv run ruff check .
-uv run mypy nerve_core track_p
+uv run mypy nerve_core track_p track_w nerve_wml harness
 ```
 
 ## Conventions

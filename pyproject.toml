@@ -52,3 +52,12 @@ markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 dev = [
     "matplotlib>=3.10.8",
 ]
+
+[tool.mypy]
+# scipy ships no inline types and no separate stubs package yet.
+# Suppress the import-untyped error for scipy so that
+# `uv run mypy nerve_core track_p track_w nerve_wml harness`
+# remains a hard failure only on code we own.
+[[tool.mypy.overrides]]
+module = "scipy.*"
+ignore_missing_imports = true

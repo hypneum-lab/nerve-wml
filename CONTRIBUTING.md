@@ -14,7 +14,7 @@ uv run pytest -m "not slow"     # fast tiers L1-L2 (what CI runs)
 uv run pytest                   # full suite incl. L3-L4 golden/integration
 # `uv run python -m pytest ...` is equivalent (lab convention)
 uv run ruff check .
-uv run mypy nerve_core track_p track_w
+uv run mypy nerve_core track_p track_w nerve_wml harness
 ```
 
 Optional extras: `uv sync --extra mnist` (torchvision), `--extra interpret`

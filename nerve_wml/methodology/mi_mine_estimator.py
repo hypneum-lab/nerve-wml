@@ -127,4 +127,6 @@ def mi_mine(
         history[epoch] = float(mi_bound.detach().item())
 
     tail = history[-tail_average:]
-    return float(max(np.mean(tail), 0.0))
+    # np.mean returns a numpy scalar; cast explicitly for mypy.
+    tail_mean: float = float(np.mean(tail))
+    return float(max(tail_mean, 0.0))
