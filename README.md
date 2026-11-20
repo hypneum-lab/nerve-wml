@@ -376,6 +376,21 @@ uv sync --all-extras
 
 Python 3.12+, macOS arm64 (MLX-friendly) or Linux x86_64. No vendor SDK deps are pulled by default (Akida, dream-of-kiki, sentence-transformers are optional integrations; Intel Loihi 2 is not a target — the `lava-nc` SDK is archived upstream).
 
+**Linux CPU-only note:** `uv sync --all-extras` on Linux x86_64 pulls
+`torch` from PyPI's default index, which currently resolves to the CUDA
+build (`torch==2.11.0+cu130` plus ~15 `nvidia-*` packages, ~5 GB venv)
+even when no GPU is present. The package runs on CPU regardless. If
+you want a smaller install without CUDA libraries, override the index at
+sync time:
+
+```bash
+UV_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu uv sync --all-extras
+```
+
+This is a workaround until an explicit CPU source is added to
+`pyproject.toml` (tracked in issue #83). The CI runs the CUDA wheel on
+Ubuntu and all tests pass.
+
 ## Run the suite
 
 ```bash
